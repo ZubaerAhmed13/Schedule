@@ -788,10 +788,10 @@ function normalizeEndTimeField(el){
   if(!el)return false;
   let value=String(el.value||'').trim();
   if(value==='2400'||value==='24:00'){el.value='24:00';el.setCustomValidity('');return true;}
-  let match=value.match(/^(\\d{1,2}):([0-5]\\d)$/);
+  let match=value.match(/^(\d{1,2}):([0-5]\d)$/);
   if(match){const hour=Number(match[1]);if(hour>=0&&hour<=23)value=String(hour).padStart(2,'0')+':'+match[2];}
-  else if(/^\\d{3,4}$/.test(value)){const hour=Number(value.slice(0,-2)),minute=Number(value.slice(-2));if(hour>=0&&hour<=23&&minute>=0&&minute<=59)value=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');}
-  const valid=/^(?:[01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+  else if(/^\d{3,4}$/.test(value)){const hour=Number(value.slice(0,-2)),minute=Number(value.slice(-2));if(hour>=0&&hour<=23&&minute>=0&&minute<=59)value=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');}
+  const valid=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
   if(valid)el.value=value;
   el.setCustomValidity(valid?'':'Enter a 24-hour end time, e.g. 14:30 or 24:00.');
   return valid;
