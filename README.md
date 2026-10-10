@@ -18,3 +18,8 @@ Weekwise saves planner data in local browser storage. It does not automatically 
 ## Offline app
 
 After the site is first opened online, the service worker can cache the application shell for later offline use.
+
+
+## Planner starts empty
+
+The weekly calendar starts empty by design. No starter routine is inserted automatically, and saving Work day or Class settings only updates the reusable template. Add events yourself with **Add an activity** and choose one of the templates. Existing user-created activities are preserved when older built-in routine entries are removed.
