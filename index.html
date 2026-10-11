@@ -1629,8 +1629,7 @@ async function initializeCloud(){
  setCloudAuthMode('signin',false);
  if(!cloudClient){renderCloudPanel();setCloudStatus('Cloud library unavailable. Weekwise still saves locally. Check your internet connection and reload to enable cloud sync.');return;}
  try{
-  const {data:{session}}=await cloudClient.auth.getSession();
-  if(session?.user)await startCloudForUser(session.user);
+  // Subscribe before reading the session so auth redirects such as password recovery are not missed.
   cloudClient.auth.onAuthStateChange((event,session)=>{
    setTimeout(()=>{
     if(event==='PASSWORD_RECOVERY'&&session?.user){cloudUser=session.user;setCloudAuthMode('recovery');openCloudPanel();return;}
@@ -1638,6 +1637,8 @@ async function initializeCloud(){
     else{cloudUser=null;cloudReady=false;cloudRevision=0;cloudConflict=null;if(cloudSyncTimer)clearTimeout(cloudSyncTimer);renderCloudPanel();setCloudStatus('Signed out. Your schedules remain saved on this device.');}
    },0);
   });
+  const {data:{session}}=await cloudClient.auth.getSession();
+  if(session?.user)await startCloudForUser(session.user);
  }catch(error){console.error(error);setCloudStatus('Could not check cloud sign-in. Local planning still works.');}
 }
 
@@ -1690,7 +1691,7 @@ async function cloudSignIn(){
    else setCloudStatus('Sign-in failed: '+message);
    return;
   }
-  if(data?.user){cloudUser=data.user;await startCloudForUser(data.user,true);setCloudStatus('Signed in. Checking your latest schedules…');}
+  if(data?.user){cloudUser=data.user;await startCloudForUser(data.user,true);}
  }catch(error){setCloudStatus('Could not sign in: '+(error?.message||'Please try again.'));}
  finally{setCloudAuthBusy(false);}
 }
@@ -1704,7 +1705,7 @@ async function cloudSignUp(){
   const {data,error}=await cloudClient.auth.signUp({email,password:$('cloudPassword').value,options:{emailRedirectTo:location.origin+location.pathname}});
   if(error){setCloudStatus('Account creation failed: '+(error.message||'Please try again.'));return;}
   if(data?.session&&data?.user){
-   cloudUser=data.user;await startCloudForUser(data.user,true);setCloudStatus('Account created. Your Weekwise cloud is ready.');
+   cloudUser=data.user;await startCloudForUser(data.user,true);if(cloudReady)setCloudStatus('Account created and cloud sync is ready.');
   }else{
    setCloudStatus('Account created. Check your inbox and spam folder for the confirmation link, then return here to sign in. If the link fails, add the Weekwise site address to Supabase Authentication → URL Configuration.');
    setCloudAuthMode('signin',false);
