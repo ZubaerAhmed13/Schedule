@@ -1,4 +1,4 @@
-const CACHE_NAME = 'weekwise-static-v40';
+const CACHE_NAME = 'weekwise-static-v41';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
