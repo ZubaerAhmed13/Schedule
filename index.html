@@ -2730,12 +2730,12 @@ function renderWorkspaceTaskGroups(items){
 function renderTodayOverview(){
  const panel=$('todayOverview');if(!panel)return;
  const isToday=workspaceView==='today';panel.hidden=!isToday;if(!isToday)return;
- const todayKey=dateKey(now),todayRecords=workspaceRecords().filter(record=>dateKey(record.date)===todayKey);
+ const todayKey=dateKey(now),todayRecords=workspaceRecords().filter(record=>workspaceRecordMatches(record,'today'));
  const completed=todayRecords.filter(record=>record.task.done).length,total=todayRecords.length;
  const progress=total?Math.round(completed/total*100):0;
  const overdue=workspaceRecords().filter(record=>!record.task.done&&record.task.dueDate&&record.task.dueDate<todayKey);
  const minute=now.getHours()*60+now.getMinutes();
- const timedToday=todayRecords.filter(record=>!record.task.done&&!record.task.allDay&&!record.task.unscheduled&&record.task.start!==null&&record.task.start!==undefined&&Number(record.task.duration)>0);
+ const timedToday=todayRecords.filter(record=>dateKey(record.date)===todayKey&&!record.task.done&&!record.task.allDay&&!record.task.unscheduled&&record.task.start!==null&&record.task.start!==undefined&&Number(record.task.duration)>0);
  const current=timedToday.filter(record=>Number(record.task.start)<=minute&&Number(record.task.start)+Number(record.task.duration)>minute).sort((a,b)=>Number(a.task.start)-Number(b.task.start))[0];
  const next=current||timedToday.filter(record=>Number(record.task.start)>=minute).sort((a,b)=>Number(a.task.start)-Number(b.task.start))[0];
  const nextTitle=next?next.task.title:total===0?'No tasks planned':'No more timed tasks';
