@@ -887,11 +887,54 @@ function loadStore(){
     return {settings:defaultSettings(),weeks:{}};
   }catch(e){return {settings:defaultSettings(),weeks:{}}}
 }
+function autoPopulatedSampleKind(task){
+  const title=String(task&&task.title||'').trim().toLowerCase().replace(/[’‘]/g,"'").replace(/\s+/g,' ');
+  if(title==='german practice')return 'german';
+  if(title==='english fluency practice')return 'english';
+  if(/^job applications\s*(?:&|and)\s*follow-ups$/.test(title))return 'jobs';
+  if(/^master's coursework self-study$/.test(title))return 'coursework';
+  if(/^communication skills(?:\s*\/\s*interviews?(?:\s+practice)?|\s+practice)$/.test(title))return 'communication';
+  if(title==='explore another city')return 'city';
+  if(title==='quick clean & reset')return 'cleaning';
+  if(title==='cook meals for the next 2 days')return 'cooking';
+  if(title==='cycling / outdoor time')return 'cycling';
+  if(title==='movie / guilt-free downtime')return 'downtime';
+  return '';
+}
+/* Older builds saved an example week directly into the calendar. Remove those
+   recognizable batches only when there is strong evidence of a seeded routine.
+   Unrelated personal activities and the separate reminders store are preserved. */
+function removeAutoPopulatedSampleData(data){
+  if(!data||!data.weeks||typeof data.weeks!=='object')return false;
+  const weekEntries=Object.values(data.weeks);
+  const allTasks=weekEntries.flatMap(week=>Array.isArray(week&&week.tasks)?week.tasks:[]);
+  const allSamples=allTasks.map(task=>({task,kind:autoPopulatedSampleKind(task)})).filter(x=>x.kind);
+  const globalKinds=new Set(allSamples.map(x=>x.kind));
+  const globalGerman=allSamples.filter(x=>x.kind==='german').length;
+  const globalEnglish=allSamples.filter(x=>x.kind==='english').length;
+  const globallySeeded=allSamples.length>=15&&globalKinds.size>=5&&globalGerman>=3&&globalEnglish>=3;
+  let changed=false;
+  for(const week of weekEntries){
+    if(!Array.isArray(week&&week.tasks))continue;
+    const samples=week.tasks.map(task=>({task,kind:autoPopulatedSampleKind(task)})).filter(x=>x.kind);
+    const kinds=new Set(samples.map(x=>x.kind));
+    const german=samples.filter(x=>x.kind==='german').length;
+    const english=samples.filter(x=>x.kind==='english').length;
+    const seededWeek=samples.length>=10&&kinds.size>=4&&german>=3&&english>=2;
+    if(!globallySeeded&&!seededWeek)continue;
+    const kept=week.tasks.filter(task=>!autoPopulatedSampleKind(task));
+    if(kept.length!==week.tasks.length){week.tasks=kept;changed=true;}
+  }
+  return changed;
+}
+
 function loadReminders(){try{const data=JSON.parse(localStorage.getItem(REMINDERS_KEY)||'[]');return Array.isArray(data)?data:[];}catch(_){return [];}}
 let reminders=loadReminders();
 function saveReminders(){try{localStorage.setItem(REMINDERS_KEY,JSON.stringify(reminders));}catch(_){showToast('Could not save reminders in this browser. Export a backup when available.');}}
 let store=loadStore();
 if(!store.settings)store.settings=defaultSettings();if(!store.weeks)store.weeks={};if(!store.settings.shifts)store.settings.shifts=defaultSettings().shifts;if(!store.settings.classTemplate)store.settings.classTemplate=defaultClassTemplate();
+const removedAutoPopulatedSamples=removeAutoPopulatedSampleData(store);
+if(removedAutoPopulatedSamples){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(_){}}
 let currentWeek=dateKey(sundayOf(now));
 let mobileDay=now.getDay();
 let monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);
