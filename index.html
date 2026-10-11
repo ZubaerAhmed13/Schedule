@@ -623,6 +623,18 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
  .view-switch-btn{font-size:11px;padding:6px 4px}
 }
 
+
+/* Cloud account and sync controls */
+.cloud-status{margin:0 0 13px;padding:11px 12px;border-radius:10px;background:#f4f5ff;color:#4c548e;border:1px solid #e4e6fb;font-size:12px;line-height:1.5}
+.cloud-auth-form .formgrid{margin-top:0}
+.cloud-form-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.cloud-account-line{font-size:12px;color:#69718b;margin:0 0 8px}
+.cloud-account-line strong{color:#343954;overflow-wrap:anywhere}
+.cloud-conflict{margin-top:14px;padding:12px;border:1px solid #e9d8a8;border-radius:12px;background:#fffae9;color:#6d5721;font-size:12px;line-height:1.5}
+.cloud-conflict p{margin:5px 0 0;color:#776b50}
+.cloud-footnote{margin:13px 0 0;color:#7b849c;font-size:10px;line-height:1.5}
+#cloudPanel[open] .inside{padding-top:13px}
+
 </style>
 </head>
 <body>
@@ -635,6 +647,7 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
         <div class="more-panel" role="menu" aria-label="Weekwise options">
           <button class="btn" id="dashboardMenuBtn" role="menuitem">Weekly effort dashboard</button>
           <button class="btn reminders-menu-button" id="remindersMenuBtn" role="menuitem">Reminders & sticky notes <span id="reminderBadge" class="reminder-badge" hidden>0</span></button>
+          <button class="btn reminders-menu-button" id="cloudMenuBtn" role="menuitem">Cloud sync & account <span id="cloudMenuBadge" class="reminder-badge">Local</span></button>
           <button class="btn" id="menuSettingsBtn" role="menuitem">Work day & weekly settings</button>
           <button class="btn" id="menuQuickAddBtn" role="menuitem">Quick add activity</button>
           <button class="btn" id="menuHabitsBtn" role="menuitem">Habits & focus tips</button>
@@ -708,6 +721,29 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
       <div class="shift-title">Work days <span style="color:var(--muted);font-weight:500">— select your days and hours</span></div>
       <div class="shiftgrid" id="shiftGrid"></div>
       <div class="formfooter"><p>Settings are saved as templates. Your calendar stays empty until you add activities.</p><div class="settings-actions"><button class="btn" id="cancelSettings">Cancel</button><button class="btn primary" id="applySettings">Save settings</button></div></div>
+    </div>
+  </details>
+  <details class="settings secondary-details utility-source" id="cloudPanel">
+    <summary>Cloud sync & account <span style="color:var(--muted);font-size:11px;font-weight:500">Use Weekwise across devices</span></summary>
+    <div class="inside">
+      <p id="cloudStatus" class="cloud-status" role="status" aria-live="polite">Weekwise is using this browser only.</p>
+      <form id="cloudAuthForm" class="cloud-auth-form">
+        <div class="formgrid">
+          <div class="field"><label for="cloudEmail">Email</label><input id="cloudEmail" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></div>
+          <div class="field"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="At least 8 characters"></div>
+        </div>
+        <div class="cloud-form-actions"><button class="btn primary" id="cloudSignInBtn" type="submit">Sign in</button><button class="btn" id="cloudSignUpBtn" type="button">Create account</button></div>
+      </form>
+      <div id="cloudSignedIn" hidden>
+        <p class="cloud-account-line">Signed in as <strong id="cloudUserEmail"></strong></p>
+        <div class="cloud-form-actions"><button class="btn" id="cloudSyncNow" type="button">Sync now</button><button class="btn" id="cloudSignOut" type="button">Sign out</button></div>
+      </div>
+      <div id="cloudConflict" class="cloud-conflict" hidden>
+        <strong>There are different changes on this device and in the cloud.</strong>
+        <p>Choose which copy to keep. The other copy will not be merged automatically.</p>
+        <div class="cloud-form-actions"><button class="btn" id="cloudUseRemote" type="button">Use cloud version</button><button class="btn primary" id="cloudUseLocal" type="button">Keep this device's version</button></div>
+      </div>
+      <p class="cloud-footnote">Your existing local schedules and sticky notes stay on this device. The first sync asks before replacing data when both copies contain changes. Cloud access requires the Weekwise database setup to be completed in Supabase.</p>
     </div>
   </details>
   <div class="unscheduled" id="unscheduledBox"><h3>⚠ A few activities need a time</h3><p id="unscheduledText">These blocks did not fit around your shifts. Move them to another day or adjust the shift times.</p></div>
@@ -796,6 +832,7 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
   </section>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -804,7 +841,12 @@ const DAY_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const TYPE_LABELS={job:'Career',study:'Coursework',language:'Language',life:'Home / personal',hobby:'Hobby',fixed:'Fixed',other:'Other'};
 const STORE_KEY='weekwise-planner-v2';
 const REMINDERS_KEY='weekwise-reminders-v1';
+const CLOUD_META_KEY='weekwise-cloud-sync-meta-v1';
+const SUPABASE_URL='https://iajkzlsurghfvsmqkmut.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_jwdzJMi4VxXUHEOVasrcOg_ax0A5scL';
 const $=id=>document.getElementById(id);
+let cloudClient=null,cloudUser=null,cloudRevision=0,cloudReady=false,cloudApplyingRemote=false,cloudBusy=false,cloudSyncTimer=null,cloudConflict=null,cloudInitializationUser=null,cloudInitPromise=null;
+try{if(window.supabase&&typeof window.supabase.createClient==='function')cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}catch(e){console.error('Weekwise cloud client could not start',e);}
 let now=new Date();
 function nextQuarterHour(){const minutes=now.getHours()*60+now.getMinutes();return Math.min(23*60+45,Math.ceil(minutes/15)*15);}
 function dateOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
@@ -938,7 +980,7 @@ function removeAutoPopulatedSampleData(data){
 
 function loadReminders(){try{const data=JSON.parse(localStorage.getItem(REMINDERS_KEY)||'[]');return Array.isArray(data)?data:[];}catch(_){return [];}}
 let reminders=loadReminders();
-function saveReminders(){try{localStorage.setItem(REMINDERS_KEY,JSON.stringify(reminders));}catch(_){showToast('Could not save reminders in this browser. Export a backup when available.');}}
+function saveReminders(){try{localStorage.setItem(REMINDERS_KEY,JSON.stringify(reminders));}catch(_){showToast('Could not save reminders in this browser. Export a backup when available.');}if(!cloudApplyingRemote)queueCloudSave();}
 let store=loadStore();
 if(!store.settings)store.settings=defaultSettings();if(!store.weeks)store.weeks={};if(!store.settings.shifts)store.settings.shifts=defaultSettings().shifts;if(!store.settings.classTemplate)store.settings.classTemplate=defaultClassTemplate();
 const removedAutoPopulatedSamples=removeAutoPopulatedSampleData(store);
@@ -953,7 +995,7 @@ let lastRenderedCalendarView=null;
 let tasks=[];
 let toastTimer;
 let storageWarningShown=false;
-function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}}
+function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}if(!cloudApplyingRemote)queueCloudSave();}
 function saveCurrent(){store.weeks[currentWeek]={tasks:JSON.parse(JSON.stringify(tasks))};saveStore();}
 function showToast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400);}
 function populateDaySelects(){['tripDay','cookDay','quickDay','modalDay'].forEach(id=>{const el=$(id);el.innerHTML=DAY_NAMES.map((n,i)=>`<option value="${i}">${n}</option>`).join('')});}
@@ -1448,6 +1490,172 @@ function renderReminders(){
 function openReminders(){renderReminders();openUtilityPanel('remindersPanel','Reminders & sticky notes');}
 function nudgeDueReminders(){const due=reminderDueOpen();if(!due.length)return;const today=reminderTodayKey();let seen='';try{seen=localStorage.getItem('weekwise-reminder-nudge-v1')||'';}catch(_){}if(seen===today)return;try{localStorage.setItem('weekwise-reminder-nudge-v1',today);}catch(_){}showToast(due.length===1?'You have 1 reminder due. Open More → Reminders & sticky notes.':'You have '+due.length+' reminders due. Open More → Reminders & sticky notes.');}
 
+
+function cloudFingerprint(payload){return JSON.stringify(payload);}
+function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,calendarView:view};}
+function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||settingsChanged;}
+function readCloudMeta(){try{return JSON.parse(localStorage.getItem(CLOUD_META_KEY)||'null');}catch(_){return null;}}
+function writeCloudMeta(revision,payload){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify({userId:cloudUser?.id||'',revision:Number(revision)||0,fingerprint:cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}catch(_){}}
+function setCloudStatus(message){const el=$('cloudStatus');if(el)el.textContent=message;const badge=$('cloudMenuBadge');if(badge){badge.textContent=cloudUser?(cloudReady?'Synced':'Account'):'Local';badge.title=message;}}
+function renderCloudPanel(){
+ const form=$('cloudAuthForm'),signed=$('cloudSignedIn'),email=$('cloudUserEmail'),conflict=$('cloudConflict');
+ if(form)form.hidden=!!cloudUser;
+ if(signed)signed.hidden=!cloudUser;
+ if(email)email.textContent=cloudUser?.email||'';
+ if(conflict)conflict.hidden=!cloudConflict;
+ if(!cloudClient)setCloudStatus('Cloud sign-in is unavailable because the Supabase library did not load. Local planning still works.');
+ else if(!cloudUser)setCloudStatus('Weekwise is using this browser only. Sign in to sync schedules across devices.');
+ if(cloudConflict)setCloudStatus('Sync paused to protect both versions. Choose which copy to keep.');
+}
+function saveCloudLocalPayload(payload){
+ cloudApplyingRemote=true;
+ try{
+  if(payload&&payload.store&&typeof payload.store==='object'){
+   store=payload.store;
+   if(!store.settings)store.settings=defaultSettings();
+   if(!store.weeks||typeof store.weeks!=='object')store.weeks={};
+   if(!store.settings.shifts)store.settings.shifts=defaultSettings().shifts;
+   if(!store.settings.classTemplate)store.settings.classTemplate=defaultClassTemplate();
+   localStorage.setItem(STORE_KEY,JSON.stringify(store));
+  }
+  if(Array.isArray(payload?.reminders)){reminders=payload.reminders;localStorage.setItem(REMINDERS_KEY,JSON.stringify(reminders));}
+  if(['day','week','month'].includes(payload?.calendarView))localStorage.setItem('weekwise-calendar-view-v1',payload.calendarView);
+  currentWeek=dateKey(sundayOf(now));mobileDay=now.getDay();monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);
+  loadWeek(currentWeek);renderReminders();
+ }finally{cloudApplyingRemote=false;}
+}
+function applyCloudRow(row){
+ saveCloudLocalPayload(row.data||{});
+ cloudRevision=Number(row.revision)||0;cloudReady=true;cloudConflict=null;
+ writeCloudMeta(cloudRevision,buildCloudPayload());
+ renderCloudPanel();
+ setCloudStatus('All changes synced. Last saved '+new Date(row.updated_at||Date.now()).toLocaleString()+'.');
+}
+function showCloudConflict(row){
+ cloudConflict=row;cloudRevision=Number(row?.revision)||0;
+ renderCloudPanel();
+ setCloudStatus('Both this device and the cloud have changes. Choose which version to keep.');
+}
+function queueCloudSave(){
+ if(!cloudClient||!cloudUser||!cloudReady||cloudApplyingRemote||cloudConflict)return;
+ if(cloudSyncTimer)clearTimeout(cloudSyncTimer);
+ setCloudStatus('Changes saved on this device. Syncing to cloud…');
+ cloudSyncTimer=setTimeout(()=>{cloudSyncTimer=null;saveCloudSnapshot();},900);
+}
+async function saveCloudSnapshot(){
+ if(!cloudClient||!cloudUser||!cloudReady||cloudApplyingRemote||cloudConflict||cloudBusy)return;
+ cloudBusy=true;
+ const payload=buildCloudPayload(),expectedRevision=cloudRevision;
+ try{
+  const {data,error}=await cloudClient.rpc('weekwise_save',{p_data:payload,p_expected_revision:expectedRevision});
+  if(error)throw error;
+  const result=Array.isArray(data)?data[0]:data;
+  if(!result)throw new Error('The cloud returned no save result.');
+  if(!result.saved){showCloudConflict({data:result.data||{},revision:Number(result.revision)||0,updated_at:result.updated_at||null});return;}
+  cloudRevision=Number(result.revision)||expectedRevision+1;cloudReady=true;
+  writeCloudMeta(cloudRevision,payload);
+  setCloudStatus('All changes synced · '+new Date(result.updated_at||Date.now()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+  const badge=$('cloudMenuBadge');if(badge)badge.textContent='Synced';
+  if(cloudFingerprint(buildCloudPayload())!==cloudFingerprint(payload))queueCloudSave();
+ }catch(error){
+  console.error('Weekwise cloud save failed',error);
+  setCloudStatus('Cloud save failed. Your changes remain on this device. Open Cloud sync and try Sync now. '+(error?.message||''));
+ }finally{cloudBusy=false;}
+}
+async function startCloudForUser(user,force=false){
+ if(!cloudClient||!user)return;
+ if(cloudUser?.id===user.id&&cloudReady&&!force)return;
+ if(cloudInitPromise&&cloudInitializationUser===user.id)return cloudInitPromise;
+ cloudInitializationUser=user.id;cloudInitPromise=(async()=>{
+  cloudUser=user;cloudReady=false;cloudConflict=null;renderCloudPanel();setCloudStatus('Checking your cloud data…');
+  try{
+   const {data:row,error}=await cloudClient.from('weekwise_cloud_data').select('user_id,data,revision,updated_at').eq('user_id',user.id).maybeSingle();
+   if(error)throw error;
+   const payload=buildCloudPayload(),meta=readCloudMeta(),localFingerprint=cloudFingerprint(payload),hasLocal=localHasWeekwiseData();
+   if(!row){
+    cloudRevision=0;cloudReady=true;
+    if(hasLocal){setCloudStatus('Your existing schedules are ready to upload to your new cloud account.');await saveCloudSnapshot();}
+    else {await saveCloudSnapshot();}
+    return;
+   }
+   cloudReady=true;cloudRevision=Number(row.revision)||0;
+   if(meta?.userId===user.id){
+    const localDirty=localFingerprint!==meta.fingerprint;
+    const remoteChanged=Number(row.revision)>Number(meta.revision||0);
+    if(localDirty&&remoteChanged){showCloudConflict(row);return;}
+    if(localDirty){cloudRevision=Number(row.revision)||0;queueCloudSave();return;}
+    applyCloudRow(row);return;
+   }
+   if(!hasLocal){applyCloudRow(row);return;}
+   showCloudConflict(row);
+  }catch(error){
+   console.error('Weekwise cloud initialization failed',error);
+   cloudReady=false;setCloudStatus('Signed in, but the cloud database is not ready yet. Run the Weekwise setup SQL in Supabase, then tap Sync now. '+(error?.message||''));
+   renderCloudPanel();
+  }
+ })();
+ try{return await cloudInitPromise;}finally{cloudInitPromise=null;cloudInitializationUser=null;}
+}
+async function initializeCloud(){
+ if(!cloudClient){renderCloudPanel();setCloudStatus('Cloud library unavailable. Weekwise still saves locally. Check your internet connection and reload to enable cloud sync.');return;}
+ try{
+  const {data:{session}}=await cloudClient.auth.getSession();
+  if(session?.user)await startCloudForUser(session.user);
+  cloudClient.auth.onAuthStateChange((event,session)=>{
+   setTimeout(()=>{
+    if(session?.user)startCloudForUser(session.user).catch(()=>{});
+    else{cloudUser=null;cloudReady=false;cloudRevision=0;cloudConflict=null;if(cloudSyncTimer)clearTimeout(cloudSyncTimer);renderCloudPanel();setCloudStatus('Signed out. Your schedules remain saved on this device.');}
+   },0);
+  });
+ }catch(error){console.error(error);setCloudStatus('Could not check cloud sign-in. Local planning still works.');}
+}
+async function cloudSignIn(){
+ if(!cloudClient){setCloudStatus('Cloud library unavailable.');return;}
+ const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
+ if(!email||!password){$('cloudAuthForm').reportValidity();return;}
+ setCloudStatus('Signing in…');
+ const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
+ if(error){setCloudStatus('Sign-in failed: '+error.message);return;}
+ if(data?.user)await startCloudForUser(data.user,true);
+}
+async function cloudSignUp(){
+ if(!cloudClient){setCloudStatus('Cloud library unavailable.');return;}
+ const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
+ if(!email||!password){$('cloudAuthForm').reportValidity();return;}
+ if(password.length<8){setCloudStatus('Use a password of at least 8 characters.');return;}
+ setCloudStatus('Creating your Weekwise account…');
+ const {data,error}=await cloudClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+ if(error){setCloudStatus('Account creation failed: '+error.message);return;}
+ if(data?.session&&data?.user){await startCloudForUser(data.user,true);}
+ else{setCloudStatus('Check your email for the confirmation link. After confirming, return here and sign in. Add the Weekwise site URL to Supabase Auth → URL Configuration if the confirmation link is rejected.');}
+}
+async function cloudUseRemote(){
+ if(!cloudConflict)return;
+ const row=cloudConflict;cloudConflict=null;applyCloudRow(row);
+}
+async function cloudUseLocal(){
+ if(!cloudConflict||!cloudUser)return;
+ if(!confirm('Replace the cloud copy with the planner saved on this device? This cannot be automatically undone. Export a backup first if you need both versions.'))return;
+ const row=cloudConflict;cloudConflict=null;cloudRevision=Number(row.revision)||0;cloudReady=true;
+ await saveCloudSnapshot();renderCloudPanel();
+}
+async function cloudSyncNow(){
+ if(!cloudUser){openUtilityPanel('cloudPanel','Cloud sync & account');setCloudStatus('Sign in to sync your schedules.');return;}
+ if(cloudConflict){renderCloudPanel();setCloudStatus('Choose which version to keep before syncing.');return;}
+ if(!cloudReady){await startCloudForUser(cloudUser,true);return;}
+ await saveCloudSnapshot();
+}
+async function checkCloudForRemoteChanges(){
+ if(!cloudClient||!cloudUser||!cloudReady||cloudBusy||cloudConflict||document.hidden)return;
+ try{
+  const {data:row,error}=await cloudClient.from('weekwise_cloud_data').select('user_id,data,revision,updated_at').eq('user_id',cloudUser.id).maybeSingle();
+  if(error)throw error;if(!row||Number(row.revision)<=cloudRevision)return;
+  const meta=readCloudMeta(),localFingerprint=cloudFingerprint(buildCloudPayload()),localDirty=meta?.userId===cloudUser.id&&localFingerprint!==meta.fingerprint;
+  if(localDirty)showCloudConflict(row);else applyCloudRow(row);
+ }catch(error){console.warn('Could not check cloud for updates',error);}
+}
+function openCloudPanel(){renderCloudPanel();openUtilityPanel('cloudPanel','Cloud sync & account');}
+
 function exportBackup(){const payload={app:'Weekwise',version:2,exportedAt:new Date().toISOString(),settings:store.settings,weeks:store.weeks,reminders};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${currentWeek}.json`;a.click();URL.revokeObjectURL(url);showToast('Backup exported');}
 function loadImport(file){const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!data.settings||!data.weeks)throw new Error('bad');store={settings:data.settings,weeks:data.weeks};saveStore();if(Array.isArray(data.reminders)){reminders=data.reminders;saveReminders();}loadWeek(currentWeek);renderReminders();showToast('Backup restored');}catch(e){showToast('That file does not look like a Weekwise backup.');}};reader.readAsText(file);}
 function shiftWeeks(n){const d=parseKey(currentWeek);d.setDate(d.getDate()+7*n);saveCurrent();loadWeek(dateKey(d));}
@@ -1455,7 +1663,7 @@ function setCalendarView(view){if(view!=='day'&&view!=='week')return;if(calendar
 function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBtn');if(dayBtn){dayBtn.classList.toggle('active',calendarView==='day');dayBtn.setAttribute('aria-pressed',calendarView==='day'?'true':'false');}if(weekBtn){weekBtn.classList.toggle('active',calendarView==='week');weekBtn.setAttribute('aria-pressed',calendarView==='week'?'true':'false');}const prev=$('prevWeek'),next=$('nextWeek');if(prev){prev.title=calendarView==='day'?'Previous day':'Previous week';prev.setAttribute('aria-label',prev.title);}if(next){next.title=calendarView==='day'?'Next day':'Next week';next.setAttribute('aria-label',next.title);}}
 function shiftPeriod(n){if(calendarView!=='day'){shiftWeeks(n);return;}const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));}
 function addQuick(e){e.preventDefault();const title=$('quickTitle').value.trim();if(!title)return;if(!validateTimeFields(['quickTime']))return;const day=Number($('quickDay').value),type=$('quickType').value,duration=Number($('quickDuration').value),preferred=timeMins($('quickTime').value||'10:00');createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true});const t=tasks[tasks.length-1];t.unscheduled=t.start===null;saveCurrent();renderAll();$('quickTitle').value='';showToast(t.start===null?'Added to the day, but needs a time':'Activity added to your week');}
-function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});}
+function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);$('cloudAuthForm').addEventListener('submit',e=>{e.preventDefault();cloudSignIn();});$('cloudSignUpBtn').addEventListener('click',cloudSignUp);$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
 
 /* Optional visual gaps, monthly calendar, and week-selectable dashboard. */
 const weekwiseOriginalRenderDays=renderDays;
