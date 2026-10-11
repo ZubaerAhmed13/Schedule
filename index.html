@@ -1023,6 +1023,17 @@ body[data-theme="dark"] .cal-event.done{opacity:.58}
 body[data-theme="dark"] .workspace-tag-hash{background:#34304a;color:#d7cbff}
 @media(max-width:760px){.workspace-tag-empty{display:none}}
 
+
+.today-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:16px 0 14px}
+.today-overview[hidden]{display:none!important}.today-overview-card{min-width:0;padding:11px 12px;border:1px solid #e8eaf4;border-radius:12px;background:#fbfbff}
+.today-overview-card small{display:block;color:#8e94a8;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase}
+.today-overview-card strong{display:block;margin-top:5px;color:#343a59;font-size:17px;line-height:1.2;overflow-wrap:anywhere}
+.today-overview-card p{margin:4px 0 0;color:#8d93a8;font-size:10px;line-height:1.35;overflow-wrap:anywhere}
+.today-progress-track{height:4px;overflow:hidden;margin-top:9px;border-radius:99px;background:#e9ebf6}.today-progress-track span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#656bd7,#8c83e6)}
+.today-overview-card.overdue strong{color:#c75d54}
+@media(max-width:600px){.today-overview{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.today-overview-card{padding:10px}.today-overview-card strong{font-size:15px}}
+body[data-theme="dark"] .today-overview-card{background:#202633;border-color:#363e50}body[data-theme="dark"] .today-overview-card strong{color:#edf0f7}body[data-theme="dark"] .today-progress-track{background:#353c50}
+
 </style>
 </head>
 <body>
@@ -1107,6 +1118,7 @@ body[data-theme="dark"] .workspace-tag-hash{background:#34304a;color:#d7cbff}
           <div><div class="workspace-page-eyebrow">YOUR TASKS</div><h2 id="taskWorkspaceTitle">Today</h2><p id="taskWorkspaceDescription">Focus on what matters today.</p></div>
           <button class="btn primary" type="button" id="workspaceAddTaskBtn">＋ Add task</button>
         </header>
+        <section class="today-overview" id="todayOverview" hidden aria-label="Today overview"></section>
         <form class="workspace-capture" id="workspaceCaptureForm">
           <span class="capture-plus" aria-hidden="true">＋</span>
           <input id="workspaceCaptureInput" type="text" maxlength="100" autocomplete="off" placeholder="Add a task to your inbox…" aria-label="Quick capture task">
@@ -2714,6 +2726,26 @@ function renderWorkspaceTaskGroups(items){
   return a[0].localeCompare(b[0]);
  }).map(([section,records])=>'<section class="workspace-section-group"><header><span>§ '+escapeHtml(section)+'</span><span>'+records.length+'</span></header>'+records.map(workspaceTaskRow).join('')+'</section>').join('');
 }
+
+function renderTodayOverview(){
+ const panel=$('todayOverview');if(!panel)return;
+ const isToday=workspaceView==='today';panel.hidden=!isToday;if(!isToday)return;
+ const todayKey=dateKey(now),todayRecords=workspaceRecords().filter(record=>dateKey(record.date)===todayKey);
+ const completed=todayRecords.filter(record=>record.task.done).length,total=todayRecords.length;
+ const progress=total?Math.round(completed/total*100):0;
+ const overdue=workspaceRecords().filter(record=>!record.task.done&&record.task.dueDate&&record.task.dueDate<todayKey);
+ const minute=now.getHours()*60+now.getMinutes();
+ const timedToday=todayRecords.filter(record=>!record.task.done&&!record.task.allDay&&!record.task.unscheduled&&record.task.start!==null&&record.task.start!==undefined&&Number(record.task.duration)>0);
+ const current=timedToday.filter(record=>Number(record.task.start)<=minute&&Number(record.task.start)+Number(record.task.duration)>minute).sort((a,b)=>Number(a.task.start)-Number(b.task.start))[0];
+ const next=current||timedToday.filter(record=>Number(record.task.start)>=minute).sort((a,b)=>Number(a.task.start)-Number(b.task.start))[0];
+ const nextTitle=next?next.task.title:total===0?'No tasks planned':'No more timed tasks';
+ const nextTime=next?(current?'In progress · '+formatTime(next.task):minsTime(Number(next.task.start))+' · '+durationLabel(Number(next.task.duration))):'Nothing time-blocked remains today';
+ panel.innerHTML=
+  '<article class="today-overview-card"><small>Today’s progress</small><strong>'+completed+' / '+total+' done</strong><div class="today-progress-track"><span style="width:'+progress+'%"></span></div><p>'+progress+'% of today’s items complete</p></article>'+
+  '<article class="today-overview-card overdue"><small>Overdue deadlines</small><strong>'+overdue.length+'</strong><p>'+(overdue.length?'Needs attention · deadlines before today':'You are clear of overdue deadlines')+'</p></article>'+
+  '<article class="today-overview-card"><small>Next activity</small><strong>'+escapeHtml(nextTitle)+'</strong><p>'+escapeHtml(nextTime)+'</p></article>';
+}
+
 function renderWorkspaceTasks(){
  const list=$('workspaceTaskList');if(!list)return;
  const search=String($('workspaceSearch')?.value||'').trim().toLowerCase(),sort=$('workspaceSort')?.value||'date';
@@ -2729,6 +2761,7 @@ function renderWorkspaceTasks(){
  $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':workspaceView.startsWith('folder:')?'Add a task to '+workspaceView.slice(7)+'…':workspaceView.startsWith('tag:')?'Add a task tagged #'+workspaceView.slice(4)+'…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
  const shouldGroupSections=(workspaceView.startsWith('list-')||workspaceView.startsWith('folder:')||workspaceView.startsWith('tag:'))&&items.some(record=>String(record.task.sectionName||'').trim());
  const renderedItems=shouldGroupSections?renderWorkspaceTaskGroups(items):items.map(workspaceTaskRow).join('');
+ renderTodayOverview();
  list.innerHTML=items.length?renderedItems:'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
 }
 function renderWorkspaceView(){
