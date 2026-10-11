@@ -1223,6 +1223,7 @@ function closeUtilityPanel(restoreFocus=true){
   activeUtilityPanel=null;
   $('utilityModal').classList.remove('show');$('utilityModal').hidden=true;
   if(restoreFocus)$('moreActions').querySelector('summary')?.focus();
+  if(!cloudUser&&window.signinGateInFlow){const gate=$('signinLanding');if(gate){gate.hidden=false;document.body.classList.add('signin-required');}window.signinGateInFlow=false;}
 }
 function openDashboard(){openUtilityPanel('dashboard','Weekly effort dashboard');}
 function durationText(minutes){minutes=Math.max(0,Math.round(minutes||0));const h=Math.floor(minutes/60),m=minutes%60;if(h&&m)return `${h}h ${m}m`;if(h)return `${h}h`;return `${m}m`;}
