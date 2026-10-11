@@ -751,7 +751,7 @@ body.signin-required{overflow:hidden}
 .matrix-task-title{border:0;padding:0;background:transparent;text-align:left;color:#424864;font:inherit;font-size:11px;font-weight:750;overflow-wrap:anywhere}.matrix-task-title:hover{color:#5359c9}.matrix-task-meta{margin-top:3px;color:#969bae;font-size:9px}.matrix-task-edit{border:0;background:transparent;color:#969bae;border-radius:6px;padding:5px}.matrix-task-edit:hover{background:#f0f1ff;color:#575dc9}
 .matrix-empty{padding:14px 5px;text-align:center;color:#a0a5b5;font-size:10px}.matrix-unclassified{margin-top:15px;padding:13px;border:1px dashed #dfe2ef;border-radius:14px;background:#fdfdff}.matrix-unclassified h3{display:flex;align-items:center;gap:7px;margin:0;color:#4b5270;font-size:12px}.matrix-unclassified h3 span{border-radius:6px;background:#eceeff;padding:2px 6px;color:#585ec8;font-size:10px}.matrix-unclassified>p{margin:4px 0 10px;color:#9298aa;font-size:10px}
 .focus-panel{padding:3px}.focus-panel-intro{display:flex;align-items:center;gap:13px}.focus-panel-mark{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:15px;background:linear-gradient(145deg,#6268e1,#8d76ee);color:#fff;font-size:26px;box-shadow:0 7px 18px rgba(97,100,217,.18)}
-.focus-panel-intro h3{margin:2px 0;color:#292e4a;font-size:19px;letter-spacing:-.5px}.focus-panel-intro p{margin:4px 0 0;color:#858ba2;font-size:11px}.focus-options{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-top:20px}.focus-options .field select{width:100%}
+.focus-panel-intro h3{margin:2px 0;color:#292e4a;font-size:19px;letter-spacing:-.5px}.focus-panel-intro p{margin:4px 0 0;color:#858ba2;font-size:11px}.focus-options{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-top:20px}.focus-options .field select{width:100%}.focus-estimate-help{display:block;margin-top:6px;color:#8b91a6;font-size:10px;line-height:1.45}
 .focus-clock-wrap{display:flex;flex-direction:column;align-items:center;padding:27px 15px 21px;margin-top:16px;border:1px solid #e6e8f7;border-radius:18px;background:radial-gradient(circle at 50% 0%,#f0f1ff,#fff 70%)}.focus-mode-label{color:#686ed3;font-size:9px;font-weight:850;letter-spacing:1.5px}
 .focus-clock{margin:6px 0;color:#282d4a;font-size:clamp(46px,9vw,68px);font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-3px;line-height:1.05}.focus-progress{width:min(100%,320px);height:6px;border-radius:99px;background:#e7e9f6;overflow:hidden}.focus-progress span{display:block;width:100%;height:100%;border-radius:99px;background:linear-gradient(90deg,#6268df,#9a7bed);transition:width .3s linear}
 .focus-clock-wrap p{margin:10px 0 0;color:#9399ad;font-size:10px;text-align:center}.focus-controls{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:14px 0 20px}.focus-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -1247,7 +1247,7 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
     <div class="inside">
       <section class="focus-panel">
         <div class="focus-panel-intro"><div class="focus-panel-mark">◴</div><div><div class="workspace-page-eyebrow">FOCUS SESSION</div><h3>Make time for one thing.</h3><p>Choose a task, start a session and review how much focused time you complete.</p></div></div>
-        <div class="focus-options"><div class="field"><label for="focusTaskSelect">Working on</label><select id="focusTaskSelect"><option value="">No linked task</option></select></div><div class="field"><label for="focusPreset">Session length</label><select id="focusPreset"><option value="25">Pomodoro · 25 min</option><option value="50">Deep work · 50 min</option><option value="90">Long focus · 90 min</option></select></div></div>
+        <div class="focus-options"><div class="field"><label for="focusTaskSelect">Working on</label><select id="focusTaskSelect"><option value="">No linked task</option></select><small class="focus-estimate-help" id="focusTaskEstimateHelp">Choose a task to attach this focus session to.</small></div><div class="field"><label for="focusPreset">Session length</label><select id="focusPreset"><option value="25">Pomodoro · 25 min</option><option value="50">Deep work · 50 min</option><option value="90">Long focus · 90 min</option></select></div></div>
         <div class="focus-clock-wrap"><div class="focus-mode-label" id="focusModeLabel">FOCUS TIME</div><div class="focus-clock" id="focusClock" aria-live="off">25:00</div><div class="focus-progress"><span id="focusProgressBar"></span></div><p id="focusTimerMessage">One task. One session. No need to make it perfect.</p></div>
         <div class="focus-controls"><button type="button" class="btn primary" id="focusStartBtn">Start focus</button><button type="button" class="btn" id="focusResetBtn">Reset</button><button type="button" class="btn" id="focusBreakBtn">Take a 5-minute break</button></div>
         <div class="focus-summary" id="focusSummary"></div>
@@ -1407,6 +1407,7 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
   <div class="field"><label for="modalSection">Section (optional)</label><input id="modalSection" maxlength="60" placeholder="e.g. Exam preparation"></div>
   <div class="field"><label for="modalPriority">Priority</label><select id="modalPriority"><option value="none">No priority</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
   <div class="field"><label for="modalStatus">Status</label><select id="modalStatus"><option value="todo">To do</option><option value="in-progress">In progress</option><option value="done">Completed</option></select></div>
+  <div class="field"><label for="modalFocusEstimate">Estimated focus (minutes)</label><input id="modalFocusEstimate" type="number" min="5" max="1440" step="5" inputmode="numeric" placeholder="e.g. 50" /><div class="hint">Expected focused work time; separate from calendar duration.</div></div>
   <div class="field"><label for="modalImportance">Importance</label><select id="modalImportance"><option value="unclassified">Not classified</option><option value="important">Important</option><option value="not-important">Not important</option></select></div>
   <div class="field"><label for="modalUrgency">Urgency</label><select id="modalUrgency"><option value="unclassified">Not classified</option><option value="urgent">Urgent</option><option value="not-urgent">Not urgent</option></select></div>
   <div class="field" style="grid-column:1/-1"><label class="schedule-toggle-label" for="modalNoSchedule"><input id="modalNoSchedule" type="checkbox"><span><strong>Keep in Inbox — no scheduled time</strong><small>Use this for tasks you have captured but have not planned yet.</small></span></label></div>
@@ -2092,7 +2093,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   if(!t&&!defaultListId&&!folderView)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
   $('modalFolder').value=t?.folderName||(folderView?selectedFolder:defaultFolderName($('modalListId').value));
   $('modalSection').value=t?.sectionName||'';
-  $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';const existingReminderTimes=taskReminderTimes(t);
+  $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalFocusEstimate').value=t?.focusEstimateMinutes?String(t.focusEstimateMinutes):'';$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';const existingReminderTimes=taskReminderTimes(t);
   $('modalReminderAt').value=existingReminderTimes[0]||'';
   [2,3,4,5].forEach((n,index)=>{const input=$('modalReminderAt'+n);if(input)input.value=existingReminderTimes[index+1]||'';});
   const extraReminderDetails=document.querySelector('.task-extra-reminders');if(extraReminderDetails)extraReminderDetails.open=existingReminderTimes.length>1;
@@ -2139,18 +2140,20 @@ function saveModalTask(e){
   const day=Number($('modalDay').value),type=$('modalCategory').value,note=$('modalNote').value.trim(),recurrence=$('modalRecurrence').value;
   const occurrenceDate=dateKey(dayDate(currentWeek,day));
   const listId=$('modalListId').value,folderName=$('modalFolder').value.trim()||defaultFolderName($('modalListId').value),sectionName=$('modalSection').value.trim(),priority=$('modalPriority').value,status=$('modalStatus').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null,reminderTimes=[...new Set([1,2,3,4,5].map(n=>$('modalReminderAt'+(n===1?'':n)).value||'').filter(Boolean))].sort().slice(0,5),reminderAt=reminderTimes[0]||null;
+  const focusEstimateRaw=$('modalFocusEstimate').value.trim();
+  const focusEstimateMinutes=focusEstimateRaw?Math.max(5,Math.min(1440,Math.round(Number(focusEstimateRaw)/5)*5)):null;
   const tags=[...new Set($('modalTags').value.split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))];
   const attachmentParse=parseTaskAttachmentInput($('modalAttachments').value);
   if(attachmentParse.invalid.length){showToast('Use complete http:// or https:// URLs for attachments.');$('modalAttachments').focus();return;}
   const attachments=attachmentParse.valid;
   const subtasks=$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false}));
   if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled on ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
-  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,allDay,note,recurrence,listId,folderName,sectionName,priority,status,importance,urgency,dueDate,reminderAt,reminderTimes,tags,subtasks,attachments};
+  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,allDay,note,recurrence,listId,folderName,sectionName,priority,status,focusEstimateMinutes,importance,urgency,dueDate,reminderAt,reminderTimes,tags,subtasks,attachments};
   if(id){
     const t=tasks.find(x=>x.id===id);
     if(t&&!t.fixed){
       const oldSeriesId=t.seriesId||null;
-      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedTimes=(Array.isArray(t.reminderNotifiedTimes)?t.reminderNotifiedTimes:[]).filter(value=>reminderTimes.includes(value));if(t.reminderNotifiedAt&&reminderTimes.includes(t.reminderNotifiedAt)&&!t.reminderNotifiedTimes.includes(t.reminderNotifiedAt))t.reminderNotifiedTimes.push(t.reminderNotifiedAt);t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;t.attachments=attachments;t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;
+      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.focusEstimateMinutes=focusEstimateMinutes;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedTimes=(Array.isArray(t.reminderNotifiedTimes)?t.reminderNotifiedTimes:[]).filter(value=>reminderTimes.includes(value));if(t.reminderNotifiedAt&&reminderTimes.includes(t.reminderNotifiedAt)&&!t.reminderNotifiedTimes.includes(t.reminderNotifiedAt))t.reminderNotifiedTimes.push(t.reminderNotifiedAt);t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;t.attachments=attachments;t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...s,id:old.id||s.id,done:!!old.done}:{...s};});
       t.start=noSchedule||allDay?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
@@ -2165,7 +2168,7 @@ function saveModalTask(e){
     }
   }else{
     createTask(day,title,type,duration,noSchedule||allDay?null:preferred,{min:0,max:1440,custom:true,note});
-    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||(!allDay&&t.start===null);t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.reminderNotifiedTimes=[];t.tags=tags;t.attachments=attachments;t.subtasks=subtasks;actualStart=t.start;
+    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||(!allDay&&t.start===null);t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.focusEstimateMinutes=focusEstimateMinutes;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.reminderNotifiedTimes=[];t.tags=tags;t.attachments=attachments;t.subtasks=subtasks;actualStart=t.start;
     if(recurrence!=='none'){
       seriesId=uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
       upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
@@ -2727,6 +2730,8 @@ function workspaceTaskRow(record){
  const dueHtml=t.dueDate?'<span class="workspace-meta-pill">Due '+escapeHtml(fmtDate(parseKey(t.dueDate),{day:'numeric',month:'short'}))+'</span>':'';
  const scheduleHtml=t.allDay?'<span class="workspace-meta-pill">All day</span>':(record.listId==='inbox'?'<span class="workspace-meta-pill">Inbox</span>':(t.unscheduled||t.start==null?'<span class="workspace-meta-pill">Not scheduled</span>':'<span>'+escapeHtml(workspaceDateLabel(record))+'</span>'));
  const status=taskBoardStatus(t),statusHtml=status==='in-progress'?'<span class="workspace-meta-pill">In progress</span>':'';
+ const focusTarget=Number(t.focusEstimateMinutes)||0,focusLogged=taskLoggedFocusMinutes(t.id);
+ const focusEstimateHtml=focusTarget?'<span class="workspace-meta-pill task-focus-estimate" title="Estimated focus '+focusTarget+' minutes">'+String(focusTarget)+'m focus target'+(focusLogged?' · '+focusLogged+'m logged':'')+'</span>':'';
  const tagsHtml=tags.length?'<div class="workspace-task-tags">'+tags.map(tag=>'<span>#'+escapeHtml(tag)+'</span>').join('')+'</div>':'';
  const attachmentsHtml=renderTaskAttachments(t.attachments);
  const reminderList=taskReminderTimes(t),pendingReminderList=reminderList.filter(value=>!((Array.isArray(t.reminderNotifiedTimes)&&t.reminderNotifiedTimes.includes(value))||t.reminderNotifiedAt===value));
@@ -2739,7 +2744,7 @@ function workspaceTaskRow(record){
  return '<article class="workspace-task-row '+(t.done?'is-done':'')+'" data-workspace-id="'+escapeHtml(t.id)+'"'+attrs+'>'+
   '<input class="workspace-task-check" type="checkbox" data-workspace-done="'+escapeHtml(t.id)+'"'+attrs+' aria-label="Mark '+escapeHtml(t.title)+' complete" '+(t.done?'checked':'')+'>'+
   '<div class="workspace-task-main"><button type="button" class="workspace-task-title" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>'+escapeHtml(t.title)+'</button>'+
-  '<div class="workspace-task-meta">'+scheduleHtml+'<span class="workspace-meta-pill">'+escapeHtml(label)+'</span>'+organizationHtml+statusHtml+priorityHtml+dueHtml+reminderHtml+'</div>'+tagsHtml+attachmentsHtml+subtasksHtml+(t.note?'<div class="workspace-task-subtasks">'+escapeHtml(t.note)+'</div>':'')+'</div>'+
+  '<div class="workspace-task-meta">'+scheduleHtml+'<span class="workspace-meta-pill">'+escapeHtml(label)+'</span>'+organizationHtml+statusHtml+priorityHtml+dueHtml+reminderHtml+focusEstimateHtml+'</div>'+tagsHtml+attachmentsHtml+subtasksHtml+(t.note?'<div class="workspace-task-subtasks">'+escapeHtml(t.note)+'</div>':'')+'</div>'+
   '<div class="workspace-task-actions"><button type="button" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>✎</button><button type="button" title="Delete task" aria-label="Delete '+escapeHtml(t.title)+'" data-workspace-delete="'+escapeHtml(t.id)+'"'+attrs+'>×</button></div></article>';
 }
 function updateWorkspaceCounts(){
@@ -2902,6 +2907,7 @@ $('priorityMatrix').addEventListener('change',e=>{const c=e.target.closest('[dat
 $('priorityMatrix').addEventListener('click',e=>{const b=e.target.closest('[data-matrix-edit]');if(b)openWorkspaceRecord(b.dataset.matrixEdit,b.dataset.matrixWeek);});
 $('matrixAddTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));
 $('focusPreset').addEventListener('change',()=>{if(!focusRunning){focusInitialSeconds=Number($('focusPreset').value)*60;focusRemainingSeconds=focusInitialSeconds;focusMode='focus';focusStartedAt=null;renderFocusPanel();}});
+$('focusTaskSelect').addEventListener('change',renderFocusPanel);
 $('focusStartBtn').addEventListener('click',focusStartPause);
 $('focusResetBtn').addEventListener('click',focusReset);
 $('focusBreakBtn').addEventListener('click',focusTakeBreak);
@@ -2937,11 +2943,22 @@ function renderPriorityMatrix(){
  [['matrixDoList',lists.do],['matrixScheduleList',lists.schedule],['matrixDelegateList',lists.delegate],['matrixLaterList',lists.later],['matrixUnclassifiedList',lists.unclassified]].forEach(([id,items])=>{const el=$(id);if(el)el.innerHTML=items.length?items.map(renderMatrixTask).join(''):'<div class="matrix-empty">No tasks here yet.</div>';});
  $('matrixUnclassifiedCount').textContent=String(lists.unclassified.length);
 }
+function taskLoggedFocusMinutes(taskId){return Math.round(focusSessions.filter(s=>s.taskId===taskId).reduce((total,s)=>total+Number(s.minutes||0),0));}
 function renderFocusPanel(){
  const select=$('focusTaskSelect');if(!select)return;
  const prior=select.value,records=workspaceRecords().filter(r=>!r.task.done).sort((a,b)=>a.date-b.date);
- select.innerHTML='<option value="">No linked task</option>'+records.map(r=>'<option value="'+escapeHtml(r.week+'::'+r.task.id)+'">'+escapeHtml(r.task.title+' · '+fmtDate(r.date,{day:'numeric',month:'short'}))+'</option>').join('');
+ select.innerHTML='<option value="">No linked task</option>'+records.map(r=>'<option value="'+escapeHtml(r.week+'::'+r.task.id)+'">'+escapeHtml(r.task.title+' · '+fmtDate(r.date,{day:'numeric',month:'short'})+(r.task.focusEstimateMinutes?' · target '+r.task.focusEstimateMinutes+'m':''))+'</option>').join('');
  if([...select.options].some(o=>o.value===prior))select.value=prior;
+ const selected=select.value,split=selected.indexOf('::'),selectedWeek=split>=0?selected.slice(0,split):'',selectedId=split>=0?selected.slice(split+2):'';
+ const selectedRecord=workspaceRecords().find(r=>r.week===selectedWeek&&r.task.id===selectedId);
+ const targetHelp=$('focusTaskEstimateHelp');
+ if(targetHelp){
+  if(!selectedRecord)targetHelp.textContent='Choose a task to attach this focus session to.';
+  else{
+   const target=Number(selectedRecord.task.focusEstimateMinutes)||0,logged=taskLoggedFocusMinutes(selectedRecord.task.id);
+   targetHelp.textContent=target?logged+' of '+target+' estimated focus minutes logged'+(logged>=target?' · estimate reached':''):'No focus estimate set. Edit the task to add one.';
+  }
+ }
  const totalFocus=focusSessions.reduce((n,s)=>n+Number(s.minutes||0),0),today=dateKey(now),todayFocus=focusSessions.filter(s=>dateKey(new Date(s.endedAt))===today).reduce((n,s)=>n+Number(s.minutes||0),0);
  const summary=$('focusSummary');if(summary)summary.innerHTML='<div class="focus-stat"><small>Focus time today</small><strong>'+durationText(todayFocus)+'</strong></div><div class="focus-stat"><small>Total focus time</small><strong>'+durationText(totalFocus)+'</strong></div><div class="focus-stat"><small>Completed sessions</small><strong>'+focusSessions.length+'</strong></div>';
  const history=$('focusHistory'),historyTotal=$('focusHistoryTotal');if(historyTotal)historyTotal.textContent=focusSessions.length+' session'+(focusSessions.length===1?'':'s');
@@ -3055,7 +3072,7 @@ function upsertRecurringTemplate(id,occurrenceDate,fields){
  const reminderRules=reminderValues.map(value=>({offsetDays:Math.round((parseKey(value.slice(0,10))-parseKey(occurrenceDate))/86400000),time:value.slice(11,16)})).filter(rule=>/^\d{2}:\d{2}$/.test(rule.time));
  const reminderOffsetDays=reminderRules[0]?.offsetDays??null,reminderTime=reminderRules[0]?.time??null;
  let template=store.recurringTemplates.find(item=>item.id===id);
- const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,allDay:!!fields.allDay,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:'todo',importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,reminderRules,tags:[...(fields.tags||[])],attachments:[...(fields.attachments||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,allDay:!!fields.allDay,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:'todo',focusEstimateMinutes:fields.focusEstimateMinutes??null,importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,reminderRules,tags:[...(fields.tags||[])],attachments:[...(fields.attachments||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
  if(template)Object.assign(template,value);else{template=value;store.recurringTemplates.push(template);}
  return template;
 }
@@ -3086,7 +3103,7 @@ function materializeRecurringRange(rangeStart,rangeEnd){
    const reminderAt=reminderTimes[0]||null;
    const priorNotified=[...(Array.isArray(existing?.reminderNotifiedTimes)?existing.reminderNotifiedTimes:[])];if(existing?.reminderNotifiedAt)priorNotified.push(existing.reminderNotifiedAt);
    const reminderNotifiedTimes=[...new Set(priorNotified.filter(value=>reminderTimes.includes(value)))];
-   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),custom:true,fixed:false,note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],attachments:[...(template.attachments||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),focusEstimateMinutes:template.focusEstimateMinutes??null,custom:true,fixed:false,note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],attachments:[...(template.attachments||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
    if(existing)Object.assign(existing,values);
    else rows.push({id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values});
   }
@@ -3193,8 +3210,9 @@ function taskBoardStatus(task){return task?.done||task?.status==='done'?'done':t
 function renderKanbanCard(record){
  const t=record.task,status=taskBoardStatus(t),priority=t.priority||'none',due=t.dueDate?'<span class="kanban-chip">Due '+escapeHtml(fmtDate(parseKey(t.dueDate),{day:'numeric',month:'short'}))+'</span>':'';
  const priorityChip=priority!=='none'?'<span class="kanban-chip priority-'+escapeHtml(priority)+'">'+escapeHtml(({high:'↑ High',medium:'→ Medium',low:'↓ Low'})[priority]||priority)+'</span>':'';
- const listLabel=WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Inbox';
- return '<article class="kanban-card" data-board-task="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'"><div class="kanban-card-top"><button type="button" class="kanban-card-title" data-board-edit="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'">'+escapeHtml(t.title)+'</button></div>'+(t.note?'<div class="kanban-card-note">'+escapeHtml(t.note)+'</div>':'')+'<div class="kanban-card-meta"><span class="kanban-chip">'+escapeHtml(listLabel)+'</span>'+priorityChip+due+'</div><footer class="kanban-card-footer"><select data-board-status="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'" aria-label="Change status of '+escapeHtml(t.title)+'"><option value="todo" '+(status==='todo'?'selected':'')+'>To do</option><option value="in-progress" '+(status==='in-progress'?'selected':'')+'>In progress</option><option value="done" '+(status==='done'?'selected':'')+'>Completed</option></select><button type="button" class="kanban-card-edit" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-board-edit="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'">✎</button></footer></article>';
+ const listLabel=WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Inbox',focusTarget=Number(t.focusEstimateMinutes)||0,focusLogged=taskLoggedFocusMinutes(t.id);
+ const focusHtml=focusTarget?'<span class="kanban-chip">'+focusTarget+'m focus'+(focusLogged?' · '+focusLogged+'m logged':'')+'</span>':'';
+ return '<article class="kanban-card" data-board-task="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'"><div class="kanban-card-top"><button type="button" class="kanban-card-title" data-board-edit="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'">'+escapeHtml(t.title)+'</button></div>'+(t.note?'<div class="kanban-card-note">'+escapeHtml(t.note)+'</div>':'')+'<div class="kanban-card-meta"><span class="kanban-chip">'+escapeHtml(listLabel)+'</span>'+priorityChip+due+focusHtml+'</div><footer class="kanban-card-footer"><select data-board-status="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'" aria-label="Change status of '+escapeHtml(t.title)+'"><option value="todo" '+(status==='todo'?'selected':'')+'>To do</option><option value="in-progress" '+(status==='in-progress'?'selected':'')+'>In progress</option><option value="done" '+(status==='done'?'selected':'')+'>Completed</option></select><button type="button" class="kanban-card-edit" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-board-edit="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'">✎</button></footer></article>';
 }
 function renderKanbanBoard(){
  const board=$('kanbanBoard');if(!board)return;
@@ -3654,7 +3672,7 @@ function renderTaskTemplateOptions(){
 function readModalTaskTemplate(){
  return {title:$('modalTitleInput').value.trim(),type:$('modalCategory').value,listId:$('modalListId').value,
   folderName:$('modalFolder').value.trim(),sectionName:$('modalSection').value.trim(),priority:$('modalPriority').value,status:$('modalStatus').value,
-  importance:$('modalImportance').value,urgency:$('modalUrgency').value,duration:Math.max(10,Number($('modalDuration').value)||30),note:$('modalNote').value.trim(),
+  importance:$('modalImportance').value,urgency:$('modalUrgency').value,duration:Math.max(10,Number($('modalDuration').value)||30),focusEstimateMinutes:$('modalFocusEstimate').value.trim()?Math.max(5,Math.min(1440,Math.round(Number($('modalFocusEstimate').value)/5)*5)):null,note:$('modalNote').value.trim(),
   recurrence:$('modalRecurrence').value,tags:[...new Set($('modalTags').value.split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))],
   subtasks:$('modalSubtasks').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false})),
   attachments:parseTaskAttachmentInput($('modalAttachments').value).valid,
@@ -3682,7 +3700,7 @@ function applySelectedTaskTemplate(){
  const listId=template.listId||'inbox';$('modalListId').value=[...$('modalListId').options].some(o=>o.value===listId)?listId:'other';
  $('modalFolder').value=template.folderName||defaultFolderName($('modalListId').value);$('modalSection').value=template.sectionName||'';
  $('modalPriority').value=template.priority||'none';$('modalStatus').value=template.status||'todo';
- $('modalImportance').value=template.importance||'unclassified';$('modalUrgency').value=template.urgency||'unclassified';
+ $('modalImportance').value=template.importance||'unclassified';$('modalUrgency').value=template.urgency||'unclassified';$('modalFocusEstimate').value=template.focusEstimateMinutes?String(template.focusEstimateMinutes):'';
  $('modalRecurrence').value=['none','daily','weekly','monthly','yearly'].includes(template.recurrence)?template.recurrence:'none';
  const duration=String(template.duration||30);
  if(![...$('modalDuration').options].some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=durationLabel(Number(duration));$('modalDuration').add(option);}
