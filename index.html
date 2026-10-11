@@ -1951,6 +1951,7 @@ function saveModalTask(e){
   if(seriesId||recurrence!=='none')materializeRecurringRange(parseKey(currentWeek),parseKey(addDaysToKey(currentWeek,89)));
   saveCurrent();closeTaskModal();renderAll();
   if(recurrence!=='none')showToast('Task saved · repeating '+recurrence+'.');
+  else if(allDay)showToast('All-day event saved for '+fmtDate(dayDate(currentWeek,day),{weekday:'short',day:'numeric',month:'short'})+'.');
   else if(noSchedule)showToast('Task saved to '+(listId==='inbox'?'Inbox':'your list')+'.');
   else if(actualStart===null)showToast('No free slot on that day; task is in Needs a time.');
   else if(actualStart!==preferred)showToast(`That time was busy; scheduled at ${minsTime(actualStart)} instead.`);
