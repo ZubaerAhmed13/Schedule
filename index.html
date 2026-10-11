@@ -3101,7 +3101,7 @@ function icsUtcDateTime(date){
 }
 function exportCalendarICS(){
  const records=workspaceRecords().filter(r=>{
-  const t=r.task;return !!(t&&((t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0)||t.dueDate));
+  const t=r.task;return !!(t&&(t.allDay||(t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0)||t.dueDate));
  });
  if(!records.length){showToast('Nothing scheduled or due to export yet.');return;}
  const stamp=icsUtcDateTime(new Date()),lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Weekwise//Personal Planner//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Weekwise'];
