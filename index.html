@@ -1078,6 +1078,7 @@ body.signin-required{overflow:hidden}
     <div class="field"><label for="modalEndTime">End time</label><input id="modalEndTime" class="time24" data-time24-end type="text" inputmode="numeric" maxlength="5" placeholder="11:00" value="10:30" required title="Use 24-hour end time. Use 24:00 for midnight." /><div class="hint">24-hour time; use 24:00 for midnight.</div></div>
     <div class="field duration-field"><label for="modalDuration">Duration</label><select id="modalDuration"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30" selected>30 minutes</option><option value="35">35 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option><option value="75">1 hour 15 minutes</option><option value="90">1 hour 30 minutes</option><option value="120">2 hours</option><option value="180">3 hours</option><option value="540">9 hours</option></select><div class="hint">Duration updates automatically when you change the end time.</div></div>
   </div>
+  <div class="field"><label for="modalRecurrence">Repeat</label><select id="modalRecurrence"><option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option></select><div class="hint">Future occurrences are added automatically.</div></div>
   <div class="field"><label for="modalDueDate">Due date (optional)</label><input id="modalDueDate" type="date" /></div>
   <div class="field"><label for="modalTags">Tags (optional)</label><input id="modalTags" maxlength="180" placeholder="e.g. deep-work, urgent" /><div class="hint">Separate tags with commas.</div></div>
   <div class="field" style="grid-column:1/-1"><label for="modalSubtasks">Subtasks (optional)</label><textarea id="modalSubtasks" rows="2" maxlength="800" placeholder="One step per line"></textarea></div>
@@ -1249,7 +1250,7 @@ function loadReminders(){try{const data=JSON.parse(localStorage.getItem(REMINDER
 let reminders=loadReminders();
 function saveReminders(){try{localStorage.setItem(REMINDERS_KEY,JSON.stringify(reminders));}catch(_){showToast('Could not save reminders in this browser. Export a backup when available.');}if(!cloudApplyingRemote)queueCloudSave();}
 let store=loadStore();
-if(!store.settings)store.settings=defaultSettings();if(!store.weeks)store.weeks={};if(!store.settings.shifts)store.settings.shifts=defaultSettings().shifts;if(!store.settings.classTemplate)store.settings.classTemplate=defaultClassTemplate();
+if(!store.settings)store.settings=defaultSettings();if(!store.weeks)store.weeks={};if(!Array.isArray(store.recurringTemplates))store.recurringTemplates=[];if(!store.settings.shifts)store.settings.shifts=defaultSettings().shifts;if(!store.settings.classTemplate)store.settings.classTemplate=defaultClassTemplate();
 const removedAutoPopulatedSamples=removeAutoPopulatedSampleData(store);
 if(removedAutoPopulatedSamples){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(_){}}
 let currentWeek=dateKey(sundayOf(now));
@@ -1281,22 +1282,16 @@ function loadWeek(week){
   currentWeek=week;
   const saved=store.weeks[currentWeek];
   if(saved&&Array.isArray(saved.tasks)){
-    const original=saved.tasks;
-    let changed=false;
+    const original=saved.tasks;let changed=false;
     tasks=original.filter(item=>item&&item.custom===true).map(item=>{
       const t={...item};
-      if(/^Picnic work shift$/i.test(t.title||'')){
-        t.title='Work day';t.workday=true;t.fixed=false;t.type='job';t.note=t.note||'Work day';changed=true;
-      }
+      if(/^Picnic work shift$/i.test(t.title||'')){t.title='Work day';t.workday=true;t.fixed=false;t.type='job';t.note=t.note||'Work day';changed=true;}
       return t;
     });
     if(tasks.length!==original.length||changed)saveCurrent();
-  }else{
-    tasks=[];
-    saveCurrent();
-  }
-  syncSettingsForm();
-  renderAll();
+  }else{tasks=[];saveCurrent();}
+  materializeCurrentAndUpcoming();
+  syncSettingsForm();renderAll();
 }
 function setWeekFromInput(){let chosen=$('weekStart').value;if(!chosen)return;chosen=dateKey(sundayOf(parseKey(chosen)));saveCurrent();loadWeek(chosen);}
 function formatTime(t){if(t.start===null||t.start===undefined)return 'Needs a time';const start=Number(t.start),end=start+Number(t.duration||0);const endLabel=end===1440?'24:00':minsTime(end);return end<1440?`${minsTime(start)}–${endLabel}`:end===1440?`${minsTime(start)}–24:00`:`${minsTime(start)}–${minsTime(end)} (+${Math.floor(end/1440)} day${Math.floor(end/1440)===1?'':'s'})`;}
@@ -1718,7 +1713,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   $('modalListId').value=t?inferredListId(t):(defaultListId||'career');
   if(!t&&!defaultListId)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
-  $('modalPriority').value=t?.priority||'none';$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalDueDate').value=t?.dueDate||'';
+  $('modalPriority').value=t?.priority||'none';$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';
   $('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
   $('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
   $('modalNoSchedule').checked=!!(t&&(t.unscheduled||t.start==null))||(!t&&defaultListId==='inbox');
@@ -1757,27 +1752,42 @@ function saveModalTask(e){
     if(end<=start){$('modalEndTime').setCustomValidity('End time must be later than start time on the same day. Use 24:00 for midnight.');$('modalEndTime').reportValidity?.();$('modalEndTime').focus();return;}
     $('modalEndTime').setCustomValidity('');preferred=start;duration=end-start;
   }
-  const day=Number($('modalDay').value),type=$('modalCategory').value,note=$('modalNote').value.trim();
+  const day=Number($('modalDay').value),type=$('modalCategory').value,note=$('modalNote').value.trim(),recurrence=$('modalRecurrence').value;
+  const occurrenceDate=dateKey(dayDate(currentWeek,day));
   const listId=$('modalListId').value,priority=$('modalPriority').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null;
   const tags=[...new Set($('modalTags').value.split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))];
   const subtasks=$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false}));
   if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled on ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
-  let actualStart=null;
+  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,note,recurrence,listId,priority,importance,urgency,dueDate,tags,subtasks};
   if(id){
     const t=tasks.find(x=>x.id===id);
     if(t&&!t.fixed){
+      const oldSeriesId=t.seriesId||null;
       t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.priority=priority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.tags=tags;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...s,done:!!old.done}:{...s};});
-      t.start=noSchedule?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));
-      t.unscheduled=noSchedule||t.start===null;actualStart=t.start;
+      t.start=noSchedule?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));t.unscheduled=noSchedule||t.start===null;actualStart=t.start;
+      if(recurrence==='none'){
+        if(oldSeriesId)stopRecurringSeries(t,occurrenceDate);
+        else{t.recurrence='none';t.seriesId=null;t.occurrenceDate=null;}
+      }else{
+        seriesId=oldSeriesId||uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
+        if(oldSeriesId)clearFutureOccurrences(seriesId,occurrenceDate);
+        upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
+      }
     }
   }else{
     createTask(day,title,type,duration,noSchedule?null:preferred,{min:0,max:1440,custom:true,note});
     const t=tasks[tasks.length-1];t.unscheduled=noSchedule||t.start===null;t.listId=listId;t.priority=priority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
+    if(recurrence!=='none'){
+      seriesId=uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
+      upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
+    }else t.recurrence='none';
   }
+  if(seriesId||recurrence!=='none')materializeRecurringRange(parseKey(currentWeek),parseKey(addDaysToKey(currentWeek,89)));
   saveCurrent();closeTaskModal();renderAll();
-  if(noSchedule)showToast('Task saved to '+(listId==='inbox'?'Inbox':'your list')+'.');
+  if(recurrence!=='none')showToast('Task saved · repeating '+recurrence+'.');
+  else if(noSchedule)showToast('Task saved to '+(listId==='inbox'?'Inbox':'your list')+'.');
   else if(actualStart===null)showToast('No free slot on that day; task is in Needs a time.');
   else if(actualStart!==preferred)showToast(`That time was busy; scheduled at ${minsTime(actualStart)} instead.`);
   else showToast(id?`Task updated · ${DAY_SHORT[day]} ${minsTime(actualStart)}`:`Task added · ${DAY_SHORT[day]} ${minsTime(actualStart)}`);
@@ -2094,14 +2104,14 @@ function openCloudPanel(){renderCloudPanel();openUtilityPanel('cloudPanel','Clou
 function openSignInFromLanding(){const gate=$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=true;}openCloudPanel();}
 function finishSignInLanding(){const gate=$('signinLanding');if(!gate)return;if(activeUtilityPanel===$('cloudPanel'))closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;now=new Date();mobileDay=now.getDay();currentWeek=dateKey(sundayOf(now));monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}loadWeek(currentWeek);setWorkspaceView('today');renderReminders();const heading=$('calendarInstruction');if(heading)heading.hidden=true;showToast('Welcome to Weekwise. Here is today’s plan.');}
 
-function exportBackup(){const payload={app:'Weekwise',version:2,exportedAt:new Date().toISOString(),settings:store.settings,weeks:store.weeks,reminders};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${currentWeek}.json`;a.click();URL.revokeObjectURL(url);showToast('Backup exported');}
-function loadImport(file){const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!data.settings||!data.weeks)throw new Error('bad');store={settings:data.settings,weeks:data.weeks};saveStore();if(Array.isArray(data.reminders)){reminders=data.reminders;saveReminders();}loadWeek(currentWeek);renderReminders();showToast('Backup restored');}catch(e){showToast('That file does not look like a Weekwise backup.');}};reader.readAsText(file);}
+function exportBackup(){const payload={app:'Weekwise',version:3,exportedAt:new Date().toISOString(),settings:store.settings,weeks:store.weeks,recurringTemplates:store.recurringTemplates||[],reminders,focusSessions,habits};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${currentWeek}.json`;a.click();URL.revokeObjectURL(url);showToast('Backup exported');}
+function loadImport(file){const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!data.settings||!data.weeks)throw new Error('bad');store={settings:data.settings,weeks:data.weeks,recurringTemplates:Array.isArray(data.recurringTemplates)?data.recurringTemplates:[]};saveStore();if(Array.isArray(data.reminders)){reminders=data.reminders;saveReminders();}if(Array.isArray(data.focusSessions)){focusSessions=data.focusSessions;localStorage.setItem(FOCUS_SESSIONS_KEY,JSON.stringify(focusSessions));}if(Array.isArray(data.habits)){habits=data.habits;localStorage.setItem(HABITS_KEY,JSON.stringify(habits));}loadWeek(currentWeek);renderReminders();renderHabitTracker();showToast('Backup restored');}catch(e){showToast('That file does not look like a Weekwise backup.');}};reader.readAsText(file);}
 function shiftWeeks(n){const d=parseKey(currentWeek);d.setDate(d.getDate()+7*n);saveCurrent();loadWeek(dateKey(d));}
 function setCalendarView(view){if(view!=='day'&&view!=='week')return;if(calendarView===view)return;calendarView=view;try{localStorage.setItem('weekwise-calendar-view-v1',view);}catch(_){}renderAll();}
 function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBtn');if(dayBtn){dayBtn.classList.toggle('active',calendarView==='day');dayBtn.setAttribute('aria-pressed',calendarView==='day'?'true':'false');}if(weekBtn){weekBtn.classList.toggle('active',calendarView==='week');weekBtn.setAttribute('aria-pressed',calendarView==='week'?'true':'false');}const prev=$('prevWeek'),next=$('nextWeek');if(prev){prev.title=calendarView==='day'?'Previous day':'Previous week';prev.setAttribute('aria-label',prev.title);}if(next){next.title=calendarView==='day'?'Next day':'Next week';next.setAttribute('aria-label',next.title);}}
 function shiftPeriod(n){if(calendarView!=='day'){shiftWeeks(n);return;}const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));}
 function addQuick(e){e.preventDefault();const title=$('quickTitle').value.trim();if(!title)return;if(!validateTimeFields(['quickTime']))return;const day=Number($('quickDay').value),type=$('quickType').value,duration=Number($('quickDuration').value),preferred=timeMins($('quickTime').value||'10:00');createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true});const t=tasks[tasks.length-1];t.unscheduled=t.start===null;saveCurrent();renderAll();$('quickTitle').value='';showToast(t.start===null?'Added to the day, but needs a time':'Activity added to your week');}
-function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();wireWorkspaceControls();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('signinLandingContinue').addEventListener('click',openSignInFromLanding);$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>{if(suppressActivitySuggestionFocus){suppressActivitySuggestionFocus=false;return;}renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});document.addEventListener('click',e=>{if(!e.target.closest('.activity-name-wrap'))hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalNoSchedule').addEventListener('change',updateModalScheduleVisibility);$('modalListId').addEventListener('change',()=>{if($('modalListId').value==='inbox')$('modalNoSchedule').checked=true;updateModalScheduleVisibility();});$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
+function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();wireWorkspaceControls();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('signinLandingContinue').addEventListener('click',openSignInFromLanding);$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>{if(suppressActivitySuggestionFocus){suppressActivitySuggestionFocus=false;return;}renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});document.addEventListener('click',e=>{if(!e.target.closest('.activity-name-wrap'))hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalNoSchedule').addEventListener('change',updateModalScheduleVisibility);$('modalListId').addEventListener('change',()=>{if($('modalListId').value==='inbox')$('modalNoSchedule').checked=true;updateModalScheduleVisibility();});$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){if(t.seriesId){const template=(store.recurringTemplates||[]).find(item=>item.id===t.seriesId);if(template){template.excludedDates=Array.isArray(template.excludedDates)?template.excludedDates:[];template.excludedDates.push(t.occurrenceDate||dateKey(dayDate(currentWeek,t.day)));}}tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
 
 /* Optional visual gaps, monthly calendar, and week-selectable dashboard. */
 const weekwiseOriginalRenderDays=renderDays;
@@ -2427,6 +2437,75 @@ function saveHabitForm(e){
 function editHabit(id){const habit=habits.find(h=>h.id===id);if(!habit)return;$('habitEditId').value=habit.id;$('habitName').value=habit.title||'';$('habitIcon').value=habit.icon||'';$('habitGoal').value=habit.goal||'';$('habitTargetPerWeek').value=String(habit.targetPerWeek||5);$('saveHabitBtn').textContent='Save changes';$('cancelHabitEdit').hidden=false;$('habitName').focus();}
 function toggleHabitCheck(id,date){const habit=habits.find(h=>h.id===id);if(!habit)return;const checks=new Set(habit.checkIns||[]);if(checks.has(date))checks.delete(date);else checks.add(date);habit.checkIns=[...checks].sort();habit.updatedAt=new Date().toISOString();persistHabits();renderHabitTracker();}
 function deleteHabit(id){const habit=habits.find(h=>h.id===id);if(!habit)return;if(!confirm('Delete the habit "'+habit.title+'"? Its check-in history will also be removed.'))return;habits=habits.filter(h=>h.id!==id);persistHabits();renderHabitTracker();showToast('Habit deleted');}
+
+
+function addDaysToKey(key,delta){const d=parseKey(key);d.setDate(d.getDate()+delta);return dateKey(d);}
+function recurrenceDateMatches(template,date){
+ const anchor=parseKey(template.startDate),key=dateKey(date);
+ if(key<template.startDate)return false;
+ if(template.frequency==='daily')return true;
+ if(template.frequency==='weekly')return date.getDay()===anchor.getDay();
+ if(template.frequency==='monthly'){const last=new Date(date.getFullYear(),date.getMonth()+1,0).getDate();return date.getDate()===Math.min(anchor.getDate(),last);}
+ return false;
+}
+function clearFutureOccurrences(seriesId,fromDate){
+ Object.values(store.weeks||{}).forEach(week=>{
+  if(!Array.isArray(week?.tasks))return;
+  week.tasks=week.tasks.filter(item=>!(item.seriesId===seriesId&&item.occurrenceDate&&item.occurrenceDate>fromDate));
+ });
+ tasks=tasks.filter(item=>!(item.seriesId===seriesId&&item.occurrenceDate&&item.occurrenceDate>fromDate));
+}
+function stopRecurringSeries(task,fromDate){
+ const seriesId=task?.seriesId;if(!seriesId)return;
+ store.recurringTemplates=(store.recurringTemplates||[]).filter(template=>template.id!==seriesId);
+ clearFutureOccurrences(seriesId,fromDate);
+ Object.values(store.weeks||{}).forEach(week=>{
+  if(!Array.isArray(week?.tasks))return;
+  week.tasks.forEach(item=>{if(item.seriesId===seriesId){item.seriesId=null;item.recurrence='none';item.occurrenceDate=null;}});
+ });
+ tasks.forEach(item=>{if(item.seriesId===seriesId){item.seriesId=null;item.recurrence='none';item.occurrenceDate=null;}});
+ task.seriesId=null;task.recurrence='none';task.occurrenceDate=null;
+}
+function upsertRecurringTemplate(id,occurrenceDate,fields){
+ if(!Array.isArray(store.recurringTemplates))store.recurringTemplates=[];
+ const dueOffsetDays=fields.dueDate?Math.round((parseKey(fields.dueDate)-parseKey(occurrenceDate))/86400000):null;
+ let template=store.recurringTemplates.find(item=>item.id===id);
+ const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,note:fields.note,listId:fields.listId,priority:fields.priority,importance:fields.importance,urgency:fields.urgency,dueOffsetDays,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ if(template)Object.assign(template,value);else{template=value;store.recurringTemplates.push(template);}
+ return template;
+}
+function materializeRecurringRange(rangeStart,rangeEnd){
+ const templates=Array.isArray(store.recurringTemplates)?store.recurringTemplates.slice():[];
+ if(!templates.length||!rangeStart||!rangeEnd)return;
+ const start=new Date(rangeStart),end=new Date(rangeEnd);
+ for(let date=new Date(start);date<=end;date.setDate(date.getDate()+1)){
+  const occurrenceDate=dateKey(date),day=date.getDay(),weekKey=dateKey(sundayOf(date));
+  for(const template of templates){
+   if(!template||!template.id||!recurrenceDateMatches(template,date)||(template.excludedDates||[]).includes(occurrenceDate))continue;
+   let rows;
+   if(weekKey===currentWeek)rows=tasks;
+   else{
+    if(!store.weeks[weekKey]||!Array.isArray(store.weeks[weekKey].tasks))store.weeks[weekKey]={...(store.weeks[weekKey]||{}),tasks:[]};
+    rows=store.weeks[weekKey].tasks;
+   }
+   let existing=rows.find(item=>item.seriesId===template.id&&item.occurrenceDate===occurrenceDate);
+   const duration=Math.max(10,Number(template.duration)||30),preferred=template.start===null||template.start===undefined?null:Number(template.start);
+   let startTime=null;
+   if(preferred!==null){
+    const blockers=rows.filter(item=>item!==existing&&Number(item.day)===day&&item.start!==null&&item.start!==undefined&&!item.unscheduled&&Number(item.duration)>0);
+    startTime=findSlot(day,duration,preferred,0,1440,blockers);
+   }
+   const dueDate=template.dueOffsetDays===null||template.dueOffsetDays===undefined?null:addDaysToKey(occurrenceDate,Number(template.dueOffsetDays)||0);
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,done:!!existing?.done,custom:true,fixed:false,note:template.note||'',unscheduled:startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   if(existing)Object.assign(existing,values);
+   else rows.push({id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values});
+  }
+ }
+}
+function materializeCurrentAndUpcoming(){
+ materializeRecurringRange(parseKey(currentWeek),parseKey(addDaysToKey(currentWeek,89)));
+ saveCurrent();
+}
 
 setup();
 renderWorkspaceView();renderReminders();nudgeDueReminders();
