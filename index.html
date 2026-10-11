@@ -1056,6 +1056,13 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
 .workspace-task-links a{display:inline-flex;align-items:center;gap:4px;max-width:100%;border:1px solid #e5e7f2;border-radius:6px;background:#fafaff;padding:3px 6px;color:#646ac5;font-size:9px;text-decoration:none;overflow-wrap:anywhere}
 .workspace-task-links a:hover{background:#f0f1ff;border-color:#d7daf7;color:#474db4}
 
+
+.workspace-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.task-ai-helper{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e7e9f5;border-radius:12px;background:linear-gradient(120deg,#f7f7ff,#fff)}
+.task-ai-helper strong{display:block;color:#444b6b;font-size:11px}.task-ai-helper p{margin:4px 0 0;color:#888fa5;font-size:10px;line-height:1.5}
+.task-ai-helper .btn{flex:0 0 auto;white-space:nowrap}
+@media(max-width:760px){.workspace-head-actions{width:100%;justify-content:stretch}.workspace-head-actions .btn{flex:1;min-width:0;padding:8px 9px;font-size:10px}.task-ai-helper{align-items:stretch;flex-direction:column}.task-ai-helper .btn{width:100%}}
+
 </style>
 </head>
 <body>
@@ -1140,7 +1147,12 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
       <section class="task-workspace" id="taskWorkspace" hidden aria-labelledby="taskWorkspaceTitle">
         <header class="task-workspace-head">
           <div><div class="workspace-page-eyebrow">YOUR TASKS</div><h2 id="taskWorkspaceTitle">Today</h2><p id="taskWorkspaceDescription">Focus on what matters today.</p></div>
-          <button class="btn primary" type="button" id="workspaceAddTaskBtn">＋ Add task</button>
+          <div class="workspace-head-actions">
+            <button class="btn" type="button" id="workspaceExportListBtn" title="Export tasks in the current view as a shareable Weekwise file">↗ Share / export</button>
+            <button class="btn" type="button" id="workspaceImportListBtn" title="Import tasks from another Weekwise list file">＋ Import list</button>
+            <input id="workspaceImportListFile" type="file" accept="application/json,.json" hidden>
+            <button class="btn primary" type="button" id="workspaceAddTaskBtn">＋ Add task</button>
+          </div>
         </header>
         <section class="today-overview" id="todayOverview" hidden aria-label="Today overview"></section>
         <form class="workspace-capture" id="workspaceCaptureForm">
@@ -1422,6 +1434,7 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
   <div class="field"><label for="modalReminderAt">Reminders (optional)</label><input id="modalReminderAt" type="datetime-local" /><div class="hint">An alert while Weekwise is open; browser notifications need permission.</div><details class="task-extra-reminders"><summary>Add up to 4 more reminders</summary><div class="task-extra-reminder-fields"><label for="modalReminderAt2">Reminder 2<input id="modalReminderAt2" type="datetime-local" /></label><label for="modalReminderAt3">Reminder 3<input id="modalReminderAt3" type="datetime-local" /></label><label for="modalReminderAt4">Reminder 4<input id="modalReminderAt4" type="datetime-local" /></label><label for="modalReminderAt5">Reminder 5<input id="modalReminderAt5" type="datetime-local" /></label></div></details></div>
   <div class="field"><label for="modalTags">Tags (optional)</label><input id="modalTags" maxlength="180" placeholder="e.g. deep-work, urgent" /><div class="hint">Separate tags with commas.</div></div>
   <div class="field" style="grid-column:1/-1"><label for="modalSubtasks">Subtasks (optional)</label><textarea id="modalSubtasks" rows="2" maxlength="800" placeholder="One step per line"></textarea></div>
+  <div class="field task-ai-helper" style="grid-column:1/-1"><div><strong>Plan this task with AI</strong><p>Copy a task-specific prompt to your clipboard, then paste it into the AI tool you choose. Nothing is sent automatically.</p></div><button type="button" class="btn" id="copyTaskPlanningPromptBtn">Copy planning prompt</button></div>
   <div class="field" style="grid-column:1/-1"><label for="modalAttachments">Links / attachments (optional)</label><textarea id="modalAttachments" rows="2" maxlength="1600" placeholder="Paste one http:// or https:// link per line"></textarea><div class="hint">Weekwise saves links with the task. It does not upload local files.</div></div>
   <div class="field" style="grid-column:1/-1"><label for="modalNote">Note (optional)</label><input id="modalNote" maxlength="180" placeholder="A small reminder or desired outcome" /></div>
 </div><div class="modalbuttons"><button type="button" class="btn danger modal-delete" id="deleteTaskBtn">Delete</button><span class="modal-spacer"></span><button type="button" class="btn" id="closeModal">Cancel</button><button type="submit" class="btn primary" id="saveTaskBtn">Save activity</button></div></form></div></div>
@@ -2886,6 +2899,10 @@ function wireWorkspaceControls(){
   if(action==='statistics')openDashboard();
  });
  $('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();quickCaptureWorkspaceTask();});
+ $('workspaceExportListBtn').addEventListener('click',exportCurrentTaskList);
+ $('workspaceImportListBtn').addEventListener('click',()=>$('workspaceImportListFile').click());
+ $('workspaceImportListFile').addEventListener('change',async e=>{const file=e.target.files?.[0];e.target.value='';if(file)await importSharedTaskList(file);});
+ $('copyTaskPlanningPromptBtn').addEventListener('click',copyTaskPlanningPrompt);
  $('voiceCaptureBtn').addEventListener('click',toggleVoiceCapture);
  $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):workspaceView.startsWith('folder:')?(workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===workspaceView.slice(7))?.listId||'other'):workspaceView.startsWith('tag:')?(workspaceRecords().find(r=>(Array.isArray(r.task.tags)?r.task.tags:[]).some(tag=>String(tag).replace(/^#/,'').toLowerCase()===workspaceView.slice(4).toLowerCase()))?.listId||'other'):null;const tomorrow=workspaceView==='tomorrow';const targetDay=tomorrow?addDaysForView(now,1).getDay():workspaceView==='today'?now.getDay():mobileDay;const targetStart=workspaceView==='inbox'?null:tomorrow?10*60:nextQuarterHour();openTaskModal(null,targetDay,targetStart,def);});
  $('addCustomListBtn').addEventListener('click',createCustomList);
@@ -3741,6 +3758,223 @@ function renderTaskAttachments(attachments){
   let label='Attachment '+(index+1);try{const url=new URL(link);label=url.hostname+((url.pathname&&url.pathname!=='/')?url.pathname:'');}catch(_){}
   return '<a href="'+escapeHtml(link)+'" target="_blank" rel="noopener noreferrer" title="Open link in a new tab">↗ '+escapeHtml(label)+'</a>';
  }).join('')+'</div>';
+}
+
+
+function shareViewTitle(){
+ const known={today:'Today',tomorrow:'Tomorrow',inbox:'Inbox',upcoming:'Upcoming',board:'Board',filters:'Saved filters',calendar:'Calendar',matrix:'Priority matrix',search:'Search results'};
+ if(known[workspaceView])return workspaceView==='filters'?(savedTaskFilters.find(f=>f.id===activeSavedFilterId)?.title||'Saved filters'):known[workspaceView];
+ return $('taskWorkspaceTitle')?.textContent||'Weekwise tasks';
+}
+function recordsForListTransfer(){
+ const all=workspaceRecords();
+ if(workspaceView==='board'||workspaceView==='calendar'||workspaceView==='matrix')return all;
+ if(workspaceView==='filters'){
+  const active=savedTaskFilters.find(f=>f.id===activeSavedFilterId);
+  return active?all.filter(record=>savedFilterMatches(record,active)):[];
+ }
+ let records=all.filter(record=>workspaceRecordMatches(record,workspaceView));
+ if(workspaceView==='search'||$('workspaceSearch').value.trim()){
+  const query=String($('workspaceSearch').value||'').trim().toLowerCase();
+  if(query)records=records.filter(r=>[
+   r.task.title,r.task.note,r.task.folderName,r.task.sectionName,r.task.dueDate,r.task.priority,r.task.status,r.task.listId,
+   WORKSPACE_LISTS.find(list=>list.id===r.listId)?.label,
+   ...(Array.isArray(r.task.tags)?r.task.tags:[]),
+   ...(Array.isArray(r.task.attachments)?r.task.attachments:[])
+  ].join(' ').toLowerCase().includes(query));
+ }
+ return records;
+}
+function exportCurrentTaskList(){
+ const records=recordsForListTransfer();
+ if(!records.length){showToast(workspaceView==='filters'?'Choose a saved filter before exporting it.':'There are no tasks in this view to export.');return;}
+ const seriesIds=new Set(records.map(r=>r.task.seriesId).filter(Boolean));
+ const templates=(store.recurringTemplates||[]).filter(template=>seriesIds.has(template.id));
+ const listIds=new Set(records.map(r=>r.listId));
+ const customLists=(store.customLists||[]).filter(list=>listIds.has(list.id));
+ const data={
+  app:'Weekwise',
+  kind:'shared-task-list',
+  schemaVersion:1,
+  title:shareViewTitle(),
+  sourceView:workspaceView,
+  exportedAt:new Date().toISOString(),
+  note:'This is a portable list file. Import it into another Weekwise workspace to copy these tasks; it does not create live collaboration.',
+  customLists,
+  recurringTemplates:templates,
+  tasks:records.map(record=>{
+   const t=record.task;
+   return {
+    sourceDate:dateKey(record.date),title:String(t.title||''),type:t.type||'other',listId:record.listId,
+    folderName:t.folderName||defaultFolderName(record.listId),sectionName:t.sectionName||'',
+    note:t.note||'',start:t.start??null,duration:Number(t.duration)||30,allDay:!!t.allDay,allDayDate:t.allDayDate||null,
+    unscheduled:!!t.unscheduled,done:!!t.done,status:taskBoardStatus(t),
+    priority:t.priority||'none',importance:t.importance||'unclassified',urgency:t.urgency||'unclassified',
+    dueDate:t.dueDate||null,focusEstimateMinutes:t.focusEstimateMinutes||null,
+    tags:Array.isArray(t.tags)?t.tags:[],subtasks:Array.isArray(t.subtasks)?t.subtasks:[],
+    attachments:Array.isArray(t.attachments)?t.attachments:[],recurrence:t.recurrence||'none',
+    seriesId:t.seriesId||null,occurrenceDate:t.occurrenceDate||null
+   };
+  })
+ };
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ const slug=String(data.title||'tasks').normalize('NFKD').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase().slice(0,45)||'tasks';
+ a.href=url;a.download='weekwise-'+slug+'-'+dateKey(now)+'.json';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ showToast('Exported '+records.length+' task'+(records.length===1?'':'s')+'. Review the file before sharing it.');
+}
+function validTransferDate(value,fallback){
+ if(typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)){
+  const d=parseKey(value);if(Number.isFinite(d.getTime())&&dateKey(d)===value)return d;
+ }
+ return dateOnly(fallback||now);
+}
+function transferDestinationList(){
+ if(workspaceView.startsWith('list-')||workspaceView.startsWith('folder:')||workspaceView.startsWith('tag:'))return defaultCaptureList();
+ return null;
+}
+async function importSharedTaskList(file){
+ if(!file)return;
+ try{
+  if(file.size>12*1024*1024){showToast('This list file is larger than 12 MB. Ask for a smaller export.');return;}
+  const data=JSON.parse(await file.text());
+  if(data?.app!=='Weekwise'||data?.kind!=='shared-task-list'||data?.schemaVersion!==1||!Array.isArray(data.tasks)){
+   showToast('That file is not a supported Weekwise list export.');return;
+  }
+  if(data.tasks.length>1000){showToast('This list contains more than 1,000 tasks. Export a smaller list first.');return;}
+  const destination=transferDestinationList();
+  const destinationName=destination?(WORKSPACE_LISTS.find(list=>list.id===destination)?.label||destination):'the original lists';
+  const taskCount=data.tasks.length;
+  if(!taskCount){showToast('This list export contains no tasks.');return;}
+  if(!confirm('Import '+taskCount+' task'+(taskCount===1?'':'s')+' from "'+String(data.title||'Shared list').slice(0,90)+'" into '+destinationName+'? This copies the tasks; it does not enable live shared editing.'))return;
+
+  if(!Array.isArray(store.customLists))store.customLists=[];
+  const incomingLists=Array.isArray(data.customLists)?data.customLists:[];
+  const listIdMap=new Map();
+  for(const sourceList of incomingLists){
+   if(!sourceList||typeof sourceList.name!=='string'||!sourceList.name.trim())continue;
+   const existing=store.customLists.find(list=>String(list.name||'').trim().toLowerCase()===sourceList.name.trim().toLowerCase());
+   if(existing)listIdMap.set(sourceList.id,existing.id);
+   else{
+    let newId='custom_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    while(WORKSPACE_LISTS.some(list=>list.id===newId)||listIdMap.has(newId))newId='custom_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    const copy={id:newId,name:sourceList.name.trim().slice(0,60),createdAt:new Date().toISOString()};
+    store.customLists.push(copy);listIdMap.set(sourceList.id,newId);
+   }
+  }
+  syncWorkspaceLists();
+  const sourceSeriesIds=new Set((Array.isArray(data.recurringTemplates)?data.recurringTemplates:[]).map(template=>template?.id).filter(Boolean));
+  const seriesIdMap=new Map([...sourceSeriesIds].map(id=>[id,uid()]));
+  if(!Array.isArray(store.recurringTemplates))store.recurringTemplates=[];
+  (Array.isArray(data.recurringTemplates)?data.recurringTemplates:[]).forEach(template=>{
+   if(!template||!sourceSeriesIds.has(template.id))return;
+   const copy={...template,id:seriesIdMap.get(template.id),
+    listId:destination||listIdMap.get(template.listId)||template.listId||'inbox',
+    tags:Array.isArray(template.tags)?[...template.tags]:[],
+    subtasks:Array.isArray(template.subtasks)?template.subtasks.map(sub=>({...sub})):[],
+    attachments:Array.isArray(template.attachments)?template.attachments.map(item=>({...item})):[],
+    excludedDates:Array.isArray(template.excludedDates)?[...template.excludedDates]:[],
+    createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+   store.recurringTemplates.push(copy);
+  });
+  let imported=0,failed=0,shifted=0;
+  const seriesWithTemplate=new Set(sourceSeriesIds);
+  for(const source of data.tasks){
+   if(!source||typeof source.title!=='string'||!source.title.trim()){failed++;continue;}
+   const date=validTransferDate(source.sourceDate,now),weekKey=dateKey(sundayOf(date)),day=date.getDay();
+   let rows;
+   if(weekKey===currentWeek)rows=tasks;
+   else{
+    if(!store.weeks[weekKey]||!Array.isArray(store.weeks[weekKey].tasks))store.weeks[weekKey]={...(store.weeks[weekKey]||{}),tasks:[]};
+    rows=store.weeks[weekKey].tasks;
+   }
+   const duration=Math.max(5,Math.min(1440,Number(source.duration)||30));
+   let start=null,unscheduled=source.unscheduled!==false;
+   if(source.allDay){unscheduled=false;}
+   else if(!unscheduled&&source.start!==null&&source.start!==undefined&&Number.isFinite(Number(source.start))){
+    const preferred=Math.max(0,Math.min(1439,Math.round(Number(source.start))));
+    const blockers=rows.filter(item=>item&&item.custom===true&&Number(item.day)===day&&item.start!==null&&item.start!==undefined&&!item.unscheduled&&Number(item.duration)>0);
+    start=findSlot(day,duration,preferred,0,1440,blockers);
+    unscheduled=start===null;if(unscheduled||start!==preferred)shifted++;
+   }
+   const sourceListId=String(source.listId||'inbox');
+   const listId=destination||listIdMap.get(sourceListId)||(WORKSPACE_LISTS.some(list=>list.id===sourceListId)?sourceListId:'inbox');
+   const seriesId=source.seriesId&&seriesIdMap.has(source.seriesId)?seriesIdMap.get(source.seriesId):null;
+   const recurrence=seriesId?(source.recurrence||'none'):'none';
+   const task={
+    id:uid(),day,title:source.title.trim().slice(0,180),type:source.type||'other',duration,
+    start:source.allDay?null:start,allDay:!!source.allDay,allDayDate:source.allDay?(source.allDayDate||dateKey(date)):null,
+    done:!!source.done,status:source.done?'done':(['todo','in-progress','done'].includes(source.status)?source.status:'todo'),
+    custom:true,fixed:false,note:String(source.note||'').slice(0,4000),unscheduled:source.allDay?false:unscheduled,
+    listId,folderName:destination?(workspaceView.startsWith('folder:')?workspaceView.slice(7):defaultFolderName(destination)):(String(source.folderName||'').slice(0,100)||defaultFolderName(listId)),
+    sectionName:String(source.sectionName||'').slice(0,100),priority:['none','low','medium','high'].includes(source.priority)?source.priority:'none',
+    importance:['unclassified','important','not-important'].includes(source.importance)?source.importance:'unclassified',
+    urgency:['unclassified','urgent','not-urgent'].includes(source.urgency)?source.urgency:'unclassified',
+    dueDate:typeof source.dueDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(source.dueDate)?source.dueDate:null,
+    focusEstimateMinutes:Math.max(0,Math.min(1440,Number(source.focusEstimateMinutes)||0))||null,
+    tags:Array.isArray(source.tags)?source.tags.map(tag=>String(tag).slice(0,80)).filter(Boolean).slice(0,30):[],
+    subtasks:Array.isArray(source.subtasks)?source.subtasks.slice(0,100).map(sub=>typeof sub==='string'?{id:uid(),title:sub.slice(0,500),done:false}:{id:uid(),title:String(sub?.title||'').slice(0,500),done:!!sub?.done}):[],
+    attachments:Array.isArray(source.attachments)?source.attachments.slice(0,30).map(item=>typeof item==='string'?item.slice(0,1000):({...item})):[],
+    recurrence,seriesId,occurrenceDate:seriesId?(source.occurrenceDate||dateKey(date)):null,
+    reminderAt:null,reminderTimes:[],reminderNotifiedAt:null,reminderNotifiedTimes:[],
+    createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()
+   };
+   rows.push(task);imported++;
+  }
+  saveCurrent();saveStore();
+  materializeRecurringRange(parseKey(currentWeek),parseKey(addDaysToKey(currentWeek,89)));
+  renderAll();renderWorkspaceView();
+  const notes=(shifted?', '+shifted+' scheduled task'+(shifted===1?' was':'s were')+' moved to the nearest available time':'')+(failed?', '+failed+' invalid entr'+(failed===1?'y was':'ies were')+' skipped':'');
+  showToast('Imported '+imported+' task'+(imported===1?'':'s')+notes+'.');
+ }catch(error){
+  console.error('Weekwise list import failed',error);
+  showToast('Could not import that list file. Check that it is a valid Weekwise export.');
+ }
+}
+
+
+async function copyTaskPlanningPrompt(){
+ const title=String($('modalTitleInput').value||'').trim();
+ if(!title){showToast('Enter a task title first, then copy the planning prompt.');$('modalTitleInput').focus();return;}
+ const note=String($('modalNote').value||'').trim();
+ const listId=$('modalListId').value,listName=WORKSPACE_LISTS.find(list=>list.id===listId)?.label||listId;
+ const category=$('modalCategory').selectedOptions[0]?.textContent||$('modalCategory').value;
+ const priority=$('modalPriority').value,focusEstimate=$('modalFocusEstimate').value.trim();
+ const dueDate=$('modalDueDate').value,recurrence=$('modalRecurrence').value;
+ const existing=String($('modalSubtasks').value||'').trim();
+ const links=String($('modalAttachments').value||'').trim();
+ const prompt=[
+  'Help me turn the following task into a realistic, actionable checklist.',
+  '',
+  'Task: '+title,
+  'Category: '+category,
+  'List: '+listName,
+  'Priority: '+priority,
+  dueDate?'Due date: '+dueDate:null,
+  recurrence&&recurrence!=='none'?'Repeat: '+recurrence:null,
+  focusEstimate?'Estimated focused effort: '+focusEstimate+' minutes':null,
+  note?'Context / notes: '+note:null,
+  links?'Reference links:\n'+links:null,
+  existing?'Existing subtasks to improve or keep:\n'+existing:null,
+  '',
+  'Requirements:',
+  '- Suggest 3–7 small, specific steps in a sensible order.',
+  '- Use plain language and start each step with a concrete action verb.',
+  '- Respect the due date and effort estimate; do not invent facts or mark anything complete.',
+  '- Return only the checklist, one step per line, without numbering or introductory text, so I can paste it into the Subtasks field.'
+ ].filter(line=>line!==null).join('\n');
+ try{
+  if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(prompt);
+  else throw new Error('Clipboard API unavailable');
+  showToast('Planning prompt copied. Paste it into your chosen AI tool; no task data was sent.');
+ }catch(_){
+  const area=document.createElement('textarea');area.value=prompt;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();
+  let copied=false;try{copied=document.execCommand('copy');}catch(__){}
+  area.remove();
+  if(copied)showToast('Planning prompt copied. Paste it into your chosen AI tool; no task data was sent.');
+  else window.prompt('Copy this planning prompt into your chosen AI tool:',prompt);
+ }
 }
 
 setup();
