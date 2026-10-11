@@ -25,13 +25,13 @@ revoke all on table private.weekwise_invite_codes from public, anon, authenticat
 -- Active invite code hash. The matching raw code is not stored in this file.
 insert into private.weekwise_invite_codes (code_hash, is_active)
 values ('1d86e1797ae13b92da7e6a09525681fc82db021b530a03ebeb2d981af1756d0f', true)
-on conflict (code_hash) do update set is_active = true;
+on conflict (code_hash) do nothing;
 
 create or replace function public.weekwise_require_referral_code()
 returns trigger
 language plpgsql
 security definer
-set search_path = pg_catalog, public, extensions, private
+set search_path = pg_catalog, extensions, private
 as $function$
 declare
   submitted_code text;
@@ -44,7 +44,7 @@ begin
       using errcode = 'P0001';
   end if;
 
-  submitted_hash := encode(digest(submitted_code, 'sha256'), 'hex');
+  submitted_hash := encode(extensions.digest(submitted_code, 'sha256'), 'hex');
 
   update private.weekwise_invite_codes
      set use_count = use_count + 1
