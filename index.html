@@ -891,6 +891,12 @@ body.signin-required{overflow:hidden}
 
 .workspace-section-group{display:grid;gap:7px;margin:3px 0 13px}.workspace-section-group>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;background:#f7f7ff;color:#7076bf;font-size:10px;font-weight:800}.workspace-section-group>header span:last-child{padding:2px 6px;border-radius:6px;background:#fff;color:#9197aa;font-size:9px}
 
+
+.voice-capture-btn{padding:8px 11px;min-width:39px;color:#686f91;background:#fff;border-color:#e1e4f0}
+.voice-capture-btn[aria-pressed="true"]{background:#fff0ee;border-color:#edc8c4;color:#b94f46;animation:voicePulse 1.4s ease-in-out infinite}
+.voice-capture-btn:disabled{opacity:.55;cursor:not-allowed}
+@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(185,79,70,.1)}50%{box-shadow:0 0 0 5px rgba(185,79,70,.06)}}
+@media(prefers-reduced-motion:reduce){.voice-capture-btn[aria-pressed="true"]{animation:none}}
 </style>
 </head>
 <body>
@@ -975,6 +981,7 @@ body.signin-required{overflow:hidden}
         <form class="workspace-capture" id="workspaceCaptureForm">
           <span class="capture-plus" aria-hidden="true">＋</span>
           <input id="workspaceCaptureInput" type="text" maxlength="100" autocomplete="off" placeholder="Add a task to your inbox…" aria-label="Quick capture task">
+          <button type="button" class="btn voice-capture-btn" id="voiceCaptureBtn" title="Capture by voice where supported" aria-label="Capture task by voice" aria-pressed="false">🎙</button>
           <button type="submit" class="btn primary">Add</button>
         </form>
         <p class="workspace-capture-hint">Try “Submit report tomorrow at 15:00” or “German practice every Monday at 09:00”. Press <kbd>⌘K</kbd> or <kbd>Ctrl K</kbd> to capture from anywhere.</p>
@@ -1430,6 +1437,7 @@ let lastRenderedCalendarView=null;
 let tasks=[];
 let workspaceView='today';
 try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace)||(savedWorkspace&&savedWorkspace.startsWith('folder:')))workspaceView=savedWorkspace;}catch(_){}
+try{const shortcutView=new URLSearchParams(window.location.search).get('view');if(['today','inbox','calendar'].includes(shortcutView))workspaceView=shortcutView;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
 function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}if(!cloudApplyingRemote)queueCloudSave();}
@@ -2620,6 +2628,7 @@ function wireWorkspaceControls(){
   if(action==='statistics')openDashboard();
  });
  $('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();quickCaptureWorkspaceTask();});
+ $('voiceCaptureBtn').addEventListener('click',toggleVoiceCapture);
  $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):workspaceView.startsWith('folder:')?(workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===workspaceView.slice(7))?.listId||'other'):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
  $('addCustomListBtn').addEventListener('click',createCustomList);
  $('workspaceSearch').addEventListener('input',renderWorkspaceTasks);$('workspaceSort').addEventListener('change',renderWorkspaceTasks);
@@ -3298,6 +3307,31 @@ async function importCalendarICS(file){
  showToast('Imported '+added+' events'+(skipped?' · skipped '+skipped+' duplicates':'')+(invalid?' · ignored '+invalid+' unsupported entries':'')+'.');
 }
 
+let activeVoiceRecognition=null;
+function toggleVoiceCapture(){
+ const button=$('voiceCaptureBtn'),input=$('workspaceCaptureInput');
+ const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!Recognition){showToast('Voice capture is not supported by this browser. You can still type or use the keyboard shortcut.');return;}
+ if(activeVoiceRecognition){try{activeVoiceRecognition.stop();}catch(_){}return;}
+ try{
+  const recognition=new Recognition();
+  recognition.lang=navigator.language||'en-US';
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+  activeVoiceRecognition=recognition;
+  button.setAttribute('aria-pressed','true');button.title='Stop voice capture';button.textContent='■';
+  recognition.onresult=event=>{
+   const transcript=String(event.results?.[0]?.[0]?.transcript||'').trim();
+   if(transcript){const existing=String(input.value||'').trim();input.value=[existing,transcript].filter(Boolean).join(' ');input.focus();try{input.setSelectionRange(input.value.length,input.value.length);}catch(_){}}
+  };
+  recognition.onerror=event=>{if(event.error!=='no-speech'&&event.error!=='aborted')showToast('Voice capture stopped. Type your task if the browser cannot recognize speech.');};
+  recognition.onend=()=>{activeVoiceRecognition=null;button.setAttribute('aria-pressed','false');button.title='Capture by voice where supported';button.textContent='🎙';};
+  recognition.start();showToast('Listening. Say the task and any date or time, then review before adding.');
+ }catch(error){
+  activeVoiceRecognition=null;button.setAttribute('aria-pressed','false');button.title='Capture by voice where supported';button.textContent='🎙';
+  showToast('Could not start voice capture in this browser.');
+ }
+}
 document.addEventListener('keydown',e=>{
  if(!(e.metaKey||e.ctrlKey)||String(e.key).toLowerCase()!=='k'||e.altKey)return;
  if(document.body.classList.contains('signin-required')||$('taskModal')?.classList.contains('show'))return;
