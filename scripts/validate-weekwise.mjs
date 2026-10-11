@@ -81,6 +81,27 @@ if (fs.existsSync(sw)) {
   fail("sw.js exists");
 }
 
+
+// Focused regression checks for the cloud-save race and invite-trigger hardening.
+const appSource = fs.readFileSync(indexPath, "utf8");
+if (/let savedPayload=null;[\s\S]*?finally\{\s*cloudBusy=false;[\s\S]*?if\(savedPayload&&cloudUser&&cloudReady&&!cloudConflict&&cloudFingerprint\(buildCloudPayload\(\)\)!==cloudFingerprint\(savedPayload\)\)queueCloudSave\(\);/.test(appSource)) {
+  pass("cloud save re-queues edits made while a request is in flight");
+} else {
+  fail("cloud save re-queues edits made while a request is in flight");
+}
+
+const inviteSqlPath = path.join(root, "supabase_invite_code_setup.sql");
+if (fs.existsSync(inviteSqlPath)) {
+  const inviteSql = fs.readFileSync(inviteSqlPath, "utf8");
+  if (/set search_path = pg_catalog, extensions, private/i.test(inviteSql) &&
+      /extensions\.digest\(submitted_code,\s*'sha256'\)/i.test(inviteSql)) {
+    pass("invite trigger uses a restricted search path and schema-qualified digest");
+  } else fail("invite trigger uses a restricted search path and schema-qualified digest");
+  if (/on conflict \(code_hash\) do nothing;/i.test(inviteSql)) {
+    pass("rerunning invite setup does not reactivate a revoked invite");
+  } else fail("rerunning invite setup does not reactivate a revoked invite");
+} else fail("invite-code SQL exists for validation");
+
 if (failures.length) {
   console.error(`\\n${failures.length} release sanity check(s) failed.`);
   process.exit(1);
