@@ -3284,7 +3284,7 @@ async function importCalendarICS(file){
    const calculated=end&&!end.allDay?Math.round((end.date.getTime()-start.date.getTime())/60000):30;
    duration=Math.max(10,Math.min(1440,calculated>0?calculated:30));unscheduled=false;
   }
-  const dueDate=isAllDay?dateKey(date):null;
+  const dueDate=null;
   const description=unescapeICSText(event.DESCRIPTION?.value);
   const task={id:uid(),externalUid,calendarImportSource:'ics',day,title,type:'other',duration,start:startMinutes,done:false,status:'todo',custom:true,fixed:false,note:description,unscheduled:isAllDay?false:unscheduled,allDay:isAllDay,allDayDate:isAllDay?dateKey(date):null,listId:'other',folderName:defaultFolderName('other'),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
   if(!store.weeks[weekKey]||!Array.isArray(store.weeks[weekKey].tasks))store.weeks[weekKey]={...(store.weeks[weekKey]||{}),tasks:[]};
