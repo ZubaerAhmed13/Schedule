@@ -1870,9 +1870,11 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit task':'Add a task';
   $('modalDescription').textContent=t?'To move this activity, choose a new day and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the day, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
-  $('modalListId').value=t?inferredListId(t):(defaultListId||'career');
-  if(!t&&!defaultListId)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
-  $('modalFolder').value=t?.folderName||defaultFolderName($('modalListId').value);
+  const folderView=workspaceView.startsWith('folder:'),selectedFolder=folderView?workspaceView.slice(7):'';
+  const folderExisting=folderView?workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===selectedFolder):null;
+  $('modalListId').value=t?inferredListId(t):(defaultListId||(folderExisting?.listId)||'career');
+  if(!t&&!defaultListId&&!folderView)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
+  $('modalFolder').value=t?.folderName||(folderView?selectedFolder:defaultFolderName($('modalListId').value));
   $('modalSection').value=t?.sectionName||'';
   $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';$('modalReminderAt').value=t?.reminderAt||'';
   $('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
@@ -2486,7 +2488,7 @@ function renderWorkspaceTasks(){
  const folderView=workspaceView.startsWith('folder:'),folderTitle=folderView?workspaceView.slice(7):'';
  const info=WORKSPACE_VIEW_INFO[workspaceView]||{title:folderView?folderTitle:(WORKSPACE_LISTS.find(x=>x.view===workspaceView)?.label||'Tasks'),description:folderView?'Tasks organized in this folder.':'Tasks in this list.',emptyTitle:folderView?'This folder is empty':'No tasks in this list yet',emptyText:folderView?'Edit any task to place it in this folder, or create a task with this folder name.':'Add a task to this list or edit an existing task to move it here.'};
  $('taskWorkspaceTitle').textContent=info.title;$('taskWorkspaceDescription').textContent=info.description||'';
- $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
+ $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':workspaceView.startsWith('folder:')?'Add a task to '+workspaceView.slice(7)+'…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
  list.innerHTML=items.length?items.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
 }
 function renderWorkspaceView(){
@@ -2547,7 +2549,7 @@ function updateWorkspaceRecord(id,week,action,subtaskIndex=null){
 function wireWorkspaceControls(){
  $('workspaceSidebar').addEventListener('click',e=>{const button=e.target.closest('[data-workspace-view]');if(button){setWorkspaceView(button.dataset.workspaceView);return;}const action=e.target.closest('[data-workspace-action]')?.dataset.workspaceAction;if(action==='habits'){renderHabitTracker();openUtilityPanel('routineDetails','Habits & routines');}if(action==='focus'){renderFocusPanel();openUtilityPanel('focusPanel','Focus timer');}if(action==='countdowns'){renderCountdowns();openUtilityPanel('countdownsPanel','Countdowns');}if(action==='statistics')openDashboard();});
  $('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();quickCaptureWorkspaceTask();});
- $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
+ $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):workspaceView.startsWith('folder:')?(workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===workspaceView.slice(7))?.listId||'other'):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
  $('workspaceSearch').addEventListener('input',renderWorkspaceTasks);$('workspaceSort').addEventListener('change',renderWorkspaceTasks);
  $('workspaceTaskList').addEventListener('change',e=>{const sub=e.target.closest('[data-workspace-subtask]');if(sub){updateWorkspaceRecord(sub.dataset.workspaceSubtask,sub.dataset.workspaceWeek,'toggle-subtask',Number(sub.dataset.workspaceSubtaskIndex));return;}const control=e.target.closest('[data-workspace-done]');if(control)updateWorkspaceRecord(control.dataset.workspaceDone,control.dataset.workspaceWeek,'toggle');});
  $('workspaceTaskList').addEventListener('click',e=>{const edit=e.target.closest('[data-workspace-edit]');if(edit){openWorkspaceRecord(edit.dataset.workspaceEdit,edit.dataset.workspaceWeek);return;}const del=e.target.closest('[data-workspace-delete]');if(del)updateWorkspaceRecord(del.dataset.workspaceDelete,del.dataset.workspaceWeek,'delete');});
@@ -3054,9 +3056,13 @@ function parseWeekwiseNaturalCapture(raw,baseDate=new Date()){
 }
 function defaultCaptureList(){
  if(workspaceView.startsWith('list-'))return workspaceView.slice(5);
+ if(workspaceView.startsWith('folder:')){
+  const folder=workspaceView.slice(7),existing=workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===folder);
+  return existing?.listId||'other';
+ }
  return 'inbox';
 }
-function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId){
+function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,folderNameOverride=null){
  const day=targetDate.getDay(),weekKey=dateKey(sundayOf(targetDate)),duration=30;
  let rows,actualStart=null;
  if(weekKey===currentWeek)rows=tasks;
@@ -3069,7 +3075,7 @@ function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId){
   actualStart=findSlot(day,duration,startMinutes,0,1440,blockers);
  }
  const type=({career:'job',study:'study',work:'job',personal:'life',language:'language',hobbies:'hobby',other:'other',inbox:'other'})[listId]||'other';
- const task={id:uid(),day,title,type,duration,start:actualStart,done:false,status:'todo',custom:true,fixed:false,note:'',unscheduled:actualStart===null,listId,folderName:defaultFolderName(listId),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
+ const task={id:uid(),day,title,type,duration,start:actualStart,done:false,status:'todo',custom:true,fixed:false,note:'',unscheduled:actualStart===null,listId,folderName:folderNameOverride||defaultFolderName(listId),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
  rows.push(task);
  if(weekKey===currentWeek)saveCurrent();else saveStore();
  renderAll();renderWorkspaceView();
@@ -3083,7 +3089,8 @@ function quickCaptureWorkspaceTask(){
  let listId=defaultCaptureList();
  if(listId==='inbox'&&parsed.timeMatched)listId='other';
  const start=parsed.timeMatched?parsed.timeMinutes:null;
- const result=addCapturedTaskForDate(title,date,start,dueDate,listId);
+ const selectedFolder=workspaceView.startsWith('folder:')?workspaceView.slice(7):null;
+ const result=addCapturedTaskForDate(title,date,start,dueDate,listId,selectedFolder);
  input.value='';
  if(parsed.timeMatched&&result.actualStart===null)showToast('Task captured, but there was no free slot at that time. It needs scheduling.');
  else if(parsed.timeMatched&&result.actualStart!==start)showToast('Task scheduled at '+minsTime(result.actualStart)+' instead because that time was busy.');
