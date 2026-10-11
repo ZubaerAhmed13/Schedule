@@ -2508,6 +2508,8 @@ $('focusResetBtn').addEventListener('click',focusReset);
 $('focusBreakBtn').addEventListener('click',focusTakeBreak);
 $('enableTaskNotificationsBtn').addEventListener('click',enableTaskNotifications);
 renderTaskNotificationSettings();
+$('enableTaskNotificationsBtn').addEventListener('click',enableTaskNotifications);
+renderTaskNotificationSettings();
 $('habitForm').addEventListener('submit',saveHabitForm);
 $('cancelHabitEdit').addEventListener('click',habitFormReset);
 $('habitTrackerList').addEventListener('click',e=>{
@@ -2881,8 +2883,61 @@ function deleteSavedFilter(id){
  renderSavedFilters();showToast('Filter deleted');
 }
 
+
+function renderTaskNotificationSettings(){
+ const button=$('enableTaskNotificationsBtn'),status=$('taskNotificationStatus');if(!button||!status)return;
+ if(!('Notification' in window)){button.disabled=true;button.textContent='Not supported';status.textContent='This browser does not support desktop notifications. In-app task alerts still appear while Weekwise is open.';return;}
+ const permission=Notification.permission;
+ if(permission==='granted'){button.disabled=true;button.textContent='Browser alerts enabled';status.textContent='Browser notifications are enabled. Scheduled task reminders can show a system alert while Weekwise is running.';}
+ else if(permission==='denied'){button.disabled=true;button.textContent='Permission blocked';status.textContent='Browser alerts are blocked by this site. Change Weekwise notification permissions in browser settings; in-app alerts still work while it is open.';}
+ else{button.disabled=false;button.textContent='Enable browser alerts';status.textContent='Task alerts can appear while Weekwise is open. Allow browser notifications for system-level alerts.';}
+}
+async function enableTaskNotifications(){
+ if(!('Notification' in window)){showToast('This browser does not support notifications.');renderTaskNotificationSettings();return;}
+ try{const permission=await Notification.requestPermission();renderTaskNotificationSettings();if(permission==='granted'){showToast('Browser alerts enabled.');checkTaskReminders();}else showToast(permission==='denied'?'Browser alerts are blocked; in-app alerts still work.':'Browser alert permission was not granted.');}
+ catch(_){showToast('Could not request notification permission.');}
+}
+function openReminderTask(record){
+ try{window.focus();}catch(_){}
+ setWorkspaceView('calendar');
+ saveCurrent();
+ mobileDay=record.date.getDay();
+ currentWeek=dateKey(sundayOf(record.date));
+ monthAnchor=new Date(record.date.getFullYear(),record.date.getMonth(),1);
+ calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}
+ loadWeek(currentWeek);
+ const t=tasks.find(x=>x.id===record.task.id);if(t)openTaskModal(t.id,t.day,t.start);
+}
+function checkTaskReminders(){
+ if(document.hidden)return;
+ const currentTime=Date.now(),due=workspaceRecords().filter(record=>{
+  const task=record.task;if(!task||task.done||!task.reminderAt||task.reminderNotifiedAt===task.reminderAt)return false;
+  const at=new Date(task.reminderAt).getTime();return Number.isFinite(at)&&at<=currentTime;
+ });
+ if(!due.length)return;
+ let changedCurrent=false,changedOther=false,fallbackCount=0;
+ due.forEach(record=>{
+  const task=record.task;task.reminderNotifiedAt=task.reminderAt;
+  let sent=false;
+  if('Notification' in window&&Notification.permission==='granted'){
+   try{
+    const notification=new Notification('Weekwise · '+task.title,{body:'Your task reminder is due now.',tag:'weekwise-task-'+task.id+'-'+task.reminderAt});
+    notification.onclick=()=>{try{notification.close();}catch(_){}openReminderTask(record);};
+    sent=true;
+   }catch(_){}
+  }
+  if(!sent)fallbackCount++;
+  if(record.week===currentWeek)changedCurrent=true;else changedOther=true;
+ });
+ if(changedCurrent)saveCurrent();
+ if(changedOther)saveStore();
+ renderAll();
+ if(fallbackCount===1)showToast('Task reminder: '+due.find(record=>record.task.reminderNotifiedAt===record.task.reminderAt)?.task.title);
+ else if(fallbackCount>1)showToast(fallbackCount+' task reminders are due. Open Today or Upcoming to review them.');
+}
+
 setup();
-renderWorkspaceView();renderReminders();nudgeDueReminders();
+renderWorkspaceView();renderReminders();nudgeDueReminders();renderTaskNotificationSettings();checkTaskReminders();setInterval(checkTaskReminders,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkTaskReminders();});window.addEventListener('focus',checkTaskReminders);
 function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}
 setInterval(refreshClock,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClock();});window.addEventListener('focus',refreshClock);
 })();
