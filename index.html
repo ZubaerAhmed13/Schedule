@@ -600,6 +600,29 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
 .reminder-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sticky-note{position:relative;display:flex;flex-direction:column;gap:9px;min-width:0;min-height:126px;padding:13px 12px 10px;border:1px solid rgba(72,80,110,.1);border-radius:5px 13px 12px 13px;box-shadow:0 3px 8px rgba(43,50,84,.07);background:#fff4c8;color:#544b2b}.sticky-note:before{content:"";position:absolute;top:-1px;right:13px;width:36px;height:8px;border-radius:0 0 5px 5px;background:rgba(255,255,255,.7)}.sticky-note.note-purple{background:#f0e8ff;color:#4f3e73}.sticky-note.note-blue{background:#e5f3ff;color:#2e506d}.sticky-note.note-green{background:#e5f7e9;color:#315c3e}.sticky-note.note-pink{background:#ffe7ef;color:#704153}.sticky-note.note-yellow{background:#fff4c8;color:#544b2b}.sticky-note.note-done{opacity:.75}.sticky-note-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.sticky-note-markers{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.sticky-tag{display:inline-flex;align-items:center;border-radius:99px;padding:3px 6px;background:rgba(255,255,255,.64);color:inherit;font-size:9px;font-weight:850}.sticky-pin{border:0;background:transparent;color:inherit;font-size:15px;cursor:pointer;line-height:1;padding:2px 4px}.sticky-note h4{margin:0;font-size:13px;line-height:1.35;overflow-wrap:anywhere}.sticky-note p{margin:0;font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit;opacity:.85}.sticky-note h4.is-done{text-decoration:line-through;opacity:.7}.sticky-note-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:3px}.sticky-note-date{font-size:9px;font-weight:850;opacity:.8}.sticky-note-actions{display:flex;gap:3px}.sticky-note-actions button{border:1px solid rgba(70,77,103,.14);border-radius:7px;background:rgba(255,255,255,.6);color:inherit;padding:5px 7px;font:inherit;font-size:9px;font-weight:800;cursor:pointer}.reminder-empty{grid-column:1/-1;padding:25px 12px;border:1px dashed #d9dff0;border-radius:13px;text-align:center;color:#7d86a1;font-size:11px;background:#fafbff}.reminder-storage-note{margin:12px 0 0;color:#7e87a0;font-size:10px;line-height:1.45}.reminder-list .sticky-note.is-pinned{outline:2px solid rgba(101,97,218,.16)}
 @media(max-width:650px){.reminder-editor-row{grid-template-columns:1fr 1fr}.reminder-pin-input{grid-column:1/-1}.reminder-list{grid-template-columns:1fr}.sticky-note{min-height:105px}.reminder-list-head{align-items:start;flex-direction:column}.reminder-filter-label{width:100%;grid-template-columns:auto 1fr;align-items:center}.reminder-filter-label select{width:100%}}
 
+
+/* Simplified activity entry: templates become ordered suggestions inside the name field. */
+.activity-name-wrap{position:relative;width:100%}
+.activity-name-wrap>input{width:100%}
+.activity-suggestions{position:absolute;z-index:120;top:calc(100% + 5px);left:0;right:0;max-height:240px;overflow:auto;padding:5px;border:1px solid #dce1f3;border-radius:12px;background:#fff;box-shadow:0 12px 28px rgba(38,45,94,.16);display:grid;gap:2px}
+.activity-suggestions[hidden]{display:none!important}
+.activity-suggestion{display:flex;align-items:center;width:100%;padding:10px 11px;border:0;border-radius:8px;background:#fff;color:#303655;text-align:left;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.activity-suggestion:hover,.activity-suggestion:focus-visible{background:#f1f2ff;outline:none;color:#4d52c7}
+.view-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:228px;min-width:0;flex:0 0 228px}
+.view-switch-btn{width:100%;min-width:0;text-align:center;justify-content:center;padding-left:6px;padding-right:6px}
+.calendar-create-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+#calendarInstruction[hidden]{display:none!important}
+@media(max-width:650px){
+ .view-switch{order:4;width:100%;max-width:none;flex:1 1 100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .calendar-create-actions{gap:4px}
+ .calendar-create-actions .btn{padding:7px 8px;font-size:10px}
+}
+@media(max-width:390px){
+ .calendar-create-actions .btn{font-size:9px;padding:7px 6px}
+ .view-switch{gap:2px}
+ .view-switch-btn{font-size:11px;padding:6px 4px}
+}
+
 </style>
 </head>
 <body>
@@ -629,7 +652,7 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
     <div class="calendar-heading">
       <div class="eyebrow">YOUR PERSONAL PLANNER</div>
       <h2>Calendar</h2>
-      <p class="calendar-instruction" id="calendarInstruction">Tap an event to edit it. Tap an empty time to add one. Times are 24-hour.</p>
+      <p class="calendar-instruction" id="calendarInstruction" hidden></p>
     </div>
     <div class="calendar-actions">
       <div class="view-switch" role="group" aria-label="Calendar view">
@@ -643,7 +666,7 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
         <button class="btn nav-square" id="nextWeek" aria-label="Next week" title="Next week">›</button>
       </div>
       <strong class="weeklabel" id="weekLabel">Week of …</strong>
-      <button class="btn primary" id="addTaskBtn">＋ New event</button>
+      <div class="calendar-create-actions"><button class="btn" id="remindersQuickBtn" type="button">＋ Reminder</button><button class="btn primary" id="addTaskBtn" type="button">＋ New event</button></div>
     </div>
   </section>
 
@@ -748,24 +771,8 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
 </div>
 
 <div class="modalback" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal"><h3 id="modalTitle">Add an activity</h3><p id="modalDescription">Choose the day, start time, and duration. Enter times as HH:MM (for example, 17:30). You can type 1730 and it will format automatically.</p><form id="taskForm"><input type="hidden" id="editTaskId" />
-  <section class="activity-template-section" id="activityTemplatePicker" aria-label="Activity templates">
-    <div class="activity-template-head"><div><strong>Start with a template</strong><small>Choose one to fill in the form, then adjust anything before saving.</small></div></div>
-    <div class="activity-template-grid" id="activityTemplateGrid">
-      <button type="button" class="activity-template-card" data-template="german" aria-pressed="false"><span class="activity-template-emoji">🇩🇪</span><span class="activity-template-copy"><span class="activity-template-name">German</span><span class="activity-template-meta">30 min · language</span></span></button>
-      <button type="button" class="activity-template-card" data-template="english" aria-pressed="false"><span class="activity-template-emoji">🗣️</span><span class="activity-template-copy"><span class="activity-template-name">English fluency</span><span class="activity-template-meta">20 min · speaking</span></span></button>
-      <button type="button" class="activity-template-card" data-template="jobs" aria-pressed="false"><span class="activity-template-emoji">💼</span><span class="activity-template-copy"><span class="activity-template-name">Job applications</span><span class="activity-template-meta">75 min · career</span></span></button>
-      <button type="button" class="activity-template-card" data-template="workday" aria-pressed="false"><span class="activity-template-emoji">🧑‍💼</span><span class="activity-template-copy"><span class="activity-template-name">Work day</span><span class="activity-template-meta">Uses your shift hours</span></span></button>
-      <button type="button" class="activity-template-card" data-template="class" aria-pressed="false"><span class="activity-template-emoji">🎓</span><span class="activity-template-copy"><span class="activity-template-name">Class / coursework</span><span class="activity-template-meta">Your saved class template</span></span></button>
-      <button type="button" class="activity-template-card" data-template="cooking" aria-pressed="false"><span class="activity-template-emoji">🍳</span><span class="activity-template-copy"><span class="activity-template-name">Cooking</span><span class="activity-template-meta">60 min · home</span></span></button>
-      <button type="button" class="activity-template-card" data-template="cleaning" aria-pressed="false"><span class="activity-template-emoji">🧹</span><span class="activity-template-copy"><span class="activity-template-name">Cleaning</span><span class="activity-template-meta">10 min · reset</span></span></button>
-      <button type="button" class="activity-template-card" data-template="cycling" aria-pressed="false"><span class="activity-template-emoji">🚲</span><span class="activity-template-copy"><span class="activity-template-name">Cycling</span><span class="activity-template-meta">60 min · hobby</span></span></button>
-      <button type="button" class="activity-template-card" data-template="movies" aria-pressed="false"><span class="activity-template-emoji">🎬</span><span class="activity-template-copy"><span class="activity-template-name">Movies & rest</span><span class="activity-template-meta">2 hours · downtime</span></span></button>
-      <button type="button" class="activity-template-card" data-template="communication" aria-pressed="false"><span class="activity-template-emoji">💬</span><span class="activity-template-copy"><span class="activity-template-name">Communication skills</span><span class="activity-template-meta">15 min · practice</span></span></button>
-    </div>
-    <p class="activity-template-help" id="activityTemplateHelp">Templates only prefill the fields. Your activity is added when you press Save activity. Work day blocks already configured in settings are not duplicated.</p>
-  </section>
   <div class="modalgrid">
-  <div class="field" style="grid-column:1/-1"><label for="modalTitleInput">Activity name</label><input id="modalTitleInput" required maxlength="100" placeholder="e.g. Review lecture notes" /></div>
+  <div class="field activity-name-field" style="grid-column:1/-1"><label for="modalTitleInput">Activity name</label><div class="activity-name-wrap"><input id="modalTitleInput" required maxlength="100" placeholder="Type an activity or choose a suggestion" autocomplete="off" aria-autocomplete="list" aria-controls="activitySuggestions" aria-expanded="false" /><div class="activity-suggestions" id="activitySuggestions" role="listbox" aria-label="Activity suggestions" hidden></div></div></div>
   <div class="field"><label for="modalDay">Day</label><select id="modalDay"></select></div>
   <div class="field"><label for="modalCategory">Category</label><select id="modalCategory"><option value="job">Career</option><option value="study">Coursework</option><option value="language">Language</option><option value="life">Home / personal</option><option value="hobby">Hobby</option><option value="other">Other</option></select></div>
   <div class="field"><label for="modalTime">Start time</label><input id="modalTime" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="10:00" value="10:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /></div>
@@ -799,6 +806,7 @@ const STORE_KEY='weekwise-planner-v2';
 const REMINDERS_KEY='weekwise-reminders-v1';
 const $=id=>document.getElementById(id);
 let now=new Date();
+function nextQuarterHour(){const minutes=now.getHours()*60+now.getMinutes();return Math.min(23*60+45,Math.ceil(minutes/15)*15);}
 function dateOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function sundayOf(d){const x=dateOnly(d);x.setDate(x.getDate()-x.getDay());return x;}
 function mondayOf(d){const x=dateOnly(d);const mon=(x.getDay()+6)%7;x.setDate(x.getDate()-mon);return x;}
@@ -1015,7 +1023,7 @@ function renderDays(){
   const alreadyRendered=grid.dataset.hasRendered==='true';
   const mobileMode=window.matchMedia('(max-width: 650px)').matches;
   const singleDay=calendarView==='day';
-  const instruction=$('calendarInstruction');if(instruction)instruction.textContent=singleDay?'Day view: tap an event to edit it or an empty time to add one. Use ‹ and › to move between days.':'Week view: tap an event to edit it; tap an empty time to add one. Drag events on desktop. Times use the 24-hour clock.';
+  const instruction=$('calendarInstruction');if(instruction){instruction.textContent='';instruction.hidden=true;}
   const hourHeight=56;
   grid.setAttribute('aria-label',singleDay?'Daily calendar':'Weekly calendar');
   updateViewControls();
@@ -1066,7 +1074,7 @@ function renderDays(){
       const firstLeft=firstRect.left-gridRect.left;
       const todayLeft=todayRect.left-gridRect.left;
       const todayWidth=todayRect.width;
-      const y=todayRect.top-gridRect.top+(now.getHours()*60+now.getMinutes())/60*hourHeight;
+      const y=todayRect.top-gridRect.top+grid.scrollTop+(now.getHours()*60+now.getMinutes())/60*hourHeight;
       const leadWidth=Math.max(0,todayLeft-firstLeft);
       const indicator=document.createElement('div');
       indicator.className='now-week-indicator';
@@ -1352,24 +1360,41 @@ function chooseActivityTemplate(key){
   $('modalTime').value=preset.start;
   updateEndTimeFromDuration();
   $('modalNote').value=preset.note||'';
-  document.querySelectorAll('[data-template]').forEach(button=>button.setAttribute('aria-pressed',button.dataset.template===key?'true':'false'));
-  $('activityTemplateHelp').textContent=key==='class'?'Class / coursework uses your saved class name, duration, and preferred time. This adds one session; recurring days are controlled by your class template.':key==='workday'?'Work day uses your configured shift length and start time, but adds one editable activity. Recurring protected shifts are managed in Work day settings.':'Template applied. You can edit the name, day, category, duration, start time, and note below before saving.';
-  $('modalTitleInput').focus();
+  selectedActivitySuggestion=key;hideActivitySuggestions();$('modalTitleInput').focus();
 }
-function clearActivityTemplateSelection(){
-  document.querySelectorAll('[data-template]').forEach(button=>button.setAttribute('aria-pressed','false'));
-  const help=$('activityTemplateHelp');if(help)help.textContent='Templates only prefill the fields. Your activity is added when you press Save activity. Work day blocks already configured in settings are not duplicated.';
+let selectedActivitySuggestion=null;
+const ACTIVITY_SUGGESTIONS=[
+ {key:'german',label:'German practice'},
+ {key:'english',label:'English fluency practice'},
+ {key:'jobs',label:'Job applications & follow-ups'},
+ {key:'workday',label:'Work day'},
+ {key:'class',label:'Class / coursework'},
+ {key:'cooking',label:'Cooking'},
+ {key:'cleaning',label:'Cleaning'},
+ {key:'cycling',label:'Cycling'},
+ {key:'movies',label:'Movies & rest'},
+ {key:'communication',label:'Communication skills'}
+];
+function hideActivitySuggestions(){const list=$('activitySuggestions'),input=$('modalTitleInput');if(list)list.hidden=true;if(input)input.setAttribute('aria-expanded','false');}
+function renderActivitySuggestions(query=''){
+ const list=$('activitySuggestions'),input=$('modalTitleInput');if(!list||!input)return;
+ const q=String(query||'').trim().toLowerCase();
+ const options=ACTIVITY_SUGGESTIONS.filter(x=>!q||x.label.toLowerCase().includes(q)||String(ACTIVITY_TEMPLATE_PRESETS[x.key]?.title||'').toLowerCase().includes(q));
+ if(!options.length){hideActivitySuggestions();return;}
+ list.innerHTML=options.map(x=>'<button type="button" class="activity-suggestion" role="option" aria-label="'+escapeHtml(x.label)+'" data-activity-suggestion="'+x.key+'">'+escapeHtml(x.label)+'</button>').join('');
+ list.hidden=false;input.setAttribute('aria-expanded','true');
+ list.querySelectorAll('[data-activity-suggestion]').forEach(button=>{button.addEventListener('pointerdown',e=>e.preventDefault());button.addEventListener('click',()=>chooseActivityTemplate(button.dataset.activitySuggestion));});
 }
-function openTaskModal(id=null,day=mobileDay,startAt=600){
+function clearActivityTemplateSelection(){selectedActivitySuggestion=null;hideActivitySuggestions();}
+function openTaskModal(id=null,day=mobileDay,startAt=null){
   const modal=$('taskModal');const t=id?tasks.find(t=>t.id===id):null;
-  $('editTaskId').value=t?.id||'';$('activityTemplatePicker').hidden=!!t;if(!t)clearActivityTemplateSelection();$('modalTitle').textContent=t?'Edit activity':'Add an activity';
+  $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit activity':'Add an activity';
   $('modalDescription').textContent=t?'To move this activity, choose a new day and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the day, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   const durationSelect=$('modalDuration'),duration=String(t?.duration||30);
   if(!Array.from(durationSelect.options).some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=durationLabel(Number(duration));durationSelect.add(option);}
-  durationSelect.value=duration;$('modalTime').value=minsTime(t?.start??startAt);updateEndTimeFromDuration();$('modalNote').value=t?.note||'';
+  durationSelect.value=duration;const chosenStart=t?.start??(startAt===null||startAt===undefined?nextQuarterHour():startAt);$('modalTime').value=minsTime(chosenStart);updateEndTimeFromDuration();$('modalNote').value=t?.note||'';
   $('saveTaskBtn').textContent=t?'Save changes':'Save activity';$('deleteTaskBtn').style.display=t&&!t.fixed?'inline-flex':'none';
-  updateActivityTemplateStates();
   modal.classList.add('show');setTimeout(()=>$('modalTitleInput').focus(),30);
 }
 function closeTaskModal(){$('taskModal').classList.remove('show');}
@@ -1430,7 +1455,7 @@ function setCalendarView(view){if(view!=='day'&&view!=='week')return;if(calendar
 function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBtn');if(dayBtn){dayBtn.classList.toggle('active',calendarView==='day');dayBtn.setAttribute('aria-pressed',calendarView==='day'?'true':'false');}if(weekBtn){weekBtn.classList.toggle('active',calendarView==='week');weekBtn.setAttribute('aria-pressed',calendarView==='week'?'true':'false');}const prev=$('prevWeek'),next=$('nextWeek');if(prev){prev.title=calendarView==='day'?'Previous day':'Previous week';prev.setAttribute('aria-label',prev.title);}if(next){next.title=calendarView==='day'?'Next day':'Next week';next.setAttribute('aria-label',next.title);}}
 function shiftPeriod(n){if(calendarView!=='day'){shiftWeeks(n);return;}const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));}
 function addQuick(e){e.preventDefault();const title=$('quickTitle').value.trim();if(!title)return;if(!validateTimeFields(['quickTime']))return;const day=Number($('quickDay').value),type=$('quickType').value,duration=Number($('quickDuration').value),preferred=timeMins($('quickTime').value||'10:00');createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true});const t=tasks[tasks.length-1];t.unscheduled=t.start===null;saveCurrent();renderAll();$('quickTitle').value='';showToast(t.start===null?'Added to the day, but needs a time':'Activity added to your week');}
-function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,10*60));$('activityTemplateGrid').addEventListener('click',e=>{const button=e.target.closest('[data-template]');if(!button)return;if(button.getAttribute('aria-disabled')==='true'){showToast(`A Work day block is already scheduled for ${DAY_NAMES[Number($('modalDay').value)]}. Choose a non-workday or edit Work day settings.`);return;}chooseActivityTemplate(button.dataset.template);});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});}
+function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});}
 
 /* Optional visual gaps, monthly calendar, and week-selectable dashboard. */
 const weekwiseOriginalRenderDays=renderDays;
@@ -1459,7 +1484,7 @@ function weekwiseRenderMonth(){
   const ev=e.target.closest('[data-month-event]');
   if(ev){e.preventDefault();e.stopPropagation();const date=parseKey(ev.dataset.monthDate),id=ev.dataset.monthEvent;saveCurrent();mobileDay=date.getDay();currentWeek=dateKey(sundayOf(date));loadWeek(currentWeek);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}renderAll();const item=tasks.find(function(t){return t.id===id;});if(item){if(item.fixed)openFixedSettings(id);else openTaskModal(id);}return;}
   const cell=e.target.closest('[data-month-day]');
-  if(cell){const date=parseKey(cell.dataset.monthDay);saveCurrent();mobileDay=date.getDay();monthAnchor=new Date(date.getFullYear(),date.getMonth(),1);currentWeek=dateKey(sundayOf(date));loadWeek(currentWeek);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}renderAll();openTaskModal(null,mobileDay,10*60);}
+  if(cell){const date=parseKey(cell.dataset.monthDay);saveCurrent();mobileDay=date.getDay();monthAnchor=new Date(date.getFullYear(),date.getMonth(),1);currentWeek=dateKey(sundayOf(date));loadWeek(currentWeek);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}renderAll();openTaskModal(null,mobileDay,dateKey(date)===dateKey(now)?nextQuarterHour():10*60);}
  };
  grid.onkeydown=function(e){if(calendarView!=='month'||(e.key!=='Enter'&&e.key!==' '))return;const cell=e.target.closest('[data-month-day]');if(cell&&!e.target.closest('[data-month-event]')){e.preventDefault();cell.click();}};
 }
@@ -1527,7 +1552,8 @@ $('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFu
 
 setup();
 renderReminders();nudgeDueReminders();
-setInterval(()=>{const fresh=new Date();if(fresh.getMinutes()!==now.getMinutes()||dateKey(fresh)!==dateKey(now)){const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}},15000);
+function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}
+setInterval(refreshClock,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClock();});window.addEventListener('focus',refreshClock);
 })();
 </script>
 <script>
