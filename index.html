@@ -2641,6 +2641,7 @@ $('savedFilterResults').addEventListener('click',e=>{
  const del=e.target.closest('[data-workspace-delete]');if(del)updateWorkspaceRecord(del.dataset.workspaceDelete,del.dataset.workspaceWeek,'delete');
 });
 $('savedFilterResults').addEventListener('change',e=>{
+ const sub=e.target.closest('[data-workspace-subtask]');if(sub){updateWorkspaceRecord(sub.dataset.workspaceSubtask,sub.dataset.workspaceWeek,'toggle-subtask',Number(sub.dataset.workspaceSubtaskIndex));return;}
  const control=e.target.closest('[data-workspace-done]');if(control)updateWorkspaceRecord(control.dataset.workspaceDone,control.dataset.workspaceWeek,'toggle');
 });
 $('priorityMatrix').addEventListener('change',e=>{const c=e.target.closest('[data-matrix-done]');if(c)updateWorkspaceRecord(c.dataset.matrixDone,c.dataset.matrixWeek,'toggle');});
@@ -2650,8 +2651,6 @@ $('focusPreset').addEventListener('change',()=>{if(!focusRunning){focusInitialSe
 $('focusStartBtn').addEventListener('click',focusStartPause);
 $('focusResetBtn').addEventListener('click',focusReset);
 $('focusBreakBtn').addEventListener('click',focusTakeBreak);
-$('enableTaskNotificationsBtn').addEventListener('click',enableTaskNotifications);
-renderTaskNotificationSettings();
 $('enableTaskNotificationsBtn').addEventListener('click',enableTaskNotifications);
 renderTaskNotificationSettings();
 $('habitForm').addEventListener('submit',saveHabitForm);
@@ -2800,7 +2799,7 @@ function upsertRecurringTemplate(id,occurrenceDate,fields){
  const reminderOffsetDays=fields.reminderAt?Math.round((parseKey(fields.reminderAt.slice(0,10))-parseKey(occurrenceDate))/86400000):null;
  const reminderTime=fields.reminderAt?fields.reminderAt.slice(11,16):null;
  let template=store.recurringTemplates.find(item=>item.id===id);
- const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,allDay:!!fields.allDay,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:fields.status||'todo',importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,allDay:!!fields.allDay,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:'todo',importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
  if(template)Object.assign(template,value);else{template=value;store.recurringTemplates.push(template);}
  return template;
 }
@@ -2827,7 +2826,7 @@ function materializeRecurringRange(rangeStart,rangeEnd){
    }
    const dueDate=template.dueOffsetDays===null||template.dueOffsetDays===undefined?null:addDaysToKey(occurrenceDate,Number(template.dueOffsetDays)||0);
    const reminderAt=template.reminderOffsetDays===null||template.reminderOffsetDays===undefined||!template.reminderTime?null:addDaysToKey(occurrenceDate,Number(template.reminderOffsetDays)||0)+'T'+template.reminderTime;
-   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status||template.status||'todo'),custom:true,fixed:false,note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderNotifiedAt:existing?.reminderNotifiedAt===reminderAt?reminderAt:null,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),custom:true,fixed:false,note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderNotifiedAt:existing?.reminderNotifiedAt===reminderAt?reminderAt:null,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
    if(existing)Object.assign(existing,values);
    else rows.push({id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values});
   }
