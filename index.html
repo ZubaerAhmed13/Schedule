@@ -634,6 +634,27 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
 .cloud-conflict p{margin:5px 0 0;color:#776b50}
 .cloud-footnote{margin:13px 0 0;color:#7b849c;font-size:10px;line-height:1.5}
 #cloudPanel[open] .inside{padding-top:13px}
+.cloud-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid #e5e7f4;border-radius:13px;background:#f5f6fc}
+.cloud-auth-tab{border:0;border-radius:9px;background:transparent;padding:9px 10px;color:#747b92;font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.cloud-auth-tab.active{background:#fff;color:#4f55c7;box-shadow:0 2px 7px rgba(45,50,95,.1)}
+.cloud-auth-intro{margin:13px 0;color:#68718c;font-size:11px;line-height:1.5}
+.cloud-auth-fields{display:grid;grid-template-columns:1fr;gap:12px}
+.cloud-auth-fields .field{min-width:0}
+.cloud-auth-fields .field label{display:block;margin-bottom:5px;font-size:11px;font-weight:750;color:#404864}
+.cloud-auth-fields input{width:100%;min-width:0;border:1px solid #dfe3f0;border-radius:10px;background:#fff;padding:11px 12px;color:#29314c;font:inherit;font-size:12px;box-sizing:border-box}
+.cloud-auth-fields input:focus{outline:none;border-color:#8287f1;box-shadow:0 0 0 3px rgba(101,105,224,.12)}
+.cloud-password-wrap{position:relative;display:flex;align-items:center}
+.cloud-password-wrap input{padding-right:70px}
+.cloud-password-toggle{position:absolute;right:7px;border:0;background:#f4f5fc;border-radius:7px;padding:6px 8px;color:#585f92;font:inherit;font-size:10px;font-weight:800;cursor:pointer}
+.cloud-auth-options{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px}
+.cloud-auth-options span{font-size:10px;line-height:1.4;color:#858ba0}
+.cloud-text-button{border:0;background:transparent;padding:5px 0;color:#585cc8;font:inherit;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap}
+.cloud-form-actions .cloud-submit{width:100%;justify-content:center;margin-top:4px}
+.cloud-status[data-tone="error"]{color:#8d3340;background:#fff0f1;border-color:#ffd7dc}
+.cloud-status[data-tone="success"]{color:#216647;background:#edf9f2;border-color:#d5f0e0}
+.cloud-status[data-tone="loading"]{color:#4c548e;background:#f4f5ff;border-color:#e4e6fb}
+.cloud-auth-tab:disabled,.cloud-form-actions .btn:disabled,.cloud-password-toggle:disabled{opacity:.58;cursor:wait}
+@media(max-width:650px){.cloud-auth-options{align-items:flex-start}.cloud-auth-options span{max-width:60%}.cloud-auth-fields input{font-size:16px}}
 
 </style>
 </head>
@@ -645,16 +666,16 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
       <details class="more-actions" id="moreActions">
         <summary class="btn more-trigger" aria-label="More options" title="More options">•••</summary>
         <div class="more-panel" role="menu" aria-label="Weekwise options">
-          <button class="btn" id="dashboardMenuBtn" role="menuitem">Weekly effort dashboard</button>
+          <button class="btn" id="menuQuickAddBtn" role="menuitem">Quick add activity</button>
           <button class="btn reminders-menu-button" id="remindersMenuBtn" role="menuitem">Reminders & sticky notes <span id="reminderBadge" class="reminder-badge" hidden>0</span></button>
           <button class="btn reminders-menu-button" id="cloudMenuBtn" role="menuitem">Cloud sync & account <span id="cloudMenuBadge" class="reminder-badge">Local</span></button>
+          <button class="btn" id="dashboardMenuBtn" role="menuitem">Weekly effort dashboard</button>
           <button class="btn" id="menuSettingsBtn" role="menuitem">Work day & weekly settings</button>
-          <button class="btn" id="menuQuickAddBtn" role="menuitem">Quick add activity</button>
           <button class="btn" id="menuHabitsBtn" role="menuitem">Habits & focus tips</button>
           <hr class="menu-divider">
-          <button class="btn" id="printBtn" role="menuitem">Print calendar</button>
           <button class="btn" id="exportBtn" role="menuitem">Export backup</button>
           <button class="btn" id="importBtn" role="menuitem">Import backup</button>
+          <button class="btn" id="printBtn" role="menuitem">Print calendar</button>
           <input type="file" id="importFile" accept="application/json,.json" hidden>
         </div>
       </details>
@@ -728,11 +749,18 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
     <div class="inside">
       <p id="cloudStatus" class="cloud-status" role="status" aria-live="polite">Weekwise is using this browser only.</p>
       <form id="cloudAuthForm" class="cloud-auth-form">
-        <div class="formgrid">
-          <div class="field"><label for="cloudEmail">Email</label><input id="cloudEmail" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></div>
-          <div class="field"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="At least 8 characters"></div>
+        <div class="cloud-auth-tabs" role="tablist" aria-label="Account access">
+          <button class="cloud-auth-tab active" id="cloudSignInMode" type="button" role="tab" aria-selected="true">Sign in</button>
+          <button class="cloud-auth-tab" id="cloudSignUpBtn" type="button" role="tab" aria-selected="false">Create account</button>
         </div>
-        <div class="cloud-form-actions"><button class="btn primary" id="cloudSignInBtn" type="submit">Sign in</button><button class="btn" id="cloudSignUpBtn" type="button">Create account</button></div>
+        <p class="cloud-auth-intro" id="cloudAuthIntro">Sign in to keep your Weekwise schedule synced across your devices.</p>
+        <div class="cloud-auth-fields">
+          <div class="field"><label for="cloudEmail">Email address</label><input id="cloudEmail" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></div>
+          <div class="field"><label for="cloudPassword" id="cloudPasswordLabel">Password</label><div class="cloud-password-wrap"><input id="cloudPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="Enter your password"><button type="button" id="cloudTogglePassword" class="cloud-password-toggle" aria-label="Show password" aria-pressed="false">Show</button></div></div>
+          <div class="field" id="cloudConfirmPasswordWrap" hidden><label for="cloudConfirmPassword">Confirm password</label><input id="cloudConfirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Re-enter your password"></div>
+        </div>
+        <div class="cloud-auth-options"><span id="cloudPasswordHint">Use your Weekwise account details.</span><button type="button" class="cloud-text-button" id="cloudForgotPassword">Forgot password?</button></div>
+        <div class="cloud-form-actions"><button class="btn primary cloud-submit" id="cloudSignInBtn" type="submit">Sign in</button></div>
       </form>
       <div id="cloudSignedIn" hidden>
         <p class="cloud-account-line">Signed in as <strong id="cloudUserEmail"></strong></p>
@@ -1496,11 +1524,12 @@ function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('w
 function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||settingsChanged;}
 function readCloudMeta(){try{return JSON.parse(localStorage.getItem(CLOUD_META_KEY)||'null');}catch(_){return null;}}
 function writeCloudMeta(revision,payload){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify({userId:cloudUser?.id||'',revision:Number(revision)||0,fingerprint:cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}catch(_){}}
-function setCloudStatus(message){const el=$('cloudStatus');if(el)el.textContent=message;const badge=$('cloudMenuBadge');if(badge){badge.textContent=cloudUser?(cloudReady?'Synced':'Account'):'Local';badge.title=message;}}
+function setCloudStatus(message){const el=$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=$('cloudMenuBadge');if(badge){badge.textContent=cloudUser?(cloudReady?'Synced':'Account'):'Local';badge.title=message;}}
 function renderCloudPanel(){
  const form=$('cloudAuthForm'),signed=$('cloudSignedIn'),email=$('cloudUserEmail'),conflict=$('cloudConflict');
- if(form)form.hidden=!!cloudUser;
- if(signed)signed.hidden=!cloudUser;
+ const recovery=cloudAuthMode==='recovery';
+ if(form)form.hidden=!!cloudUser&&!recovery;
+ if(signed)signed.hidden=!cloudUser||recovery;
  if(email)email.textContent=cloudUser?.email||'';
  if(conflict)conflict.hidden=!cloudConflict;
  if(!cloudClient)setCloudStatus('Cloud sign-in is unavailable because the Supabase library did not load. Local planning still works.');
@@ -1597,38 +1626,144 @@ async function startCloudForUser(user,force=false){
  try{return await cloudInitPromise;}finally{cloudInitPromise=null;cloudInitializationUser=null;}
 }
 async function initializeCloud(){
+ setCloudAuthMode('signin',false);
  if(!cloudClient){renderCloudPanel();setCloudStatus('Cloud library unavailable. Weekwise still saves locally. Check your internet connection and reload to enable cloud sync.');return;}
  try{
   const {data:{session}}=await cloudClient.auth.getSession();
   if(session?.user)await startCloudForUser(session.user);
   cloudClient.auth.onAuthStateChange((event,session)=>{
    setTimeout(()=>{
+    if(event==='PASSWORD_RECOVERY'&&session?.user){cloudUser=session.user;setCloudAuthMode('recovery');openCloudPanel();return;}
     if(session?.user)startCloudForUser(session.user).catch(()=>{});
     else{cloudUser=null;cloudReady=false;cloudRevision=0;cloudConflict=null;if(cloudSyncTimer)clearTimeout(cloudSyncTimer);renderCloudPanel();setCloudStatus('Signed out. Your schedules remain saved on this device.');}
    },0);
   });
  }catch(error){console.error(error);setCloudStatus('Could not check cloud sign-in. Local planning still works.');}
 }
+
+let cloudAuthMode='signin',cloudAuthBusy=false;
+function setCloudAuthMode(mode,resetStatus=true){
+ cloudAuthMode=['signin','signup','recovery'].includes(mode)?mode:'signin';
+ const signup=cloudAuthMode==='signup',recovery=cloudAuthMode==='recovery';
+ const signInTab=$('cloudSignInMode'),signUpTab=$('cloudSignUpBtn'),tabs=document.querySelector('.cloud-auth-tabs');
+ if(signInTab){signInTab.classList.toggle('active',cloudAuthMode==='signin');signInTab.setAttribute('aria-selected',cloudAuthMode==='signin'?'true':'false');}
+ if(signUpTab){signUpTab.classList.toggle('active',signup);signUpTab.setAttribute('aria-selected',signup?'true':'false');}
+ if(tabs)tabs.hidden=recovery;
+ $('cloudAuthIntro').textContent=recovery?'Choose a new password for your Weekwise account.':signup?'Create one account to access the same schedules and reminders on all your devices.':'Sign in to keep your Weekwise schedule synced across your devices.';
+ $('cloudSignInBtn').textContent=recovery?'Update password':signup?'Create account':'Sign in';
+ $('cloudPasswordLabel').textContent=recovery?'New password':'Password';
+ $('cloudPassword').placeholder=recovery?'Choose a new password':signup?'At least 8 characters':'Enter your password';
+ $('cloudPassword').autocomplete=signup||recovery?'new-password':'current-password';
+ $('cloudConfirmPasswordWrap').hidden=!(signup||recovery);
+ $('cloudConfirmPassword').required=signup||recovery;
+ $('cloudConfirmPassword').autocomplete='new-password';
+ $('cloudForgotPassword').hidden=signup||recovery;
+ $('cloudPasswordHint').textContent=recovery?'Use at least 8 characters.':signup?'Use at least 8 characters and confirm it below.':'Use your Weekwise account details.';
+ if(!signup&&!recovery)$('cloudConfirmPassword').value='';
+ if(resetStatus)setCloudStatus(recovery?'Enter and confirm your new password.':signup?'Create a Weekwise account with your email.':'Sign in to sync schedules across devices.');
+ renderCloudPanel();
+}
+function setCloudAuthBusy(busy){
+ cloudAuthBusy=busy;
+ ['cloudEmail','cloudPassword','cloudConfirmPassword','cloudSignInBtn','cloudSignUpBtn','cloudSignInMode','cloudForgotPassword','cloudTogglePassword'].forEach(id=>{const el=$(id);if(el)el.disabled=busy;});
+ const button=$('cloudSignInBtn');
+ if(button&&busy){button.dataset.previousLabel=button.textContent;button.textContent=cloudAuthMode==='signup'?'Creating account…':cloudAuthMode==='recovery'?'Updating password…':'Signing in…';}
+ else if(button&&!busy){button.textContent=cloudAuthMode==='signup'?'Create account':cloudAuthMode==='recovery'?'Update password':'Sign in';}
+}
+function validateCloudPassword(){
+ const password=$('cloudPassword').value,confirmation=$('cloudConfirmPassword').value;
+ if(password.length<8){setCloudStatus('Use a password with at least 8 characters.');$('cloudPassword').focus();return false;}
+ if((cloudAuthMode==='signup'||cloudAuthMode==='recovery')&&password!==confirmation){setCloudStatus('The passwords do not match. Please check both fields.');$('cloudConfirmPassword').focus();return false;}
+ return true;
+}
 async function cloudSignIn(){
- if(!cloudClient){setCloudStatus('Cloud library unavailable.');return;}
+ if(!cloudClient){setCloudStatus('Cloud library unavailable. Your local schedules are still saved.');return;}
  const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
  if(!email||!password){$('cloudAuthForm').reportValidity();return;}
- setCloudStatus('Signing in…');
- const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
- if(error){setCloudStatus('Sign-in failed: '+error.message);return;}
- if(data?.user)await startCloudForUser(data.user,true);
+ setCloudAuthBusy(true);setCloudStatus('Signing in…');
+ try{
+  const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
+  if(error){
+   const message=error.message||'Please try again.';
+   if(/email not confirmed/i.test(message))setCloudStatus('Your email is not confirmed yet. Open the confirmation email from Supabase, then return and sign in.');
+   else if(/invalid login credentials/i.test(message))setCloudStatus('Email or password is incorrect. Check your details or use Forgot password.');
+   else setCloudStatus('Sign-in failed: '+message);
+   return;
+  }
+  if(data?.user){cloudUser=data.user;await startCloudForUser(data.user,true);setCloudStatus('Signed in. Checking your latest schedules…');}
+ }catch(error){setCloudStatus('Could not sign in: '+(error?.message||'Please try again.'));}
+ finally{setCloudAuthBusy(false);}
 }
 async function cloudSignUp(){
- if(!cloudClient){setCloudStatus('Cloud library unavailable.');return;}
- const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
- if(!email||!password){$('cloudAuthForm').reportValidity();return;}
- if(password.length<8){setCloudStatus('Use a password of at least 8 characters.');return;}
- setCloudStatus('Creating your Weekwise account…');
- const {data,error}=await cloudClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
- if(error){setCloudStatus('Account creation failed: '+error.message);return;}
- if(data?.session&&data?.user){await startCloudForUser(data.user,true);}
- else{setCloudStatus('Check your email for the confirmation link. After confirming, return here and sign in. Add the Weekwise site URL to Supabase Auth → URL Configuration if the confirmation link is rejected.');}
+ if(!cloudClient){setCloudStatus('Cloud library unavailable. Your local schedules are still saved.');return;}
+ const email=$('cloudEmail').value.trim();
+ if(!email){$('cloudAuthForm').reportValidity();return;}
+ if(!validateCloudPassword())return;
+ setCloudAuthBusy(true);setCloudStatus('Creating your Weekwise account…');
+ try{
+  const {data,error}=await cloudClient.auth.signUp({email,password:$('cloudPassword').value,options:{emailRedirectTo:location.origin+location.pathname}});
+  if(error){setCloudStatus('Account creation failed: '+(error.message||'Please try again.'));return;}
+  if(data?.session&&data?.user){
+   cloudUser=data.user;await startCloudForUser(data.user,true);setCloudStatus('Account created. Your Weekwise cloud is ready.');
+  }else{
+   setCloudStatus('Account created. Check your inbox and spam folder for the confirmation link, then return here to sign in. If the link fails, add the Weekwise site address to Supabase Authentication → URL Configuration.');
+   setCloudAuthMode('signin',false);
+  }
+ }catch(error){setCloudStatus('Could not create your account: '+(error?.message||'Please try again.'));}
+ finally{setCloudAuthBusy(false);}
 }
+async function cloudResetPassword(){
+ if(!cloudClient){setCloudStatus('Cloud library unavailable.');return;}
+ const email=$('cloudEmail').value.trim();
+ if(!email){setCloudStatus('Enter your email address first, then choose Forgot password.');$('cloudEmail').focus();return;}
+ setCloudAuthBusy(true);setCloudStatus('Sending password-reset link…');
+ try{
+  const {error}=await cloudClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  if(error)throw error;
+  setCloudStatus('Password-reset email sent if that account exists. Check your inbox and spam folder.');
+ }catch(error){setCloudStatus('Could not send reset email: '+(error?.message||'Please try again.'));}
+ finally{setCloudAuthBusy(false);}
+}
+async function cloudUpdatePassword(){
+ if(!cloudClient||!cloudUser){setCloudStatus('Open the password-reset link from your email again to continue.');return;}
+ if(!validateCloudPassword())return;
+ setCloudAuthBusy(true);setCloudStatus('Updating your password…');
+ try{
+  const {error}=await cloudClient.auth.updateUser({password:$('cloudPassword').value});
+  if(error)throw error;
+  $('cloudPassword').value='';$('cloudConfirmPassword').value='';
+  setCloudAuthMode('signin',false);setCloudStatus('Password updated successfully.');
+  renderCloudPanel();
+ }catch(error){setCloudStatus('Could not update password: '+(error?.message||'Please try again.'));}
+ finally{setCloudAuthBusy(false);}
+}
+async function submitCloudAuth(){
+ if(cloudAuthBusy)return;
+ if(cloudAuthMode==='signup')return cloudSignUp();
+ if(cloudAuthMode==='recovery')return cloudUpdatePassword();
+ return cloudSignIn();
+}
+function wireCloudAuthControls(){
+ $('cloudSignInMode').addEventListener('click',()=>setCloudAuthMode('signin'));
+ $('cloudSignUpBtn').addEventListener('click',()=>setCloudAuthMode('signup'));
+ $('cloudForgotPassword').addEventListener('click',cloudResetPassword);
+ $('cloudTogglePassword').addEventListener('click',()=>{
+  const input=$('cloudPassword'),show=input.type==='password';input.type=show?'text':'password';
+  $('cloudTogglePassword').textContent=show?'Hide':'Show';
+  $('cloudTogglePassword').setAttribute('aria-label',show?'Hide password':'Show password');
+  $('cloudTogglePassword').setAttribute('aria-pressed',show?'true':'false');
+ });
+ $('cloudConfirmPassword').addEventListener('input',()=>{
+  const input=$('cloudConfirmPassword');
+  input.setCustomValidity(input.value&&input.value!==$('cloudPassword').value?'Passwords do not match.':'');
+ });
+ $('cloudPassword').addEventListener('input',()=>{
+  const input=$('cloudConfirmPassword');
+  if(input.value)input.setCustomValidity(input.value!==$('cloudPassword').value?'Passwords do not match.':'');
+ });
+ $('cloudAuthForm').addEventListener('submit',e=>{e.preventDefault();submitCloudAuth();});
+}
+
 async function cloudUseRemote(){
  if(!cloudConflict)return;
  const row=cloudConflict;cloudConflict=null;applyCloudRow(row);
@@ -1663,7 +1798,7 @@ function setCalendarView(view){if(view!=='day'&&view!=='week')return;if(calendar
 function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBtn');if(dayBtn){dayBtn.classList.toggle('active',calendarView==='day');dayBtn.setAttribute('aria-pressed',calendarView==='day'?'true':'false');}if(weekBtn){weekBtn.classList.toggle('active',calendarView==='week');weekBtn.setAttribute('aria-pressed',calendarView==='week'?'true':'false');}const prev=$('prevWeek'),next=$('nextWeek');if(prev){prev.title=calendarView==='day'?'Previous day':'Previous week';prev.setAttribute('aria-label',prev.title);}if(next){next.title=calendarView==='day'?'Next day':'Next week';next.setAttribute('aria-label',next.title);}}
 function shiftPeriod(n){if(calendarView!=='day'){shiftWeeks(n);return;}const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));}
 function addQuick(e){e.preventDefault();const title=$('quickTitle').value.trim();if(!title)return;if(!validateTimeFields(['quickTime']))return;const day=Number($('quickDay').value),type=$('quickType').value,duration=Number($('quickDuration').value),preferred=timeMins($('quickTime').value||'10:00');createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true});const t=tasks[tasks.length-1];t.unscheduled=t.start===null;saveCurrent();renderAll();$('quickTitle').value='';showToast(t.start===null?'Added to the day, but needs a time':'Activity added to your week');}
-function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);$('cloudAuthForm').addEventListener('submit',e=>{e.preventDefault();cloudSignIn();});$('cloudSignUpBtn').addEventListener('click',cloudSignUp);$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
+function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
 
 /* Optional visual gaps, monthly calendar, and week-selectable dashboard. */
 const weekwiseOriginalRenderDays=renderDays;
