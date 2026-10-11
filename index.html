@@ -2391,11 +2391,11 @@ function workspaceRecords(){
 function workspaceRecordMatches(record,view){
  const t=record.task,day=dateOnly(now),todayKey=dateKey(day),end=new Date(day);end.setDate(end.getDate()+7);
  const recordDate=dateOnly(record.date),recordKey=dateKey(recordDate),listId=record.listId;
- if(view==='today')return recordKey===todayKey||(!t.done&&t.dueDate===todayKey);
- if(view==='inbox')return listId==='inbox'||t.unscheduled||t.start==null;
+ if(view==='today')return recordKey===todayKey||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
+ if(view==='inbox')return listId==='inbox';
  if(view==='upcoming'){
-  const scheduledSoon=listId!=='inbox'&&!t.unscheduled&&t.start!=null&&recordDate>=day&&recordDate<end;
-  const dueSoon=!!t.dueDate&&t.dueDate>=todayKey&&t.dueDate<dateKey(end);
+  const scheduledSoon=!t.unscheduled&&t.start!=null&&recordDate>=day&&recordDate<end;
+  const dueSoon=!!t.dueDate&&t.dueDate>todayKey&&t.dueDate<dateKey(end);
   return !t.done&&(scheduledSoon||dueSoon);
  }
  if(view.startsWith('list-'))return listId===view.slice(5);
@@ -2413,7 +2413,7 @@ function workspaceTaskRow(record){
  const completedSubtasks=subtasks.filter(s=>typeof s==='object'&&s.done).length;
  const priorityHtml=priority!=='none'?'<span class="workspace-meta-pill priority-'+escapeHtml(priority)+'">'+({high:'↑ High',medium:'→ Medium',low:'↓ Low'}[priority]||'Priority')+'</span>':'';
  const dueHtml=t.dueDate?'<span class="workspace-meta-pill">Due '+escapeHtml(fmtDate(parseKey(t.dueDate),{day:'numeric',month:'short'}))+'</span>':'';
- const scheduleHtml=t.allDay?'<span class="workspace-meta-pill">All day</span>':(record.listId==='inbox'||t.unscheduled||t.start==null?'<span class="workspace-meta-pill">Inbox</span>':'<span>'+escapeHtml(workspaceDateLabel(record))+'</span>');
+ const scheduleHtml=t.allDay?'<span class="workspace-meta-pill">All day</span>':(record.listId==='inbox'?'<span class="workspace-meta-pill">Inbox</span>':(t.unscheduled||t.start==null?'<span class="workspace-meta-pill">Not scheduled</span>':'<span>'+escapeHtml(workspaceDateLabel(record))+'</span>'));
  const status=taskBoardStatus(t),statusHtml=status==='in-progress'?'<span class="workspace-meta-pill">In progress</span>':'';
  const tagsHtml=tags.length?'<div class="workspace-task-tags">'+tags.map(tag=>'<span>#'+escapeHtml(tag)+'</span>').join('')+'</div>':'';
  const reminderHtml=t.reminderAt?'<span class="workspace-meta-pill task-reminder-pill" title="Task reminder">◷ '+escapeHtml(new Date(t.reminderAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))+'</span>':'';
@@ -2433,11 +2433,11 @@ function updateWorkspaceCounts(){
  Object.entries(ids).forEach(([key,id])=>{
   const el=$(id);if(!el)return;
   const count=key==='Today'
-   ?all.filter(r=>dateKey(r.date)===todayKey||(!r.task.done&&r.task.dueDate===todayKey)).length
+   ?all.filter(r=>dateKey(r.date)===todayKey||(!r.task.done&&!!r.task.dueDate&&r.task.dueDate<=todayKey)).length
    :key==='Inbox'
-    ?all.filter(r=>r.listId==='inbox'||r.task.unscheduled||r.task.start==null).length
+    ?all.filter(r=>r.listId==='inbox').length
     :key==='Upcoming'
-     ?all.filter(r=>!r.task.done&&((r.listId!=='inbox'&&!r.task.unscheduled&&r.task.start!=null&&dateKey(r.date)>=todayKey&&dateKey(r.date)<endKey)||(r.task.dueDate&&r.task.dueDate>=todayKey&&r.task.dueDate<endKey))).length
+     ?all.filter(r=>!r.task.done&&((!r.task.unscheduled&&r.task.start!=null&&dateKey(r.date)>=todayKey&&dateKey(r.date)<endKey)||(r.task.dueDate&&r.task.dueDate>todayKey&&r.task.dueDate<endKey))).length
      :all.filter(r=>r.listId===listIds[key]).length;
   el.textContent=String(count);
  });
