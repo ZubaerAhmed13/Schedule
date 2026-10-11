@@ -1018,6 +1018,11 @@ body[data-theme="dark"] .calendar-day-header.is-trip{background:#2a3d32}
 body[data-theme="dark"] .task.done,
 body[data-theme="dark"] .cal-event.done{opacity:.58}
 
+
+.workspace-tag-nav{display:grid;gap:3px}.workspace-tag-btn{min-width:0}.workspace-tag-btn>span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.workspace-tag-hash{display:inline-grid;place-items:center;flex:0 0 23px;width:23px;height:23px;border-radius:7px;background:#f3f1ff;color:#8b77cc;font-size:12px;font-weight:850}.workspace-tag-empty{margin:3px 10px 6px;color:#a0a5b5;font-size:10px;line-height:1.45}
+body[data-theme="dark"] .workspace-tag-hash{background:#34304a;color:#d7cbff}
+@media(max-width:760px){.workspace-tag-empty{display:none}}
+
 </style>
 </head>
 <body>
@@ -1085,6 +1090,9 @@ body[data-theme="dark"] .cal-event.done{opacity:.58}
       <div class="workspace-nav-divider"></div>
       <div class="workspace-sidebar-head">FOLDERS</div>
       <div id="workspaceFolderNav" class="workspace-folder-nav"></div>
+      <div class="workspace-nav-divider"></div>
+      <div class="workspace-sidebar-head">TAGS</div>
+      <div id="workspaceTagNav" class="workspace-tag-nav"></div>
       <div class="workspace-nav-divider"></div>
       <div class="workspace-sidebar-head">PRODUCTIVITY</div>
       <button class="workspace-nav-btn" type="button" data-workspace-action="habits"><span class="workspace-nav-icon">✳</span><span>Habits & routines</span></button>
@@ -1558,7 +1566,7 @@ try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarVi
 let lastRenderedCalendarView=null;
 let tasks=[];
 let workspaceView='today';
-try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace)||(savedWorkspace&&savedWorkspace.startsWith('folder:')))workspaceView=savedWorkspace;}catch(_){}
+try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace)||(savedWorkspace&&(savedWorkspace.startsWith('folder:')||savedWorkspace.startsWith('tag:'))))workspaceView=savedWorkspace;}catch(_){}
 try{const shortcutView=new URLSearchParams(window.location.search).get('view');if(['today','inbox','calendar'].includes(shortcutView))workspaceView=shortcutView;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
@@ -2043,6 +2051,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('modalSection').value=t?.sectionName||'';
   $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';$('modalReminderAt').value=t?.reminderAt||'';
   $('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
+  if(!t&&workspaceView.startsWith('tag:'))$('modalTags').value=workspaceView.slice(4);
   $('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
   $('modalAllDay').checked=!!t?.allDay;
   $('modalNoSchedule').checked=!!(t&&(t.unscheduled||t.start==null)&&!t.allDay)||(!t&&defaultListId==='inbox');
@@ -2614,6 +2623,27 @@ function renderWorkspaceFolders(){
   return '<button type="button" class="workspace-nav-btn workspace-folder-btn '+(active?'active':'')+'" data-workspace-view="'+escapeHtml(view)+'" aria-current="'+(active?'page':'false')+'"><span class="workspace-nav-icon" aria-hidden="true">▰</span><span title="'+escapeHtml(name)+'">'+escapeHtml(name)+'</span><span class="workspace-nav-count">'+count+'</span></button>';
  }).join('');
 }
+
+function workspaceTagSummary(){
+ const counts=new Map();
+ workspaceRecords().forEach(record=>{
+  (Array.isArray(record.task.tags)?record.task.tags:[]).forEach(raw=>{
+   const name=String(raw||'').trim().replace(/^#/,'');if(!name)return;
+   const key=name.toLowerCase(),existing=counts.get(key);
+   if(existing)existing.count++;else counts.set(key,{name,count:1});
+  });
+ });
+ return [...counts.values()].sort((a,b)=>a.name.localeCompare(b.name));
+}
+function renderWorkspaceTags(){
+ const nav=$('workspaceTagNav');if(!nav)return;
+ const tags=workspaceTagSummary();
+ if(!tags.length){nav.innerHTML='<p class="workspace-tag-empty">Tags appear here when you add them to tasks.</p>';return;}
+ nav.innerHTML=tags.map(item=>{
+  const view='tag:'+item.name,active=workspaceView.toLowerCase()===view.toLowerCase();
+  return '<button type="button" class="workspace-nav-btn workspace-tag-btn '+(active?'active':'')+'" data-workspace-view="'+escapeHtml(view)+'" aria-current="'+(active?'page':'false')+'"><span class="workspace-tag-hash">#</span><span title="'+escapeHtml(item.name)+'">'+escapeHtml(item.name)+'</span><span class="workspace-nav-count">'+item.count+'</span></button>';
+ }).join('');
+}
 function workspaceRecordMatches(record,view){
  const t=record.task,day=dateOnly(now),todayKey=dateKey(day),end=new Date(day);end.setDate(end.getDate()+7);
  const recordDate=dateOnly(record.date),recordKey=dateKey(recordDate),listId=record.listId;
@@ -2626,6 +2656,7 @@ function workspaceRecordMatches(record,view){
  }
  if(view.startsWith('list-'))return listId===view.slice(5);
  if(view.startsWith('folder:'))return (record.task.folderName||defaultFolderName(record.listId))===view.slice(7);
+ if(view.startsWith('tag:'))return Array.isArray(t.tags)&&t.tags.some(tag=>String(tag).replace(/^#/,'').toLowerCase()===view.slice(4).toLowerCase());
  return false;
 }
 function workspacePriorityValue(priority){return ({high:3,medium:2,low:1})[priority]||0;}
@@ -2692,10 +2723,11 @@ function renderWorkspaceTasks(){
  else if(sort==='title')items.sort((a,b)=>String(a.task.title).localeCompare(String(b.task.title)));
  else items.sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
  const folderView=workspaceView.startsWith('folder:'),folderTitle=folderView?workspaceView.slice(7):'';
- const info=WORKSPACE_VIEW_INFO[workspaceView]||{title:folderView?folderTitle:(WORKSPACE_LISTS.find(x=>x.view===workspaceView)?.label||'Tasks'),description:folderView?'Tasks organized in this folder.':'Tasks in this list.',emptyTitle:folderView?'This folder is empty':'No tasks in this list yet',emptyText:folderView?'Edit any task to place it in this folder, or create a task with this folder name.':'Add a task to this list or edit an existing task to move it here.'};
+ const tagView=workspaceView.startsWith('tag:'),tagTitle=tagView?workspaceView.slice(4):'';
+ const info=WORKSPACE_VIEW_INFO[workspaceView]||{title:tagView?'#'+tagTitle:folderView?folderTitle:(WORKSPACE_LISTS.find(x=>x.view===workspaceView)?.label||'Tasks'),description:tagView?'Tasks tagged #'+tagTitle:folderView?'Tasks organized in this folder.':'Tasks in this list.',emptyTitle:tagView?'No tasks with this tag':folderView?'This folder is empty':'No tasks in this list yet',emptyText:tagView?'Add this tag to a task to make it appear here.':folderView?'Edit any task to place it in this folder, or create a task with this folder name.':'Add a task to this list or edit an existing task to move it here.'};
  $('taskWorkspaceTitle').textContent=info.title;$('taskWorkspaceDescription').textContent=info.description||'';
- $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':workspaceView.startsWith('folder:')?'Add a task to '+workspaceView.slice(7)+'…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
- const shouldGroupSections=(workspaceView.startsWith('list-')||workspaceView.startsWith('folder:'))&&items.some(record=>String(record.task.sectionName||'').trim());
+ $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':workspaceView.startsWith('folder:')?'Add a task to '+workspaceView.slice(7)+'…':workspaceView.startsWith('tag:')?'Add a task tagged #'+workspaceView.slice(4)+'…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
+ const shouldGroupSections=(workspaceView.startsWith('list-')||workspaceView.startsWith('folder:')||workspaceView.startsWith('tag:'))&&items.some(record=>String(record.task.sectionName||'').trim());
  const renderedItems=shouldGroupSections?renderWorkspaceTaskGroups(items):items.map(workspaceTaskRow).join('');
  list.innerHTML=items.length?renderedItems:'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
 }
@@ -2708,13 +2740,13 @@ function renderWorkspaceView(){
  if(filters)filters.hidden=!isFilters;
  ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','dashboard'].forEach(id=>{const el=$(id);if(el)el.hidden=!isCalendar;});
  document.querySelectorAll('[data-workspace-view]').forEach(button=>{const active=button.dataset.workspaceView===workspaceView;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false');});
- syncWorkspaceLists();renderWorkspaceFolders();renderWorkspaceTasks();updateWorkspaceCounts();
+ syncWorkspaceLists();renderWorkspaceFolders();renderWorkspaceTags();renderWorkspaceTasks();updateWorkspaceCounts();
  if(isMatrix)renderPriorityMatrix();
  if(isBoard)renderKanbanBoard();
  if(isFilters)renderSavedFilters();
 }
 function setWorkspaceView(view){
- if(!['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view)&&!WORKSPACE_LISTS.some(list=>list.view===view)&&!(typeof view==='string'&&view.startsWith('folder:')))return;
+ if(!['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view)&&!WORKSPACE_LISTS.some(list=>list.view===view)&&!(typeof view==='string'&&(view.startsWith('folder:')||view.startsWith('tag:'))))return;
  if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
  renderWorkspaceView();if(view==='calendar')renderAll();
 }
@@ -2761,7 +2793,7 @@ function wireWorkspaceControls(){
  });
  $('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();quickCaptureWorkspaceTask();});
  $('voiceCaptureBtn').addEventListener('click',toggleVoiceCapture);
- $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):workspaceView.startsWith('folder:')?(workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===workspaceView.slice(7))?.listId||'other'):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
+ $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):workspaceView.startsWith('folder:')?(workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===workspaceView.slice(7))?.listId||'other'):workspaceView.startsWith('tag:')?(workspaceRecords().find(r=>(Array.isArray(r.task.tags)?r.task.tags:[]).some(tag=>String(tag).replace(/^#/,'').toLowerCase()===workspaceView.slice(4).toLowerCase()))?.listId||'other'):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
  $('addCustomListBtn').addEventListener('click',createCustomList);
  $('workspaceSearch').addEventListener('input',renderWorkspaceTasks);$('workspaceSort').addEventListener('change',renderWorkspaceTasks);
  $('workspaceTaskList').addEventListener('change',e=>{const sub=e.target.closest('[data-workspace-subtask]');if(sub){updateWorkspaceRecord(sub.dataset.workspaceSubtask,sub.dataset.workspaceWeek,'toggle-subtask',Number(sub.dataset.workspaceSubtaskIndex));return;}const control=e.target.closest('[data-workspace-done]');if(control)updateWorkspaceRecord(control.dataset.workspaceDone,control.dataset.workspaceWeek,'toggle');});
@@ -3292,9 +3324,13 @@ function defaultCaptureList(){
   const folder=workspaceView.slice(7),existing=workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===folder);
   return existing?.listId||'other';
  }
+ if(workspaceView.startsWith('tag:')){
+  const tag=workspaceView.slice(4).toLowerCase(),existing=workspaceRecords().find(r=>(Array.isArray(r.task.tags)?r.task.tags:[]).some(value=>String(value).replace(/^#/,'').toLowerCase()===tag));
+  return existing?.listId||'other';
+ }
  return 'inbox';
 }
-function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,folderNameOverride=null,recurrence='none'){
+function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,folderNameOverride=null,recurrence='none',tagsOverride=[]){
  const day=targetDate.getDay(),weekKey=dateKey(sundayOf(targetDate)),duration=30,occurrenceDate=dateKey(targetDate);
  let rows,actualStart=null;
  if(weekKey===currentWeek)rows=tasks;
@@ -3307,11 +3343,11 @@ function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,fol
   actualStart=findSlot(day,duration,startMinutes,0,1440,blockers);
  }
  const type=({career:'job',study:'study',work:'job',personal:'life',language:'language',hobbies:'hobby',other:'other',inbox:'other'})[listId]||'other';
- const task={id:uid(),day,title,type,duration,start:actualStart,done:false,status:'todo',custom:true,fixed:false,note:'',unscheduled:actualStart===null,listId,folderName:folderNameOverride||defaultFolderName(listId),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:recurrence||'none'};
+ const task={id:uid(),day,title,type,duration,start:actualStart,done:false,status:'todo',custom:true,fixed:false,note:'',unscheduled:actualStart===null,listId,folderName:folderNameOverride||defaultFolderName(listId),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,reminderNotifiedAt:null,tags:Array.isArray(tagsOverride)?tagsOverride:[],subtasks:[],recurrence:recurrence||'none'};
  rows.push(task);
  if(recurrence&&recurrence!=='none'){
   task.seriesId=uid();task.occurrenceDate=occurrenceDate;
-  const fields={title,type,duration,start:startMinutes,allDay:false,note:'',recurrence,listId,folderName:task.folderName,sectionName:'',priority:'none',status:'todo',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,tags:[],subtasks:[]};
+  const fields={title,type,duration,start:startMinutes,allDay:false,note:'',recurrence,listId,folderName:task.folderName,sectionName:'',priority:'none',status:'todo',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,tags:Array.isArray(tagsOverride)?tagsOverride:[],subtasks:[]};
   upsertRecurringTemplate(task.seriesId,occurrenceDate,fields);
   materializeRecurringRange(parseKey(weekKey),parseKey(addDaysToKey(weekKey,89)));
  }
@@ -3327,7 +3363,8 @@ function quickCaptureWorkspaceTask(){
  const listId=defaultCaptureList();
  const start=parsed.timeMatched?parsed.timeMinutes:null;
  const selectedFolder=workspaceView.startsWith('folder:')?workspaceView.slice(7):null;
- const result=addCapturedTaskForDate(title,date,start,dueDate,listId,selectedFolder,parsed.recurrence||'none');
+ const selectedTags=workspaceView.startsWith('tag:')?[workspaceView.slice(4)]:[];
+ const result=addCapturedTaskForDate(title,date,start,dueDate,listId,selectedFolder,parsed.recurrence||'none',selectedTags);
  input.value='';
  if(parsed.recurrence&&parsed.recurrence!=='none')showToast('Added repeating task · '+parsed.recurrence+'.');
  else if(parsed.timeMatched&&result.actualStart===null)showToast('Task captured, but there was no free slot at that time. It needs scheduling.');
