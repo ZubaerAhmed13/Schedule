@@ -2287,6 +2287,7 @@ async function saveCloudSnapshot(){
  if(!cloudClient||!cloudUser||!cloudReady||cloudApplyingRemote||cloudConflict||cloudBusy)return;
  cloudBusy=true;
  const payload=buildCloudPayload(),expectedRevision=cloudRevision;
+ let savedPayload=null;
  try{
   const {data,error}=await cloudClient.rpc('weekwise_save',{p_data:payload,p_expected_revision:expectedRevision});
   if(error)throw error;
@@ -2295,13 +2296,18 @@ async function saveCloudSnapshot(){
   if(!result.saved){showCloudConflict({data:result.data||{},revision:Number(result.revision)||0,updated_at:result.updated_at||null});return;}
   cloudRevision=Number(result.revision)||expectedRevision+1;cloudReady=true;
   writeCloudMeta(cloudRevision,payload);
+  savedPayload=payload;
   setCloudStatus('All changes synced · '+new Date(result.updated_at||Date.now()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
   const badge=$('cloudMenuBadge');if(badge)badge.textContent='Synced';
-  if(cloudFingerprint(buildCloudPayload())!==cloudFingerprint(payload))queueCloudSave();
  }catch(error){
   console.error('Weekwise cloud save failed',error);
   setCloudStatus('Cloud save failed. Your changes remain on this device. Open Cloud sync and try Sync now. '+(error?.message||''));
- }finally{cloudBusy=false;}
+ }finally{
+  cloudBusy=false;
+  // Recheck only after releasing the save lock. A timer may have fired while the
+  // previous request was still in flight, so schedule again if newer edits exist.
+  if(savedPayload&&cloudUser&&cloudReady&&!cloudConflict&&cloudFingerprint(buildCloudPayload())!==cloudFingerprint(savedPayload))queueCloudSave();
+ }
 }
 async function startCloudForUser(user,force=false){
  if(!cloudClient||!user)return;

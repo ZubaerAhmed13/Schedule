@@ -24,5 +24,7 @@ jobs:
         run: node scripts/validate-weekwise.mjs
       - name: Validate manifest JSON
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8'))"
+      - name: Test cloud-sync race regression
+        run: node --test tests/*.test.mjs
       - name: Check whitespace errors
         run: git diff --check
