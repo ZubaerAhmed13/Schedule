@@ -741,6 +741,25 @@ body.signin-required{overflow:hidden}
 
 /* The workspace toggles the original calendar using the hidden attribute; override display rules explicitly. */
 .calendar-toolbar[hidden],#mobileDayPicker[hidden],#mobileHelp[hidden],#daysGrid[hidden],#dashboard[hidden],#taskWorkspace[hidden]{display:none!important}
+
+.priority-matrix{padding:22px;border:1px solid #e2e5f1;border-radius:21px;background:#fff;box-shadow:0 6px 25px rgba(42,47,90,.04)}.priority-matrix[hidden]{display:none!important}
+.matrix-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}.matrix-heading h2{margin:3px 0;color:#242945;font-size:27px;letter-spacing:-.8px}.matrix-heading p{margin:4px 0 0;color:#8a90a5;font-size:12px}
+.matrix-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.matrix-quadrant{min-width:0;padding:13px;border:1px solid #e5e8f1;border-radius:15px;background:#fbfcff}.matrix-quadrant>header{display:flex;align-items:center;gap:10px;padding-bottom:11px;border-bottom:1px solid #e9ebf4;margin-bottom:10px}
+.matrix-number{display:grid;place-items:center;width:31px;height:31px;border-radius:10px;background:#eef0ff;color:#565dc8;font-size:11px;font-weight:850}.matrix-do .matrix-number{background:#fff0ee;color:#cd6156}.matrix-schedule .matrix-number{background:#eef3ff;color:#5072c7}.matrix-delegate .matrix-number{background:#fff5df;color:#b17b23}.matrix-later .matrix-number{background:#edf7f1;color:#3c956f}
+.matrix-quadrant h3{margin:0;color:#303651;font-size:13px}.matrix-quadrant header p{margin:2px 0 0;color:#969bae;font-size:10px}.matrix-task-list{display:grid;gap:7px;min-height:30px}
+.matrix-task{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:7px;padding:8px;border:1px solid #eceef6;border-radius:10px;background:#fff}.matrix-task input{width:14px;height:14px;margin:0;accent-color:#656bd6}
+.matrix-task-title{border:0;padding:0;background:transparent;text-align:left;color:#424864;font:inherit;font-size:11px;font-weight:750;overflow-wrap:anywhere}.matrix-task-title:hover{color:#5359c9}.matrix-task-meta{margin-top:3px;color:#969bae;font-size:9px}.matrix-task-edit{border:0;background:transparent;color:#969bae;border-radius:6px;padding:5px}.matrix-task-edit:hover{background:#f0f1ff;color:#575dc9}
+.matrix-empty{padding:14px 5px;text-align:center;color:#a0a5b5;font-size:10px}.matrix-unclassified{margin-top:15px;padding:13px;border:1px dashed #dfe2ef;border-radius:14px;background:#fdfdff}.matrix-unclassified h3{display:flex;align-items:center;gap:7px;margin:0;color:#4b5270;font-size:12px}.matrix-unclassified h3 span{border-radius:6px;background:#eceeff;padding:2px 6px;color:#585ec8;font-size:10px}.matrix-unclassified>p{margin:4px 0 10px;color:#9298aa;font-size:10px}
+.focus-panel{padding:3px}.focus-panel-intro{display:flex;align-items:center;gap:13px}.focus-panel-mark{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:15px;background:linear-gradient(145deg,#6268e1,#8d76ee);color:#fff;font-size:26px;box-shadow:0 7px 18px rgba(97,100,217,.18)}
+.focus-panel-intro h3{margin:2px 0;color:#292e4a;font-size:19px;letter-spacing:-.5px}.focus-panel-intro p{margin:4px 0 0;color:#858ba2;font-size:11px}.focus-options{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-top:20px}.focus-options .field select{width:100%}
+.focus-clock-wrap{display:flex;flex-direction:column;align-items:center;padding:27px 15px 21px;margin-top:16px;border:1px solid #e6e8f7;border-radius:18px;background:radial-gradient(circle at 50% 0%,#f0f1ff,#fff 70%)}.focus-mode-label{color:#686ed3;font-size:9px;font-weight:850;letter-spacing:1.5px}
+.focus-clock{margin:6px 0;color:#282d4a;font-size:clamp(46px,9vw,68px);font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-3px;line-height:1.05}.focus-progress{width:min(100%,320px);height:6px;border-radius:99px;background:#e7e9f6;overflow:hidden}.focus-progress span{display:block;width:100%;height:100%;border-radius:99px;background:linear-gradient(90deg,#6268df,#9a7bed);transition:width .3s linear}
+.focus-clock-wrap p{margin:10px 0 0;color:#9399ad;font-size:10px;text-align:center}.focus-controls{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:14px 0 20px}.focus-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.focus-stat{padding:11px;border:1px solid #eceef6;border-radius:12px;background:#fff}.focus-stat small{display:block;color:#8f95aa;font-size:9px}.focus-stat strong{display:block;margin-top:4px;color:#343a5a;font-size:18px;font-variant-numeric:tabular-nums}
+.focus-history-section{margin-top:20px}.focus-history-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.focus-history-heading h4{margin:0;color:#454b68;font-size:12px}.focus-history-heading span{color:#969bae;font-size:10px}.focus-history{display:grid;gap:7px;margin-top:10px}
+.focus-history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid #eceef6;border-radius:10px;background:#fff}.focus-history-row strong{display:block;color:#454b68;font-size:11px}.focus-history-row small{display:block;color:#969bae;font-size:9px;margin-top:2px}.focus-history-row>span{color:#696fd2;font-size:11px;font-weight:800;white-space:nowrap}
+@media(max-width:760px){.matrix-grid{grid-template-columns:1fr}.priority-matrix{padding:14px;border-radius:16px}.matrix-heading h2{font-size:23px}.focus-options{grid-template-columns:1fr}.focus-summary{gap:6px}.focus-stat{padding:9px}.focus-stat strong{font-size:16px}.focus-controls{gap:6px}.focus-controls .btn{padding:8px 10px}}
+
 </style>
 </head>
 <body>
@@ -791,6 +810,7 @@ body.signin-required{overflow:hidden}
       <button class="workspace-nav-btn" type="button" data-workspace-view="inbox"><span class="workspace-nav-icon">⌑</span><span>Inbox</span><span class="workspace-nav-count" id="navCountInbox">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="upcoming"><span class="workspace-nav-icon">▦</span><span>Upcoming</span><span class="workspace-nav-count" id="navCountUpcoming">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="calendar"><span class="workspace-nav-icon">▣</span><span>Calendar</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="matrix"><span class="workspace-nav-icon">⊞</span><span>Priority matrix</span></button>
       <div class="workspace-nav-divider"></div>
       <div class="workspace-sidebar-head">MY LISTS</div>
       <button class="workspace-nav-btn" type="button" data-workspace-view="list-career"><span class="list-colour-dot career-dot"></span><span>Career</span><span class="workspace-nav-count" id="navCountCareer">0</span></button>
@@ -803,6 +823,7 @@ body.signin-required{overflow:hidden}
       <div class="workspace-nav-divider"></div>
       <div class="workspace-sidebar-head">PRODUCTIVITY</div>
       <button class="workspace-nav-btn" type="button" data-workspace-action="habits"><span class="workspace-nav-icon">✳</span><span>Habits & routines</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-action="focus"><span class="workspace-nav-icon">◴</span><span>Focus timer</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-action="statistics"><span class="workspace-nav-icon">▥</span><span>Statistics</span></button>
       <div class="workspace-sidebar-footer"><span class="workspace-status-dot"></span> Your personal workspace</div>
     </aside>
@@ -823,6 +844,16 @@ body.signin-required{overflow:hidden}
         </div>
         <div id="workspaceTaskList" class="workspace-task-list" aria-live="polite"></div>
         <p class="workspace-list-footnote">Tasks stay connected to your calendar. Edit a task here or schedule it from the calendar.</p>
+      </section>
+      <section class="priority-matrix" id="priorityMatrix" hidden aria-labelledby="matrixTitle">
+        <header class="matrix-heading"><div><div class="workspace-page-eyebrow">DECIDE WHAT MATTERS</div><h2 id="matrixTitle">Priority matrix</h2><p>Sort tasks by importance and urgency, then decide what to do first.</p></div><button class="btn" type="button" id="matrixAddTaskBtn">＋ Add task</button></header>
+        <div class="matrix-grid">
+          <section class="matrix-quadrant matrix-do"><header><span class="matrix-number">01</span><div><h3>Do first</h3><p>Important and urgent</p></div></header><div id="matrixDoList" class="matrix-task-list"></div></section>
+          <section class="matrix-quadrant matrix-schedule"><header><span class="matrix-number">02</span><div><h3>Schedule</h3><p>Important, not urgent</p></div></header><div id="matrixScheduleList" class="matrix-task-list"></div></section>
+          <section class="matrix-quadrant matrix-delegate"><header><span class="matrix-number">03</span><div><h3>Limit or delegate</h3><p>Urgent, less important</p></div></header><div id="matrixDelegateList" class="matrix-task-list"></div></section>
+          <section class="matrix-quadrant matrix-later"><header><span class="matrix-number">04</span><div><h3>Do later</h3><p>Neither urgent nor important</p></div></header><div id="matrixLaterList" class="matrix-task-list"></div></section>
+        </div>
+        <section class="matrix-unclassified"><h3>Not classified yet <span id="matrixUnclassifiedCount">0</span></h3><p>Open a task to set its importance and urgency before placing it in a quadrant.</p><div id="matrixUnclassifiedList" class="matrix-task-list"></div></section>
       </section>
 
   <section class="calendar-toolbar" id="calendarToolbar" aria-label="Calendar controls">
@@ -873,6 +904,19 @@ body.signin-required{overflow:hidden}
   </section>
     </main>
   </div>
+  <details class="settings secondary-details utility-source" id="focusPanel">
+    <summary>Focus timer <span style="color:var(--muted);font-size:11px;font-weight:500">Task-linked focus sessions</span></summary>
+    <div class="inside">
+      <section class="focus-panel">
+        <div class="focus-panel-intro"><div class="focus-panel-mark">◴</div><div><div class="workspace-page-eyebrow">FOCUS SESSION</div><h3>Make time for one thing.</h3><p>Choose a task, start a session and review how much focused time you complete.</p></div></div>
+        <div class="focus-options"><div class="field"><label for="focusTaskSelect">Working on</label><select id="focusTaskSelect"><option value="">No linked task</option></select></div><div class="field"><label for="focusPreset">Session length</label><select id="focusPreset"><option value="25">Pomodoro · 25 min</option><option value="50">Deep work · 50 min</option><option value="90">Long focus · 90 min</option></select></div></div>
+        <div class="focus-clock-wrap"><div class="focus-mode-label" id="focusModeLabel">FOCUS TIME</div><div class="focus-clock" id="focusClock" aria-live="off">25:00</div><div class="focus-progress"><span id="focusProgressBar"></span></div><p id="focusTimerMessage">One task. One session. No need to make it perfect.</p></div>
+        <div class="focus-controls"><button type="button" class="btn primary" id="focusStartBtn">Start focus</button><button type="button" class="btn" id="focusResetBtn">Reset</button><button type="button" class="btn" id="focusBreakBtn">Take a 5-minute break</button></div>
+        <div class="focus-summary" id="focusSummary"></div>
+        <section class="focus-history-section"><div class="focus-history-heading"><h4>Recent sessions</h4><span id="focusHistoryTotal">0 sessions</span></div><div id="focusHistory" class="focus-history"></div></section>
+      </section>
+    </div>
+  </details>
   <details class="settings utility-source" id="settingsPanel">
     <summary>Work day & weekly settings <span style="color:var(--muted);font-size:11px;font-weight:500">Configure work days, city day and cooking rhythm</span></summary>
     <div class="inside">
@@ -987,6 +1031,8 @@ body.signin-required{overflow:hidden}
   <div class="field"><label for="modalCategory">Category</label><select id="modalCategory"><option value="job">Career</option><option value="study">Coursework</option><option value="language">Language</option><option value="life">Home / personal</option><option value="hobby">Hobby</option><option value="other">Other</option></select></div>
   <div class="field"><label for="modalListId">List</label><select id="modalListId"><option value="inbox">Inbox</option><option value="career">Career</option><option value="study">Study</option><option value="work">Work</option><option value="personal">Personal</option><option value="language">Languages</option><option value="hobbies">Hobbies</option><option value="other">Other</option></select></div>
   <div class="field"><label for="modalPriority">Priority</label><select id="modalPriority"><option value="none">No priority</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+  <div class="field"><label for="modalImportance">Importance</label><select id="modalImportance"><option value="unclassified">Not classified</option><option value="important">Important</option><option value="not-important">Not important</option></select></div>
+  <div class="field"><label for="modalUrgency">Urgency</label><select id="modalUrgency"><option value="unclassified">Not classified</option><option value="urgent">Urgent</option><option value="not-urgent">Not urgent</option></select></div>
   <div class="field" style="grid-column:1/-1"><label class="schedule-toggle-label" for="modalNoSchedule"><input id="modalNoSchedule" type="checkbox"><span><strong>Keep in Inbox — no scheduled time</strong><small>Use this for tasks you have captured but have not planned yet.</small></span></label></div>
   <div id="taskSchedulingFields" class="task-scheduling-fields">
     <div class="field"><label for="modalTime">Start time</label><input id="modalTime" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="10:00" value="10:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /></div>
