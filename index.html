@@ -2993,7 +2993,7 @@ function focusComplete(){
  }else{
   focusMode='focus';focusInitialSeconds=Number($('focusPreset').value||25)*60;focusRemainingSeconds=focusInitialSeconds;focusStartedAt=null;showToast('Break complete. Ready for another focus session?');
  }
- renderFocusPanel();
+ renderWorkspaceTasks();renderKanbanBoard();renderPriorityMatrix();renderFocusPanel();
 }
 function focusTick(){if(!focusRunning)return;focusRemainingSeconds=Math.max(0,Math.ceil((focusDeadline-Date.now())/1000));if(focusRemainingSeconds<=0){focusComplete();return;}updateFocusDisplay();}
 function focusStartPause(){
