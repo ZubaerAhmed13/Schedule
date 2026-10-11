@@ -871,6 +871,10 @@ body.signin-required{overflow:hidden}
 
 .workspace-folder-pill{background:#f1f2ff!important;color:#676dc7!important}.workspace-section-pill{background:#f7f1ff!important;color:#8669b4!important}
 
+
+.workspace-folder-nav{display:grid;gap:3px}.workspace-folder-btn{min-width:0}.workspace-folder-btn>span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.workspace-folder-empty{margin:3px 10px 6px;color:#a0a5b5;font-size:10px;line-height:1.45}
+@media(max-width:760px){.workspace-folder-empty{display:none}.workspace-folder-btn{max-width:210px}}
+
 </style>
 </head>
 <body>
@@ -933,6 +937,9 @@ body.signin-required{overflow:hidden}
       <button class="workspace-nav-btn" type="button" data-workspace-view="list-language"><span class="list-colour-dot language-dot"></span><span>Languages</span><span class="workspace-nav-count" id="navCountLanguage">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="list-hobbies"><span class="list-colour-dot hobby-dot"></span><span>Hobbies</span><span class="workspace-nav-count" id="navCountHobbies">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="list-other"><span class="list-colour-dot other-dot"></span><span>Other</span><span class="workspace-nav-count" id="navCountOther">0</span></button>
+      <div class="workspace-nav-divider"></div>
+      <div class="workspace-sidebar-head">FOLDERS</div>
+      <div id="workspaceFolderNav" class="workspace-folder-nav"></div>
       <div class="workspace-nav-divider"></div>
       <div class="workspace-sidebar-head">PRODUCTIVITY</div>
       <button class="workspace-nav-btn" type="button" data-workspace-action="habits"><span class="workspace-nav-icon">✳</span><span>Habits & routines</span></button>
@@ -1402,7 +1409,7 @@ try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarVi
 let lastRenderedCalendarView=null;
 let tasks=[];
 let workspaceView='today';
-try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace))workspaceView=savedWorkspace;}catch(_){}
+try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace)||(savedWorkspace&&savedWorkspace.startsWith('folder:')))workspaceView=savedWorkspace;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
 function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}if(!cloudApplyingRemote)queueCloudSave();}
@@ -2388,6 +2395,24 @@ function workspaceRecords(){
  [...keys].sort().forEach(week=>{const rows=week===currentWeek?tasks:(Array.isArray(store.weeks[week]?.tasks)?store.weeks[week].tasks:[]);rows.forEach(task=>{if(!task||task.custom===false)return;let date;try{date=dayDate(week,Number(task.day)||0);}catch(_){return;}records.push({task,week,date,listId:inferredListId(task)});});});
  return records.sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
 }
+
+function workspaceFolderSummary(){
+ const counts=new Map();
+ workspaceRecords().forEach(record=>{
+  const name=String(record.task.folderName||defaultFolderName(record.listId)||'Personal').trim()||'Personal';
+  counts.set(name,(counts.get(name)||0)+1);
+ });
+ return [...counts.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+}
+function renderWorkspaceFolders(){
+ const nav=$('workspaceFolderNav');if(!nav)return;
+ const folders=workspaceFolderSummary();
+ if(!folders.length){nav.innerHTML='<p class="workspace-folder-empty">Folders appear here when you assign them to a task.</p>';return;}
+ nav.innerHTML=folders.map(([name,count])=>{
+  const view='folder:'+name,active=workspaceView===view;
+  return '<button type="button" class="workspace-nav-btn workspace-folder-btn '+(active?'active':'')+'" data-workspace-view="'+escapeHtml(view)+'" aria-current="'+(active?'page':'false')+'"><span class="workspace-nav-icon" aria-hidden="true">▰</span><span title="'+escapeHtml(name)+'">'+escapeHtml(name)+'</span><span class="workspace-nav-count">'+count+'</span></button>';
+ }).join('');
+}
 function workspaceRecordMatches(record,view){
  const t=record.task,day=dateOnly(now),todayKey=dateKey(day),end=new Date(day);end.setDate(end.getDate()+7);
  const recordDate=dateOnly(record.date),recordKey=dateKey(recordDate),listId=record.listId;
@@ -2399,6 +2424,7 @@ function workspaceRecordMatches(record,view){
   return !t.done&&(scheduledSoon||dueSoon);
  }
  if(view.startsWith('list-'))return listId===view.slice(5);
+ if(view.startsWith('folder:'))return (record.task.folderName||defaultFolderName(record.listId))===view.slice(7);
  return false;
 }
 function workspacePriorityValue(priority){return ({high:3,medium:2,low:1})[priority]||0;}
@@ -2450,7 +2476,8 @@ function renderWorkspaceTasks(){
  if(sort==='priority')items.sort((a,b)=>workspacePriorityValue(b.task.priority)-workspacePriorityValue(a.task.priority)||a.date-b.date||(Number(a.task.start??9999)-Number(b.task.start??9999)));
  else if(sort==='title')items.sort((a,b)=>String(a.task.title).localeCompare(String(b.task.title)));
  else items.sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
- const info=WORKSPACE_VIEW_INFO[workspaceView]||{title:(WORKSPACE_LISTS.find(x=>x.view===workspaceView)?.label||'Tasks'),description:'Tasks in this list.',emptyTitle:'No tasks in this list yet',emptyText:'Add a task to this list or edit an existing task to move it here.'};
+ const folderView=workspaceView.startsWith('folder:'),folderTitle=folderView?workspaceView.slice(7):'';
+ const info=WORKSPACE_VIEW_INFO[workspaceView]||{title:folderView?folderTitle:(WORKSPACE_LISTS.find(x=>x.view===workspaceView)?.label||'Tasks'),description:folderView?'Tasks organized in this folder.':'Tasks in this list.',emptyTitle:folderView?'This folder is empty':'No tasks in this list yet',emptyText:folderView?'Edit any task to place it in this folder, or create a task with this folder name.':'Add a task to this list or edit an existing task to move it here.'};
  $('taskWorkspaceTitle').textContent=info.title;$('taskWorkspaceDescription').textContent=info.description||'';
  $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
  list.innerHTML=items.length?items.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
@@ -2464,13 +2491,13 @@ function renderWorkspaceView(){
  if(filters)filters.hidden=!isFilters;
  ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','dashboard'].forEach(id=>{const el=$(id);if(el)el.hidden=!isCalendar;});
  document.querySelectorAll('[data-workspace-view]').forEach(button=>{const active=button.dataset.workspaceView===workspaceView;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false');});
- renderWorkspaceTasks();updateWorkspaceCounts();
+ renderWorkspaceFolders();renderWorkspaceTasks();updateWorkspaceCounts();
  if(isMatrix)renderPriorityMatrix();
  if(isBoard)renderKanbanBoard();
  if(isFilters)renderSavedFilters();
 }
 function setWorkspaceView(view){
- if(!['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view))return;
+ if(!['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view)&&!(typeof view==='string'&&view.startsWith('folder:')))return;
  if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
  renderWorkspaceView();if(view==='calendar')renderAll();
 }
