@@ -2699,7 +2699,10 @@ function workspaceTaskRow(record){
  const scheduleHtml=t.allDay?'<span class="workspace-meta-pill">All day</span>':(record.listId==='inbox'?'<span class="workspace-meta-pill">Inbox</span>':(t.unscheduled||t.start==null?'<span class="workspace-meta-pill">Not scheduled</span>':'<span>'+escapeHtml(workspaceDateLabel(record))+'</span>'));
  const status=taskBoardStatus(t),statusHtml=status==='in-progress'?'<span class="workspace-meta-pill">In progress</span>':'';
  const tagsHtml=tags.length?'<div class="workspace-task-tags">'+tags.map(tag=>'<span>#'+escapeHtml(tag)+'</span>').join('')+'</div>':'';
- const reminderHtml=t.reminderAt?'<span class="workspace-meta-pill task-reminder-pill" title="Task reminder">◷ '+escapeHtml(new Date(t.reminderAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))+'</span>':'';
+ const reminderList=taskReminderTimes(t),pendingReminderList=reminderList.filter(value=>!((Array.isArray(t.reminderNotifiedTimes)&&t.reminderNotifiedTimes.includes(value))||t.reminderNotifiedAt===value));
+ const reminderPreview=pendingReminderList[0]||reminderList[0]||'';
+ const reminderLabel=reminderList.length>1?(pendingReminderList.length||reminderList.length)+' reminders':reminderPreview?new Date(reminderPreview).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+ const reminderHtml=reminderList.length?'<span class="workspace-meta-pill task-reminder-pill" title="'+escapeHtml(reminderList.map(value=>new Date(value).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})).join(' · '))+'">◷ '+escapeHtml(reminderLabel)+'</span>':'';
  const organizationHtml='<span class="workspace-meta-pill workspace-folder-pill">'+escapeHtml(t.folderName||defaultFolderName(record.listId))+'</span>'+(t.sectionName?'<span class="workspace-meta-pill workspace-section-pill">§ '+escapeHtml(t.sectionName)+'</span>':'');
  const label=WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Inbox',attrs=' data-workspace-week="'+escapeHtml(record.week)+'"';
  const subtasksHtml=subtasks.length?'<details class="workspace-subtasks"><summary>☷ '+completedSubtasks+'/'+subtasks.length+' subtasks</summary><div class="workspace-subtask-list">'+subtasks.map((sub,index)=>{const title=typeof sub==='string'?sub:(sub.title||'Untitled step'),checked=typeof sub==='object'&&!!sub.done;return '<label class="workspace-subtask-row"><input type="checkbox" data-workspace-subtask="'+escapeHtml(t.id)+'" data-workspace-subtask-index="'+index+'"'+attrs+' '+(checked?'checked':'')+' aria-label="Complete subtask '+escapeHtml(title)+'"><span class="'+(checked?'is-complete':'')+'">'+escapeHtml(title)+'</span></label>';}).join('')+'</div></details>':'';
@@ -3014,10 +3017,11 @@ function stopRecurringSeries(task,fromDate){
 function upsertRecurringTemplate(id,occurrenceDate,fields){
  if(!Array.isArray(store.recurringTemplates))store.recurringTemplates=[];
  const dueOffsetDays=fields.dueDate?Math.round((parseKey(fields.dueDate)-parseKey(occurrenceDate))/86400000):null;
- const reminderOffsetDays=fields.reminderAt?Math.round((parseKey(fields.reminderAt.slice(0,10))-parseKey(occurrenceDate))/86400000):null;
- const reminderTime=fields.reminderAt?fields.reminderAt.slice(11,16):null;
+ const reminderValues=Array.isArray(fields.reminderTimes)&&fields.reminderTimes.length?fields.reminderTimes:(fields.reminderAt?[fields.reminderAt]:[]);
+ const reminderRules=reminderValues.map(value=>({offsetDays:Math.round((parseKey(value.slice(0,10))-parseKey(occurrenceDate))/86400000),time:value.slice(11,16)})).filter(rule=>/^\d{2}:\d{2}$/.test(rule.time));
+ const reminderOffsetDays=reminderRules[0]?.offsetDays??null,reminderTime=reminderRules[0]?.time??null;
  let template=store.recurringTemplates.find(item=>item.id===id);
- const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,allDay:!!fields.allDay,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:'todo',importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,allDay:!!fields.allDay,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:'todo',importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,reminderRules,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
  if(template)Object.assign(template,value);else{template=value;store.recurringTemplates.push(template);}
  return template;
 }
@@ -3043,8 +3047,12 @@ function materializeRecurringRange(rangeStart,rangeEnd){
     startTime=findSlot(day,duration,preferred,0,1440,blockers);
    }
    const dueDate=template.dueOffsetDays===null||template.dueOffsetDays===undefined?null:addDaysToKey(occurrenceDate,Number(template.dueOffsetDays)||0);
-   const reminderAt=template.reminderOffsetDays===null||template.reminderOffsetDays===undefined||!template.reminderTime?null:addDaysToKey(occurrenceDate,Number(template.reminderOffsetDays)||0)+'T'+template.reminderTime;
-   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),custom:true,fixed:false,note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderNotifiedAt:existing?.reminderNotifiedAt===reminderAt?reminderAt:null,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   const reminderRules=Array.isArray(template.reminderRules)?template.reminderRules:(template.reminderTime?[{offsetDays:template.reminderOffsetDays||0,time:template.reminderTime}]:[]);
+   const reminderTimes=reminderRules.map(rule=>addDaysToKey(occurrenceDate,Number(rule.offsetDays)||0)+'T'+rule.time).filter(Boolean);
+   const reminderAt=reminderTimes[0]||null;
+   const priorNotified=[...(Array.isArray(existing?.reminderNotifiedTimes)?existing.reminderNotifiedTimes:[])];if(existing?.reminderNotifiedAt)priorNotified.push(existing.reminderNotifiedAt);
+   const reminderNotifiedTimes=[...new Set(priorNotified.filter(value=>reminderTimes.includes(value)))];
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),custom:true,fixed:false,note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
    if(existing)Object.assign(existing,values);
    else rows.push({id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values});
   }
@@ -3270,18 +3278,27 @@ function openReminderTask(record){
  const t=tasks.find(x=>x.id===record.task.id);if(t)openTaskModal(t.id,t.day,t.start);
 }
 function checkTaskReminders(){
- const currentTime=Date.now(),due=workspaceRecords().filter(record=>{
-  const task=record.task;if(!task||task.done||!task.reminderAt||task.reminderNotifiedAt===task.reminderAt)return false;
-  const at=new Date(task.reminderAt).getTime();return Number.isFinite(at)&&at<=currentTime;
+ const currentTime=Date.now(),due=[];
+ workspaceRecords().forEach(record=>{
+  const task=record.task;if(!task||task.done)return;
+  const notified=new Set(Array.isArray(task.reminderNotifiedTimes)?task.reminderNotifiedTimes:[]);
+  if(task.reminderAt&&task.reminderNotifiedAt===task.reminderAt)notified.add(task.reminderAt);
+  taskReminderTimes(task).forEach(value=>{
+   if(notified.has(value))return;
+   const at=new Date(value).getTime();if(Number.isFinite(at)&&at<=currentTime)due.push({record,value});
+  });
  });
  if(!due.length)return;
  let changedCurrent=false,changedOther=false,fallbackCount=0;
- due.forEach(record=>{
-  const task=record.task;task.reminderNotifiedAt=task.reminderAt;
+ due.forEach(({record,value})=>{
+  const task=record.task;
+  task.reminderNotifiedTimes=Array.isArray(task.reminderNotifiedTimes)?task.reminderNotifiedTimes:[];
+  if(!task.reminderNotifiedTimes.includes(value))task.reminderNotifiedTimes.push(value);
+  if(task.reminderAt===value)task.reminderNotifiedAt=value;
   let sent=false;
   if('Notification' in window&&Notification.permission==='granted'){
    try{
-    const notification=new Notification('Weekwise · '+task.title,{body:'Your task reminder is due now.',tag:'weekwise-task-'+task.id+'-'+task.reminderAt});
+    const notification=new Notification('Weekwise · '+task.title,{body:'Your task reminder is due now.',tag:'weekwise-task-'+task.id+'-'+value});
     notification.onclick=()=>{try{notification.close();}catch(_){}openReminderTask(record);};
     sent=true;
    }catch(_){}
@@ -3292,10 +3309,9 @@ function checkTaskReminders(){
  if(changedCurrent)saveCurrent();
  if(changedOther)saveStore();
  renderAll();
- if(fallbackCount===1)showToast('Task reminder: '+due.find(record=>record.task.reminderNotifiedAt===record.task.reminderAt)?.task.title);
+ if(fallbackCount===1)showToast('Task reminder: '+due[0].record.task.title);
  else if(fallbackCount>1)showToast(fallbackCount+' task reminders are due. Open Today or Upcoming to review them.');
 }
-
 
 function parseWeekwiseNaturalCapture(raw,baseDate=new Date()){
  let text=String(raw||'').trim(),targetDate=null,timeMinutes=null,dateMatched=false,recurrence='none';
