@@ -1547,7 +1547,7 @@ function renderDays(){
   }
   if(!alreadyRendered||lastRenderedCalendarView!==calendarView){const firstHour=Math.max(6,Math.min(20,now.getHours()-2));grid.scrollTop=Math.max(0,firstHour*hourHeight-18);grid.scrollLeft=0;grid.dataset.hasRendered='true';lastRenderedCalendarView=calendarView;}
   else{grid.scrollTop=previousScrollTop;grid.scrollLeft=previousScrollLeft;}
-  grid.querySelectorAll('[data-done]').forEach(el=>el.addEventListener('change',()=>{const t=tasks.find(t=>t.id===el.dataset.done);if(t){t.done=el.checked;saveCurrent();renderAll();}}));
+  grid.querySelectorAll('[data-done]').forEach(el=>el.addEventListener('change',()=>{const t=tasks.find(t=>t.id===el.dataset.done);if(t){t.done=el.checked;t.status=t.done?'done':(t.status==='done'?'todo':(t.status||'todo'));saveCurrent();renderAll();}}));
   grid.querySelectorAll('[data-delete]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();const t=tasks.find(t=>t.id===el.dataset.delete);if(t&&!t.fixed){tasks=tasks.filter(x=>x.id!==t.id);saveCurrent();renderAll();showToast('Event deleted');}}));
   grid.querySelectorAll('[data-edit]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();openTaskModal(el.dataset.edit);}));
   // Make the entire event card a tap target; the title-only click was too subtle on phones.
@@ -3178,7 +3178,7 @@ async function importCalendarICS(file){
   const title=unescapeICSText(event.SUMMARY?.value)||'Imported calendar event';
   if(!start){invalid++;continue;}
   const externalUid=unescapeICSText(event.UID?.value)||('weekwise-import:'+title+'|'+String(event.DTSTART.value));
-  if(workspaceRecords().some(record=>record.task.externalUid===externalUid)){skipped++;continue;}
+  if(workspaceRecords().some(record=>record.task.externalUid===externalUid||externalUid===String(record.task.id)+'@weekwise.local')){skipped++;continue;}
   const date=dateOnly(start.date),weekKey=dateKey(sundayOf(date)),day=date.getDay(),isAllDay=start.allDay;
   let startMinutes=null,duration=0,unscheduled=true;
   if(!isAllDay){
