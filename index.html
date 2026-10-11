@@ -837,6 +837,21 @@ body.signin-required{overflow:hidden}
 .countdown-empty{grid-column:1/-1;padding:27px 12px;border:1px dashed #dfe2f0;border-radius:13px;background:#fdfdff;text-align:center}.countdown-empty strong{color:#515774;font-size:12px}.countdown-empty p{max-width:320px;margin:5px auto 0;color:#949aaf;font-size:10px;line-height:1.5}
 @media(max-width:760px){.countdown-form{grid-template-columns:minmax(0,1fr) minmax(100px,.9fr)}.countdown-title-field,.countdown-note-field{grid-column:1/-1}.countdown-field:nth-of-type(3){grid-column:1/-1}.countdown-list{grid-template-columns:1fr}.countdown-card{padding:13px}.countdown-card-number{font-size:29px}.countdown-form-actions .btn{flex:1}}
 
+
+.kanban-workspace{padding:21px;border:1px solid #e2e5f1;border-radius:21px;background:#fff;box-shadow:0 6px 25px rgba(42,47,90,.04)}.kanban-workspace[hidden]{display:none!important}
+.kanban-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:17px}.kanban-heading h2{margin:3px 0;color:#242945;font-size:27px;letter-spacing:-.8px}.kanban-heading p{margin:4px 0 0;color:#8a90a5;font-size:12px}
+.kanban-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.kanban-column{min-width:0;min-height:250px;padding:10px;border:1px solid #e7e9f2;border-radius:14px;background:#f8f9fc}
+.kanban-column>header{display:flex;align-items:center;gap:8px;padding:4px 3px 11px;border-bottom:1px solid #e7e9f2;margin-bottom:10px}.kanban-column>header h3{flex:1;margin:0;color:#4a506b;font-size:12px;font-weight:850}.kanban-column>header>span:last-child{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:7px;background:#eceef7;color:#77809a;font-size:10px;font-weight:800}
+.kanban-status-dot{width:8px;height:8px;border-radius:50%;background:#a2a8ba}.kanban-status-dot.todo-dot{background:#a2a8ba}.kanban-status-dot.progress-dot{background:#777de2}.kanban-status-dot.done-dot{background:#40a77b}
+.kanban-column-body{display:grid;gap:8px}.kanban-card{min-width:0;padding:11px;border:1px solid #e5e8f1;border-radius:11px;background:#fff;box-shadow:0 2px 6px rgba(42,47,88,.025);transition:border-color .16s,transform .16s}.kanban-card:hover{border-color:#d5d9f2;transform:translateY(-1px)}
+.kanban-card-top{display:flex;align-items:flex-start;gap:7px}.kanban-card-title{flex:1;min-width:0;border:0;padding:0;background:transparent;color:#363c59;text-align:left;font:inherit;font-size:11px;line-height:1.45;font-weight:800;overflow-wrap:anywhere}.kanban-card-title:hover{color:#575dca}
+.kanban-card-note{margin-top:5px;color:#8c93a8;font-size:9px;line-height:1.45;overflow-wrap:anywhere}.kanban-card-meta{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:8px}.kanban-chip{max-width:100%;padding:3px 6px;border-radius:5px;background:#f0f2f8;color:#747b96;font-size:8px;font-weight:750;overflow-wrap:anywhere}.kanban-chip.priority-high{background:#fff0ef;color:#c65b52}.kanban-chip.priority-medium{background:#fff5df;color:#a77922}.kanban-chip.priority-low{background:#eff6ff;color:#5681b5}
+.kanban-card-footer{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:10px;padding-top:8px;border-top:1px solid #f0f1f7}.kanban-card-footer select{min-width:0;width:100%;border:1px solid #e5e7f2;border-radius:7px;background:#fbfbff;padding:6px;color:#6c7390;font:inherit;font-size:9px}.kanban-card-edit{flex:0 0 25px;width:25px;height:26px;border:0;border-radius:7px;background:transparent;color:#9298ad}.kanban-card-edit:hover{background:#f0f1ff;color:#585ec8}
+.kanban-empty{padding:22px 6px;text-align:center;color:#a0a5b5;font-size:10px;line-height:1.5}
+@media(max-width:980px){.kanban-columns{grid-template-columns:repeat(2,minmax(0,1fr))}.kanban-column:last-child{grid-column:1/-1}.kanban-workspace{padding:15px}}
+@media(max-width:650px){.kanban-columns{grid-template-columns:minmax(0,1fr)}.kanban-column:last-child{grid-column:auto}.kanban-column{min-height:140px;padding:9px}.kanban-heading h2{font-size:23px}.kanban-heading .btn{padding:8px 10px;font-size:10px}}
+
 </style>
 </head>
 <body>
@@ -886,6 +901,7 @@ body.signin-required{overflow:hidden}
       <button class="workspace-nav-btn" type="button" data-workspace-view="today"><span class="workspace-nav-icon">◷</span><span>Today</span><span class="workspace-nav-count" id="navCountToday">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="inbox"><span class="workspace-nav-icon">⌑</span><span>Inbox</span><span class="workspace-nav-count" id="navCountInbox">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="upcoming"><span class="workspace-nav-icon">▦</span><span>Upcoming</span><span class="workspace-nav-count" id="navCountUpcoming">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="board"><span class="workspace-nav-icon">▤</span><span>Board</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="calendar"><span class="workspace-nav-icon">▣</span><span>Calendar</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="matrix"><span class="workspace-nav-icon">⊞</span><span>Priority matrix</span></button>
       <div class="workspace-nav-divider"></div>
@@ -922,6 +938,14 @@ body.signin-required{overflow:hidden}
         </div>
         <div id="workspaceTaskList" class="workspace-task-list" aria-live="polite"></div>
         <p class="workspace-list-footnote">Tasks stay connected to your calendar. Edit a task here or schedule it from the calendar.</p>
+      </section>
+      <section class="kanban-workspace" id="kanbanBoard" hidden aria-labelledby="kanbanTitle">
+        <header class="kanban-heading"><div><div class="workspace-page-eyebrow">MOVE WORK FORWARD</div><h2 id="kanbanTitle">Board</h2><p>Change a task’s status here and the same task updates in your lists and calendar.</p></div><button class="btn primary" type="button" id="kanbanAddTaskBtn">＋ Add task</button></header>
+        <div class="kanban-columns">
+          <section class="kanban-column"><header><span class="kanban-status-dot todo-dot"></span><h3>To do</h3><span id="kanbanCountTodo">0</span></header><div class="kanban-column-body" id="kanbanListTodo"></div></section>
+          <section class="kanban-column"><header><span class="kanban-status-dot progress-dot"></span><h3>In progress</h3><span id="kanbanCountProgress">0</span></header><div class="kanban-column-body" id="kanbanListProgress"></div></section>
+          <section class="kanban-column"><header><span class="kanban-status-dot done-dot"></span><h3>Completed</h3><span id="kanbanCountDone">0</span></header><div class="kanban-column-body" id="kanbanListDone"></div></section>
+        </div>
       </section>
       <section class="priority-matrix" id="priorityMatrix" hidden aria-labelledby="matrixTitle">
         <header class="matrix-heading"><div><div class="workspace-page-eyebrow">DECIDE WHAT MATTERS</div><h2 id="matrixTitle">Priority matrix</h2><p>Sort tasks by importance and urgency, then decide what to do first.</p></div><button class="btn" type="button" id="matrixAddTaskBtn">＋ Add task</button></header>
@@ -1143,6 +1167,7 @@ body.signin-required{overflow:hidden}
   <div class="field"><label for="modalCategory">Category</label><select id="modalCategory"><option value="job">Career</option><option value="study">Coursework</option><option value="language">Language</option><option value="life">Home / personal</option><option value="hobby">Hobby</option><option value="other">Other</option></select></div>
   <div class="field"><label for="modalListId">List</label><select id="modalListId"><option value="inbox">Inbox</option><option value="career">Career</option><option value="study">Study</option><option value="work">Work</option><option value="personal">Personal</option><option value="language">Languages</option><option value="hobbies">Hobbies</option><option value="other">Other</option></select></div>
   <div class="field"><label for="modalPriority">Priority</label><select id="modalPriority"><option value="none">No priority</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+  <div class="field"><label for="modalStatus">Status</label><select id="modalStatus"><option value="todo">To do</option><option value="in-progress">In progress</option><option value="done">Completed</option></select></div>
   <div class="field"><label for="modalImportance">Importance</label><select id="modalImportance"><option value="unclassified">Not classified</option><option value="important">Important</option><option value="not-important">Not important</option></select></div>
   <div class="field"><label for="modalUrgency">Urgency</label><select id="modalUrgency"><option value="unclassified">Not classified</option><option value="urgent">Urgent</option><option value="not-urgent">Not urgent</option></select></div>
   <div class="field" style="grid-column:1/-1"><label class="schedule-toggle-label" for="modalNoSchedule"><input id="modalNoSchedule" type="checkbox"><span><strong>Keep in Inbox — no scheduled time</strong><small>Use this for tasks you have captured but have not planned yet.</small></span></label></div>
@@ -1337,7 +1362,7 @@ try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarVi
 let lastRenderedCalendarView=null;
 let tasks=[];
 let workspaceView='today';
-try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace))workspaceView=savedWorkspace;}catch(_){}
+try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace))workspaceView=savedWorkspace;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
 function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}if(!cloudApplyingRemote)queueCloudSave();}
@@ -1590,7 +1615,7 @@ function saveTemplateEditor(e){
   }
   saveStore();saveCurrent();syncSettingsForm();renderAll();closeTemplateEditor();showToast(currentKind==='workday'?'Work day template saved. Add shifts when ready.':'Class template saved. Add classes when ready.');
 }
-function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();updateCalendarPeriodLabel();}
+function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();renderKanbanBoard();updateCalendarPeriodLabel();}
 function moveTask(id,newDay,preferredTime=null){
   const t=tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
@@ -1788,7 +1813,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   $('modalListId').value=t?inferredListId(t):(defaultListId||'career');
   if(!t&&!defaultListId)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
-  $('modalPriority').value=t?.priority||'none';$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';
+  $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';
   $('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
   $('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
   $('modalNoSchedule').checked=!!(t&&(t.unscheduled||t.start==null))||(!t&&defaultListId==='inbox');
@@ -1829,16 +1854,16 @@ function saveModalTask(e){
   }
   const day=Number($('modalDay').value),type=$('modalCategory').value,note=$('modalNote').value.trim(),recurrence=$('modalRecurrence').value;
   const occurrenceDate=dateKey(dayDate(currentWeek,day));
-  const listId=$('modalListId').value,priority=$('modalPriority').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null;
+  const listId=$('modalListId').value,priority=$('modalPriority').value,status=$('modalStatus').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null;
   const tags=[...new Set($('modalTags').value.split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))];
   const subtasks=$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false}));
   if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled on ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
-  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,note,recurrence,listId,priority,importance,urgency,dueDate,tags,subtasks};
+  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,note,recurrence,listId,priority,status,importance,urgency,dueDate,tags,subtasks};
   if(id){
     const t=tasks.find(x=>x.id===id);
     if(t&&!t.fixed){
       const oldSeriesId=t.seriesId||null;
-      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.priority=priority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.tags=tags;
+      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.tags=tags;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...s,done:!!old.done}:{...s};});
       t.start=noSchedule?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));t.unscheduled=noSchedule||t.start===null;actualStart=t.start;
@@ -1853,7 +1878,7 @@ function saveModalTask(e){
     }
   }else{
     createTask(day,title,type,duration,noSchedule?null:preferred,{min:0,max:1440,custom:true,note});
-    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||t.start===null;t.listId=listId;t.priority=priority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
+    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||t.start===null;t.listId=listId;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
     if(recurrence!=='none'){
       seriesId=uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
       upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
@@ -2331,13 +2356,14 @@ function workspaceTaskRow(record){
  const priorityHtml=priority!=='none'?'<span class="workspace-meta-pill priority-'+escapeHtml(priority)+'">'+({high:'↑ High',medium:'→ Medium',low:'↓ Low'}[priority]||'Priority')+'</span>':'';
  const dueHtml=t.dueDate?'<span class="workspace-meta-pill">Due '+escapeHtml(fmtDate(parseKey(t.dueDate),{day:'numeric',month:'short'}))+'</span>':'';
  const scheduleHtml=record.listId==='inbox'||t.unscheduled||t.start==null?'<span class="workspace-meta-pill">Inbox</span>':'<span>'+escapeHtml(workspaceDateLabel(record))+'</span>';
+ const status=taskBoardStatus(t),statusHtml=status==='in-progress'?'<span class="workspace-meta-pill">In progress</span>':'';
  const tagsHtml=tags.length?'<div class="workspace-task-tags">'+tags.map(tag=>'<span>#'+escapeHtml(tag)+'</span>').join('')+'</div>':'';
  const subtasksHtml=subtasks.length?'<div class="workspace-task-subtasks">☷ '+completedSubtasks+'/'+subtasks.length+' subtasks</div>':'';
  const label=WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Inbox',attrs=' data-workspace-week="'+escapeHtml(record.week)+'"';
  return '<article class="workspace-task-row '+(t.done?'is-done':'')+'" data-workspace-id="'+escapeHtml(t.id)+'"'+attrs+'>'+
   '<input class="workspace-task-check" type="checkbox" data-workspace-done="'+escapeHtml(t.id)+'"'+attrs+' aria-label="Mark '+escapeHtml(t.title)+' complete" '+(t.done?'checked':'')+'>'+
   '<div class="workspace-task-main"><button type="button" class="workspace-task-title" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>'+escapeHtml(t.title)+'</button>'+
-  '<div class="workspace-task-meta">'+scheduleHtml+'<span class="workspace-meta-pill">'+escapeHtml(label)+'</span>'+priorityHtml+dueHtml+'</div>'+tagsHtml+subtasksHtml+(t.note?'<div class="workspace-task-subtasks">'+escapeHtml(t.note)+'</div>':'')+'</div>'+
+  '<div class="workspace-task-meta">'+scheduleHtml+'<span class="workspace-meta-pill">'+escapeHtml(label)+'</span>'+statusHtml+priorityHtml+dueHtml+'</div>'+tagsHtml+subtasksHtml+(t.note?'<div class="workspace-task-subtasks">'+escapeHtml(t.note)+'</div>':'')+'</div>'+
   '<div class="workspace-task-actions"><button type="button" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>✎</button><button type="button" title="Delete task" aria-label="Delete '+escapeHtml(t.title)+'" data-workspace-delete="'+escapeHtml(t.id)+'"'+attrs+'>×</button></div></article>';
 }
 function updateWorkspaceCounts(){
@@ -2359,16 +2385,16 @@ function renderWorkspaceTasks(){
  list.innerHTML=items.length?items.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
 }
 function renderWorkspaceView(){
- const isCalendar=workspaceView==='calendar',isMatrix=workspaceView==='matrix';
- const taskWorkspace=$('taskWorkspace'),matrix=$('priorityMatrix');
- if(taskWorkspace)taskWorkspace.hidden=isCalendar||isMatrix;
- if(matrix)matrix.hidden=!isMatrix;
+ const isCalendar=workspaceView==='calendar',isMatrix=workspaceView==='matrix',isBoard=workspaceView==='board';
+ const taskWorkspace=$('taskWorkspace'),matrix=$('priorityMatrix'),board=$('kanbanBoard');
+ if(taskWorkspace)taskWorkspace.hidden=isCalendar||isMatrix||isBoard;
+ if(matrix)matrix.hidden=!isMatrix;if(board)board.hidden=!isBoard;
  ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','dashboard'].forEach(id=>{const el=$(id);if(el)el.hidden=!isCalendar;});
  document.querySelectorAll('[data-workspace-view]').forEach(button=>{const active=button.dataset.workspaceView===workspaceView;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false');});
- renderWorkspaceTasks();updateWorkspaceCounts();if(isMatrix)renderPriorityMatrix();
+ renderWorkspaceTasks();updateWorkspaceCounts();if(isMatrix)renderPriorityMatrix();if(isBoard)renderKanbanBoard();
 }
 function setWorkspaceView(view){
- if(!['today','inbox','upcoming','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view))return;
+ if(!['today','inbox','upcoming','board','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view))return;
  if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
  renderWorkspaceView();if(view==='calendar')renderAll();
 }
@@ -2388,11 +2414,11 @@ function openWorkspaceRecord(id,week){
 function updateWorkspaceRecord(id,week,action){
  if(week!==currentWeek){
   const saved=store.weeks[week];if(!saved||!Array.isArray(saved.tasks))return;const item=saved.tasks.find(t=>t.id===id);if(!item)return;
-  if(action==='delete'){if(!confirm('Delete this task?'))return;saved.tasks=saved.tasks.filter(t=>t.id!==id);}else if(action==='toggle')item.done=!item.done;
+  if(action==='delete'){if(!confirm('Delete this task?'))return;saved.tasks=saved.tasks.filter(t=>t.id!==id);}else if(action==='toggle'){item.done=!item.done;item.status=item.done?'done':(item.status==='done'?'todo':(item.status||'todo'));}
   saveStore();renderAll();return;
  }
  const item=tasks.find(t=>t.id===id);if(!item)return;
- if(action==='delete'){if(!confirm('Delete this task?'))return;tasks=tasks.filter(t=>t.id!==id);}else if(action==='toggle')item.done=!item.done;
+ if(action==='delete'){if(!confirm('Delete this task?'))return;tasks=tasks.filter(t=>t.id!==id);}else if(action==='toggle'){item.done=!item.done;item.status=item.done?'done':(item.status==='done'?'todo':(item.status||'todo'));}
  saveCurrent();renderAll();
 }
 function wireWorkspaceControls(){
@@ -2402,6 +2428,9 @@ function wireWorkspaceControls(){
  $('workspaceSearch').addEventListener('input',renderWorkspaceTasks);$('workspaceSort').addEventListener('change',renderWorkspaceTasks);
  $('workspaceTaskList').addEventListener('change',e=>{const control=e.target.closest('[data-workspace-done]');if(control)updateWorkspaceRecord(control.dataset.workspaceDone,control.dataset.workspaceWeek,'toggle');});
  $('workspaceTaskList').addEventListener('click',e=>{const edit=e.target.closest('[data-workspace-edit]');if(edit){openWorkspaceRecord(edit.dataset.workspaceEdit,edit.dataset.workspaceWeek);return;}const del=e.target.closest('[data-workspace-delete]');if(del)updateWorkspaceRecord(del.dataset.workspaceDelete,del.dataset.workspaceWeek,'delete');});
+$('kanbanBoard').addEventListener('change',e=>{const select=e.target.closest('[data-board-status]');if(select)updateBoardTaskStatus(select.dataset.boardStatus,select.dataset.boardWeek,select.value);});
+$('kanbanBoard').addEventListener('click',e=>{const edit=e.target.closest('[data-board-edit]');if(edit)openWorkspaceRecord(edit.dataset.boardEdit,edit.dataset.boardWeek);});
+$('kanbanAddTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));
 $('priorityMatrix').addEventListener('change',e=>{const c=e.target.closest('[data-matrix-done]');if(c)updateWorkspaceRecord(c.dataset.matrixDone,c.dataset.matrixWeek,'toggle');});
 $('priorityMatrix').addEventListener('click',e=>{const b=e.target.closest('[data-matrix-edit]');if(b)openWorkspaceRecord(b.dataset.matrixEdit,b.dataset.matrixWeek);});
 $('matrixAddTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));
@@ -2553,7 +2582,7 @@ function upsertRecurringTemplate(id,occurrenceDate,fields){
  if(!Array.isArray(store.recurringTemplates))store.recurringTemplates=[];
  const dueOffsetDays=fields.dueDate?Math.round((parseKey(fields.dueDate)-parseKey(occurrenceDate))/86400000):null;
  let template=store.recurringTemplates.find(item=>item.id===id);
- const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,note:fields.note,listId:fields.listId,priority:fields.priority,importance:fields.importance,urgency:fields.urgency,dueOffsetDays,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,note:fields.note,listId:fields.listId,priority:fields.priority,status:fields.status||'todo',importance:fields.importance,urgency:fields.urgency,dueOffsetDays,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
  if(template)Object.assign(template,value);else{template=value;store.recurringTemplates.push(template);}
  return template;
 }
@@ -2579,7 +2608,7 @@ function materializeRecurringRange(rangeStart,rangeEnd){
     startTime=findSlot(day,duration,preferred,0,1440,blockers);
    }
    const dueDate=template.dueOffsetDays===null||template.dueOffsetDays===undefined?null:addDaysToKey(occurrenceDate,Number(template.dueOffsetDays)||0);
-   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,done:!!existing?.done,custom:true,fixed:false,note:template.note||'',unscheduled:startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,done:!!existing?.done,status:existing?.done?'done':(existing?.status||template.status||'todo'),custom:true,fixed:false,note:template.note||'',unscheduled:startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
    if(existing)Object.assign(existing,values);
    else rows.push({id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values});
   }
@@ -2679,6 +2708,32 @@ function deleteCountdown(id){const item=countdowns.find(c=>c.id===id);if(!item)r
 function wireCountdownControls(){
  $('countdownForm').addEventListener('submit',saveCountdownForm);$('cancelCountdownEdit').addEventListener('click',resetCountdownForm);
  $('countdownList').addEventListener('click',e=>{const edit=e.target.closest('[data-countdown-edit]');if(edit){editCountdown(edit.dataset.countdownEdit);return;}const del=e.target.closest('[data-countdown-delete]');if(del)deleteCountdown(del.dataset.countdownDelete);});
+}
+
+
+function taskBoardStatus(task){return task?.done||task?.status==='done'?'done':task?.status==='in-progress'?'in-progress':'todo';}
+function renderKanbanCard(record){
+ const t=record.task,status=taskBoardStatus(t),priority=t.priority||'none',due=t.dueDate?'<span class="kanban-chip">Due '+escapeHtml(fmtDate(parseKey(t.dueDate),{day:'numeric',month:'short'}))+'</span>':'';
+ const priorityChip=priority!=='none'?'<span class="kanban-chip priority-'+escapeHtml(priority)+'">'+escapeHtml(({high:'↑ High',medium:'→ Medium',low:'↓ Low'})[priority]||priority)+'</span>':'';
+ const listLabel=WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Inbox';
+ return '<article class="kanban-card" data-board-task="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'"><div class="kanban-card-top"><button type="button" class="kanban-card-title" data-board-edit="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'">'+escapeHtml(t.title)+'</button></div>'+(t.note?'<div class="kanban-card-note">'+escapeHtml(t.note)+'</div>':'')+'<div class="kanban-card-meta"><span class="kanban-chip">'+escapeHtml(listLabel)+'</span>'+priorityChip+due+'</div><footer class="kanban-card-footer"><select data-board-status="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'" aria-label="Change status of '+escapeHtml(t.title)+'"><option value="todo" '+(status==='todo'?'selected':'')+'>To do</option><option value="in-progress" '+(status==='in-progress'?'selected':'')+'>In progress</option><option value="done" '+(status==='done'?'selected':'')+'>Completed</option></select><button type="button" class="kanban-card-edit" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-board-edit="'+escapeHtml(t.id)+'" data-board-week="'+escapeHtml(record.week)+'">✎</button></footer></article>';
+}
+function renderKanbanBoard(){
+ const board=$('kanbanBoard');if(!board)return;
+ const groups={'todo':[],'in-progress':[],'done':[]};
+ workspaceRecords().forEach(record=>groups[taskBoardStatus(record.task)].push(record));
+ [['todo','kanbanListTodo','kanbanCountTodo'],['in-progress','kanbanListProgress','kanbanCountProgress'],['done','kanbanListDone','kanbanCountDone']].forEach(([status,listId,countId])=>{
+  const list=$(listId),count=$(countId),items=groups[status].sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
+  if(count)count.textContent=String(items.length);
+  if(list)list.innerHTML=items.length?items.map(renderKanbanCard).join(''):'<div class="kanban-empty">No tasks in this column.</div>';
+ });
+}
+function updateBoardTaskStatus(id,week,status){
+ if(!['todo','in-progress','done'].includes(status))return;
+ let item=null;
+ if(week!==currentWeek){const saved=store.weeks[week];item=Array.isArray(saved?.tasks)?saved.tasks.find(t=>t.id===id):null;if(!item)return;item.status=status;item.done=status==='done';saveStore();}
+ else{item=tasks.find(t=>t.id===id);if(!item)return;item.status=status;item.done=status==='done';saveCurrent();}
+ renderAll();
 }
 
 setup();
