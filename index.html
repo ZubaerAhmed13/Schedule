@@ -1496,7 +1496,22 @@ function openTaskModal(id=null,day=mobileDay,startAt=null){
   if(!Array.from(durationSelect.options).some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=durationLabel(Number(duration));durationSelect.add(option);}
   durationSelect.value=duration;const chosenStart=t?.start??(startAt===null||startAt===undefined?nextQuarterHour():startAt);$('modalTime').value=minsTime(chosenStart);updateEndTimeFromDuration();$('modalNote').value=t?.note||'';
   $('saveTaskBtn').textContent=t?'Save changes':'Save activity';$('deleteTaskBtn').style.display=t&&!t.fixed?'inline-flex':'none';
-  modal.classList.add('show');setTimeout(()=>$('modalTitleInput').focus(),30);
+  modal.classList.add('show');
+  setTimeout(()=>{
+    const titleInput=$('modalTitleInput');
+    if(t){
+      hideActivitySuggestions();
+      if(document.activeElement!==titleInput){
+        suppressActivitySuggestionFocus=true;
+        titleInput.focus({preventScroll:true});
+      }else{
+        suppressActivitySuggestionFocus=false;
+      }
+      hideActivitySuggestions();
+    }else{
+      titleInput.focus();
+    }
+  },30);
 }
 function closeTaskModal(){$('taskModal').classList.remove('show');}
 function saveModalTask(e){
