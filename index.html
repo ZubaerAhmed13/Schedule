@@ -577,6 +577,20 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
 @media(max-width:600px){.template-backdrop{padding:9px}.template-dialog{max-height:95vh;border-radius:17px}.template-dialog-head{padding:14px}.template-form{padding:14px}.template-form .template-days{grid-template-columns:repeat(2,minmax(0,1fr))}.template-form .template-shifts{grid-template-columns:1fr}.template-footer{align-items:stretch;flex-direction:column}.template-note{max-width:none}.template-buttons{justify-content:flex-end}.template-form .template-fields-grid{grid-template-columns:1fr}}
 
 .modalgrid .duration-field{grid-column:1/-1}
+
+/* Smart schedule gaps, monthly view, and dashboard week selection. */
+.setting-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:14px 0 4px;padding:13px 14px;border:1px solid #e0e5f1;background:#f8f9ff;border-radius:13px}
+.setting-toggle-row strong{display:block;font-size:12px;color:#28304d}.setting-toggle-row small{display:block;margin-top:3px;max-width:570px;color:#67718c;font-size:10.5px;line-height:1.45}
+.switch-control{display:flex;align-items:center;gap:8px;flex:0 0 auto;cursor:pointer;color:#4e5573;font-size:11px;font-weight:800}.switch-control input{position:absolute;opacity:0;width:1px;height:1px}.switch-track{width:38px;height:22px;border-radius:99px;background:#c9cede;position:relative;transition:background .16s;flex:0 0 38px}.switch-track:after{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .16s}.switch-control input:checked+.switch-track{background:#6566dc}.switch-control input:checked+.switch-track:after{transform:translateX(16px)}.switch-control input:focus-visible+.switch-track{outline:3px solid #9998f1;outline-offset:3px}
+.dashboard-period-control{display:grid;grid-template-columns:auto minmax(150px,190px);align-items:center;gap:6px 9px;justify-items:end}.dashboard-period-control>label{font-size:10px;font-weight:800;color:#5d6683}.dashboard-period-control input{grid-column:2;width:100%;min-width:0;padding:7px 9px;border:1px solid #d9def0;border-radius:10px;background:#fff;color:#303856;font:inherit;font-size:11px;font-weight:700}.dashboard-period-control .dashboard-period{grid-column:1/-1}
+.dashboard-insight{margin-top:12px;padding:11px 13px;border-radius:13px;background:#f0f4ff;border:1px solid #e0e6ff;color:#414c77;font-size:11px;line-height:1.55}.dashboard-insight strong{color:#30386c}
+.calendar-scroll.month-mode{height:auto;min-height:0;max-height:none;overflow:visible;scrollbar-gutter:auto}.month-calendar{width:100%;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid #e0e3f0;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 7px 22px rgba(45,52,94,.04)}
+.month-weekday{padding:11px 8px;text-align:center;background:#f7f8ff;border-bottom:1px solid #e4e7f2;color:#626b88;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.6px}.month-day-cell{position:relative;min-width:0;min-height:116px;padding:8px 7px 7px;border:0;border-right:1px solid #e9ebf4;border-bottom:1px solid #e9ebf4;background:#fff;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:5px}.month-day-cell:nth-child(7n){border-right:0}.month-day-cell:hover{background:#f9f9ff}.month-day-cell:focus-visible{outline:3px solid #7b7df0;outline-offset:-3px;z-index:2}.month-day-cell.outside-month{background:#fafbfe;color:#9ba2b7}.month-day-cell.is-today{background:#f4f3ff;box-shadow:inset 0 3px 0 #6567df}.month-day-number{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:850;color:#3b4261;font-variant-numeric:tabular-nums}.outside-month .month-day-number{color:#9ba2b7}.month-today-dot{width:6px;height:6px;border-radius:50%;background:#6567df;display:inline-block}.month-event-list{display:grid;gap:3px;min-width:0}.month-event-chip{display:flex;align-items:center;gap:4px;width:100%;min-width:0;border:0;border-radius:5px;padding:3px 4px;background:#e9efff;color:#35528d;text-align:left;font-size:9px;line-height:1.25;cursor:pointer;overflow:hidden}.month-event-chip.t-study{background:#f0e8ff;color:#65459a}.month-event-chip.t-language{background:#fff2ce;color:#7d5a15}.month-event-chip.t-life{background:#e3f5e9;color:#236344}.month-event-chip.t-hobby{background:#fff0e3;color:#855024}.month-event-chip.t-job{background:#e7efff;color:#2c579c}.month-event-chip.done{opacity:.65;text-decoration:line-through}.month-event-time{flex:0 0 auto;font-weight:850;font-variant-numeric:tabular-nums}.month-event-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}.month-more{font-size:9px;font-weight:800;color:#6b6fbc;padding:1px 3px}.month-empty-hint{margin-top:auto;font-size:9px;color:#b0b5c5;padding:5px 2px 0}
+@media(max-width:760px){.month-day-cell{min-height:92px;padding:6px 4px;gap:4px}.month-weekday{padding:9px 2px;font-size:9px}.month-day-number{font-size:11px}.month-event-chip{padding:3px;font-size:8px}.month-event-time{display:none}.dashboard-period-control{grid-template-columns:1fr;justify-items:stretch;width:100%}.dashboard-period-control>label,.dashboard-period-control input,.dashboard-period-control .dashboard-period{grid-column:1;justify-self:stretch}.dashboard-head{flex-direction:column}.setting-toggle-row{align-items:flex-start;flex-direction:column}}
+@media(max-width:430px){.month-day-cell{min-height:74px;padding:5px 3px}.month-weekday{font-size:8px;letter-spacing:0}.month-event-chip{font-size:7.5px}.month-event-list{gap:2px}.month-event-chip{border-radius:4px}.month-more{font-size:8px}}
+.break-layer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}.break-gap{position:absolute;left:4px;right:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px dashed rgba(111,118,174,.32);border-radius:5px;background:rgba(245,246,255,.78);color:#72799e;font-size:9px;font-weight:750;line-height:1;white-space:nowrap;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.switch-track,.switch-track:after{transition:none}}
+
 </style>
 </head>
 <body>
@@ -611,6 +625,7 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
       <div class="view-switch" role="group" aria-label="Calendar view">
         <button class="btn view-switch-btn" id="dayViewBtn" type="button" aria-pressed="false">Day</button>
         <button class="btn view-switch-btn" id="weekViewBtn" type="button" aria-pressed="false">Week</button>
+        <button class="btn view-switch-btn" id="monthViewBtn" type="button" aria-pressed="false">Month</button>
       </div>
       <div class="week-control">
         <button class="btn nav-square" id="prevWeek" aria-label="Previous week" title="Previous week">‹</button>
@@ -630,7 +645,7 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
   <section class="effort-dashboard dashboard-source" id="dashboard" aria-labelledby="dashboardTitle">
     <div class="dashboard-head">
       <div><div class="dashboard-eyebrow">YOUR WEEK AT A GLANCE</div><h2 id="dashboardTitle">Effort dashboard</h2><p>See your completed effort, unlogged past time, and where your planned hours went.</p></div>
-      <div class="dashboard-period" id="dashboardPeriod">This week</div>
+      <div class="dashboard-period-control"><label for="dashboardWeekPicker">Review week</label><input type="date" id="dashboardWeekPicker" aria-label="Choose a date in the week to review" /><div class="dashboard-period" id="dashboardPeriod">This week</div></div>
     </div>
     <div class="dashboard-kpis">
       <article class="dash-kpi kpi-effort"><span class="kpi-icon">✓</span><div><small>Effort logged</small><strong id="effortLogged">0m</strong><p>Duration of completed activities</p></div></article>
@@ -643,6 +658,7 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
       <section class="analytics-card"><div class="analytics-title"><h3>Where your time went</h3><p>Logged effort compared with planned time in each category</p></div><div id="categoryBreakdown" class="category-breakdown"></div></section>
       <section class="analytics-card"><div class="analytics-title"><h3>Daily effort</h3><p>Completed time as a share of each day's plan</p></div><div id="dailyBreakdown" class="daily-breakdown"></div></section>
     </div>
+    <div class="dashboard-insight" id="dashboardInsight">Choose a week to see a simple summary of your effort.</div>
     <div class="dashboard-foot" id="dashboardNote">Mark an activity complete to count its planned duration as effort logged. Past time not checked off may be wasted time, a missed plan, or simply unmarked; Weekwise does not track attention automatically.</div>
   </section>
   <details class="settings utility-source" id="settingsPanel">
@@ -654,6 +670,7 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
         <div class="field"><label for="tripStart">City day start time</label><input id="tripStart" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="09:00" value="09:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /><div class="hint">24-hour time: 09:00–18:00.</div></div>
         <div class="field"><label for="cookDay">First cooking day this week</label><select id="cookDay"></select><div class="hint">Then every second day.</div></div>
       </div>
+      <div class="setting-toggle-row"><div><strong>Show breaks between activities</strong><small>Display the free gap between consecutive events when there are at least 15 minutes. This never adds events to your calendar.</small></div><label class="switch-control"><input id="showBreaks" type="checkbox" checked /><span class="switch-track" aria-hidden="true"></span><span class="switch-text">Show breaks</span></label></div>
       <div class="destination-editor"><div class="field"><label for="tripDestination">City-trip destination (optional)</label><div class="city-edit"><input id="tripDestination" aria-label="City or destination" placeholder="e.g. Heidelberg" maxlength="70" /><button class="btn" id="saveDestination">Save</button></div></div></div>
       <div class="shift-title">Work days <span style="color:var(--muted);font-weight:500">— select your days and hours</span></div>
       <div class="shiftgrid" id="shiftGrid"></div>
@@ -816,7 +833,7 @@ function updateDurationFromEnd(){
 function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function escapeHtml(str){return String(str??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function defaultClassTemplate(){return {title:'Master’s coursework self-study',days:[1,3,5,0],duration:75,start:'13:00'};}
-function defaultSettings(){return {travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,shifts:DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:defaultClassTemplate()};}
+function defaultSettings(){return {travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,shifts:DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:defaultClassTemplate()};}
 function loadStore(){
   try{
     const current=localStorage.getItem(STORE_KEY);
@@ -843,8 +860,10 @@ let store=loadStore();
 if(!store.settings)store.settings=defaultSettings();if(!store.weeks)store.weeks={};if(!store.settings.shifts)store.settings.shifts=defaultSettings().shifts;if(!store.settings.classTemplate)store.settings.classTemplate=defaultClassTemplate();
 let currentWeek=dateKey(sundayOf(now));
 let mobileDay=now.getDay();
+let monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);
+let dashboardWeekKey=currentWeek;
 let calendarView='week';
-try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarView=(savedView==='day'||savedView==='week')?savedView:(window.matchMedia('(max-width: 650px)').matches?'day':'week');}catch(_){calendarView=window.matchMedia('(max-width: 650px)').matches?'day':'week';}
+try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarView=(savedView==='day'||savedView==='week'||savedView==='month')?savedView:(window.matchMedia('(max-width: 650px)').matches?'day':'week');}catch(_){calendarView=window.matchMedia('(max-width: 650px)').matches?'day':'week';}
 let lastRenderedCalendarView=null;
 let tasks=[];
 let toastTimer;
@@ -854,8 +873,8 @@ function saveCurrent(){store.weeks[currentWeek]={tasks:JSON.parse(JSON.stringify
 function showToast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400);}
 function populateDaySelects(){['tripDay','cookDay','quickDay','modalDay'].forEach(id=>{const el=$(id);el.innerHTML=DAY_NAMES.map((n,i)=>`<option value="${i}">${n}</option>`).join('')});}
 function renderShiftFields(){const grid=$('shiftGrid');grid.innerHTML=DAY_NAMES.map((d,i)=>{const s=store.settings.shifts[i]||{enabled:false,start:'09:00',end:'17:00'};return `<div class="shiftrow"><label class="daycheck"><input type="checkbox" data-shift-enabled="${i}" ${s.enabled?'checked':''}> <span>${d}</span></label><div><label class="sr-only" for="shiftstart${i}">Shift start ${d}</label><input class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="09:00" id="shiftstart${i}" data-shift-start="${i}" value="${escapeHtml(s.start||'09:00')}" title="24-hour HH:MM, e.g. 09:00 or type 0900" aria-label="${d} shift start"></div><div><label class="sr-only" for="shiftend${i}">Shift end ${d}</label><input class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="17:00" id="shiftend${i}" data-shift-end="${i}" value="${escapeHtml(s.end||'17:00')}" title="24-hour HH:MM, e.g. 17:00 or type 1700" aria-label="${d} shift end"></div></div>`}).join('');}
-function syncSettingsForm(){ $('weekStart').value=currentWeek; $('tripDay').value=store.settings.travelDay; $('tripStart').value=store.settings.travelStart||'09:00'; $('cookDay').value=store.settings.cookStartDay; $('tripDestination').value=store.settings.destination||'';renderShiftFields(); }
-function settingsFromForm(){const shifts=DAY_NAMES.map((_,i)=>({enabled:!!document.querySelector(`[data-shift-enabled="${i}"]`)?.checked,start:document.querySelector(`[data-shift-start="${i}"]`)?.value||'09:00',end:document.querySelector(`[data-shift-end="${i}"]`)?.value||'17:00'}));return {...store.settings,travelDay:Number($('tripDay').value),travelStart:$('tripStart').value||'09:00',destination:$('tripDestination').value.trim(),cookStartDay:Number($('cookDay').value),shifts,classTemplate:store.settings.classTemplate||defaultClassTemplate()};}
+function syncSettingsForm(){ $('weekStart').value=currentWeek; $('tripDay').value=store.settings.travelDay; $('tripStart').value=store.settings.travelStart||'09:00'; $('cookDay').value=store.settings.cookStartDay; $('tripDestination').value=store.settings.destination||'';const breakToggle=$('showBreaks');if(breakToggle)breakToggle.checked=store.settings.showBreaks!==false;renderShiftFields();}
+function settingsFromForm(){const shifts=DAY_NAMES.map((_,i)=>({enabled:!!document.querySelector(`[data-shift-enabled="${i}"]`)?.checked,start:document.querySelector(`[data-shift-start="${i}"]`)?.value||'09:00',end:document.querySelector(`[data-shift-end="${i}"]`)?.value||'17:00'}));return {...store.settings,travelDay:Number($('tripDay').value),travelStart:$('tripStart').value||'09:00',destination:$('tripDestination').value.trim(),cookStartDay:Number($('cookDay').value),showBreaks:!!$('showBreaks')?.checked,shifts,classTemplate:store.settings.classTemplate||defaultClassTemplate()};}
 function overlap(a,b){return a.start < b.start+b.duration && b.start < a.start+a.duration;}
 function canPlace(dayTasks,start,duration){const candidate={start,duration};return !dayTasks.some(t=>t.start!=null && overlap(candidate,t));}
 function findSlot(dayIndex,duration,preferred=600,min=420,max=1320,dayTasks=null){const occupied=dayTasks||tasks.filter(t=>t.day===dayIndex);const candidates=[];for(let start=min;start+duration<=max;start+=15)candidates.push(start);candidates.sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred));return candidates.find(start=>canPlace(occupied,start,duration))??null;}
@@ -1310,6 +1329,97 @@ function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBt
 function shiftPeriod(n){if(calendarView!=='day'){shiftWeeks(n);return;}const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));}
 function addQuick(e){e.preventDefault();const title=$('quickTitle').value.trim();if(!title)return;if(!validateTimeFields(['quickTime']))return;const day=Number($('quickDay').value),type=$('quickType').value,duration=Number($('quickDuration').value),preferred=timeMins($('quickTime').value||'10:00');createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true});const t=tasks[tasks.length-1];t.unscheduled=t.start===null;saveCurrent();renderAll();$('quickTitle').value='';showToast(t.start===null?'Added to the day, but needs a time':'Activity added to your week');}
 function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,10*60));$('activityTemplateGrid').addEventListener('click',e=>{const button=e.target.closest('[data-template]');if(!button)return;if(button.getAttribute('aria-disabled')==='true'){showToast(`A Work day block is already scheduled for ${DAY_NAMES[Number($('modalDay').value)]}. Choose a non-workday or edit Work day settings.`);return;}chooseActivityTemplate(button.dataset.template);});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});}
+
+/* Optional visual gaps, monthly calendar, and week-selectable dashboard. */
+const weekwiseOriginalRenderDays=renderDays;
+const weekwiseOriginalRenderStats=renderStats;
+function weekwiseTasksOnDate(date){
+ const key=dateKey(sundayOf(date));
+ const source=key===currentWeek?tasks:(Array.isArray(store.weeks[key]&&store.weeks[key].tasks)?store.weeks[key].tasks:[]);
+ return source.filter(function(t){return Number(t.day)===date.getDay()&&t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0;}).sort(function(a,b){return Number(a.start)-Number(b.start);});
+}
+function weekwiseRenderMonth(){
+ const grid=$('daysGrid');grid.classList.add('month-mode');grid.setAttribute('aria-label','Monthly calendar');
+ const picker=$('mobileDayPicker');if(picker)picker.hidden=true;const help=$('mobileHelp');if(help)help.hidden=true;
+ updateViewControls();
+ const year=monthAnchor.getFullYear(),month=monthAnchor.getMonth(),first=new Date(year,month,1),start=sundayOf(first),days=new Date(year,month+1,0).getDate(),count=Math.ceil((first.getDay()+days)/7)*7;
+ let markup='<div class="month-calendar">'+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){return '<div class="month-weekday">'+d+'</div>';}).join('');
+ for(let i=0;i<count;i++){
+  const date=new Date(start);date.setDate(start.getDate()+i);
+  const key=dateKey(date),inMonth=date.getMonth()===month,isToday=key===dateKey(now),items=weekwiseTasksOnDate(date);
+  const chips=items.slice(0,3).map(function(t){const end=Number(t.start)+Number(t.duration||0),endLabel=end===1440?'24:00':minsTime(end);return '<button type="button" class="month-event-chip '+categoryClass(t.type)+(t.done?' done':'')+'" data-month-event="'+escapeHtml(t.id)+'" data-month-date="'+key+'" title="'+escapeHtml(t.title+' · '+minsTime(Number(t.start))+'–'+endLabel)+'"><span class="month-event-time">'+minsTime(Number(t.start))+'</span><span class="month-event-title">'+escapeHtml(t.title)+'</span></button>';}).join('');
+  const more=items.length>3?'<div class="month-more">+'+(items.length-3)+' more</div>':'';
+  markup+='<div class="month-day-cell '+(inMonth?'':'outside-month')+(isToday?' is-today':'')+'" role="button" tabindex="0" data-month-day="'+key+'" aria-label="'+escapeHtml(fmtDate(date,{weekday:'long',day:'numeric',month:'long'}))+', '+items.length+' activities"><div class="month-day-number"><span>'+date.getDate()+'</span>'+(isToday?'<span class="month-today-dot" aria-hidden="true"></span>':'')+'</div><div class="month-event-list">'+chips+more+'</div>'+(items.length?'':'<span class="month-empty-hint">+ Add</span>')+'</div>';
+ }
+ grid.innerHTML=markup+'</div>';grid.scrollTop=0;grid.scrollLeft=0;grid.dataset.hasRendered='true';
+ grid.onclick=function(e){
+  if(calendarView!=='month')return;
+  const ev=e.target.closest('[data-month-event]');
+  if(ev){e.preventDefault();e.stopPropagation();const date=parseKey(ev.dataset.monthDate),id=ev.dataset.monthEvent;saveCurrent();mobileDay=date.getDay();currentWeek=dateKey(sundayOf(date));loadWeek(currentWeek);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}renderAll();const item=tasks.find(function(t){return t.id===id;});if(item){if(item.fixed)openFixedSettings(id);else openTaskModal(id);}return;}
+  const cell=e.target.closest('[data-month-day]');
+  if(cell){const date=parseKey(cell.dataset.monthDay);saveCurrent();mobileDay=date.getDay();monthAnchor=new Date(date.getFullYear(),date.getMonth(),1);currentWeek=dateKey(sundayOf(date));loadWeek(currentWeek);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}renderAll();openTaskModal(null,mobileDay,10*60);}
+ };
+ grid.onkeydown=function(e){if(calendarView!=='month'||(e.key!=='Enter'&&e.key!==' '))return;const cell=e.target.closest('[data-month-day]');if(cell&&!e.target.closest('[data-month-event]')){e.preventDefault();cell.click();}};
+}
+function weekwiseRenderBreaks(){
+ const grid=$('daysGrid');grid.querySelectorAll('.break-layer').forEach(function(el){el.remove();});
+ if(store.settings.showBreaks===false)return;
+ const hourHeight=56;
+ grid.querySelectorAll('.day-column').forEach(function(column){
+  const day=Number(column.dataset.dayIndex),items=tasks.filter(function(t){return Number(t.day)===day&&t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0;}).slice().sort(function(a,b){return Number(a.start)-Number(b.start);});
+  let covered=null;const gaps=[];
+  items.forEach(function(t){const st=Math.max(0,Number(t.start)),en=Math.min(1440,st+Number(t.duration||0));if(covered!==null&&st-covered>=15)gaps.push({start:covered,end:st});covered=covered===null?en:Math.max(covered,en);});
+  if(!gaps.length)return;
+  const layer=document.createElement('div');layer.className='break-layer';layer.setAttribute('aria-hidden','true');
+  layer.innerHTML=gaps.map(function(g){const mins=g.end-g.start,top=g.start/60*hourHeight,pixels=mins/60*hourHeight,height=Math.max(10,Math.min(19,pixels-2)),label=mins>=60?(Math.floor(mins/60)+'h'+(mins%60?' '+(mins%60)+'m':'')+' break'):(mins+'m break');return '<span class="break-gap" style="top:'+(top+Math.max(1,(pixels-height)/2))+'px;height:'+height+'px" title="'+label+' between scheduled activities">'+label+'</span>';}).join('');
+  column.appendChild(layer);
+ });
+}
+renderDays=function(){
+ const grid=$('daysGrid');
+ if(calendarView==='month'){weekwiseRenderMonth();return;}
+ grid.classList.remove('month-mode');grid.onclick=null;grid.onkeydown=null;
+ const picker=$('mobileDayPicker');if(picker)picker.hidden=false;const help=$('mobileHelp');if(help)help.hidden=false;
+ weekwiseOriginalRenderDays();weekwiseRenderBreaks();
+};
+updateViewControls=function(){
+ [['dayViewBtn','day'],['weekViewBtn','week'],['monthViewBtn','month']].forEach(function(pair){const b=$(pair[0]);if(b){b.classList.toggle('active',calendarView===pair[1]);b.setAttribute('aria-pressed',calendarView===pair[1]?'true':'false');}});
+ const unit=calendarView==='day'?'day':calendarView==='month'?'month':'week';
+ ['prevWeek','nextWeek'].forEach(function(id){const b=$(id);if(b){b.title=(id==='prevWeek'?'Previous ':'Next ')+unit;b.setAttribute('aria-label',b.title);}});
+};
+setCalendarView=function(view){
+ if(!['day','week','month'].includes(view)||calendarView===view)return;
+ saveCurrent();if(view==='month'){const d=dayDate(currentWeek,mobileDay);monthAnchor=new Date(d.getFullYear(),d.getMonth(),1);}
+ calendarView=view;try{localStorage.setItem('weekwise-calendar-view-v1',view);}catch(_){}renderAll();
+};
+shiftPeriod=function(n){
+ if(calendarView==='month'){saveCurrent();monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()+n,1);currentWeek=dateKey(sundayOf(monthAnchor));loadWeek(currentWeek);return;}
+ if(calendarView!=='day'){shiftWeeks(n);return;}
+ const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));
+};
+openDashboard=function(){
+ dashboardWeekKey=currentWeek;const picker=$('dashboardWeekPicker');if(picker)picker.value=currentWeek;renderStats();openUtilityPanel('dashboard','Effort dashboard');
+};
+renderStats=function(){
+ const selected=dashboardWeekKey||currentWeek,oldTasks=tasks,oldWeek=currentWeek;
+ if(selected!==currentWeek){tasks=Array.isArray(store.weeks[selected]&&store.weeks[selected].tasks)?store.weeks[selected].tasks:[];currentWeek=selected;}
+ const measuredTasks=tasks;
+ weekwiseOriginalRenderStats();
+ const scheduled=measuredTasks.filter(function(t){return t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0;});
+ const total=scheduled.length,done=scheduled.filter(function(t){return t.done;}).length,planned=scheduled.reduce(function(n,t){return n+Number(t.duration||0);},0),logged=scheduled.filter(function(t){return t.done;}).reduce(function(n,t){return n+Number(t.duration||0);},0);
+ const groups=[{key:'job',label:'Career'},{key:'study',label:'Coursework & communication'},{key:'language',label:'Languages'},{key:'life',label:'Home & routines'},{key:'hobby',label:'Hobbies & city trips'},{key:'workday',label:'Work day'},{key:'other',label:'Other'}].map(function(g){g.total=scheduled.filter(function(t){return analyticsGroup(t)===g.key;}).reduce(function(n,t){return n+Number(t.duration||0);},0);return g;}).sort(function(a,b){return b.total-a.total;});
+ const days=DAY_NAMES.map(function(_,i){const a=scheduled.filter(function(t){return Number(t.day)===i;});return {label:DAY_SHORT[i],total:a.reduce(function(n,t){return n+Number(t.duration||0);},0)};}).sort(function(a,b){return b.total-a.total;});
+ const insight=$('dashboardInsight');
+ if(insight){if(!total)insight.textContent='This week has no scheduled activities yet. Add activities to start tracking your effort.';else insight.innerHTML='<strong>'+done+' of '+total+' activities completed.</strong> You logged <strong>'+durationText(logged)+'</strong> of <strong>'+durationText(planned)+'</strong> planned time. Most time is allocated to <strong>'+(groups[0]&&groups[0].total?groups[0].label:'no category yet')+'</strong>'+(days[0]&&days[0].total?'; <strong>'+days[0].label+'</strong> is your busiest day ('+durationText(days[0].total)+' planned)':'')+'.';}
+ tasks=oldTasks;currentWeek=oldWeek;
+ const picker=$('dashboardWeekPicker');if(picker&&!picker.value)picker.value=selected;
+ if(calendarView==='month')$('weekLabel').textContent=monthAnchor.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+ else if(calendarView==='day')$('weekLabel').textContent=DAY_NAMES[mobileDay]+', '+fmtDate(dayDate(currentWeek,mobileDay),{day:'numeric',month:'short',year:'numeric'});
+ else $('weekLabel').textContent=fmtDate(parseKey(currentWeek),{day:'numeric',month:'short'})+' – '+fmtDate(dayDate(currentWeek,6),{day:'numeric',month:'short',year:'numeric'});
+};
+$('dashboardWeekPicker').addEventListener('change',function(){if(!$('dashboardWeekPicker').value)return;dashboardWeekKey=dateKey(sundayOf(parseKey($('dashboardWeekPicker').value)));renderStats();});
+$('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);});
+
 setup();
 setInterval(()=>{const fresh=new Date();if(fresh.getMinutes()!==now.getMinutes()||dateKey(fresh)!==dateKey(now)){now=fresh;renderDays();renderStats();}},15000);
 })();
