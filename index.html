@@ -738,6 +738,9 @@ body.signin-required{overflow:hidden}
 @media(max-width:460px){.task-workspace-head{align-items:flex-start}.task-workspace-head .btn{padding:8px 9px;font-size:10px}.workspace-capture{gap:6px}.workspace-capture .btn{padding:8px 10px}.workspace-sort-wrap>span{display:none}.workspace-search-wrap{padding:6px 8px}.workspace-task-meta{font-size:9px}.workspace-task-row{grid-template-columns:18px minmax(0,1fr) 26px}.workspace-task-actions{gap:0}.workspace-task-actions button{width:25px;height:26px}.modalback.show{align-items:flex-start;overflow-y:auto}.modal{margin:auto;max-height:calc(100vh - 32px);overflow:auto}}
 @media(prefers-reduced-motion:reduce){.workspace-nav-btn,.workspace-task-row,.workspace-task-actions button{transition:none!important}}
 
+
+/* The workspace toggles the original calendar using the hidden attribute; override display rules explicitly. */
+.calendar-toolbar[hidden],#mobileDayPicker[hidden],#mobileHelp[hidden],#daysGrid[hidden],#dashboard[hidden],#taskWorkspace[hidden]{display:none!important}
 </style>
 </head>
 <body>
