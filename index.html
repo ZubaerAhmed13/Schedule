@@ -868,6 +868,9 @@ body.signin-required{overflow:hidden}
 .task-notification-settings strong{display:block;color:#444b6b;font-size:11px}.task-notification-settings p{max-width:470px;margin:3px 0 0;color:#8e94aa;font-size:10px;line-height:1.5}.task-notification-settings .btn{flex:0 0 auto;white-space:nowrap}
 @media(max-width:600px){.task-notification-settings{align-items:flex-start;flex-direction:column}.task-notification-settings .btn{width:100%}}
 
+
+.workspace-folder-pill{background:#f1f2ff!important;color:#676dc7!important}.workspace-section-pill{background:#f7f1ff!important;color:#8669b4!important}
+
 </style>
 </head>
 <body>
@@ -1200,6 +1203,8 @@ body.signin-required{overflow:hidden}
   <div class="field"><label for="modalDay">Day</label><select id="modalDay"></select></div>
   <div class="field"><label for="modalCategory">Category</label><select id="modalCategory"><option value="job">Career</option><option value="study">Coursework</option><option value="language">Language</option><option value="life">Home / personal</option><option value="hobby">Hobby</option><option value="other">Other</option></select></div>
   <div class="field"><label for="modalListId">List</label><select id="modalListId"><option value="inbox">Inbox</option><option value="career">Career</option><option value="study">Study</option><option value="work">Work</option><option value="personal">Personal</option><option value="language">Languages</option><option value="hobbies">Hobbies</option><option value="other">Other</option></select></div>
+  <div class="field"><label for="modalFolder">Folder (optional)</label><input id="modalFolder" maxlength="60" placeholder="e.g. University"></div>
+  <div class="field"><label for="modalSection">Section (optional)</label><input id="modalSection" maxlength="60" placeholder="e.g. Exam preparation"></div>
   <div class="field"><label for="modalPriority">Priority</label><select id="modalPriority"><option value="none">No priority</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
   <div class="field"><label for="modalStatus">Status</label><select id="modalStatus"><option value="todo">To do</option><option value="in-progress">In progress</option><option value="done">Completed</option></select></div>
   <div class="field"><label for="modalImportance">Importance</label><select id="modalImportance"><option value="unclassified">Not classified</option><option value="important">Important</option><option value="not-important">Not important</option></select></div>
@@ -1835,6 +1840,12 @@ function inferredListId(t){
   if(t.workday||/^work day$/i.test(t.title||''))return 'work';
   return ({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[t.type]||'other';
 }
+function defaultFolderName(listId){
+ if(['career','work'].includes(listId))return 'Career & Work';
+ if(['study','language'].includes(listId))return 'Learning';
+ if(['personal','hobbies','other'].includes(listId))return 'Personal';
+ return 'Inbox';
+}
 function updateModalScheduleVisibility(){
   const noSchedule=!!$('modalNoSchedule')?.checked;
   const fields=$('taskSchedulingFields');if(fields)fields.hidden=noSchedule;
@@ -1848,6 +1859,8 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   $('modalListId').value=t?inferredListId(t):(defaultListId||'career');
   if(!t&&!defaultListId)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
+  $('modalFolder').value=t?.folderName||defaultFolderName($('modalListId').value);
+  $('modalSection').value=t?.sectionName||'';
   $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';$('modalReminderAt').value=t?.reminderAt||'';
   $('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
   $('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
@@ -1889,16 +1902,16 @@ function saveModalTask(e){
   }
   const day=Number($('modalDay').value),type=$('modalCategory').value,note=$('modalNote').value.trim(),recurrence=$('modalRecurrence').value;
   const occurrenceDate=dateKey(dayDate(currentWeek,day));
-  const listId=$('modalListId').value,priority=$('modalPriority').value,status=$('modalStatus').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null,reminderAt=$('modalReminderAt').value||null;
+  const listId=$('modalListId').value,folderName=$('modalFolder').value.trim()||defaultFolderName($('modalListId').value),sectionName=$('modalSection').value.trim(),priority=$('modalPriority').value,status=$('modalStatus').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null,reminderAt=$('modalReminderAt').value||null;
   const tags=[...new Set($('modalTags').value.split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))];
   const subtasks=$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false}));
   if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled on ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
-  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,note,recurrence,listId,priority,status,importance,urgency,dueDate,reminderAt,tags,subtasks};
+  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,note,recurrence,listId,folderName,sectionName,priority,status,importance,urgency,dueDate,reminderAt,tags,subtasks};
   if(id){
     const t=tasks.find(x=>x.id===id);
     if(t&&!t.fixed){
       const oldSeriesId=t.seriesId||null;
-      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderAt=reminderAt;t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;
+      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderAt=reminderAt;t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...s,id:old.id||s.id,done:!!old.done}:{...s};});
       t.start=noSchedule?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));t.unscheduled=noSchedule||t.start===null;actualStart=t.start;
@@ -1913,7 +1926,7 @@ function saveModalTask(e){
     }
   }else{
     createTask(day,title,type,duration,noSchedule?null:preferred,{min:0,max:1440,custom:true,note});
-    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||t.start===null;t.listId=listId;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
+    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||t.start===null;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
     if(recurrence!=='none'){
       seriesId=uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
       upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
@@ -2400,12 +2413,13 @@ function workspaceTaskRow(record){
  const status=taskBoardStatus(t),statusHtml=status==='in-progress'?'<span class="workspace-meta-pill">In progress</span>':'';
  const tagsHtml=tags.length?'<div class="workspace-task-tags">'+tags.map(tag=>'<span>#'+escapeHtml(tag)+'</span>').join('')+'</div>':'';
  const reminderHtml=t.reminderAt?'<span class="workspace-meta-pill task-reminder-pill" title="Task reminder">◷ '+escapeHtml(new Date(t.reminderAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))+'</span>':'';
+ const organizationHtml='<span class="workspace-meta-pill workspace-folder-pill">'+escapeHtml(t.folderName||defaultFolderName(record.listId))+'</span>'+(t.sectionName?'<span class="workspace-meta-pill workspace-section-pill">§ '+escapeHtml(t.sectionName)+'</span>':'');
  const label=WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Inbox',attrs=' data-workspace-week="'+escapeHtml(record.week)+'"';
  const subtasksHtml=subtasks.length?'<details class="workspace-subtasks"><summary>☷ '+completedSubtasks+'/'+subtasks.length+' subtasks</summary><div class="workspace-subtask-list">'+subtasks.map((sub,index)=>{const title=typeof sub==='string'?sub:(sub.title||'Untitled step'),checked=typeof sub==='object'&&!!sub.done;return '<label class="workspace-subtask-row"><input type="checkbox" data-workspace-subtask="'+escapeHtml(t.id)+'" data-workspace-subtask-index="'+index+'"'+attrs+' '+(checked?'checked':'')+' aria-label="Complete subtask '+escapeHtml(title)+'"><span class="'+(checked?'is-complete':'')+'">'+escapeHtml(title)+'</span></label>';}).join('')+'</div></details>':'';
  return '<article class="workspace-task-row '+(t.done?'is-done':'')+'" data-workspace-id="'+escapeHtml(t.id)+'"'+attrs+'>'+
   '<input class="workspace-task-check" type="checkbox" data-workspace-done="'+escapeHtml(t.id)+'"'+attrs+' aria-label="Mark '+escapeHtml(t.title)+' complete" '+(t.done?'checked':'')+'>'+
   '<div class="workspace-task-main"><button type="button" class="workspace-task-title" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>'+escapeHtml(t.title)+'</button>'+
-  '<div class="workspace-task-meta">'+scheduleHtml+'<span class="workspace-meta-pill">'+escapeHtml(label)+'</span>'+statusHtml+priorityHtml+dueHtml+reminderHtml+'</div>'+tagsHtml+subtasksHtml+(t.note?'<div class="workspace-task-subtasks">'+escapeHtml(t.note)+'</div>':'')+'</div>'+
+  '<div class="workspace-task-meta">'+scheduleHtml+'<span class="workspace-meta-pill">'+escapeHtml(label)+'</span>'+organizationHtml+statusHtml+priorityHtml+dueHtml+reminderHtml+'</div>'+tagsHtml+subtasksHtml+(t.note?'<div class="workspace-task-subtasks">'+escapeHtml(t.note)+'</div>':'')+'</div>'+
   '<div class="workspace-task-actions"><button type="button" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>✎</button><button type="button" title="Delete task" aria-label="Delete '+escapeHtml(t.title)+'" data-workspace-delete="'+escapeHtml(t.id)+'"'+attrs+'>×</button></div></article>';
 }
 function updateWorkspaceCounts(){
@@ -2428,7 +2442,7 @@ function renderWorkspaceTasks(){
  const list=$('workspaceTaskList');if(!list)return;
  const search=String($('workspaceSearch')?.value||'').trim().toLowerCase(),sort=$('workspaceSort')?.value||'date';
  let items=workspaceRecords().filter(r=>workspaceRecordMatches(r,workspaceView));
- if(search)items=items.filter(r=>[r.task.title,r.task.note,...(Array.isArray(r.task.tags)?r.task.tags:[])].join(' ').toLowerCase().includes(search));
+ if(search)items=items.filter(r=>[r.task.title,r.task.note,r.task.folderName,r.task.sectionName,...(Array.isArray(r.task.tags)?r.task.tags:[])].join(' ').toLowerCase().includes(search));
  if(sort==='priority')items.sort((a,b)=>workspacePriorityValue(b.task.priority)-workspacePriorityValue(a.task.priority)||a.date-b.date||(Number(a.task.start??9999)-Number(b.task.start??9999)));
  else if(sort==='title')items.sort((a,b)=>String(a.task.title).localeCompare(String(b.task.title)));
  else items.sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
@@ -2672,7 +2686,7 @@ function upsertRecurringTemplate(id,occurrenceDate,fields){
  const reminderOffsetDays=fields.reminderAt?Math.round((parseKey(fields.reminderAt.slice(0,10))-parseKey(occurrenceDate))/86400000):null;
  const reminderTime=fields.reminderAt?fields.reminderAt.slice(11,16):null;
  let template=store.recurringTemplates.find(item=>item.id===id);
- const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,note:fields.note,listId:fields.listId,priority:fields.priority,status:fields.status||'todo',importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:fields.status||'todo',importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,tags:[...(fields.tags||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
  if(template)Object.assign(template,value);else{template=value;store.recurringTemplates.push(template);}
  return template;
 }
@@ -2699,7 +2713,7 @@ function materializeRecurringRange(rangeStart,rangeEnd){
    }
    const dueDate=template.dueOffsetDays===null||template.dueOffsetDays===undefined?null:addDaysToKey(occurrenceDate,Number(template.dueOffsetDays)||0);
    const reminderAt=template.reminderOffsetDays===null||template.reminderOffsetDays===undefined||!template.reminderTime?null:addDaysToKey(occurrenceDate,Number(template.reminderOffsetDays)||0)+'T'+template.reminderTime;
-   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,done:!!existing?.done,status:existing?.done?'done':(existing?.status||template.status||'todo'),custom:true,fixed:false,note:template.note||'',unscheduled:startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderNotifiedAt:existing?.reminderNotifiedAt===reminderAt?reminderAt:null,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status||template.status||'todo'),custom:true,fixed:false,note:template.note||'',unscheduled:startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderNotifiedAt:existing?.reminderNotifiedAt===reminderAt?reminderAt:null,tags:[...(template.tags||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
    if(existing)Object.assign(existing,values);
    else rows.push({id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values});
   }
@@ -3017,7 +3031,7 @@ function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId){
   actualStart=findSlot(day,duration,startMinutes,0,1440,blockers);
  }
  const type=({career:'job',study:'study',work:'job',personal:'life',language:'language',hobbies:'hobby',other:'other',inbox:'other'})[listId]||'other';
- const task={id:uid(),day,title,type,duration,start:actualStart,done:false,status:'todo',custom:true,fixed:false,note:'',unscheduled:actualStart===null,listId,priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
+ const task={id:uid(),day,title,type,duration,start:actualStart,done:false,status:'todo',custom:true,fixed:false,note:'',unscheduled:actualStart===null,listId,folderName:defaultFolderName(listId),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
  rows.push(task);
  if(weekKey===currentWeek)saveCurrent();else saveStore();
  renderAll();renderWorkspaceView();
