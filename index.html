@@ -785,6 +785,38 @@ body.signin-required{overflow:hidden}
 @media(max-width:1060px){.habit-create-form{grid-template-columns:68px minmax(140px,1fr) minmax(120px,1fr)}.habit-create-actions{grid-column:1/-1;justify-content:flex-end}.habit-tracker-list{grid-template-columns:1fr}}
 @media(max-width:760px){.habit-tracker{padding:12px}.habit-tracker-head{flex-direction:column}.habit-week-range{align-self:flex-start}.habit-create-form{grid-template-columns:62px minmax(0,1fr)}.habit-name-field,.habit-create-field:nth-of-type(3),.habit-target-field{grid-column:span 2}.habit-create-actions{grid-column:1/-1}.habit-create-actions .btn{flex:1}.habit-track-card{padding:11px}.habit-checkin-days{gap:3px}}
 
+
+.view-switch{max-width:100%;flex-wrap:wrap}
+.calendar-scroll.agenda-mode,.calendar-scroll.year-mode{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;padding-bottom:14px}
+.agenda-calendar{display:grid;gap:15px;min-width:0}
+.agenda-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border:1px solid #e5e7f3;border-radius:15px;background:#fff}
+.agenda-topline h3{margin:0;color:#303651;font-size:17px;letter-spacing:-.35px}.agenda-topline p{margin:4px 0 0;color:#9399ad;font-size:10px}.agenda-topline-badge{border-radius:8px;background:#f0f1ff;color:#5e64ca;padding:7px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+.agenda-day-group{overflow:hidden;border:1px solid #e5e7f1;border-radius:15px;background:#fff}
+.agenda-day-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 15px;border-bottom:1px solid #eef0f7;background:#fbfbff}
+.agenda-day-head h4{margin:0;color:#343a56;font-size:12px;font-weight:800}.agenda-day-head small{display:block;margin-top:3px;color:#9298ac;font-size:10px}
+.agenda-day-count{display:grid;place-items:center;min-width:25px;height:25px;padding:0 6px;border-radius:8px;background:#f0f1ff;color:#6268cd;font-size:10px;font-weight:800}
+.agenda-task-row{display:grid;grid-template-columns:75px 22px minmax(0,1fr) 34px;align-items:start;gap:9px;padding:13px 14px;border-bottom:1px solid #f0f1f7;transition:background .15s}
+.agenda-task-row:last-child{border-bottom:0}.agenda-task-row:hover{background:#fbfbff}
+.agenda-task-time{padding-top:2px;color:#727993;font-size:10px;font-weight:750;font-variant-numeric:tabular-nums}.agenda-task-check{width:15px;height:15px;margin:2px 0 0;accent-color:#6268dc}
+.agenda-task-title{border:0;padding:0;background:transparent;color:#303650;text-align:left;font:inherit;font-size:12px;font-weight:800;line-height:1.45;overflow-wrap:anywhere}.agenda-task-title:hover{color:#5a60cb}
+.agenda-task-row.is-done .agenda-task-title{text-decoration:line-through;color:#a0a5b5}
+.agenda-task-meta{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:5px;color:#9197aa;font-size:9px}.agenda-task-pill{padding:3px 6px;border-radius:5px;background:#f1f2f8;color:#737a95;font-size:9px}
+.agenda-task-pill.high{background:#fff0ef;color:#c65a53}.agenda-task-pill.medium{background:#fff5df;color:#aa7a24}
+.agenda-task-edit{width:28px;height:28px;border:1px solid transparent;border-radius:8px;background:transparent;color:#969bae}.agenda-task-edit:hover{background:#f0f1ff;color:#575dc9}
+.agenda-empty{padding:46px 15px;border:1px dashed #dfe2f0;border-radius:15px;background:#fff;text-align:center}.agenda-empty strong{color:#424865;font-size:14px}.agenda-empty p{margin:6px auto 0;max-width:350px;color:#9298aa;font-size:11px;line-height:1.55}
+.year-calendar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.year-month{min-width:0;padding:13px;border:1px solid #e4e7f1;border-radius:14px;background:#fff;transition:border-color .18s,transform .18s}
+.year-month:hover{border-color:#d4d7f0;transform:translateY(-1px)}
+.year-month-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px}.year-month-head h3{margin:0;color:#333954;font-size:12px;font-weight:850}.year-month-head span{color:#959bb0;font-size:9px}
+.year-month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.year-weekday{text-align:center;color:#a0a5b7;font-size:8px;padding-bottom:3px}
+.year-day{position:relative;display:grid;place-items:center;aspect-ratio:1;min-width:0;border:1px solid transparent;border-radius:6px;background:transparent;color:#59607a;font-size:9px;padding:0}
+.year-day.outside{opacity:.28}.year-day.today{border-color:#777ce0;background:#f0f1ff;color:#4d53bd;font-weight:850}.year-day.has-items:after{content:"";position:absolute;width:3px;height:3px;border-radius:50%;background:#777ce0;bottom:2px;left:calc(50% - 1.5px)}
+.year-day:hover{background:#eeeefe;color:#555bc7}.year-day:focus-visible{outline:2px solid #777ce0;outline-offset:1px}
+@media(max-width:1100px){.year-calendar{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.view-switch{flex-wrap:nowrap;max-width:100%;overflow-x:auto;scrollbar-width:none}.view-switch::-webkit-scrollbar{display:none}.view-switch-btn{flex:0 0 auto}.year-calendar{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.year-month{padding:9px}.year-month-head h3{font-size:11px}.agenda-task-row{grid-template-columns:57px 17px minmax(0,1fr) 28px;gap:6px;padding:11px 8px}.agenda-task-time{font-size:9px}.agenda-topline{padding:12px}.agenda-topline h3{font-size:15px}}
+@media(max-width:420px){.year-calendar{grid-template-columns:1fr 1fr;gap:6px}.year-month{padding:7px}.year-month-grid{gap:1px}.year-day{font-size:8px}.agenda-task-row{grid-template-columns:46px 16px minmax(0,1fr) 25px}.agenda-task-title{font-size:11px}}
+
 </style>
 </head>
 <body>
@@ -892,6 +924,8 @@ body.signin-required{overflow:hidden}
         <button class="btn view-switch-btn" id="dayViewBtn" type="button" aria-pressed="false">Day</button>
         <button class="btn view-switch-btn" id="weekViewBtn" type="button" aria-pressed="false">Week</button>
         <button class="btn view-switch-btn" id="monthViewBtn" type="button" aria-pressed="false">Month</button>
+        <button class="btn view-switch-btn" id="agendaViewBtn" type="button" aria-pressed="false">Agenda</button>
+        <button class="btn view-switch-btn" id="yearViewBtn" type="button" aria-pressed="false">Year</button>
       </div>
       <div class="week-control">
         <button class="btn nav-square" id="prevWeek" aria-label="Previous week" title="Previous week">‹</button>
@@ -1256,9 +1290,11 @@ if(removedAutoPopulatedSamples){try{localStorage.setItem(STORE_KEY,JSON.stringif
 let currentWeek=dateKey(sundayOf(now));
 let mobileDay=now.getDay();
 let monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);
+let agendaAnchor=dateOnly(now);
+let calendarYear=now.getFullYear();
 let dashboardWeekKey=currentWeek;
 let calendarView='week';
-try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarView=(savedView==='day'||savedView==='week'||savedView==='month')?savedView:(window.matchMedia('(max-width: 650px)').matches?'day':'week');}catch(_){calendarView=window.matchMedia('(max-width: 650px)').matches?'day':'week';}
+try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarView=(savedView==='day'||savedView==='week'||savedView==='month'||savedView==='agenda'||savedView==='year')?savedView:(window.matchMedia('(max-width: 650px)').matches?'day':'week');}catch(_){calendarView=window.matchMedia('(max-width: 650px)').matches?'day':'week';}
 let lastRenderedCalendarView=null;
 let tasks=[];
 let workspaceView='today';
@@ -1515,7 +1551,7 @@ function saveTemplateEditor(e){
   }
   saveStore();saveCurrent();syncSettingsForm();renderAll();closeTemplateEditor();showToast(currentKind==='workday'?'Work day template saved. Add shifts when ready.':'Class template saved. Add classes when ready.');
 }
-function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();}
+function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();updateCalendarPeriodLabel();}
 function moveTask(id,newDay,preferredTime=null){
   const t=tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
@@ -1821,7 +1857,7 @@ function nudgeDueReminders(){const due=reminderDueOpen();if(!due.length)return;c
 
 
 function cloudFingerprint(payload){return JSON.stringify(payload);}
-function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,focusSessions:focusSessions,habits:habits,calendarView:view};}
+function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month','agenda','year'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,focusSessions:focusSessions,habits:habits,calendarView:view};}
 function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;const hasHabits=Array.isArray(habits)&&habits.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||hasHabits||settingsChanged;}
 function readCloudMeta(){try{return JSON.parse(localStorage.getItem(CLOUD_META_KEY)||'null');}catch(_){return null;}}
 function writeCloudMeta(revision,payload){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify({userId:cloudUser?.id||'',revision:Number(revision)||0,fingerprint:cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}catch(_){}}
@@ -1851,7 +1887,7 @@ function saveCloudLocalPayload(payload){
   if(Array.isArray(payload?.reminders)){reminders=payload.reminders;localStorage.setItem(REMINDERS_KEY,JSON.stringify(reminders));}
   if(Array.isArray(payload?.focusSessions)){focusSessions=payload.focusSessions;localStorage.setItem(FOCUS_SESSIONS_KEY,JSON.stringify(focusSessions));}
   if(Array.isArray(payload?.habits)){habits=payload.habits;localStorage.setItem(HABITS_KEY,JSON.stringify(habits));}
-  if(['day','week','month'].includes(payload?.calendarView))localStorage.setItem('weekwise-calendar-view-v1',payload.calendarView);
+  if(['day','week','month','agenda','year'].includes(payload?.calendarView))localStorage.setItem('weekwise-calendar-view-v1',payload.calendarView);
   currentWeek=dateKey(sundayOf(now));mobileDay=now.getDay();monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);
   loadWeek(currentWeek);renderReminders();
  }finally{cloudApplyingRemote=false;}
@@ -2111,7 +2147,7 @@ function setCalendarView(view){if(view!=='day'&&view!=='week')return;if(calendar
 function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBtn');if(dayBtn){dayBtn.classList.toggle('active',calendarView==='day');dayBtn.setAttribute('aria-pressed',calendarView==='day'?'true':'false');}if(weekBtn){weekBtn.classList.toggle('active',calendarView==='week');weekBtn.setAttribute('aria-pressed',calendarView==='week'?'true':'false');}const prev=$('prevWeek'),next=$('nextWeek');if(prev){prev.title=calendarView==='day'?'Previous day':'Previous week';prev.setAttribute('aria-label',prev.title);}if(next){next.title=calendarView==='day'?'Next day':'Next week';next.setAttribute('aria-label',next.title);}}
 function shiftPeriod(n){if(calendarView!=='day'){shiftWeeks(n);return;}const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));}
 function addQuick(e){e.preventDefault();const title=$('quickTitle').value.trim();if(!title)return;if(!validateTimeFields(['quickTime']))return;const day=Number($('quickDay').value),type=$('quickType').value,duration=Number($('quickDuration').value),preferred=timeMins($('quickTime').value||'10:00');createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true});const t=tasks[tasks.length-1];t.unscheduled=t.start===null;saveCurrent();renderAll();$('quickTitle').value='';showToast(t.start===null?'Added to the day, but needs a time':'Activity added to your week');}
-function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();wireWorkspaceControls();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('signinLandingContinue').addEventListener('click',openSignInFromLanding);$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>{if(suppressActivitySuggestionFocus){suppressActivitySuggestionFocus=false;return;}renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});document.addEventListener('click',e=>{if(!e.target.closest('.activity-name-wrap'))hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalNoSchedule').addEventListener('change',updateModalScheduleVisibility);$('modalListId').addEventListener('change',()=>{if($('modalListId').value==='inbox')$('modalNoSchedule').checked=true;updateModalScheduleVisibility();});$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){if(t.seriesId){const template=(store.recurringTemplates||[]).find(item=>item.id===t.seriesId);if(template){template.excludedDates=Array.isArray(template.excludedDates)?template.excludedDates:[];template.excludedDates.push(t.occurrenceDate||dateKey(dayDate(currentWeek,t.day)));}}tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
+function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();wireWorkspaceControls();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('signinLandingContinue').addEventListener('click',openSignInFromLanding);$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('agendaViewBtn').addEventListener('click',()=>setCalendarView('agenda'));$('yearViewBtn').addEventListener('click',()=>setCalendarView('year'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>{if(suppressActivitySuggestionFocus){suppressActivitySuggestionFocus=false;return;}renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});document.addEventListener('click',e=>{if(!e.target.closest('.activity-name-wrap'))hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalNoSchedule').addEventListener('change',updateModalScheduleVisibility);$('modalListId').addEventListener('change',()=>{if($('modalListId').value==='inbox')$('modalNoSchedule').checked=true;updateModalScheduleVisibility();});$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){if(t.seriesId){const template=(store.recurringTemplates||[]).find(item=>item.id===t.seriesId);if(template){template.excludedDates=Array.isArray(template.excludedDates)?template.excludedDates:[];template.excludedDates.push(t.occurrenceDate||dateKey(dayDate(currentWeek,t.day)));}}tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
 
 /* Optional visual gaps, monthly calendar, and week-selectable dashboard. */
 const weekwiseOriginalRenderDays=renderDays;
@@ -2160,14 +2196,17 @@ function weekwiseRenderBreaks(){
 }
 renderDays=function(){
  const grid=$('daysGrid');
- if(calendarView==='month'){weekwiseRenderMonth();return;}
- grid.classList.remove('month-mode');grid.onclick=null;grid.onkeydown=null;
+ grid.classList.remove('month-mode','agenda-mode','year-mode');grid.onclick=null;grid.onkeydown=null;grid.onchange=null;
+ if(calendarView==='month'){grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';weekwiseRenderMonth();updateCalendarPeriodLabel();return;}
+ if(calendarView==='agenda'){grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';weekwiseRenderAgenda();updateCalendarPeriodLabel();return;}
+ if(calendarView==='year'){grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';weekwiseRenderYear();updateCalendarPeriodLabel();return;}
+ grid.style.height='';grid.style.minHeight='';grid.style.maxHeight='';
  const picker=$('mobileDayPicker');if(picker)picker.hidden=false;const help=$('mobileHelp');if(help)help.hidden=false;
- weekwiseOriginalRenderDays();weekwiseRenderBreaks();
+ weekwiseOriginalRenderDays();weekwiseRenderBreaks();updateCalendarPeriodLabel();
 };
 updateViewControls=function(){
- [['dayViewBtn','day'],['weekViewBtn','week'],['monthViewBtn','month']].forEach(function(pair){const b=$(pair[0]);if(b){b.classList.toggle('active',calendarView===pair[1]);b.setAttribute('aria-pressed',calendarView===pair[1]?'true':'false');}});
- const unit=calendarView==='day'?'day':calendarView==='month'?'month':'week';
+ [['dayViewBtn','day'],['weekViewBtn','week'],['monthViewBtn','month'],['agendaViewBtn','agenda'],['yearViewBtn','year']].forEach(function(pair){const b=$(pair[0]);if(b){b.classList.toggle('active',calendarView===pair[1]);b.setAttribute('aria-pressed',calendarView===pair[1]?'true':'false');}});
+ const unit=calendarView==='day'?'day':calendarView==='month'?'month':calendarView==='year'?'year':'week';
  ['prevWeek','nextWeek'].forEach(function(id){const b=$(id);if(b){b.title=(id==='prevWeek'?'Previous ':'Next ')+unit;b.setAttribute('aria-label',b.title);}});
 };
 function weekwiseAnimateCalendar(){
@@ -2179,17 +2218,21 @@ function weekwiseAnimateCalendar(){
  setTimeout(function(){grid.classList.remove('weekwise-transition-enter');},380);
 }
 setCalendarView=function(view){
- if(!['day','week','month'].includes(view))return;
+ if(!['day','week','month','agenda','year'].includes(view))return;
  const changing=calendarView!==view;saveCurrent();
  if(changing)weekwiseAnimateCalendar();
- if(view==='month'&&changing){const d=dayDate(currentWeek,mobileDay);monthAnchor=new Date(d.getFullYear(),d.getMonth(),1);}
+ const selectedDate=dayDate(currentWeek,mobileDay);
+ if(changing&&view==='month')monthAnchor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+ if(changing&&view==='agenda')agendaAnchor=dateOnly(selectedDate);
+ if(changing&&view==='year')calendarYear=selectedDate.getFullYear();
  calendarView=view;try{localStorage.setItem('weekwise-calendar-view-v1',view);}catch(_){}
- const grid=$('daysGrid');if(view==='month'){grid.classList.add('month-mode');grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';}else{grid.classList.remove('month-mode');grid.style.height='';grid.style.minHeight='';grid.style.maxHeight='';}
- renderAll();if(view==='month'&&!grid.querySelector('.month-calendar'))weekwiseRenderMonth();
+ renderAll();updateCalendarPeriodLabel();
 };
 shiftPeriod=function(n){
  weekwiseAnimateCalendar();
- if(calendarView==='month'){saveCurrent();monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()+n,1);currentWeek=dateKey(sundayOf(monthAnchor));loadWeek(currentWeek);return;}
+ if(calendarView==='month'){saveCurrent();monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()+n,1);currentWeek=dateKey(sundayOf(monthAnchor));loadWeek(currentWeek);renderAll();return;}
+ if(calendarView==='year'){calendarYear+=n;renderAll();updateCalendarPeriodLabel();return;}
+ if(calendarView==='agenda'){agendaAnchor=addDaysForView(agendaAnchor,n*7);renderAll();updateCalendarPeriodLabel();return;}
  if(calendarView!=='day'){shiftWeeks(n);return;}
  const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));
 };
@@ -2505,6 +2548,64 @@ function materializeRecurringRange(rangeStart,rangeEnd){
 function materializeCurrentAndUpcoming(){
  materializeRecurringRange(parseKey(currentWeek),parseKey(addDaysToKey(currentWeek,89)));
  saveCurrent();
+}
+
+
+function updateCalendarPeriodLabel(){
+ const label=$('weekLabel');if(!label)return;
+ if(calendarView==='year')label.textContent=String(calendarYear);
+ else if(calendarView==='agenda'){const end=new Date(agendaAnchor);end.setDate(end.getDate()+29);label.textContent='Agenda · '+fmtDate(agendaAnchor,{day:'numeric',month:'short'})+' – '+fmtDate(end,{day:'numeric',month:'short'});}
+ else if(calendarView==='month')label.textContent=monthAnchor.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+ else if(calendarView==='day')label.textContent=DAY_NAMES[mobileDay]+', '+fmtDate(dayDate(currentWeek,mobileDay),{day:'numeric',month:'short',year:'numeric'});
+ else label.textContent=fmtDate(parseKey(currentWeek),{day:'numeric',month:'short'})+' – '+fmtDate(dayDate(currentWeek,6),{day:'numeric',month:'short',year:'numeric'});
+}
+function weekwiseRenderAgenda(){
+ const grid=$('daysGrid');grid.classList.add('agenda-mode');grid.setAttribute('aria-label','Agenda view');
+ const picker=$('mobileDayPicker'),help=$('mobileHelp');if(picker)picker.hidden=true;if(help)help.hidden=true;
+ updateViewControls();
+ const anchor=dateOnly(agendaAnchor||now),end=new Date(anchor);end.setDate(end.getDate()+30);
+ const records=workspaceRecords().filter(r=>dateOnly(r.date)>=anchor&&dateOnly(r.date)<end).sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
+ const groups=new Map();records.forEach(r=>{const key=dateKey(r.date);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);});
+ const label=fmtDate(anchor,{day:'numeric',month:'short'})+' – '+fmtDate(new Date(end.getTime()-86400000),{day:'numeric',month:'short'});
+ let markup='<div class="agenda-calendar"><div class="agenda-topline"><div><h3>Upcoming agenda</h3><p>'+escapeHtml(label)+' · grouped by day</p></div><span class="agenda-topline-badge">'+records.length+' tasks</span></div>';
+ if(!groups.size)markup+='<div class="agenda-empty"><strong>Your upcoming agenda is clear.</strong><p>Add a task to Inbox or schedule an activity. Future recurring tasks appear here automatically.</p></div>';
+ groups.forEach((items,key)=>{
+  const date=parseKey(key),label=dateKey(date)===dateKey(now)?'Today':dateKey(date)===dateKey(addDaysForView(now,1))?'Tomorrow':fmtDate(date,{weekday:'long',day:'numeric',month:'short'});
+  markup+='<section class="agenda-day-group"><header class="agenda-day-head"><div><h4>'+escapeHtml(label)+'</h4><small>'+escapeHtml(fmtDate(date,{day:'numeric',month:'long',year:'numeric'}))+'</small></div><span class="agenda-day-count">'+items.length+'</span></header>';
+  items.forEach(r=>{
+   const t=r.task,priority=t.priority||'none',listLabel=WORKSPACE_LISTS.find(x=>x.id===r.listId)?.label||'Inbox';
+   const when=t.start==null||t.unscheduled?'Not scheduled':minsTime(Number(t.start))+(Number(t.duration)>0?' · '+durationText(Number(t.duration)):'');
+   const due=t.dueDate?'<span class="agenda-task-pill">Due '+escapeHtml(fmtDate(parseKey(t.dueDate),{day:'numeric',month:'short'}))+'</span>':'';
+   const pr=priority!=='none'?'<span class="agenda-task-pill '+(priority==='high'?'high':priority==='medium'?'medium':'')+'">'+escapeHtml(({high:'↑ High',medium:'→ Medium',low:'↓ Low'})[priority]||priority)+'</span>':'';
+   markup+='<article class="agenda-task-row '+(t.done?'is-done':'')+'"><span class="agenda-task-time">'+escapeHtml(when)+'</span><input class="agenda-task-check" type="checkbox" data-agenda-check="'+escapeHtml(t.id)+'" data-agenda-week="'+escapeHtml(r.week)+'" '+(t.done?'checked':'')+' aria-label="Complete '+escapeHtml(t.title)+'"><div><button type="button" class="agenda-task-title" data-agenda-edit="'+escapeHtml(t.id)+'" data-agenda-week="'+escapeHtml(r.week)+'">'+escapeHtml(t.title)+'</button><div class="agenda-task-meta"><span class="agenda-task-pill">'+escapeHtml(listLabel)+'</span>'+pr+due+'</div></div><button type="button" class="agenda-task-edit" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-agenda-edit="'+escapeHtml(t.id)+'" data-agenda-week="'+escapeHtml(r.week)+'">✎</button></article>';
+  });
+  markup+='</section>';
+ });
+ markup+='</div>';
+ grid.innerHTML=markup;grid.scrollTop=0;grid.scrollLeft=0;grid.dataset.hasRendered='true';
+ grid.onclick=e=>{const b=e.target.closest('[data-agenda-edit]');if(b)openWorkspaceRecord(b.dataset.agendaEdit,b.dataset.agendaWeek);};
+ grid.onchange=e=>{const b=e.target.closest('[data-agenda-check]');if(b)updateWorkspaceRecord(b.dataset.agendaCheck,b.dataset.agendaWeek,'toggle');};
+}
+function addDaysForView(value,days){const d=dateOnly(value);d.setDate(d.getDate()+days);return d;}
+function weekwiseRenderYear(){
+ const grid=$('daysGrid');grid.classList.add('year-mode');grid.setAttribute('aria-label','Year overview');
+ const picker=$('mobileDayPicker'),help=$('mobileHelp');if(picker)picker.hidden=true;if(help)help.hidden=true;
+ updateViewControls();
+ const countByDate=new Map();workspaceRecords().forEach(r=>{const key=dateKey(r.date);countByDate.set(key,(countByDate.get(key)||0)+1);});
+ let markup='<div class="agenda-calendar"><div class="agenda-topline"><div><h3>'+calendarYear+' at a glance</h3><p>Choose any date to open its Day view.</p></div><span class="agenda-topline-badge">12 months</span></div><div class="year-calendar">';
+ for(let month=0;month<12;month++){
+  const first=new Date(calendarYear,month,1),firstDay=sundayOf(first),days=new Date(calendarYear,month+1,0).getDate(),total=Math.ceil((first.getDay()+days)/7)*7;
+  markup+='<section class="year-month"><header class="year-month-head"><h3>'+first.toLocaleDateString('en-GB',{month:'long'})+'</h3><span>'+Array.from(countByDate.entries()).filter(([key])=>{const d=parseKey(key);return d.getFullYear()===calendarYear&&d.getMonth()===month;}).reduce((n,[,v])=>n+v,0)+' tasks</span></header><div class="year-month-grid">'+['S','M','T','W','T','F','S'].map(d=>'<span class="year-weekday">'+d+'</span>').join('');
+  for(let i=0;i<total;i++){
+   const date=new Date(firstDay);date.setDate(firstDay.getDate()+i);
+   const key=dateKey(date),inMonth=date.getMonth()===month,n=countByDate.get(key)||0,today=key===dateKey(now);
+   markup+='<button type="button" class="year-day '+(!inMonth?'outside ':'')+(today?'today ':'')+(n?'has-items':'')+'" data-year-date="'+key+'" title="'+escapeHtml(fmtDate(date,{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+(n?' · '+n+' tasks':'')+'">'+date.getDate()+'</button>';
+  }
+  markup+='</div></section>';
+ }
+ markup+='</div></div>';
+ grid.innerHTML=markup;grid.scrollTop=0;grid.scrollLeft=0;grid.dataset.hasRendered='true';
+ grid.onclick=e=>{const b=e.target.closest('[data-year-date]');if(!b)return;const date=parseKey(b.dataset.yearDate);saveCurrent();mobileDay=date.getDay();monthAnchor=new Date(date.getFullYear(),date.getMonth(),1);currentWeek=dateKey(sundayOf(date));loadWeek(currentWeek);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}renderAll();};
 }
 
 setup();
