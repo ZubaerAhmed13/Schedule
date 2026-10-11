@@ -878,6 +878,10 @@ body.signin-required{overflow:hidden}
 
 .all-day-strip{background:#f2f3ff;border-color:#dfe1fb}.all-day-strip .backlog-label{color:#5d64c8}.all-day-event{background:#fff;border-color:#e1e3fc}
 
+
+.workspace-capture-hint{margin:7px 2px 13px;color:#989eb1;font-size:10px;line-height:1.5}
+.workspace-capture-hint kbd{display:inline-block;padding:1px 5px;border:1px solid #e0e3ef;border-radius:5px;background:#f8f9fc;color:#7e84a0;font:inherit;font-size:9px;font-weight:800}
+.habit-checkin-day:disabled{opacity:.36;cursor:not-allowed;background:#f4f5f8}
 </style>
 </head>
 <body>
@@ -962,6 +966,7 @@ body.signin-required{overflow:hidden}
           <input id="workspaceCaptureInput" type="text" maxlength="100" autocomplete="off" placeholder="Add a task to your inbox…" aria-label="Quick capture task">
           <button type="submit" class="btn primary">Add</button>
         </form>
+        <p class="workspace-capture-hint">Try “Submit report tomorrow at 15:00” or “German practice every Monday at 09:00”. Press <kbd>⌘K</kbd> or <kbd>Ctrl K</kbd> to capture from anywhere.</p>
         <div class="workspace-list-controls">
           <label class="workspace-search-wrap"><span aria-hidden="true">⌕</span><input id="workspaceSearch" type="search" placeholder="Search tasks in this view" aria-label="Search tasks"></label>
           <label class="workspace-sort-wrap"><span>Sort</span><select id="workspaceSort" aria-label="Sort tasks"><option value="date">Date & time</option><option value="priority">Priority</option><option value="title">Title</option></select></label>
@@ -2673,7 +2678,7 @@ function renderHabitTracker(){
  const keys=habitWeekKeys(),todayKey=dateKey(now);
  list.innerHTML=habits.map(h=>{
   const checks=new Set(h.checkIns||[]),done=keys.filter(k=>checks.has(k)).length,target=Math.max(1,Math.min(7,Number(h.targetPerWeek)||5)),pct=Math.min(100,Math.round(done/target*100));
-  const days=keys.map(k=>{const d=parseKey(k),checked=checks.has(k),isToday=k===todayKey;return '<button type="button" class="habit-checkin-day '+(checked?'checked ':'')+(isToday?'today':'')+'" data-habit-check="'+escapeHtml(h.id)+'" data-habit-date="'+k+'" aria-pressed="'+(checked?'true':'false')+'" title="'+escapeHtml(fmtDate(d,{weekday:'long',day:'numeric',month:'short'}))+(checked?' · done':' · mark done')+'"><span>'+DAY_SHORT[d.getDay()]+'</span><strong>'+(checked?'✓':d.getDate())+'</strong></button>';}).join('');
+  const days=keys.map(k=>{const d=parseKey(k),checked=checks.has(k),isToday=k===todayKey,isFuture=k>todayKey;return '<button type="button" class="habit-checkin-day '+(checked?'checked ':'')+(isToday?'today':'')+'" data-habit-check="'+escapeHtml(h.id)+'" data-habit-date="'+k+'" aria-pressed="'+(checked?'true':'false')+'" '+(isFuture?'disabled':'')+' title="'+escapeHtml(fmtDate(d,{weekday:'long',day:'numeric',month:'short'}))+(isFuture?' · future day':checked?' · done':' · mark done')+'"><span>'+DAY_SHORT[d.getDay()]+'</span><strong>'+(checked?'✓':d.getDate())+'</strong></button>';}).join('');
   const targetText='Target '+target+' time'+(target===1?'':'s')+' per week';
   return '<article class="habit-track-card" data-habit-card="'+escapeHtml(h.id)+'"><header class="habit-track-head"><span class="habit-track-icon">'+escapeHtml(h.icon||'✦')+'</span><div class="habit-track-info"><h4>'+escapeHtml(h.title)+'</h4><p>'+escapeHtml(h.goal||targetText)+'</p></div><div class="habit-track-actions"><button type="button" data-habit-edit="'+escapeHtml(h.id)+'" aria-label="Edit '+escapeHtml(h.title)+'" title="Edit habit">✎</button><button type="button" data-habit-delete="'+escapeHtml(h.id)+'" aria-label="Delete '+escapeHtml(h.title)+'" title="Delete habit">×</button></div></header>'+
   '<div class="habit-track-progress"><div class="habit-track-progress-track"><span style="width:'+pct+'%"></span></div><strong>'+done+'/'+target+'</strong></div><div class="habit-checkin-days" aria-label="Daily habit check-ins">'+days+'</div>'+
@@ -3008,9 +3013,21 @@ function checkTaskReminders(){
 
 
 function parseWeekwiseNaturalCapture(raw,baseDate=new Date()){
- let text=String(raw||'').trim(),targetDate=null,timeMinutes=null,dateMatched=false;
+ let text=String(raw||'').trim(),targetDate=null,timeMinutes=null,dateMatched=false,recurrence='none';
  const base=dateOnly(baseDate);
  function shiftBase(days){const d=new Date(base);d.setDate(d.getDate()+days);return d;}
+ const weekdayNames='sun(?:day)?|mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?';
+ const everyWeekday=new RegExp('\\bevery\\s+('+weekdayNames+')\\b','i').exec(text);
+ if(everyWeekday){recurrence='weekly';text=text.replace(everyWeekday[0],'on '+everyWeekday[1]+' ');}
+ else{
+  const repeatRules=[
+   {pattern:/\bevery\s+day\b/i,frequency:'daily'},
+   {pattern:/\bdaily\b/i,frequency:'daily'},
+   {pattern:/\bevery\s+week\b|\beach\s+week\b|\bweekly\b/i,frequency:'weekly'},
+   {pattern:/\bevery\s+month\b|\bmonthly\b/i,frequency:'monthly'}
+  ];
+  for(const rule of repeatRules){const match=rule.pattern.exec(text);if(match){recurrence=rule.frequency;text=text.replace(match[0],' ');break;}}
+ }
  function takeDate(regex,build){
   if(dateMatched)return;
   const match=text.match(regex);if(!match)return;
@@ -3053,7 +3070,7 @@ function parseWeekwiseNaturalCapture(raw,baseDate=new Date()){
  }
  text=text.replace(/\s+/g,' ').replace(/^[,;·–—-]+|[,;·–—-]+$/g,'').trim();
  if(!targetDate&&timeMinutes!==null)targetDate=dateOnly(baseDate);
- return {title:text,date:targetDate,timeMinutes,dateMatched,timeMatched:timeMinutes!==null};
+ return {title:text,date:targetDate,timeMinutes,dateMatched,timeMatched:timeMinutes!==null,recurrence};
 }
 function defaultCaptureList(){
  if(workspaceView.startsWith('list-'))return workspaceView.slice(5);
@@ -3063,8 +3080,8 @@ function defaultCaptureList(){
  }
  return 'inbox';
 }
-function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,folderNameOverride=null){
- const day=targetDate.getDay(),weekKey=dateKey(sundayOf(targetDate)),duration=30;
+function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,folderNameOverride=null,recurrence='none'){
+ const day=targetDate.getDay(),weekKey=dateKey(sundayOf(targetDate)),duration=30,occurrenceDate=dateKey(targetDate);
  let rows,actualStart=null;
  if(weekKey===currentWeek)rows=tasks;
  else{
@@ -3076,9 +3093,15 @@ function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,fol
   actualStart=findSlot(day,duration,startMinutes,0,1440,blockers);
  }
  const type=({career:'job',study:'study',work:'job',personal:'life',language:'language',hobbies:'hobby',other:'other',inbox:'other'})[listId]||'other';
- const task={id:uid(),day,title,type,duration,start:actualStart,done:false,status:'todo',custom:true,fixed:false,note:'',unscheduled:actualStart===null,listId,folderName:folderNameOverride||defaultFolderName(listId),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
+ const task={id:uid(),day,title,type,duration,start:actualStart,done:false,status:'todo',custom:true,fixed:false,note:'',unscheduled:actualStart===null,listId,folderName:folderNameOverride||defaultFolderName(listId),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:recurrence||'none'};
  rows.push(task);
- if(weekKey===currentWeek)saveCurrent();else saveStore();
+ if(recurrence&&recurrence!=='none'){
+  task.seriesId=uid();task.occurrenceDate=occurrenceDate;
+  const fields={title,type,duration,start:startMinutes,allDay:false,note:'',recurrence,listId,folderName:task.folderName,sectionName:'',priority:'none',status:'todo',importance:'unclassified',urgency:'unclassified',dueDate:dueDate||null,reminderAt:null,tags:[],subtasks:[]};
+  upsertRecurringTemplate(task.seriesId,occurrenceDate,fields);
+  materializeRecurringRange(parseKey(weekKey),parseKey(addDaysToKey(weekKey,89)));
+ }
+ saveCurrent();
  renderAll();renderWorkspaceView();
  return {task,weekKey,actualStart};
 }
@@ -3087,17 +3110,17 @@ function quickCaptureWorkspaceTask(){
  const parsed=parseWeekwiseNaturalCapture(raw,now),title=parsed.title;
  if(!title){showToast('Add a task name before the date or time.');return;}
  const date=parsed.date||dateOnly(now),dueDate=parsed.date?dateKey(parsed.date):null;
- let listId=defaultCaptureList();
- if(listId==='inbox'&&parsed.timeMatched)listId='other';
+ const listId=defaultCaptureList();
  const start=parsed.timeMatched?parsed.timeMinutes:null;
  const selectedFolder=workspaceView.startsWith('folder:')?workspaceView.slice(7):null;
- const result=addCapturedTaskForDate(title,date,start,dueDate,listId,selectedFolder);
+ const result=addCapturedTaskForDate(title,date,start,dueDate,listId,selectedFolder,parsed.recurrence||'none');
  input.value='';
- if(parsed.timeMatched&&result.actualStart===null)showToast('Task captured, but there was no free slot at that time. It needs scheduling.');
+ if(parsed.recurrence&&parsed.recurrence!=='none')showToast('Added repeating task · '+parsed.recurrence+'.');
+ else if(parsed.timeMatched&&result.actualStart===null)showToast('Task captured, but there was no free slot at that time. It needs scheduling.');
  else if(parsed.timeMatched&&result.actualStart!==start)showToast('Task scheduled at '+minsTime(result.actualStart)+' instead because that time was busy.');
  else if(parsed.timeMatched)showToast('Task scheduled · '+fmtDate(date,{weekday:'short',day:'numeric',month:'short'})+' at '+minsTime(result.actualStart)+'.');
  else if(dueDate)showToast('Task added · due '+fmtDate(date,{day:'numeric',month:'short'})+'.');
- else showToast('Added to Inbox');
+ else showToast(listId==='inbox'?'Added to Inbox':'Task added to '+listId+'.');
 }
 
 
@@ -3201,6 +3224,14 @@ async function importCalendarICS(file){
  showToast('Imported '+added+' events'+(skipped?' · skipped '+skipped+' duplicates':'')+(invalid?' · ignored '+invalid+' unsupported entries':'')+'.');
 }
 
+document.addEventListener('keydown',e=>{
+ if(!(e.metaKey||e.ctrlKey)||String(e.key).toLowerCase()!=='k'||e.altKey)return;
+ if(document.body.classList.contains('signin-required')||$('taskModal')?.classList.contains('show'))return;
+ const target=e.target;
+ if(target&&target.closest('input,textarea,select,[contenteditable="true"]'))return;
+ e.preventDefault();setWorkspaceView('inbox');
+ setTimeout(()=>{$('workspaceCaptureInput')?.focus();},0);
+});
 setup();
 renderWorkspaceView();renderReminders();nudgeDueReminders();renderTaskNotificationSettings();checkTaskReminders();setInterval(checkTaskReminders,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkTaskReminders();});window.addEventListener('focus',checkTaskReminders);
 function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}
