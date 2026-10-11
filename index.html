@@ -875,6 +875,9 @@ body.signin-required{overflow:hidden}
 .workspace-folder-nav{display:grid;gap:3px}.workspace-folder-btn{min-width:0}.workspace-folder-btn>span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.workspace-folder-empty{margin:3px 10px 6px;color:#a0a5b5;font-size:10px;line-height:1.45}
 @media(max-width:760px){.workspace-folder-empty{display:none}.workspace-folder-btn{max-width:210px}}
 
+
+.all-day-strip{background:#f2f3ff;border-color:#dfe1fb}.all-day-strip .backlog-label{color:#5d64c8}.all-day-event{background:#fff;border-color:#e1e3fc}
+
 </style>
 </head>
 <body>
@@ -1490,7 +1493,8 @@ function renderDays(){
     arranged.forEach(t=>{const st=Number(t.start),en=st+Math.max(1,Number(t.duration)||1);if(cluster.length&&st>=clusterEnd){clusters.push(cluster);cluster=[];clusterEnd=-1;}cluster.push(t);clusterEnd=Math.max(clusterEnd,en);});if(cluster.length)clusters.push(cluster);
     clusters.forEach(items=>{const laneEnds=[];items.forEach(t=>{const st=Number(t.start);let lane=laneEnds.findIndex(end=>end<=st);if(lane<0)lane=laneEnds.length;laneEnds[lane]=st+Math.max(1,Number(t.duration)||1);t._lane=lane;});const lanes=laneEnds.length;items.forEach(t=>{t._laneCount=lanes;dayEvents.push(t);});});
   }
-  const backlog=tasks.filter(t=>t.start===null||t.start===undefined||t.unscheduled);
+  const allDayTasks=tasks.filter(t=>!!t.allDay&&(t.allDayDate||t.dueDate)&&(!singleDay||Number(t.day)===Number(mobileDay)));
+  const backlog=tasks.filter(t=>(t.start===null||t.start===undefined||t.unscheduled)&&!t.allDay);
   const hours=Array.from({length:24},(_,h)=>`<span class="hour-label ${h===0?'first':''}" style="top:${h*hourHeight}px">${String(h).padStart(2,'0')}:00</span>`).join('')+`<span class="hour-label end" style="top:${24*hourHeight}px">24:00</span>`;
   const headers=DAY_NAMES.map((day,i)=>{const d=dayDate(currentWeek,i),isToday=dateKey(d)===dateKey(now),isTrip=i===Number(store.settings.travelDay),dayTasks=tasks.filter(t=>t.day===i),completed=dayTasks.filter(t=>t.done).length;return `<div class="calendar-day-header ${isToday?'is-today':''} ${isTrip?'is-trip':''} ${singleDay&&i===mobileDay?'mobile-selected':''}" data-header-day="${i}" style="grid-column:${i+2};grid-row:1"><span class="day-number">${String(d.getDate()).padStart(2,'0')}</span><span class="day-name">${day}</span><span class="day-count">${completed}/${dayTasks.length} done</span>${isTrip?'<span class="trip-mark">✦ CITY DAY · 9H</span>':''}</div>`;}).join('');
   const columns=DAY_NAMES.map((day,i)=>{
@@ -1510,8 +1514,9 @@ function renderDays(){
     const nowLine=''; // The current-time line is drawn once across the calendar below.
     return `<div class="day-column ${isToday?'is-today':''} ${singleDay&&i===mobileDay?'mobile-selected':''}" data-day-index="${i}" style="grid-column:${i+2};grid-row:2"><div class="hour-lines"></div><div class="half-hour-lines"></div><div class="drop-surface" data-day-surface="${i}" data-day-index="${i}" aria-label="${day} calendar; click to add event"></div><div class="event-layer">${evs}${nowLine}</div></div>`;
   }).join('');
-  const backlogHTML=backlog.length?`<div class="backlog-strip"><span class="backlog-label">NEEDS A TIME</span>${backlog.map(t=>`<button class="backlog-event" data-edit="${escapeHtml(t.id)}"><span class="event-grip" data-drag-handle="${escapeHtml(t.id)}">⠿</span>${escapeHtml(t.title)} · ${DAY_NAMES[t.day]}</button>`).join('')}<span class="drop-hint">Drag a grip to a day and time</span></div>`:'';
-  grid.innerHTML=`${backlogHTML}<div class="calendar-grid ${singleDay?'single-day-view':''} ${singleDay&&mobileMode?'mobile-single-day':''}" style="--hour-height:${hourHeight}px"><div class="calendar-corner" aria-hidden="true"></div>${headers}<div class="time-axis">${hours}</div>${columns}</div>`;
+  const allDayHTML=allDayTasks.length?'<div class="backlog-strip all-day-strip"><span class="backlog-label">ALL DAY</span>'+allDayTasks.map(t=>'<button class="backlog-event all-day-event" data-edit="'+escapeHtml(t.id)+'" title="All-day event">'+escapeHtml(t.title)+' · '+DAY_NAMES[t.day]+'</button>').join('')+'</div>':'';
+  const backlogHTML=backlog.length?'<div class="backlog-strip"><span class="backlog-label">NEEDS A TIME</span>'+backlog.map(t=>'<button class="backlog-event" data-edit="'+escapeHtml(t.id)+'"><span class="event-grip" data-drag-handle="'+escapeHtml(t.id)+'">⠿</span>'+escapeHtml(t.title)+' · '+DAY_NAMES[t.day]+'</button>').join('')+'<span class="drop-hint">Drag a grip to a day and time</span></div>':'';
+  grid.innerHTML=`${allDayHTML}${backlogHTML}<div class="calendar-grid ${singleDay?'single-day-view':''} ${singleDay&&mobileMode?'mobile-single-day':''}" style="--hour-height:${hourHeight}px"><div class="calendar-corner" aria-hidden="true"></div>${headers}<div class="time-axis">${hours}</div>${columns}</div>`;
   // Draw one Outlook-like time indicator above the calendar grid. The dashed
   // part crosses earlier days; the solid part spans today's column, with a dot
   // exactly where the current day begins.
@@ -2280,7 +2285,7 @@ function weekwiseTasksOnDate(date){
  const source=key===currentWeek?tasks:(Array.isArray(store.weeks[key]&&store.weeks[key].tasks)?store.weeks[key].tasks:[]);
  return source.filter(function(t){
   const timed=Number(t.day)===date.getDay()&&t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0;
-  const allDay=!!t.allDay&&t.dueDate===dateKeyValue;
+  const allDay=!!t.allDay&&(t.allDayDate||t.dueDate)===dateKeyValue;
   return timed||allDay;
  }).sort(function(a,b){const aa=!!a.allDay,bb=!!b.allDay;if(aa!==bb)return aa?-1:1;return Number(a.start)-Number(b.start);});
 }
@@ -2421,7 +2426,7 @@ function workspaceRecordMatches(record,view){
  if(view==='today')return recordKey===todayKey||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
  if(view==='inbox')return listId==='inbox';
  if(view==='upcoming'){
-  const scheduledSoon=!t.unscheduled&&t.start!=null&&recordDate>=day&&recordDate<end;
+  const scheduledSoon=recordDate>=day&&recordDate<end&&(!!t.allDay||(!t.unscheduled&&t.start!=null));
   const dueSoon=!!t.dueDate&&t.dueDate>todayKey&&t.dueDate<dateKey(end);
   return !t.done&&(scheduledSoon||dueSoon);
  }
@@ -2465,7 +2470,7 @@ function updateWorkspaceCounts(){
    :key==='Inbox'
     ?all.filter(r=>r.listId==='inbox').length
     :key==='Upcoming'
-     ?all.filter(r=>!r.task.done&&((!r.task.unscheduled&&r.task.start!=null&&dateKey(r.date)>=todayKey&&dateKey(r.date)<endKey)||(r.task.dueDate&&r.task.dueDate>todayKey&&r.task.dueDate<endKey))).length
+     ?all.filter(r=>!r.task.done&&(((!r.task.unscheduled&&r.task.start!=null||r.task.allDay)&&dateKey(r.date)>=todayKey&&dateKey(r.date)<endKey)||(r.task.dueDate&&r.task.dueDate>todayKey&&r.task.dueDate<endKey))).length
      :all.filter(r=>r.listId===listIds[key]).length;
   el.textContent=String(count);
  });
@@ -3101,11 +3106,12 @@ function exportCalendarICS(){
  if(!records.length){showToast('Nothing scheduled or due to export yet.');return;}
  const stamp=icsUtcDateTime(new Date()),lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Weekwise//Personal Planner//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Weekwise'];
  records.forEach(record=>{
-  const t=record.task,allDay=(t.start===null||t.start===undefined||t.unscheduled)&&!!t.dueDate;
+  const t=record.task,allDay=!!t.allDay||((t.start===null||t.start===undefined||t.unscheduled)&&!!t.dueDate);
   let startLine='',endLine='';
   if(allDay){
-   startLine='DTSTART;VALUE=DATE:'+t.dueDate.replace(/-/g,'');
-   const next=new Date(parseKey(t.dueDate));next.setDate(next.getDate()+1);
+   const allDayKey=t.allDayDate||t.dueDate;
+   startLine='DTSTART;VALUE=DATE:'+allDayKey.replace(/-/g,'');
+   const next=new Date(parseKey(allDayKey));next.setDate(next.getDate()+1);
    endLine='DTEND;VALUE=DATE:'+dateKey(next).replace(/-/g,'');
   }else{
    const start=new Date(record.date.getFullYear(),record.date.getMonth(),record.date.getDate(),Math.floor(Number(t.start)/60),Number(t.start)%60,0);
@@ -3174,7 +3180,7 @@ async function importCalendarICS(file){
   }
   const dueDate=isAllDay?dateKey(date):null;
   const description=unescapeICSText(event.DESCRIPTION?.value);
-  const task={id:uid(),externalUid,calendarImportSource:'ics',day,title,type:'other',duration,start:startMinutes,done:false,status:'todo',custom:true,fixed:false,note:description,unscheduled,allDay:isAllDay,listId:'other',folderName:defaultFolderName('other'),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
+  const task={id:uid(),externalUid,calendarImportSource:'ics',day,title,type:'other',duration,start:startMinutes,done:false,status:'todo',custom:true,fixed:false,note:description,unscheduled:isAllDay?false:unscheduled,allDay:isAllDay,allDayDate:isAllDay?dateKey(date):null,listId:'other',folderName:defaultFolderName('other'),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
   if(!store.weeks[weekKey]||!Array.isArray(store.weeks[weekKey].tasks))store.weeks[weekKey]={...(store.weeks[weekKey]||{}),tasks:[]};
   const rows=weekKey===currentWeek?tasks:store.weeks[weekKey].tasks;
   rows.push(task);added++;
