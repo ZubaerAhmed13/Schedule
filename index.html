@@ -1104,6 +1104,7 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
       <div class="workspace-sidebar-head">WORKSPACE</div>
       <button class="workspace-nav-btn" type="button" data-workspace-view="search"><span class="workspace-nav-icon">⌕</span><span>Search</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="today"><span class="workspace-nav-icon">◷</span><span>Today</span><span class="workspace-nav-count" id="navCountToday">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="tomorrow"><span class="workspace-nav-icon">↗</span><span>Tomorrow</span><span class="workspace-nav-count" id="navCountTomorrow">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="inbox"><span class="workspace-nav-icon">⌑</span><span>Inbox</span><span class="workspace-nav-count" id="navCountInbox">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="upcoming"><span class="workspace-nav-icon">▦</span><span>Upcoming</span><span class="workspace-nav-count" id="navCountUpcoming">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="board"><span class="workspace-nav-icon">▤</span><span>Board</span></button>
@@ -1603,8 +1604,8 @@ try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarVi
 let lastRenderedCalendarView=null;
 let tasks=[];
 let workspaceView='today';
-try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace)||(savedWorkspace&&(savedWorkspace.startsWith('folder:')||savedWorkspace.startsWith('tag:'))))workspaceView=savedWorkspace;}catch(_){}
-try{const shortcutView=new URLSearchParams(window.location.search).get('view');if(['today','inbox','calendar'].includes(shortcutView))workspaceView=shortcutView;}catch(_){}
+try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','tomorrow','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace)||(savedWorkspace&&(savedWorkspace.startsWith('folder:')||savedWorkspace.startsWith('tag:'))))workspaceView=savedWorkspace;}catch(_){}
+try{const shortcutView=new URLSearchParams(window.location.search).get('view');if(['today','tomorrow','inbox','calendar'].includes(shortcutView))workspaceView=shortcutView;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
 function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}if(!cloudApplyingRemote)queueCloudSave();}
@@ -2618,7 +2619,7 @@ renderStats=function(){
  else $('weekLabel').textContent=fmtDate(parseKey(currentWeek),{day:'numeric',month:'short'})+' – '+fmtDate(dayDate(currentWeek,6),{day:'numeric',month:'short',year:'numeric'});
 };
 $('dashboardWeekPicker').addEventListener('change',function(){if(!$('dashboardWeekPicker').value)return;dashboardWeekKey=dateKey(sundayOf(parseKey($('dashboardWeekPicker').value)));renderStats();});
-$('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);});
+$('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);agendaAnchor=dateOnly(now);calendarYear=now.getFullYear();});
 
 $('thisWeek').addEventListener('click',weekwiseAnimateCalendar);
 $('mobileDayPicker').addEventListener('click',function(e){if(e.target.closest('[data-mobile-day]'))weekwiseAnimateCalendar();});
@@ -2649,7 +2650,7 @@ function syncWorkspaceLists(){
  WORKSPACE_LISTS=BUILTIN_WORKSPACE_LISTS.concat(store.customLists.filter(item=>item&&item.id&&item.name).map(item=>({id:item.id,label:item.name,view:'list-'+item.id,custom:true})));
  syncWorkspaceListOptions();renderWorkspaceCustomLists();
 }
-const WORKSPACE_VIEW_INFO={search:{title:'Search all tasks',description:'Search across lists, folders, tags, notes and deadlines.',emptyTitle:'Search your whole workspace',emptyText:'Enter a task name, note, tag, list, folder or deadline to find matching tasks.'},today:{title:'Today',description:'Focus on the tasks planned for today.',emptyTitle:'Nothing on your plan yet',emptyText:'Capture a task above, or add a scheduled activity from the calendar.'},inbox:{title:'Inbox',description:'Capture first. Decide when to do it later.',emptyTitle:'Your inbox is clear',emptyText:'Use the quick-capture box to collect tasks before scheduling them.'},upcoming:{title:'Upcoming',description:'See scheduled activities across the next seven days.',emptyTitle:'No upcoming tasks',emptyText:'Tasks scheduled for the next seven days will appear here.'},calendar:{title:'Calendar',description:'Time-block your activities.'}};
+const WORKSPACE_VIEW_INFO={search:{title:'Search all tasks',description:'Search across lists, folders, tags, notes and deadlines.',emptyTitle:'Search your whole workspace',emptyText:'Enter a task name, note, tag, list, folder or deadline to find matching tasks.'},today:{title:'Today',description:'Focus on the tasks planned for today.',emptyTitle:'Nothing on your plan yet',emptyText:'Capture a task above, or add a scheduled activity from the calendar.'},tomorrow:{title:'Tomorrow',description:'Look ahead one day and prepare without mixing it into today.',emptyTitle:'Tomorrow is clear',emptyText:'Schedule a task or add a deadline for tomorrow. Tasks remain linked to your calendar.'},inbox:{title:'Inbox',description:'Capture first. Decide when to do it later.',emptyTitle:'Your inbox is clear',emptyText:'Use the quick-capture box to collect tasks before scheduling them.'},upcoming:{title:'Upcoming',description:'See scheduled activities across the next seven days.',emptyTitle:'No upcoming tasks',emptyText:'Tasks scheduled for the next seven days will appear here.'},calendar:{title:'Calendar',description:'Time-block your activities.'}};
 function workspaceRecords(){
  const records=[],keys=new Set([...Object.keys(store.weeks||{}),currentWeek]);
  [...keys].sort().forEach(week=>{const rows=week===currentWeek?tasks:(Array.isArray(store.weeks[week]?.tasks)?store.weeks[week].tasks:[]);rows.forEach(task=>{if(!task||task.custom===false)return;let date;try{date=dayDate(week,Number(task.day)||0);}catch(_){return;}records.push({task,week,date,listId:inferredListId(task)});});});
@@ -2699,6 +2700,8 @@ function workspaceRecordMatches(record,view){
  const recordDate=dateOnly(record.date),recordKey=dateKey(recordDate),listId=record.listId;
  if(view==='search')return true;
  if(view==='today')return recordKey===todayKey||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
+ const tomorrowKey=dateKey(addDaysForView(day,1));
+ if(view==='tomorrow')return (recordKey===tomorrowKey&&(!!t.allDay||(!t.unscheduled&&t.start!=null)))||(!t.done&&t.dueDate===tomorrowKey);
  if(view==='inbox')return listId==='inbox';
  if(view==='upcoming'){
   const scheduledSoon=recordDate>=day&&recordDate<end&&(!!t.allDay||(!t.unscheduled&&t.start!=null));
@@ -2741,12 +2744,15 @@ function workspaceTaskRow(record){
 }
 function updateWorkspaceCounts(){
  const all=workspaceRecords(),todayKey=dateKey(now),nextWeek=new Date(dateOnly(now));nextWeek.setDate(nextWeek.getDate()+7);const endKey=dateKey(nextWeek);
- const ids={Today:'navCountToday',Inbox:'navCountInbox',Upcoming:'navCountUpcoming',Career:'navCountCareer',Study:'navCountStudy',Work:'navCountWork',Personal:'navCountPersonal',Languages:'navCountLanguage',Hobbies:'navCountHobbies',Other:'navCountOther'};
+ const ids={Today:'navCountToday',Tomorrow:'navCountTomorrow',Inbox:'navCountInbox',Upcoming:'navCountUpcoming',Career:'navCountCareer',Study:'navCountStudy',Work:'navCountWork',Personal:'navCountPersonal',Languages:'navCountLanguage',Hobbies:'navCountHobbies',Other:'navCountOther'};
  const listIds={Career:'career',Study:'study',Work:'work',Personal:'personal',Languages:'language',Hobbies:'hobbies',Other:'other'};
  Object.entries(ids).forEach(([key,id])=>{
   const el=$(id);if(!el)return;
+  const tomorrowKey=dateKey(addDaysForView(now,1));
   const count=key==='Today'
    ?all.filter(r=>dateKey(r.date)===todayKey||(!r.task.done&&!!r.task.dueDate&&r.task.dueDate<=todayKey)).length
+   :key==='Tomorrow'
+    ?all.filter(r=>(dateKey(r.date)===tomorrowKey&&(r.task.allDay||(!r.task.unscheduled&&r.task.start!=null)))||(!r.task.done&&r.task.dueDate===tomorrowKey)).length
    :key==='Inbox'
     ?all.filter(r=>r.listId==='inbox').length
     :key==='Upcoming'
@@ -2823,7 +2829,7 @@ function renderWorkspaceView(){
  if(isFilters)renderSavedFilters();
 }
 function setWorkspaceView(view){
- if(!['search','today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view)&&!WORKSPACE_LISTS.some(list=>list.view===view)&&!(typeof view==='string'&&(view.startsWith('folder:')||view.startsWith('tag:'))))return;
+ if(!['search','today','tomorrow','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view)&&!WORKSPACE_LISTS.some(list=>list.view===view)&&!(typeof view==='string'&&(view.startsWith('folder:')||view.startsWith('tag:'))))return;
  if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
  renderWorkspaceView();if(view==='calendar')renderAll();if(view==='search')setTimeout(()=>$('workspaceSearch')?.focus(),0);
 }
@@ -2870,7 +2876,7 @@ function wireWorkspaceControls(){
  });
  $('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();quickCaptureWorkspaceTask();});
  $('voiceCaptureBtn').addEventListener('click',toggleVoiceCapture);
- $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):workspaceView.startsWith('folder:')?(workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===workspaceView.slice(7))?.listId||'other'):workspaceView.startsWith('tag:')?(workspaceRecords().find(r=>(Array.isArray(r.task.tags)?r.task.tags:[]).some(tag=>String(tag).replace(/^#/,'').toLowerCase()===workspaceView.slice(4).toLowerCase()))?.listId||'other'):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
+ $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):workspaceView.startsWith('folder:')?(workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===workspaceView.slice(7))?.listId||'other'):workspaceView.startsWith('tag:')?(workspaceRecords().find(r=>(Array.isArray(r.task.tags)?r.task.tags:[]).some(tag=>String(tag).replace(/^#/,'').toLowerCase()===workspaceView.slice(4).toLowerCase()))?.listId||'other'):null;const tomorrow=workspaceView==='tomorrow';const targetDay=tomorrow?addDaysForView(now,1).getDay():workspaceView==='today'?now.getDay():mobileDay;const targetStart=workspaceView==='inbox'?null:tomorrow?10*60:nextQuarterHour();openTaskModal(null,targetDay,targetStart,def);});
  $('addCustomListBtn').addEventListener('click',createCustomList);
  $('workspaceSearch').addEventListener('input',renderWorkspaceTasks);$('workspaceSort').addEventListener('change',renderWorkspaceTasks);
  $('workspaceTaskList').addEventListener('change',e=>{const sub=e.target.closest('[data-workspace-subtask]');if(sub){updateWorkspaceRecord(sub.dataset.workspaceSubtask,sub.dataset.workspaceWeek,'toggle-subtask',Number(sub.dataset.workspaceSubtaskIndex));return;}const control=e.target.closest('[data-workspace-done]');if(control)updateWorkspaceRecord(control.dataset.workspaceDone,control.dataset.workspaceWeek,'toggle');});
@@ -3451,7 +3457,8 @@ function quickCaptureWorkspaceTask(){
  const input=$('workspaceCaptureInput'),raw=String(input?.value||'').trim();if(!raw)return;
  const parsed=parseWeekwiseNaturalCapture(raw,now),title=parsed.title;
  if(!title){showToast('Add a task name before the date or time.');return;}
- const date=parsed.date||dateOnly(now),dueDate=parsed.date?dateKey(parsed.date):null;
+ const defaultDate=workspaceView==='tomorrow'?addDaysForView(now,1):dateOnly(now);
+ const date=parsed.dateMatched&&parsed.date?parsed.date:defaultDate,dueDate=parsed.dateMatched&&parsed.date?dateKey(parsed.date):null;
  const listId=defaultCaptureList();
  const start=parsed.timeMatched?parsed.timeMinutes:null;
  const selectedFolder=workspaceView.startsWith('folder:')?workspaceView.slice(7):null;
