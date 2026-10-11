@@ -3789,7 +3789,7 @@ function exportCurrentTaskList(){
  const records=recordsForListTransfer();
  if(!records.length){showToast(workspaceView==='filters'?'Choose a saved filter before exporting it.':'There are no tasks in this view to export.');return;}
  const seriesIds=new Set(records.map(r=>r.task.seriesId).filter(Boolean));
- const templates=(store.recurringTemplates||[]).filter(template=>seriesIds.has(template.id));
+ const templates=(store.recurringTemplates||[]).filter(template=>seriesIds.has(template.id)).map(template=>({...template,reminderRules:[],reminderOffsetDays:null,reminderTime:null}));
  const listIds=new Set(records.map(r=>r.listId));
  const customLists=(store.customLists||[]).filter(list=>listIds.has(list.id));
  const data={
@@ -3905,13 +3905,13 @@ async function importSharedTaskList(file){
    const task={
     id:uid(),day,title:source.title.trim().slice(0,180),type:source.type||'other',duration,
     start:source.allDay?null:start,allDay:!!source.allDay,allDayDate:source.allDay?(source.allDayDate||dateKey(date)):null,
-    done:!!source.done,status:source.done?'done':(['todo','in-progress','done'].includes(source.status)?source.status:'todo'),
+    done:!!source.done||source.status==='done',status:(source.done||source.status==='done')?'done':(['todo','in-progress'].includes(source.status)?source.status:'todo'),
     custom:true,fixed:false,note:String(source.note||'').slice(0,4000),unscheduled:source.allDay?false:unscheduled,
     listId,folderName:destination?(workspaceView.startsWith('folder:')?workspaceView.slice(7):defaultFolderName(destination)):(String(source.folderName||'').slice(0,100)||defaultFolderName(listId)),
     sectionName:String(source.sectionName||'').slice(0,100),priority:['none','low','medium','high'].includes(source.priority)?source.priority:'none',
     importance:['unclassified','important','not-important'].includes(source.importance)?source.importance:'unclassified',
     urgency:['unclassified','urgent','not-urgent'].includes(source.urgency)?source.urgency:'unclassified',
-    dueDate:typeof source.dueDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(source.dueDate)?source.dueDate:null,
+    dueDate:typeof source.dueDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(source.dueDate)&&dateKey(parseKey(source.dueDate))===source.dueDate?source.dueDate:null,
     focusEstimateMinutes:Math.max(0,Math.min(1440,Number(source.focusEstimateMinutes)||0))||null,
     tags:Array.isArray(source.tags)?source.tags.map(tag=>String(tag).slice(0,80)).filter(Boolean).slice(0,30):[],
     subtasks:Array.isArray(source.subtasks)?source.subtasks.slice(0,100).map(sub=>typeof sub==='string'?{id:uid(),title:sub.slice(0,500),done:false}:{id:uid(),title:String(sub?.title||'').slice(0,500),done:!!sub?.done}):[],
