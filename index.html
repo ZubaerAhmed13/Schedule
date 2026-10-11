@@ -674,6 +674,33 @@ body.signin-required{overflow:hidden}
 .signin-continue span{font-size:18px;line-height:1}
 .signin-local-note{margin:16px 0 0;color:#9297aa;font-size:10px;line-height:1.5}
 @media(max-width:480px){.signin-landing{padding:13px}.signin-card{border-radius:22px}.signin-brand{margin-bottom:27px}}
+
+/* Smooth calendar, menu, form and utility-panel interactions. */
+@keyframes weekwiseCalendarEnter{from{opacity:.48;transform:translateY(9px) scale(.997);filter:blur(1px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes weekwisePopupEnter{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes weekwiseLandingEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+#daysGrid.weekwise-transition-enter{animation:weekwiseCalendarEnter 300ms cubic-bezier(.2,.75,.25,1) both;transform-origin:top center}
+.view-switch-btn,.calendar-actions>.btn,.more-trigger,.more-panel .btn,.utility-close,.cloud-auth-tab,.cloud-password-toggle{transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.view-switch-btn:hover,.calendar-actions>.btn:hover,.more-trigger:hover,.utility-close:hover{transform:translateY(-1px)}
+.more-panel{transform-origin:top right}
+.more-actions[open]>.more-panel{animation:weekwisePopupEnter 180ms cubic-bezier(.2,.75,.25,1) both}
+.menu-section-label{padding:8px 9px 3px;color:#9298ad;font-size:9px;font-weight:850;letter-spacing:1.05px;line-height:1.3}
+.more-panel .menu-divider{border:0;border-top:1px solid #eceef7;margin:5px 2px 2px}
+.more-panel .btn{display:flex;align-items:center;gap:9px;min-height:39px;border:1px solid transparent;border-radius:10px;padding:9px 10px!important;font-size:12px;font-weight:650;color:#343b59}
+.more-panel .btn:hover{background:#f5f6ff;border-color:#e5e7fa;transform:translateX(2px)}
+.menu-item-icon{display:inline-grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:8px;background:#f1f2fc;color:#5c61c9;font-size:14px;font-weight:800}
+.more-panel .btn>span:nth-child(2){flex:1;min-width:0}
+.more-panel .reminder-badge{margin-left:auto;flex:0 0 auto}
+.modalback.show .modal{animation:weekwisePopupEnter 210ms cubic-bezier(.2,.75,.25,1) both}
+.utility-backdrop.show .utility-dialog{animation:weekwisePopupEnter 220ms cubic-bezier(.2,.75,.25,1) both}
+.signin-card{animation:weekwiseLandingEnter 360ms cubic-bezier(.2,.75,.25,1) both}
+.cloud-field-note{display:block;margin-top:6px;color:#7a8299;font-size:10px;line-height:1.45}
+#cloudReferralCode{text-transform:uppercase;letter-spacing:.7px}
+@media(prefers-reduced-motion:reduce){
+  #daysGrid.weekwise-transition-enter,.more-actions[open]>.more-panel,.modalback.show .modal,.utility-backdrop.show .utility-dialog,.signin-card{animation:none!important}
+  .view-switch-btn,.calendar-actions>.btn,.more-trigger,.more-panel .btn,.utility-close,.cloud-auth-tab,.cloud-password-toggle{transition:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -695,16 +722,22 @@ body.signin-required{overflow:hidden}
       <details class="more-actions" id="moreActions">
         <summary class="btn more-trigger" aria-label="More options" title="More options">•••</summary>
         <div class="more-panel" role="menu" aria-label="Weekwise options">
-          <button class="btn" id="menuQuickAddBtn" role="menuitem">Quick add activity</button>
-          <button class="btn reminders-menu-button" id="remindersMenuBtn" role="menuitem">Reminders & sticky notes <span id="reminderBadge" class="reminder-badge" hidden>0</span></button>
-          <button class="btn reminders-menu-button" id="cloudMenuBtn" role="menuitem">Cloud sync & account <span id="cloudMenuBadge" class="reminder-badge">Local</span></button>
-          <button class="btn" id="dashboardMenuBtn" role="menuitem">Weekly effort dashboard</button>
-          <button class="btn" id="menuSettingsBtn" role="menuitem">Work day & weekly settings</button>
-          <button class="btn" id="menuHabitsBtn" role="menuitem">Habits & focus tips</button>
+          <div class="menu-section-label">PLAN YOUR TIME</div>
+          <button class="btn" id="menuQuickAddBtn" role="menuitem"><span class="menu-item-icon">＋</span><span>Quick add activity</span></button>
+          <button class="btn reminders-menu-button" id="remindersMenuBtn" role="menuitem"><span class="menu-item-icon">◷</span><span>Reminders & sticky notes</span><span id="reminderBadge" class="reminder-badge" hidden>0</span></button>
+          <button class="btn" id="menuHabitsBtn" role="menuitem"><span class="menu-item-icon">✦</span><span>Habits & focus tips</span></button>
           <hr class="menu-divider">
-          <button class="btn" id="exportBtn" role="menuitem">Export backup</button>
-          <button class="btn" id="importBtn" role="menuitem">Import backup</button>
-          <button class="btn" id="printBtn" role="menuitem">Print calendar</button>
+          <div class="menu-section-label">REVIEW</div>
+          <button class="btn" id="dashboardMenuBtn" role="menuitem"><span class="menu-item-icon">▥</span><span>Weekly effort dashboard</span></button>
+          <hr class="menu-divider">
+          <div class="menu-section-label">ACCOUNT & SETTINGS</div>
+          <button class="btn reminders-menu-button" id="cloudMenuBtn" role="menuitem"><span class="menu-item-icon">☁</span><span>Cloud sync & account</span><span id="cloudMenuBadge" class="reminder-badge">Local</span></button>
+          <button class="btn" id="menuSettingsBtn" role="menuitem"><span class="menu-item-icon">⚙</span><span>Work day & weekly settings</span></button>
+          <hr class="menu-divider">
+          <div class="menu-section-label">BACKUP & OUTPUT</div>
+          <button class="btn" id="exportBtn" role="menuitem"><span class="menu-item-icon">↓</span><span>Export backup</span></button>
+          <button class="btn" id="importBtn" role="menuitem"><span class="menu-item-icon">↑</span><span>Import backup</span></button>
+          <button class="btn" id="printBtn" role="menuitem"><span class="menu-item-icon">▤</span><span>Print calendar</span></button>
           <input type="file" id="importFile" accept="application/json,.json" hidden>
         </div>
       </details>
@@ -787,6 +820,7 @@ body.signin-required{overflow:hidden}
           <div class="field"><label for="cloudEmail">Email address</label><input id="cloudEmail" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></div>
           <div class="field"><label for="cloudPassword" id="cloudPasswordLabel">Password</label><div class="cloud-password-wrap"><input id="cloudPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="Enter your password"><button type="button" id="cloudTogglePassword" class="cloud-password-toggle" aria-label="Show password" aria-pressed="false">Show</button></div></div>
           <div class="field" id="cloudConfirmPasswordWrap" hidden><label for="cloudConfirmPassword">Confirm password</label><input id="cloudConfirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Re-enter your password"></div>
+          <div class="field" id="cloudReferralCodeWrap" hidden><label for="cloudReferralCode">Required referral / invite code</label><input id="cloudReferralCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="64" placeholder="Enter the code you received" aria-describedby="cloudReferralHelp"><small class="cloud-field-note" id="cloudReferralHelp">Ask the Weekwise owner for an invite code before creating an account.</small></div>
         </div>
         <div class="cloud-auth-options"><span id="cloudPasswordHint">Use your Weekwise account details.</span><button type="button" class="cloud-text-button" id="cloudForgotPassword">Forgot password?</button></div>
         <div class="cloud-form-actions"><button class="btn primary cloud-submit" id="cloudSignInBtn" type="submit">Sign in</button></div>
@@ -1705,16 +1739,19 @@ function setCloudAuthMode(mode,resetStatus=true){
  $('cloudPassword').autocomplete=signup||recovery?'new-password':'current-password';
  $('cloudConfirmPasswordWrap').hidden=!(signup||recovery);
  $('cloudConfirmPassword').required=signup||recovery;
+ $('cloudReferralCodeWrap').hidden=!signup;
+ $('cloudReferralCode').required=signup;
+ if(!signup)$('cloudReferralCode').value='';
  $('cloudConfirmPassword').autocomplete='new-password';
  $('cloudForgotPassword').hidden=signup||recovery;
- $('cloudPasswordHint').textContent=recovery?'Use at least 8 characters.':signup?'Use at least 8 characters and confirm it below.':'Use your Weekwise account details.';
+ $('cloudPasswordHint').textContent=recovery?'Use at least 8 characters.':signup?'A referral code and a password of at least 8 characters are required.':'Use your Weekwise account details.';
  if(!signup&&!recovery)$('cloudConfirmPassword').value='';
  if(resetStatus)setCloudStatus(recovery?'Enter and confirm your new password.':signup?'Create a Weekwise account with your email.':'Sign in to sync schedules across devices.');
  renderCloudPanel();
 }
 function setCloudAuthBusy(busy){
  cloudAuthBusy=busy;
- ['cloudEmail','cloudPassword','cloudConfirmPassword','cloudSignInBtn','cloudSignUpBtn','cloudSignInMode','cloudForgotPassword','cloudTogglePassword'].forEach(id=>{const el=$(id);if(el)el.disabled=busy;});
+ ['cloudEmail','cloudPassword','cloudConfirmPassword','cloudReferralCode','cloudSignInBtn','cloudSignUpBtn','cloudSignInMode','cloudForgotPassword','cloudTogglePassword'].forEach(id=>{const el=$(id);if(el)el.disabled=busy;});
  const button=$('cloudSignInBtn');
  if(button&&busy){button.dataset.previousLabel=button.textContent;button.textContent=cloudAuthMode==='signup'?'Creating account…':cloudAuthMode==='recovery'?'Updating password…':'Signing in…';}
  else if(button&&!busy){button.textContent=cloudAuthMode==='signup'?'Create account':cloudAuthMode==='recovery'?'Update password':'Sign in';}
@@ -1746,12 +1783,14 @@ async function cloudSignIn(){
 async function cloudSignUp(){
  if(!cloudClient){setCloudStatus('Cloud library unavailable. Your local schedules are still saved.');return;}
  const email=$('cloudEmail').value.trim();
- if(!email){$('cloudAuthForm').reportValidity();return;}
+ const referralCode=$('cloudReferralCode').value.trim().toUpperCase();
+ if(!email||!referralCode){$('cloudAuthForm').reportValidity();if(!referralCode){setCloudStatus('A referral code from the Weekwise owner is required to create an account.');$('cloudReferralCode').focus();}return;}
  if(!validateCloudPassword())return;
- setCloudAuthBusy(true);setCloudStatus('Creating your Weekwise account…');
+ setCloudAuthBusy(true);setCloudStatus('Checking invite and creating your Weekwise account…');
  try{
-  const {data,error}=await cloudClient.auth.signUp({email,password:$('cloudPassword').value,options:{emailRedirectTo:location.origin+location.pathname}});
-  if(error){setCloudStatus('Account creation failed: '+(error.message||'Please try again.'));return;}
+  const {data,error}=await cloudClient.auth.signUp({email,password:$('cloudPassword').value,options:{emailRedirectTo:location.origin+location.pathname,data:{weekwise_referral_code:referralCode}}});
+  if(error){setCloudStatus('Account creation failed: '+(error.message||'Check your referral code and try again.'));return;}
+  $('cloudReferralCode').value='';
   if(data?.session&&data?.user){
    cloudUser=data.user;await startCloudForUser(data.user,true);if(cloudReady)setCloudStatus('Account created and cloud sync is ready.');
   }else{
@@ -1908,15 +1947,25 @@ updateViewControls=function(){
  const unit=calendarView==='day'?'day':calendarView==='month'?'month':'week';
  ['prevWeek','nextWeek'].forEach(function(id){const b=$(id);if(b){b.title=(id==='prevWeek'?'Previous ':'Next ')+unit;b.setAttribute('aria-label',b.title);}});
 };
+function weekwiseAnimateCalendar(){
+ const grid=$('daysGrid');
+ if(!grid||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ grid.classList.remove('weekwise-transition-enter');
+ void grid.offsetWidth;
+ grid.classList.add('weekwise-transition-enter');
+ setTimeout(function(){grid.classList.remove('weekwise-transition-enter');},380);
+}
 setCalendarView=function(view){
  if(!['day','week','month'].includes(view))return;
  const changing=calendarView!==view;saveCurrent();
+ if(changing)weekwiseAnimateCalendar();
  if(view==='month'&&changing){const d=dayDate(currentWeek,mobileDay);monthAnchor=new Date(d.getFullYear(),d.getMonth(),1);}
  calendarView=view;try{localStorage.setItem('weekwise-calendar-view-v1',view);}catch(_){}
  const grid=$('daysGrid');if(view==='month'){grid.classList.add('month-mode');grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';}else{grid.classList.remove('month-mode');grid.style.height='';grid.style.minHeight='';grid.style.maxHeight='';}
  renderAll();if(view==='month'&&!grid.querySelector('.month-calendar'))weekwiseRenderMonth();
 };
 shiftPeriod=function(n){
+ weekwiseAnimateCalendar();
  if(calendarView==='month'){saveCurrent();monthAnchor=new Date(monthAnchor.getFullYear(),monthAnchor.getMonth()+n,1);currentWeek=dateKey(sundayOf(monthAnchor));loadWeek(currentWeek);return;}
  if(calendarView!=='day'){shiftWeeks(n);return;}
  const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));
@@ -1944,6 +1993,8 @@ renderStats=function(){
 $('dashboardWeekPicker').addEventListener('change',function(){if(!$('dashboardWeekPicker').value)return;dashboardWeekKey=dateKey(sundayOf(parseKey($('dashboardWeekPicker').value)));renderStats();});
 $('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);});
 
+$('thisWeek').addEventListener('click',weekwiseAnimateCalendar);
+$('daysGrid').addEventListener('click',function(e){if(e.target.closest('[data-mobile-day]'))weekwiseAnimateCalendar();});
 setup();
 renderReminders();nudgeDueReminders();
 function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}
