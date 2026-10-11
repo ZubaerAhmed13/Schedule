@@ -3457,8 +3457,7 @@ function quickCaptureWorkspaceTask(){
  const input=$('workspaceCaptureInput'),raw=String(input?.value||'').trim();if(!raw)return;
  const parsed=parseWeekwiseNaturalCapture(raw,now),title=parsed.title;
  if(!title){showToast('Add a task name before the date or time.');return;}
- const defaultDate=workspaceView==='tomorrow'?addDaysForView(now,1):dateOnly(now);
- const date=parsed.dateMatched&&parsed.date?parsed.date:defaultDate,dueDate=parsed.dateMatched&&parsed.date?dateKey(parsed.date):null;
+ const date=parsed.date||dateOnly(now),dueDate=parsed.date?dateKey(parsed.date):null;
  const listId=defaultCaptureList();
  const start=parsed.timeMatched?parsed.timeMinutes:null;
  const selectedFolder=workspaceView.startsWith('folder:')?workspaceView.slice(7):null;
