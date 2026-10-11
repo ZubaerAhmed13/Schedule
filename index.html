@@ -897,6 +897,127 @@ body.signin-required{overflow:hidden}
 .voice-capture-btn:disabled{opacity:.55;cursor:not-allowed}
 @keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(185,79,70,.1)}50%{box-shadow:0 0 0 5px rgba(185,79,70,.06)}}
 @media(prefers-reduced-motion:reduce){.voice-capture-btn[aria-pressed="true"]{animation:none}}
+
+body[data-theme="dark"]{
+ --bg:#141821;--paper:#1d2330;--ink:#edf0f7;--muted:#a0a9bc;--line:#343c4d;
+ --green:#69b68d;--green-soft:#243e31;--gold-soft:#40341f;--blue-soft:#22364c;--purple-soft:#342741;--red-soft:#452827;
+ --shadow:0 12px 32px rgba(0,0,0,.28);background:var(--bg);color:var(--ink);color-scheme:dark
+}
+body[data-theme="dark"] .workspace-sidebar,
+body[data-theme="dark"] .task-workspace,
+body[data-theme="dark"] .priority-matrix,
+body[data-theme="dark"] .panel,
+body[data-theme="dark"] .settings,
+body[data-theme="dark"] .stat,
+body[data-theme="dark"] .daycard,
+body[data-theme="dark"] .calendar-toolbar,
+body[data-theme="dark"] .calendar-scroll,
+body[data-theme="dark"] .workspace-task-row,
+body[data-theme="dark"] .workspace-task-row:hover,
+body[data-theme="dark"] .workspace-capture,
+body[data-theme="dark"] .workspace-search-wrap,
+body[data-theme="dark"] .matrix-quadrant,
+body[data-theme="dark"] .matrix-task,
+body[data-theme="dark"] .matrix-unclassified,
+body[data-theme="dark"] .focus-stat,
+body[data-theme="dark"] .focus-history-row,
+body[data-theme="dark"] .habit-track-card,
+body[data-theme="dark"] .habit-create-form,
+body[data-theme="dark"] .habit-create-field input,
+body[data-theme="dark"] .habit-create-field select,
+body[data-theme="dark"] .countdown-card,
+body[data-theme="dark"] .saved-filter-card,
+body[data-theme="dark"] .workspace-empty,
+body[data-theme="dark"] .workspace-section-group>header,
+body[data-theme="dark"] .workspace-folder-empty{
+ background-color:var(--paper);color:var(--ink);border-color:var(--line);box-shadow:none
+}
+body[data-theme="dark"] .hero{background:#1b3027;color:#f0f4f0}
+body[data-theme="dark"] .hero p{color:#c5d9cc}
+body[data-theme="dark"] .trip-callout{background:#203b2e;border-color:#3a5a49}
+body[data-theme="dark"] .calendar-grid{background:#151a24;border-color:#343b4b}
+body[data-theme="dark"] .calendar-day-header,
+body[data-theme="dark"] .dayhead,
+body[data-theme="dark"] .calendar-time-col,
+body[data-theme="dark"] .day-column{background:#1b2230;color:var(--ink);border-color:#343c4d}
+body[data-theme="dark"] .hour-label,
+body[data-theme="dark"] .calendar-day-header .day-name,
+body[data-theme="dark"] .calendar-day-header .day-count,
+body[data-theme="dark"] .taskmeta,
+body[data-theme="dark"] .task-note,
+body[data-theme="dark"] .tasktools,
+body[data-theme="dark"] .workspace-task-meta,
+body[data-theme="dark"] .workspace-task-subtasks,
+body[data-theme="dark"] .workspace-list-footnote{color:#a4aec1}
+body[data-theme="dark"] .cal-event,
+body[data-theme="dark"] .task,
+body[data-theme="dark"] .backlog-event,
+body[data-theme="dark"] .emptyday,
+body[data-theme="dark"] .backlog-strip,
+body[data-theme="dark"] .all-day-strip{background:#242b39;color:#ecf0f8;border-color:#414a5d}
+body[data-theme="dark"] .cal-event.t-job,
+body[data-theme="dark"] .task.t-job{background:#24354a;color:#e8eff9}
+body[data-theme="dark"] .cal-event.t-study,
+body[data-theme="dark"] .task.t-study{background:#332b43;color:#efe8fa}
+body[data-theme="dark"] .cal-event.t-language,
+body[data-theme="dark"] .task.t-language{background:#3b3322;color:#f5ecd4}
+body[data-theme="dark"] .cal-event.t-life,
+body[data-theme="dark"] .task.t-life{background:#24382e;color:#e4f2e8}
+body[data-theme="dark"] .calendar-line,
+body[data-theme="dark"] .calendar-grid .grid-line,
+body[data-theme="dark"] .day-separator{border-color:#303849}
+body[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+body[data-theme="dark"] select,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] .field input,
+body[data-theme="dark"] .field select,
+body[data-theme="dark"] .field textarea,
+body[data-theme="dark"] .time24,
+body[data-theme="dark"] .workspace-search-wrap input,
+body[data-theme="dark"] .workspace-capture input{
+ background:#171d28!important;color:#edf0f7!important;border-color:#3a4355!important
+}
+body[data-theme="dark"] input::placeholder,
+body[data-theme="dark"] textarea::placeholder{color:#7f8aa0!important}
+body[data-theme="dark"] .btn:not(.primary):not(.danger),
+body[data-theme="dark"] .iconbtn,
+body[data-theme="dark"] .workspace-nav-btn,
+body[data-theme="dark"] .workspace-task-actions button,
+body[data-theme="dark"] .matrix-task-edit,
+body[data-theme="dark"] .workspace-list-action{color:#d3d9e6}
+body[data-theme="dark"] .btn:not(.primary):not(.danger){background:#252d3b;border-color:#414a5b}
+body[data-theme="dark"] .btn.primary{background:#3d7658;border-color:#3d7658;color:#fff}
+body[data-theme="dark"] .workspace-nav-btn:hover,
+body[data-theme="dark"] .workspace-nav-btn.active{background:#303650;color:#dfe1ff;border-color:#4c5278}
+body[data-theme="dark"] .workspace-nav-count{color:#a8b0c3}
+body[data-theme="dark"] .workspace-nav-btn.active .workspace-nav-count{background:#252c3a;color:#dfe1ff}
+body[data-theme="dark"] .modal,
+body[data-theme="dark"] .template-dialog,
+body[data-theme="dark"] .utility-modal,
+body[data-theme="dark"] .focus-clock-wrap,
+body[data-theme="dark"] .habit-empty-state,
+body[data-theme="dark"] .habit-track-progress-track,
+body[data-theme="dark"] .habit-checkin-day{background:#1a202d;color:var(--ink);border-color:#384154}
+body[data-theme="dark"] .modal p,
+body[data-theme="dark"] .field label,
+body[data-theme="dark"] .habit-track-info p,
+body[data-theme="dark"] .focus-history-row small,
+body[data-theme="dark"] .focus-clock-wrap p{color:#a3aec1}
+body[data-theme="dark"] .workspace-empty-icon,
+body[data-theme="dark"] .matrix-number,
+body[data-theme="dark"] .capture-plus,
+body[data-theme="dark"] .habit-track-icon{background:#30364d;color:#dfe1ff}
+body[data-theme="dark"] .workspace-meta-pill{background:#303747;color:#d5dbea}
+body[data-theme="dark"] .workspace-folder-pill{background:#313650!important;color:#d9dcff!important}
+body[data-theme="dark"] .workspace-section-group>header{background:#272d40;color:#d6d9ff}
+body[data-theme="dark"] .focus-clock{color:#f0f2ff}
+body[data-theme="dark"] .sticky-note{color:#302b21}
+body[data-theme="dark"] .workspace-capture{border-color:#3b4355}
+body[data-theme="dark"] .calendar-day-header.is-today{background:#263b31}
+body[data-theme="dark"] .calendar-day-header.is-trip{background:#2a3d32}
+body[data-theme="dark"] .task.done,
+body[data-theme="dark"] .cal-event.done{opacity:.58}
+
 </style>
 </head>
 <body>
@@ -1116,6 +1237,7 @@ body.signin-required{overflow:hidden}
         <div class="field"><label for="tripDay">City exploration day</label><select id="tripDay"></select><div class="hint">Protected as a 9-hour block.</div></div>
         <div class="field"><label for="tripStart">City day start time</label><input id="tripStart" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="09:00" value="09:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /><div class="hint">24-hour time: 09:00–18:00.</div></div>
         <div class="field"><label for="cookDay">First cooking day this week</label><select id="cookDay"></select><div class="hint">Then every second day.</div></div>
+        <div class="field"><label for="themeMode">Appearance</label><select id="themeMode"><option value="system">System default</option><option value="light">Light</option><option value="dark">Dark</option></select><div class="hint">Choose a calm light or dark workspace, or follow this device.</div></div>
       </div>
       <div class="setting-toggle-row"><div><strong>Show breaks between activities</strong><small>Display the free gap between consecutive events when there are at least 15 minutes. This never adds events to your calendar.</small></div><label class="switch-control"><input id="showBreaks" type="checkbox" checked /><span class="switch-track" aria-hidden="true"></span><span class="switch-text">Show breaks</span></label></div>
       <div class="destination-editor"><div class="field"><label for="tripDestination">City-trip destination (optional)</label><div class="city-edit"><input id="tripDestination" aria-label="City or destination" placeholder="e.g. Heidelberg" maxlength="70" /><button class="btn" id="saveDestination">Save</button></div></div></div>
@@ -1354,7 +1476,7 @@ function updateDurationFromEnd(){
 function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function escapeHtml(str){return String(str??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function defaultClassTemplate(){return {title:'Master’s coursework self-study',days:[1,3,5,0],duration:75,start:'13:00'};}
-function defaultSettings(){return {travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,shifts:DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:defaultClassTemplate()};}
+function defaultSettings(){return {travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,theme:'system',shifts:DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:defaultClassTemplate()};}
 function loadStore(){
   try{
     const current=localStorage.getItem(STORE_KEY);
@@ -1445,8 +1567,25 @@ function saveCurrent(){store.weeks[currentWeek]={tasks:JSON.parse(JSON.stringify
 function showToast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400);}
 function populateDaySelects(){['tripDay','cookDay','quickDay','modalDay'].forEach(id=>{const el=$(id);el.innerHTML=DAY_NAMES.map((n,i)=>`<option value="${i}">${n}</option>`).join('')});}
 function renderShiftFields(){const grid=$('shiftGrid');grid.innerHTML=DAY_NAMES.map((d,i)=>{const s=store.settings.shifts[i]||{enabled:false,start:'09:00',end:'17:00'};return `<div class="shiftrow"><label class="daycheck"><input type="checkbox" data-shift-enabled="${i}" ${s.enabled?'checked':''}> <span>${d}</span></label><div><label class="sr-only" for="shiftstart${i}">Shift start ${d}</label><input class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="09:00" id="shiftstart${i}" data-shift-start="${i}" value="${escapeHtml(s.start||'09:00')}" title="24-hour HH:MM, e.g. 09:00 or type 0900" aria-label="${d} shift start"></div><div><label class="sr-only" for="shiftend${i}">Shift end ${d}</label><input class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="17:00" id="shiftend${i}" data-shift-end="${i}" value="${escapeHtml(s.end||'17:00')}" title="24-hour HH:MM, e.g. 17:00 or type 1700" aria-label="${d} shift end"></div></div>`}).join('');}
-function syncSettingsForm(){ $('weekStart').value=currentWeek; $('tripDay').value=store.settings.travelDay; $('tripStart').value=store.settings.travelStart||'09:00'; $('cookDay').value=store.settings.cookStartDay; $('tripDestination').value=store.settings.destination||'';const breakToggle=$('showBreaks');if(breakToggle)breakToggle.checked=store.settings.showBreaks!==false;renderShiftFields();}
-function settingsFromForm(){const shifts=DAY_NAMES.map((_,i)=>({enabled:!!document.querySelector(`[data-shift-enabled="${i}"]`)?.checked,start:document.querySelector(`[data-shift-start="${i}"]`)?.value||'09:00',end:document.querySelector(`[data-shift-end="${i}"]`)?.value||'17:00'}));return {...store.settings,travelDay:Number($('tripDay').value),travelStart:$('tripStart').value||'09:00',destination:$('tripDestination').value.trim(),cookStartDay:Number($('cookDay').value),showBreaks:!!$('showBreaks')?.checked,shifts,classTemplate:store.settings.classTemplate||defaultClassTemplate()};}
+
+function applyThemePreference(mode){
+ const selected=['system','light','dark'].includes(mode)?mode:'system';
+ if(store&&store.settings)store.settings.theme=selected;
+ let systemDark=false;try{systemDark=!!window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;}catch(_){}
+ const dark=selected==='dark'||(selected==='system'&&systemDark);
+ document.body.setAttribute('data-theme',dark?'dark':'light');
+ document.documentElement.style.colorScheme=dark?'dark':'light';
+}
+function setupSystemThemeListener(){
+ try{
+  if(!window.matchMedia)return;
+  const media=window.matchMedia('(prefers-color-scheme: dark)');
+  const changed=()=>{if((store.settings?.theme||'system')==='system')applyThemePreference('system');};
+  if(media.addEventListener)media.addEventListener('change',changed);else if(media.addListener)media.addListener(changed);
+ }catch(_){}
+}
+function syncSettingsForm(){ $('weekStart').value=currentWeek; $('tripDay').value=store.settings.travelDay; $('tripStart').value=store.settings.travelStart||'09:00'; $('cookDay').value=store.settings.cookStartDay; $('tripDestination').value=store.settings.destination||'';const breakToggle=$('showBreaks');if(breakToggle)breakToggle.checked=store.settings.showBreaks!==false;const themeSelect=$('themeMode');if(themeSelect){themeSelect.value=store.settings.theme||'system';applyThemePreference(themeSelect.value);}renderShiftFields();}
+function settingsFromForm(){const shifts=DAY_NAMES.map((_,i)=>({enabled:!!document.querySelector(`[data-shift-enabled="${i}"]`)?.checked,start:document.querySelector(`[data-shift-start="${i}"]`)?.value||'09:00',end:document.querySelector(`[data-shift-end="${i}"]`)?.value||'17:00'}));return {...store.settings,travelDay:Number($('tripDay').value),travelStart:$('tripStart').value||'09:00',destination:$('tripDestination').value.trim(),cookStartDay:Number($('cookDay').value),showBreaks:!!$('showBreaks')?.checked,theme:$('themeMode')?.value||store.settings.theme||'system',shifts,classTemplate:store.settings.classTemplate||defaultClassTemplate()};}
 function overlap(a,b){return a.start < b.start+b.duration && b.start < a.start+a.duration;}
 function canPlace(dayTasks,start,duration){const candidate={start,duration};return !dayTasks.some(t=>t.start!=null && overlap(candidate,t));}
 function findSlot(dayIndex,duration,preferred=600,min=420,max=1320,dayTasks=null){const occupied=dayTasks||tasks.filter(t=>t.day===dayIndex);const candidates=[];for(let start=min;start+duration<=max;start+=15)candidates.push(start);candidates.sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred));return candidates.find(start=>canPlace(occupied,start,duration))??null;}
@@ -1983,7 +2122,7 @@ function saveModalTask(e){
   else if(actualStart!==preferred)showToast(`That time was busy; scheduled at ${minsTime(actualStart)} instead.`);
   else showToast(id?`Task updated · ${DAY_SHORT[day]} ${minsTime(actualStart)}`:`Task added · ${DAY_SHORT[day]} ${minsTime(actualStart)}`);
 }
-function applySettings(){const timeIds=['tripStart'];for(let i=0;i<7;i++){if(document.querySelector(`[data-shift-enabled="${i}"]`)?.checked)timeIds.push(`shiftstart${i}`,`shiftend${i}`);}if(!validateTimeFields(timeIds))return;const newWeek=$('weekStart').value?dateKey(sundayOf(parseKey($('weekStart').value))):currentWeek;saveCurrent();store.settings=settingsFromForm();saveStore();loadWeek(newWeek);closeUtilityPanel();showToast('Settings saved. Add activities whenever you are ready.');}
+function applySettings(){const timeIds=['tripStart'];for(let i=0;i<7;i++){if(document.querySelector(`[data-shift-enabled="${i}"]`)?.checked)timeIds.push(`shiftstart${i}`,`shiftend${i}`);}if(!validateTimeFields(timeIds))return;const newWeek=$('weekStart').value?dateKey(sundayOf(parseKey($('weekStart').value))):currentWeek;saveCurrent();store.settings=settingsFromForm();applyThemePreference(store.settings.theme);saveStore();loadWeek(newWeek);closeUtilityPanel();showToast('Settings saved. Add activities whenever you are ready.');}
 function saveTripDestination(){store.settings.destination=$('tripDestination').value.trim();saveStore();const trip=tasks.find(t=>t.fixed&&t.duration===540&&t.day===store.settings.travelDay);if(trip)trip.title=store.settings.destination?`Explore ${store.settings.destination}`:'Explore another city';if(trip)trip.note='9-hour city day · travel, explore, eat, and enjoy';saveCurrent();renderAll();showToast('City day updated');}
 
 function reminderTodayKey(){return dateKey(new Date());}
@@ -2306,7 +2445,7 @@ function setCalendarView(view){if(view!=='day'&&view!=='week')return;if(calendar
 function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBtn');if(dayBtn){dayBtn.classList.toggle('active',calendarView==='day');dayBtn.setAttribute('aria-pressed',calendarView==='day'?'true':'false');}if(weekBtn){weekBtn.classList.toggle('active',calendarView==='week');weekBtn.setAttribute('aria-pressed',calendarView==='week'?'true':'false');}const prev=$('prevWeek'),next=$('nextWeek');if(prev){prev.title=calendarView==='day'?'Previous day':'Previous week';prev.setAttribute('aria-label',prev.title);}if(next){next.title=calendarView==='day'?'Next day':'Next week';next.setAttribute('aria-label',next.title);}}
 function shiftPeriod(n){if(calendarView!=='day'){shiftWeeks(n);return;}const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));}
 function addQuick(e){e.preventDefault();const title=$('quickTitle').value.trim();if(!title)return;if(!validateTimeFields(['quickTime']))return;const day=Number($('quickDay').value),type=$('quickType').value,duration=Number($('quickDuration').value),preferred=timeMins($('quickTime').value||'10:00');createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true});const t=tasks[tasks.length-1];t.unscheduled=t.start===null;saveCurrent();renderAll();$('quickTitle').value='';showToast(t.start===null?'Added to the day, but needs a time':'Activity added to your week');}
-function setup(){syncWorkspaceLists();populateDaySelects();syncSettingsForm();wireTime24Fields();wireWorkspaceControls();wireCountdownControls();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('signinLandingContinue').addEventListener('click',openSignInFromLanding);$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('agendaViewBtn').addEventListener('click',()=>setCalendarView('agenda'));$('yearViewBtn').addEventListener('click',()=>setCalendarView('year'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('exportCalendarBtn').addEventListener('click',exportCalendarICS);$('importCalendarBtn').addEventListener('click',()=>$('calendarImportFile').click());$('calendarImportFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)importCalendarICS(file).catch(error=>showToast('Could not import calendar file: '+(error?.message||'invalid iCalendar file'))).finally(()=>{e.target.value='';});});$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>{if(suppressActivitySuggestionFocus){suppressActivitySuggestionFocus=false;return;}renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});document.addEventListener('click',e=>{if(!e.target.closest('.activity-name-wrap'))hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalNoSchedule').addEventListener('change',()=>{if($('modalNoSchedule').checked)$('modalAllDay').checked=false;updateModalScheduleVisibility();});$('modalAllDay').addEventListener('change',()=>{if($('modalAllDay').checked)$('modalNoSchedule').checked=false;updateModalScheduleVisibility();});$('modalListId').addEventListener('change',()=>{if($('modalListId').value==='inbox'){$('modalNoSchedule').checked=true;$('modalAllDay').checked=false;}updateModalScheduleVisibility();});$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){if(t.seriesId){const template=(store.recurringTemplates||[]).find(item=>item.id===t.seriesId);if(template){template.excludedDates=Array.isArray(template.excludedDates)?template.excludedDates:[];const occurrenceDate=t.occurrenceDate||dateKey(dayDate(currentWeek,t.day));if(!template.excludedDates.includes(occurrenceDate))template.excludedDates.push(occurrenceDate);}}tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
+function setup(){syncWorkspaceLists();populateDaySelects();syncSettingsForm();setupSystemThemeListener();wireTime24Fields();wireWorkspaceControls();wireCountdownControls();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('signinLandingContinue').addEventListener('click',openSignInFromLanding);$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('agendaViewBtn').addEventListener('click',()=>setCalendarView('agenda'));$('yearViewBtn').addEventListener('click',()=>setCalendarView('year'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('themeMode').addEventListener('change',()=>{store.settings.theme=$('themeMode').value;applyThemePreference(store.settings.theme);saveStore();showToast('Appearance saved');});$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('exportCalendarBtn').addEventListener('click',exportCalendarICS);$('importCalendarBtn').addEventListener('click',()=>$('calendarImportFile').click());$('calendarImportFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)importCalendarICS(file).catch(error=>showToast('Could not import calendar file: '+(error?.message||'invalid iCalendar file'))).finally(()=>{e.target.value='';});});$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>{if(suppressActivitySuggestionFocus){suppressActivitySuggestionFocus=false;return;}renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});document.addEventListener('click',e=>{if(!e.target.closest('.activity-name-wrap'))hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalNoSchedule').addEventListener('change',()=>{if($('modalNoSchedule').checked)$('modalAllDay').checked=false;updateModalScheduleVisibility();});$('modalAllDay').addEventListener('change',()=>{if($('modalAllDay').checked)$('modalNoSchedule').checked=false;updateModalScheduleVisibility();});$('modalListId').addEventListener('change',()=>{if($('modalListId').value==='inbox'){$('modalNoSchedule').checked=true;$('modalAllDay').checked=false;}updateModalScheduleVisibility();});$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){if(t.seriesId){const template=(store.recurringTemplates||[]).find(item=>item.id===t.seriesId);if(template){template.excludedDates=Array.isArray(template.excludedDates)?template.excludedDates:[];const occurrenceDate=t.occurrenceDate||dateKey(dayDate(currentWeek,t.day));if(!template.excludedDates.includes(occurrenceDate))template.excludedDates.push(occurrenceDate);}}tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
 
 /* Optional visual gaps, monthly calendar, and week-selectable dashboard. */
 const weekwiseOriginalRenderDays=renderDays;
