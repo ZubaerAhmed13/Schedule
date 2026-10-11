@@ -888,6 +888,9 @@ body.signin-required{overflow:hidden}
 .workspace-list-action{display:grid;place-items:center;flex:0 0 23px;width:23px;height:28px;border:1px solid transparent;border-radius:7px;background:transparent;color:#969bb0;font-size:12px}.workspace-list-action:hover{background:#f1f2ff;color:#565dc9}.custom-list-dot{background:#7f79d8}
 @media(max-width:760px){.workspace-add-list{flex:0 0 auto;width:auto;white-space:nowrap;padding:7px 9px;margin:0}.workspace-custom-list-row{flex:0 0 auto}.workspace-custom-list-row .workspace-nav-btn{flex:0 0 auto;max-width:180px}.workspace-list-action{flex:0 0 24px}}
 
+
+.workspace-section-group{display:grid;gap:7px;margin:3px 0 13px}.workspace-section-group>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;background:#f7f7ff;color:#7076bf;font-size:10px;font-weight:800}.workspace-section-group>header span:last-child{padding:2px 6px;border-radius:6px;background:#fff;color:#9197aa;font-size:9px}
+
 </style>
 </head>
 <body>
@@ -2002,7 +2005,7 @@ function nudgeDueReminders(){const due=reminderDueOpen();if(!due.length)return;c
 
 function cloudFingerprint(payload){return JSON.stringify(payload);}
 function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month','agenda','year'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,focusSessions:focusSessions,habits:habits,countdowns:countdowns,savedTaskFilters:savedTaskFilters,calendarView:view};}
-function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;const hasHabits=Array.isArray(habits)&&habits.length>0;const hasCountdowns=Array.isArray(countdowns)&&countdowns.length>0;const hasFilters=Array.isArray(savedTaskFilters)&&savedTaskFilters.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||hasHabits||hasCountdowns||hasFilters||settingsChanged;}
+function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;const hasHabits=Array.isArray(habits)&&habits.length>0;const hasCountdowns=Array.isArray(countdowns)&&countdowns.length>0;const hasFilters=Array.isArray(savedTaskFilters)&&savedTaskFilters.length>0;const hasCustomLists=Array.isArray(store.customLists)&&store.customLists.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||hasHabits||hasCountdowns||hasFilters||hasCustomLists||settingsChanged;}
 function readCloudMeta(){try{return JSON.parse(localStorage.getItem(CLOUD_META_KEY)||'null');}catch(_){return null;}}
 function writeCloudMeta(revision,payload){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify({userId:cloudUser?.id||'',revision:Number(revision)||0,fingerprint:cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}catch(_){}}
 function setCloudStatus(message){const el=$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=$('cloudMenuBadge');if(badge){badge.textContent=cloudUser?(cloudReady?'Synced':'Account'):'Local';badge.title=message;}}
@@ -2519,6 +2522,20 @@ function updateWorkspaceCounts(){
   el.textContent=String(count);
  });
 }
+
+function renderWorkspaceTaskGroups(items){
+ const groups=new Map();
+ items.forEach(record=>{
+  const section=String(record.task.sectionName||'').trim()||'No section';
+  if(!groups.has(section))groups.set(section,[]);
+  groups.get(section).push(record);
+ });
+ return [...groups.entries()].sort((a,b)=>{
+  if(a[0]==='No section')return -1;
+  if(b[0]==='No section')return 1;
+  return a[0].localeCompare(b[0]);
+ }).map(([section,records])=>'<section class="workspace-section-group"><header><span>§ '+escapeHtml(section)+'</span><span>'+records.length+'</span></header>'+records.map(workspaceTaskRow).join('')+'</section>').join('');
+}
 function renderWorkspaceTasks(){
  const list=$('workspaceTaskList');if(!list)return;
  const search=String($('workspaceSearch')?.value||'').trim().toLowerCase(),sort=$('workspaceSort')?.value||'date';
@@ -2531,7 +2548,9 @@ function renderWorkspaceTasks(){
  const info=WORKSPACE_VIEW_INFO[workspaceView]||{title:folderView?folderTitle:(WORKSPACE_LISTS.find(x=>x.view===workspaceView)?.label||'Tasks'),description:folderView?'Tasks organized in this folder.':'Tasks in this list.',emptyTitle:folderView?'This folder is empty':'No tasks in this list yet',emptyText:folderView?'Edit any task to place it in this folder, or create a task with this folder name.':'Add a task to this list or edit an existing task to move it here.'};
  $('taskWorkspaceTitle').textContent=info.title;$('taskWorkspaceDescription').textContent=info.description||'';
  $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':workspaceView.startsWith('folder:')?'Add a task to '+workspaceView.slice(7)+'…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
- list.innerHTML=items.length?items.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
+ const shouldGroupSections=(workspaceView.startsWith('list-')||workspaceView.startsWith('folder:'))&&items.some(record=>String(record.task.sectionName||'').trim());
+ const renderedItems=shouldGroupSections?renderWorkspaceTaskGroups(items):items.map(workspaceTaskRow).join('');
+ list.innerHTML=items.length?renderedItems:'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
 }
 function renderWorkspaceView(){
  const isCalendar=workspaceView==='calendar',isMatrix=workspaceView==='matrix',isBoard=workspaceView==='board',isFilters=workspaceView==='filters';
