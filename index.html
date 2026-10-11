@@ -701,6 +701,43 @@ body.signin-required{overflow:hidden}
   .view-switch-btn,.calendar-actions>.btn,.more-trigger,.more-panel .btn,.utility-close,.cloud-auth-tab,.cloud-password-toggle{transition:none!important}
 }
 
+
+.workspace-shell{display:grid;grid-template-columns:218px minmax(0,1fr);gap:20px;align-items:start}
+.workspace-sidebar{position:sticky;top:14px;display:flex;flex-direction:column;gap:3px;padding:12px 9px;border:1px solid #e7e8f2;border-radius:18px;background:rgba(255,255,255,.88);box-shadow:0 5px 18px rgba(39,45,82,.035);max-height:calc(100vh - 28px);overflow:auto}
+.workspace-sidebar-head{padding:10px 11px 5px;color:#9399ae;font-size:9px;font-weight:850;letter-spacing:1.25px}
+.workspace-nav-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:38px;border:1px solid transparent;border-radius:10px;padding:8px 10px;background:transparent;color:#545b77;text-align:left;font:inherit;font-size:12px;font-weight:650;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease}
+.workspace-nav-btn:hover{background:#f5f6ff;color:#4248ae}.workspace-nav-btn.active{background:#eeeeff;border-color:#e2e3ff;color:#4e54c7;font-weight:800}
+.workspace-nav-btn>span:nth-child(2){flex:1;min-width:0}.workspace-nav-icon{display:inline-grid;place-items:center;flex:0 0 23px;width:23px;height:23px;font-size:16px;color:#777e9d}.workspace-nav-btn.active .workspace-nav-icon{color:#5359c8}
+.workspace-nav-count{font-size:10px;font-variant-numeric:tabular-nums;color:#9299af;padding:2px 5px;border-radius:6px}.workspace-nav-btn.active .workspace-nav-count{background:#fff;color:#5157bf}
+.workspace-nav-divider{height:1px;background:#eceef6;margin:9px 5px 5px}.list-colour-dot{width:9px;height:9px;flex:0 0 9px;border-radius:4px;background:#7b7fcf;margin-left:7px;margin-right:7px}
+.career-dot{background:#4c77df}.study-dot{background:#8860db}.work-dot{background:#5d7792}.personal-dot{background:#44a17a}.language-dot{background:#d1a33a}.hobby-dot{background:#d77c48}.other-dot{background:#9298ac}
+.workspace-sidebar-footer{display:flex;align-items:center;gap:8px;margin-top:14px;padding:11px 10px 5px;border-top:1px solid #eceef6;color:#9298ab;font-size:10px}.workspace-status-dot{width:7px;height:7px;border-radius:99px;background:#45b383;box-shadow:0 0 0 3px #e8f8f1}
+.workspace-main{min-width:0}.task-workspace{min-height:420px;padding:22px;border:1px solid #e2e5f1;border-radius:21px;background:#fff;box-shadow:0 6px 25px rgba(42,47,90,.04)}.task-workspace[hidden]{display:none!important}
+.task-workspace-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:17px}.workspace-page-eyebrow{font-size:9px;font-weight:850;letter-spacing:1.3px;color:#777de0}
+.task-workspace-head h2{margin:3px 0;color:#242945;font-size:27px;line-height:1.2;letter-spacing:-.8px}.task-workspace-head p{margin:4px 0 0;color:#8a90a5;font-size:12px}
+.workspace-capture{display:flex;align-items:center;gap:9px;padding:7px;border:1px solid #dfe2f1;border-radius:13px;background:#fbfbff;margin:16px 0 14px}.capture-plus{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:8px;background:#eeeeff;color:#555bd0;font-size:18px}
+.workspace-capture input{flex:1;min-width:0;border:0;outline:0!important;box-shadow:none!important;background:transparent;padding:8px 2px;color:#303651;font-size:13px}.workspace-capture input::placeholder{color:#a0a5b7}.workspace-capture .btn{padding:8px 13px}
+.workspace-list-controls{display:flex;align-items:center;gap:10px;margin:12px 0;padding-bottom:12px;border-bottom:1px solid #eef0f7}
+.workspace-search-wrap{display:flex;align-items:center;gap:8px;flex:1;min-width:0;border:1px solid #e5e7f2;border-radius:10px;padding:7px 10px;color:#999fb2;background:#fff}
+.workspace-search-wrap input{border:0;outline:0!important;box-shadow:none!important;min-width:0;width:100%;font:inherit;font-size:11px;color:#303651}
+.workspace-sort-wrap{display:flex;align-items:center;gap:7px;color:#8a90a3;font-size:10px;white-space:nowrap}.workspace-sort-wrap select{border:1px solid #e5e7f2;border-radius:9px;padding:7px;background:#fff;color:#525977;font:inherit;font-size:10px}
+.workspace-task-list{display:grid;gap:7px}.workspace-task-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;padding:12px 11px;border:1px solid #eceef6;border-radius:12px;background:#fff;transition:background .16s ease,border-color .16s ease,transform .16s ease}
+.workspace-task-row:hover{border-color:#d9dcf3;background:#fdfdff;transform:translateY(-1px)}.workspace-task-row.is-done{background:#fafbfc}.workspace-task-row.is-done .workspace-task-title{text-decoration:line-through;color:#9da2b2}
+.workspace-task-check{width:17px;height:17px;margin:3px 0 0;accent-color:#6469db;cursor:pointer}.workspace-task-main{min-width:0}
+.workspace-task-title{display:inline-block;border:0;padding:0;background:transparent;color:#292e48;text-align:left;font:inherit;font-size:13px;font-weight:750;line-height:1.4;overflow-wrap:anywhere}.workspace-task-title:hover{color:#555bd0}
+.workspace-task-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:5px;color:#8a90a5;font-size:10px;line-height:1.45}.workspace-meta-pill{display:inline-flex;align-items:center;gap:4px;border-radius:5px;padding:3px 6px;background:#f2f3fa;color:#737a96;font-size:9px;font-weight:750}
+.workspace-meta-pill.priority-high{background:#fff0ef;color:#cb5a51}.workspace-meta-pill.priority-medium{background:#fff5dc;color:#a87a24}.workspace-meta-pill.priority-low{background:#eef7ff;color:#4a82b8}
+.workspace-task-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.workspace-task-tags span{border-radius:5px;padding:2px 5px;background:#f3f1ff;color:#7772bf;font-size:9px}
+.workspace-task-subtasks{margin-top:6px;color:#9499ab;font-size:10px}.workspace-task-actions{display:flex;align-items:center;gap:3px}.workspace-task-actions button{display:grid;place-items:center;width:28px;height:28px;border:1px solid transparent;border-radius:8px;background:transparent;color:#9197ac;font-size:14px}.workspace-task-actions button:hover{background:#f1f2ff;border-color:#e1e3fa;color:#555bd0}
+.workspace-empty{display:grid;place-items:center;min-height:225px;padding:25px 10px;text-align:center}.workspace-empty-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:#f0f1ff;color:#656bd9;font-size:23px;margin-bottom:12px}.workspace-empty h3{margin:0;color:#303550;font-size:15px}.workspace-empty p{max-width:320px;margin:5px 0 0;color:#8e94a7;font-size:11px;line-height:1.6}.workspace-list-footnote{margin:17px 0 0;padding-top:12px;border-top:1px solid #eff0f7;color:#a0a5b5;font-size:10px}
+.schedule-toggle-label{display:flex!important;align-items:flex-start;gap:10px;border:1px solid #e5e7f2;border-radius:11px;padding:11px;background:#f9f9ff;cursor:pointer}.schedule-toggle-label input{margin-top:3px;accent-color:#5b61cf}.schedule-toggle-label strong,.schedule-toggle-label small{display:block}.schedule-toggle-label strong{color:#434969;font-size:11px}.schedule-toggle-label small{margin-top:3px;color:#8b91a7;font-size:10px;font-weight:500}
+.task-scheduling-fields{display:contents}.task-scheduling-fields[hidden]{display:none!important}#modalTags,#modalDueDate,#modalSubtasks{min-width:0;width:100%}
+.field textarea{width:100%;min-height:54px;resize:vertical;border:1px solid #dfe3f0;border-radius:10px;background:#fbfcff;padding:10px 11px;color:#303651;font:inherit;font-size:12px}
+@media(max-width:1000px){.workspace-shell{grid-template-columns:185px minmax(0,1fr);gap:12px}.workspace-sidebar{padding:9px 6px}.task-workspace{padding:17px}.workspace-nav-btn{gap:7px;padding:8px 7px}}
+@media(max-width:760px){.workspace-shell{grid-template-columns:minmax(0,1fr);gap:10px}.workspace-sidebar{position:relative;top:auto;max-height:none;overflow:visible;display:flex;flex-direction:row;flex-wrap:nowrap;gap:4px;padding:7px;border-radius:13px;overflow-x:auto;scrollbar-width:none}.workspace-sidebar::-webkit-scrollbar{display:none}.workspace-sidebar-head,.workspace-nav-divider,.workspace-sidebar-footer{display:none}.workspace-nav-btn{flex:0 0 auto;width:auto;min-height:37px;gap:6px;padding:7px 9px;white-space:nowrap;font-size:11px}.workspace-nav-icon{flex-basis:auto;width:auto;font-size:14px}.workspace-nav-count{display:none}.list-colour-dot{margin-left:2px;margin-right:1px}.workspace-main{min-width:0}.task-workspace{padding:14px;border-radius:16px}.task-workspace-head h2{font-size:23px}.workspace-list-controls{align-items:stretch}.workspace-sort-wrap{gap:4px}.workspace-sort-wrap select{max-width:120px}.workspace-task-row{grid-template-columns:20px minmax(0,1fr) auto;padding:10px 8px;gap:7px}.workspace-task-title{font-size:12px}.workspace-task-actions{flex-direction:column}.schedule-toggle-label{padding:9px}.modalgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:460px){.task-workspace-head{align-items:flex-start}.task-workspace-head .btn{padding:8px 9px;font-size:10px}.workspace-capture{gap:6px}.workspace-capture .btn{padding:8px 10px}.workspace-sort-wrap>span{display:none}.workspace-search-wrap{padding:6px 8px}.workspace-task-meta{font-size:9px}.workspace-task-row{grid-template-columns:18px minmax(0,1fr) 26px}.workspace-task-actions{gap:0}.workspace-task-actions button{width:25px;height:26px}.modalback.show{align-items:flex-start;overflow-y:auto}.modal{margin:auto;max-height:calc(100vh - 32px);overflow:auto}}
+@media(prefers-reduced-motion:reduce){.workspace-nav-btn,.workspace-task-row,.workspace-task-actions button{transition:none!important}}
+
 </style>
 </head>
 <body>
@@ -744,7 +781,48 @@ body.signin-required{overflow:hidden}
     </div>
   </header>
 
-  <section class="calendar-toolbar" aria-label="Calendar controls">
+  <div class="workspace-shell">
+    <aside class="workspace-sidebar" id="workspaceSidebar" aria-label="Workspace navigation">
+      <div class="workspace-sidebar-head">WORKSPACE</div>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="today"><span class="workspace-nav-icon">◷</span><span>Today</span><span class="workspace-nav-count" id="navCountToday">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="inbox"><span class="workspace-nav-icon">⌑</span><span>Inbox</span><span class="workspace-nav-count" id="navCountInbox">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="upcoming"><span class="workspace-nav-icon">▦</span><span>Upcoming</span><span class="workspace-nav-count" id="navCountUpcoming">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="calendar"><span class="workspace-nav-icon">▣</span><span>Calendar</span></button>
+      <div class="workspace-nav-divider"></div>
+      <div class="workspace-sidebar-head">MY LISTS</div>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="list-career"><span class="list-colour-dot career-dot"></span><span>Career</span><span class="workspace-nav-count" id="navCountCareer">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="list-study"><span class="list-colour-dot study-dot"></span><span>Study</span><span class="workspace-nav-count" id="navCountStudy">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="list-work"><span class="list-colour-dot work-dot"></span><span>Work</span><span class="workspace-nav-count" id="navCountWork">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="list-personal"><span class="list-colour-dot personal-dot"></span><span>Personal</span><span class="workspace-nav-count" id="navCountPersonal">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="list-language"><span class="list-colour-dot language-dot"></span><span>Languages</span><span class="workspace-nav-count" id="navCountLanguage">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="list-hobbies"><span class="list-colour-dot hobby-dot"></span><span>Hobbies</span><span class="workspace-nav-count" id="navCountHobbies">0</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="list-other"><span class="list-colour-dot other-dot"></span><span>Other</span><span class="workspace-nav-count" id="navCountOther">0</span></button>
+      <div class="workspace-nav-divider"></div>
+      <div class="workspace-sidebar-head">PRODUCTIVITY</div>
+      <button class="workspace-nav-btn" type="button" data-workspace-action="habits"><span class="workspace-nav-icon">✳</span><span>Habits & routines</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-action="statistics"><span class="workspace-nav-icon">▥</span><span>Statistics</span></button>
+      <div class="workspace-sidebar-footer"><span class="workspace-status-dot"></span> Your personal workspace</div>
+    </aside>
+    <main class="workspace-main">
+      <section class="task-workspace" id="taskWorkspace" hidden aria-labelledby="taskWorkspaceTitle">
+        <header class="task-workspace-head">
+          <div><div class="workspace-page-eyebrow">YOUR TASKS</div><h2 id="taskWorkspaceTitle">Today</h2><p id="taskWorkspaceDescription">Focus on what matters today.</p></div>
+          <button class="btn primary" type="button" id="workspaceAddTaskBtn">＋ Add task</button>
+        </header>
+        <form class="workspace-capture" id="workspaceCaptureForm">
+          <span class="capture-plus" aria-hidden="true">＋</span>
+          <input id="workspaceCaptureInput" type="text" maxlength="100" autocomplete="off" placeholder="Add a task to your inbox…" aria-label="Quick capture task">
+          <button type="submit" class="btn primary">Add</button>
+        </form>
+        <div class="workspace-list-controls">
+          <label class="workspace-search-wrap"><span aria-hidden="true">⌕</span><input id="workspaceSearch" type="search" placeholder="Search tasks in this view" aria-label="Search tasks"></label>
+          <label class="workspace-sort-wrap"><span>Sort</span><select id="workspaceSort" aria-label="Sort tasks"><option value="date">Date & time</option><option value="priority">Priority</option><option value="title">Title</option></select></label>
+        </div>
+        <div id="workspaceTaskList" class="workspace-task-list" aria-live="polite"></div>
+        <p class="workspace-list-footnote">Tasks stay connected to your calendar. Edit a task here or schedule it from the calendar.</p>
+      </section>
+
+  <section class="calendar-toolbar" id="calendarToolbar" aria-label="Calendar controls">
     <div class="calendar-heading">
       <div class="eyebrow">YOUR PERSONAL PLANNER</div>
       <h2>Calendar</h2>
@@ -790,6 +868,8 @@ body.signin-required{overflow:hidden}
     <div class="dashboard-insight" id="dashboardInsight">Choose a week to see a simple summary of your effort.</div>
     <div class="dashboard-foot" id="dashboardNote">Mark an activity complete to count its planned duration as effort logged. Past time not checked off may be wasted time, a missed plan, or simply unmarked; Weekwise does not track attention automatically.</div>
   </section>
+    </main>
+  </div>
   <details class="settings utility-source" id="settingsPanel">
     <summary>Work day & weekly settings <span style="color:var(--muted);font-size:11px;font-weight:500">Configure work days, city day and cooking rhythm</span></summary>
     <div class="inside">
@@ -902,9 +982,17 @@ body.signin-required{overflow:hidden}
   <div class="field activity-name-field" style="grid-column:1/-1"><label for="modalTitleInput">Activity name</label><div class="activity-name-wrap"><input id="modalTitleInput" required maxlength="100" placeholder="Type an activity or choose a suggestion" autocomplete="off" aria-autocomplete="list" aria-controls="activitySuggestions" aria-expanded="false" /><div class="activity-suggestions" id="activitySuggestions" role="listbox" aria-label="Activity suggestions" hidden></div></div></div>
   <div class="field"><label for="modalDay">Day</label><select id="modalDay"></select></div>
   <div class="field"><label for="modalCategory">Category</label><select id="modalCategory"><option value="job">Career</option><option value="study">Coursework</option><option value="language">Language</option><option value="life">Home / personal</option><option value="hobby">Hobby</option><option value="other">Other</option></select></div>
-  <div class="field"><label for="modalTime">Start time</label><input id="modalTime" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="10:00" value="10:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /></div>
-  <div class="field"><label for="modalEndTime">End time</label><input id="modalEndTime" class="time24" data-time24-end type="text" inputmode="numeric" maxlength="5" placeholder="11:00" value="10:30" required title="Use 24-hour HH:MM. Use 24:00 for midnight." /><div class="hint">24-hour time; use 24:00 for midnight.</div></div>
-  <div class="field duration-field"><label for="modalDuration">Duration</label><select id="modalDuration"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30" selected>30 minutes</option><option value="35">35 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option><option value="75">1 hour 15 minutes</option><option value="90">1 hour 30 minutes</option><option value="120">2 hours</option><option value="180">3 hours</option><option value="540">9 hours</option></select><div class="hint">Duration updates automatically when you change the end time.</div></div>
+  <div class="field"><label for="modalListId">List</label><select id="modalListId"><option value="inbox">Inbox</option><option value="career">Career</option><option value="study">Study</option><option value="work">Work</option><option value="personal">Personal</option><option value="language">Languages</option><option value="hobbies">Hobbies</option><option value="other">Other</option></select></div>
+  <div class="field"><label for="modalPriority">Priority</label><select id="modalPriority"><option value="none">No priority</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+  <div class="field" style="grid-column:1/-1"><label class="schedule-toggle-label" for="modalNoSchedule"><input id="modalNoSchedule" type="checkbox"><span><strong>Keep in Inbox — no scheduled time</strong><small>Use this for tasks you have captured but have not planned yet.</small></span></label></div>
+  <div id="taskSchedulingFields" class="task-scheduling-fields">
+    <div class="field"><label for="modalTime">Start time</label><input id="modalTime" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="10:00" value="10:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /></div>
+    <div class="field"><label for="modalEndTime">End time</label><input id="modalEndTime" class="time24" data-time24-end type="text" inputmode="numeric" maxlength="5" placeholder="11:00" value="10:30" required title="Use 24-hour end time. Use 24:00 for midnight." /><div class="hint">24-hour time; use 24:00 for midnight.</div></div>
+    <div class="field duration-field"><label for="modalDuration">Duration</label><select id="modalDuration"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30" selected>30 minutes</option><option value="35">35 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option><option value="75">1 hour 15 minutes</option><option value="90">1 hour 30 minutes</option><option value="120">2 hours</option><option value="180">3 hours</option><option value="540">9 hours</option></select><div class="hint">Duration updates automatically when you change the end time.</div></div>
+  </div>
+  <div class="field"><label for="modalDueDate">Due date (optional)</label><input id="modalDueDate" type="date" /></div>
+  <div class="field"><label for="modalTags">Tags (optional)</label><input id="modalTags" maxlength="180" placeholder="e.g. deep-work, urgent" /><div class="hint">Separate tags with commas.</div></div>
+  <div class="field" style="grid-column:1/-1"><label for="modalSubtasks">Subtasks (optional)</label><textarea id="modalSubtasks" rows="2" maxlength="800" placeholder="One step per line"></textarea></div>
   <div class="field" style="grid-column:1/-1"><label for="modalNote">Note (optional)</label><input id="modalNote" maxlength="180" placeholder="A small reminder or desired outcome" /></div>
 </div><div class="modalbuttons"><button type="button" class="btn danger modal-delete" id="deleteTaskBtn">Delete</button><span class="modal-spacer"></span><button type="button" class="btn" id="closeModal">Cancel</button><button type="submit" class="btn primary" id="saveTaskBtn">Save activity</button></div></form></div></div>
 <div class="template-backdrop" id="templateModal" hidden>
@@ -1084,6 +1172,8 @@ let calendarView='week';
 try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarView=(savedView==='day'||savedView==='week'||savedView==='month')?savedView:(window.matchMedia('(max-width: 650px)').matches?'day':'week');}catch(_){calendarView=window.matchMedia('(max-width: 650px)').matches?'day':'week';}
 let lastRenderedCalendarView=null;
 let tasks=[];
+let workspaceView='today';
+try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','calendar','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace))workspaceView=savedWorkspace;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
 function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}if(!cloudApplyingRemote)queueCloudSave();}
@@ -1342,7 +1432,7 @@ function saveTemplateEditor(e){
   }
   saveStore();saveCurrent();syncSettingsForm();renderAll();closeTemplateEditor();showToast(currentKind==='workday'?'Work day template saved. Add shifts when ready.':'Class template saved. Add classes when ready.');
 }
-function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();}
+function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();}
 function moveTask(id,newDay,preferredTime=null){
   const t=tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
@@ -1521,15 +1611,34 @@ function renderActivitySuggestions(query=''){
  list.querySelectorAll('[data-activity-suggestion]').forEach(button=>{button.addEventListener('pointerdown',e=>e.preventDefault());button.addEventListener('click',()=>chooseActivityTemplate(button.dataset.activitySuggestion));});
 }
 function clearActivityTemplateSelection(){selectedActivitySuggestion=null;hideActivitySuggestions();}
-function openTaskModal(id=null,day=mobileDay,startAt=null){
+function inferredListId(t){
+  if(t&&['inbox','career','study','work','personal','language','hobbies','other'].includes(t.listId))return t.listId;
+  if(!t||t.unscheduled||t.start==null)return 'inbox';
+  if(t.workday||/^work day$/i.test(t.title||''))return 'work';
+  return ({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[t.type]||'other';
+}
+function updateModalScheduleVisibility(){
+  const noSchedule=!!$('modalNoSchedule')?.checked;
+  const fields=$('taskSchedulingFields');if(fields)fields.hidden=noSchedule;
+  ['modalTime','modalEndTime','modalDuration'].forEach(id=>{const el=$(id);if(el)el.required=!noSchedule;});
+  if(noSchedule){$('modalEndTime').setCustomValidity('');$('modalTime').setCustomValidity('');}
+}
+function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   const modal=$('taskModal');const t=id?tasks.find(t=>t.id===id):null;
-  $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit activity':'Add an activity';
+  $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit task':'Add a task';
   $('modalDescription').textContent=t?'To move this activity, choose a new day and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the day, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
+  $('modalListId').value=t?inferredListId(t):(defaultListId||'career');
+  if(!t&&!defaultListId)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
+  $('modalPriority').value=t?.priority||'none';$('modalDueDate').value=t?.dueDate||'';
+  $('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
+  $('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
+  $('modalNoSchedule').checked=!!(t&&(t.unscheduled||t.start==null))||(!t&&defaultListId==='inbox');
   const durationSelect=$('modalDuration'),duration=String(t?.duration||30);
   if(!Array.from(durationSelect.options).some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=durationLabel(Number(duration));durationSelect.add(option);}
   durationSelect.value=duration;const chosenStart=t?.start??(startAt===null||startAt===undefined?nextQuarterHour():startAt);$('modalTime').value=minsTime(chosenStart);updateEndTimeFromDuration();$('modalNote').value=t?.note||'';
-  $('saveTaskBtn').textContent=t?'Save changes':'Save activity';$('deleteTaskBtn').style.display=t&&!t.fixed?'inline-flex':'none';
+  $('saveTaskBtn').textContent=t?'Save changes':'Add task';$('deleteTaskBtn').style.display=t&&!t.fixed?'inline-flex':'none';
+  updateModalScheduleVisibility();
   modal.classList.add('show');
   setTimeout(()=>{
     const titleInput=$('modalTitleInput');
@@ -1551,25 +1660,39 @@ function closeTaskModal(){$('taskModal').classList.remove('show');}
 function saveModalTask(e){
   e.preventDefault();
   const id=$('editTaskId').value,title=$('modalTitleInput').value.trim();if(!title)return;
-  if(!validateTimeFields(['modalTime']))return;
-  if(!normalizeEndTimeField($('modalEndTime'))){$('modalEndTime').reportValidity?.();$('modalEndTime').focus();return;}
-  const startMinutes=timeMins($('modalTime').value||'10:00'),endMinutes=timeMins($('modalEndTime').value);
-  if(endMinutes<=startMinutes){$('modalEndTime').setCustomValidity('End time must be later than start time on the same day. Use 24:00 for midnight.');$('modalEndTime').reportValidity?.();$('modalEndTime').focus();return;}
-  $('modalEndTime').setCustomValidity('');
-  const day=Number($('modalDay').value),type=$('modalCategory').value,duration=endMinutes-startMinutes,preferred=startMinutes,note=$('modalNote').value.trim();
-  if(!id&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled for ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
+  const noSchedule=!!$('modalNoSchedule').checked;
+  let preferred=null,duration=Math.max(10,Number($('modalDuration').value)||30);
+  if(!noSchedule){
+    if(!validateTimeFields(['modalTime']))return;
+    if(!normalizeEndTimeField($('modalEndTime'))){$('modalEndTime').reportValidity?.();$('modalEndTime').focus();return;}
+    const start=timeMins($('modalTime').value||'10:00'),end=timeMins($('modalEndTime').value);
+    if(end<=start){$('modalEndTime').setCustomValidity('End time must be later than start time on the same day. Use 24:00 for midnight.');$('modalEndTime').reportValidity?.();$('modalEndTime').focus();return;}
+    $('modalEndTime').setCustomValidity('');preferred=start;duration=end-start;
+  }
+  const day=Number($('modalDay').value),type=$('modalCategory').value,note=$('modalNote').value.trim();
+  const listId=$('modalListId').value,priority=$('modalPriority').value,dueDate=$('modalDueDate').value||null;
+  const tags=[...new Set($('modalTags').value.split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))];
+  const subtasks=$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false}));
+  if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled on ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
   let actualStart=null;
   if(id){
     const t=tasks.find(x=>x.id===id);
-    if(t&&!t.fixed){t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.start=findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));t.unscheduled=t.start===null;actualStart=t.start;}
+    if(t&&!t.fixed){
+      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.priority=priority;t.dueDate=dueDate;t.tags=tags;
+      const prior=Array.isArray(t.subtasks)?t.subtasks:[];
+      t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...s,done:!!old.done}:{...s};});
+      t.start=noSchedule?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));
+      t.unscheduled=noSchedule||t.start===null;actualStart=t.start;
+    }
   }else{
-    createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true,note});
-    const t=tasks[tasks.length-1];t.unscheduled=t.start===null;actualStart=t.start;
+    createTask(day,title,type,duration,noSchedule?null:preferred,{min:0,max:1440,custom:true,note});
+    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||t.start===null;t.listId=listId;t.priority=priority;t.dueDate=dueDate;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
   }
   saveCurrent();closeTaskModal();renderAll();
-  if(actualStart===null)showToast('No free slot on that day; activity is in Needs a time.');
+  if(noSchedule)showToast('Task saved to '+(listId==='inbox'?'Inbox':'your list')+'.');
+  else if(actualStart===null)showToast('No free slot on that day; task is in Needs a time.');
   else if(actualStart!==preferred)showToast(`That time was busy; scheduled at ${minsTime(actualStart)} instead.`);
-  else showToast(id?`Activity updated · ${DAY_SHORT[day]} ${minsTime(actualStart)}`:`Activity added · ${DAY_SHORT[day]} ${minsTime(actualStart)}`);
+  else showToast(id?`Task updated · ${DAY_SHORT[day]} ${minsTime(actualStart)}`:`Task added · ${DAY_SHORT[day]} ${minsTime(actualStart)}`);
 }
 function applySettings(){const timeIds=['tripStart'];for(let i=0;i<7;i++){if(document.querySelector(`[data-shift-enabled="${i}"]`)?.checked)timeIds.push(`shiftstart${i}`,`shiftend${i}`);}if(!validateTimeFields(timeIds))return;const newWeek=$('weekStart').value?dateKey(sundayOf(parseKey($('weekStart').value))):currentWeek;saveCurrent();store.settings=settingsFromForm();saveStore();loadWeek(newWeek);closeUtilityPanel();showToast('Settings saved. Add activities whenever you are ready.');}
 function saveTripDestination(){store.settings.destination=$('tripDestination').value.trim();saveStore();const trip=tasks.find(t=>t.fixed&&t.duration===540&&t.day===store.settings.travelDay);if(trip)trip.title=store.settings.destination?`Explore ${store.settings.destination}`:'Explore another city';if(trip)trip.note='9-hour city day · travel, explore, eat, and enjoy';saveCurrent();renderAll();showToast('City day updated');}
@@ -1879,7 +2002,7 @@ async function checkCloudForRemoteChanges(){
 }
 function openCloudPanel(){renderCloudPanel();openUtilityPanel('cloudPanel','Cloud sync & account');}
 function openSignInFromLanding(){const gate=$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=true;}openCloudPanel();}
-function finishSignInLanding(){const gate=$('signinLanding');if(!gate)return;if(activeUtilityPanel===$('cloudPanel'))closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;now=new Date();mobileDay=now.getDay();currentWeek=dateKey(sundayOf(now));monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}loadWeek(currentWeek);renderReminders();const heading=$('calendarInstruction');if(heading)heading.hidden=true;showToast('Welcome to Weekwise. Here is today’s schedule.');}
+function finishSignInLanding(){const gate=$('signinLanding');if(!gate)return;if(activeUtilityPanel===$('cloudPanel'))closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;now=new Date();mobileDay=now.getDay();currentWeek=dateKey(sundayOf(now));monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}loadWeek(currentWeek);setWorkspaceView('today');renderReminders();const heading=$('calendarInstruction');if(heading)heading.hidden=true;showToast('Welcome to Weekwise. Here is today’s plan.');}
 
 function exportBackup(){const payload={app:'Weekwise',version:2,exportedAt:new Date().toISOString(),settings:store.settings,weeks:store.weeks,reminders};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${currentWeek}.json`;a.click();URL.revokeObjectURL(url);showToast('Backup exported');}
 function loadImport(file){const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!data.settings||!data.weeks)throw new Error('bad');store={settings:data.settings,weeks:data.weeks};saveStore();if(Array.isArray(data.reminders)){reminders=data.reminders;saveReminders();}loadWeek(currentWeek);renderReminders();showToast('Backup restored');}catch(e){showToast('That file does not look like a Weekwise backup.');}};reader.readAsText(file);}
@@ -1888,7 +2011,7 @@ function setCalendarView(view){if(view!=='day'&&view!=='week')return;if(calendar
 function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBtn');if(dayBtn){dayBtn.classList.toggle('active',calendarView==='day');dayBtn.setAttribute('aria-pressed',calendarView==='day'?'true':'false');}if(weekBtn){weekBtn.classList.toggle('active',calendarView==='week');weekBtn.setAttribute('aria-pressed',calendarView==='week'?'true':'false');}const prev=$('prevWeek'),next=$('nextWeek');if(prev){prev.title=calendarView==='day'?'Previous day':'Previous week';prev.setAttribute('aria-label',prev.title);}if(next){next.title=calendarView==='day'?'Next day':'Next week';next.setAttribute('aria-label',next.title);}}
 function shiftPeriod(n){if(calendarView!=='day'){shiftWeeks(n);return;}const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));}
 function addQuick(e){e.preventDefault();const title=$('quickTitle').value.trim();if(!title)return;if(!validateTimeFields(['quickTime']))return;const day=Number($('quickDay').value),type=$('quickType').value,duration=Number($('quickDuration').value),preferred=timeMins($('quickTime').value||'10:00');createTask(day,title,type,duration,preferred,{min:0,max:1440,custom:true});const t=tasks[tasks.length-1];t.unscheduled=t.start===null;saveCurrent();renderAll();$('quickTitle').value='';showToast(t.start===null?'Added to the day, but needs a time':'Activity added to your week');}
-function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('signinLandingContinue').addEventListener('click',openSignInFromLanding);$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>{if(suppressActivitySuggestionFocus){suppressActivitySuggestionFocus=false;return;}renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});document.addEventListener('click',e=>{if(!e.target.closest('.activity-name-wrap'))hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
+function setup(){populateDaySelects();syncSettingsForm();wireTime24Fields();wireWorkspaceControls();$('weekStart').value=currentWeek;loadWeek(currentWeek);setupDragDrop();$('signinLandingContinue').addEventListener('click',openSignInFromLanding);$('dayViewBtn').addEventListener('click',()=>setCalendarView('day'));$('weekViewBtn').addEventListener('click',()=>setCalendarView('week'));$('monthViewBtn').addEventListener('click',()=>setCalendarView('month'));$('prevWeek').addEventListener('click',()=>shiftPeriod(-1));$('nextWeek').addEventListener('click',()=>shiftPeriod(1));$('thisWeek').addEventListener('click',()=>{saveCurrent();mobileDay=now.getDay();loadWeek(dateKey(sundayOf(now)));});$('menuSettingsBtn').addEventListener('click',()=>openUtilityPanel('settingsPanel','Work day & weekly settings'));$('menuQuickAddBtn').addEventListener('click',()=>openUtilityPanel('quickAddDetails','Quick add activity'));$('menuHabitsBtn').addEventListener('click',()=>openUtilityPanel('routineDetails','Habits & focus tips'));$('dashboardMenuBtn').addEventListener('click',openDashboard);$('remindersMenuBtn').addEventListener('click',openReminders);$('cloudMenuBtn').addEventListener('click',openCloudPanel);wireCloudAuthControls();$('cloudSyncNow').addEventListener('click',cloudSyncNow);$('cloudSignOut').addEventListener('click',async()=>{if(cloudClient)await cloudClient.auth.signOut();});$('cloudUseRemote').addEventListener('click',cloudUseRemote);$('cloudUseLocal').addEventListener('click',cloudUseLocal);$('reminderForm').addEventListener('submit',reminderSave);$('cancelReminderEdit').addEventListener('click',reminderFormReset);$('reminderFilter').addEventListener('change',renderReminders);document.querySelectorAll('[data-template-editor]').forEach(card=>{const activate=()=>openTemplateEditor(card.dataset.templateEditor);card.addEventListener('click',activate);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});});$('closeTemplate').addEventListener('click',closeTemplateEditor);$('cancelTemplate').addEventListener('click',closeTemplateEditor);$('templateForm').addEventListener('submit',saveTemplateEditor);$('templateModal').addEventListener('click',e=>{if(e.target===$('templateModal'))closeTemplateEditor();});$('closeUtility').addEventListener('click',()=>closeUtilityPanel());$('utilityModal').addEventListener('click',e=>{if(e.target===$('utilityModal'))closeUtilityPanel();});$('applySettings').addEventListener('click',applySettings);$('cancelSettings').addEventListener('click',()=>{syncSettingsForm();closeUtilityPanel();});$('saveDestination').addEventListener('click',saveTripDestination);$('tripDestination').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveTripDestination();}});$('addTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));$('remindersQuickBtn').addEventListener('click',openReminders);$('activitySuggestions').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideActivitySuggestions();$('modalTitleInput').focus();}});$('modalTitleInput').addEventListener('focus',()=>{if(suppressActivitySuggestionFocus){suppressActivitySuggestionFocus=false;return;}renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('click',()=>renderActivitySuggestions($('modalTitleInput').value));$('modalTitleInput').addEventListener('input',()=>{selectedActivitySuggestion=null;renderActivitySuggestions($('modalTitleInput').value);});$('modalTitleInput').addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!$('activitySuggestions').hidden){const first=$('activitySuggestions').querySelector('button');if(first){e.preventDefault();first.focus();}}if(e.key==='Escape')hideActivitySuggestions();});document.addEventListener('click',e=>{if(!e.target.closest('.activity-name-wrap'))hideActivitySuggestions();});$('modalDay').addEventListener('change',updateActivityTemplateStates);$('modalNoSchedule').addEventListener('change',updateModalScheduleVisibility);$('modalListId').addEventListener('change',()=>{if($('modalListId').value==='inbox')$('modalNoSchedule').checked=true;updateModalScheduleVisibility();});$('modalTime').addEventListener('change',updateEndTimeFromDuration);$('modalDuration').addEventListener('change',updateEndTimeFromDuration);$('modalEndTime').addEventListener('input',()=> $('modalEndTime').setCustomValidity(''));$('modalEndTime').addEventListener('change',updateDurationFromEnd);$('modalEndTime').addEventListener('blur',()=>{if(String($('modalEndTime').value||'').trim()){normalizeEndTimeField($('modalEndTime'));updateDurationFromEnd();}});$('closeModal').addEventListener('click',closeTaskModal);$('taskForm').addEventListener('submit',saveModalTask);$('deleteTaskBtn').addEventListener('click',()=>{const id=$('editTaskId').value,t=tasks.find(x=>x.id===id);if(t&&!t.fixed&&confirm(`Delete “${t.title}”?`)){tasks=tasks.filter(x=>x.id!==id);saveCurrent();closeTaskModal();renderAll();showToast('Activity deleted');}});$('taskModal').addEventListener('click',e=>{if(e.target===$('taskModal'))closeTaskModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeTaskModal();closeTemplateEditor();if(activeUtilityPanel)closeUtilityPanel();$('moreActions').open=false;}});$('quickAddForm').addEventListener('submit',addQuick);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)loadImport(file);e.target.value='';});$('printBtn').addEventListener('click',()=>{window.print();$('moreActions').open=false;});$('exportBtn').addEventListener('click',()=>$('moreActions').open=false);$('importBtn').addEventListener('click',()=>$('moreActions').open=false);$('weekStart').addEventListener('change',setWeekFromInput);$('quickDay').value=String(mobileDay);const mobileQuery=window.matchMedia('(max-width: 650px)');if(mobileQuery.addEventListener)mobileQuery.addEventListener('change',()=>renderDays());else if(mobileQuery.addListener)mobileQuery.addListener(()=>renderDays());window.addEventListener('resize',()=>{if(window.innerWidth<=650)renderMobileDayPicker();});initializeCloud();setInterval(checkCloudForRemoteChanges,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCloudForRemoteChanges();});}
 
 /* Optional visual gaps, monthly calendar, and week-selectable dashboard. */
 const weekwiseOriginalRenderDays=renderDays;
@@ -1996,8 +2119,107 @@ $('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFu
 $('thisWeek').addEventListener('click',weekwiseAnimateCalendar);
 $('mobileDayPicker').addEventListener('click',function(e){if(e.target.closest('[data-mobile-day]'))weekwiseAnimateCalendar();});
 $('daysGrid').addEventListener('click',function(e){if(e.target.closest('[data-month-day],[data-month-event]'))weekwiseAnimateCalendar();});
+
+const WORKSPACE_LISTS=[{id:'career',label:'Career',view:'list-career'},{id:'study',label:'Study',view:'list-study'},{id:'work',label:'Work',view:'list-work'},{id:'personal',label:'Personal',view:'list-personal'},{id:'language',label:'Languages',view:'list-language'},{id:'hobbies',label:'Hobbies',view:'list-hobbies'},{id:'other',label:'Other',view:'list-other'}];
+const WORKSPACE_VIEW_INFO={today:{title:'Today',description:'Focus on the tasks planned for today.',emptyTitle:'Nothing on your plan yet',emptyText:'Capture a task above, or add a scheduled activity from the calendar.'},inbox:{title:'Inbox',description:'Capture first. Decide when to do it later.',emptyTitle:'Your inbox is clear',emptyText:'Use the quick-capture box to collect tasks before scheduling them.'},upcoming:{title:'Upcoming',description:'See scheduled activities across the next seven days.',emptyTitle:'No upcoming tasks',emptyText:'Tasks scheduled for the next seven days will appear here.'},calendar:{title:'Calendar',description:'Time-block your activities.'}};
+function workspaceRecords(){
+ const records=[],keys=new Set([...Object.keys(store.weeks||{}),currentWeek]);
+ [...keys].sort().forEach(week=>{const rows=week===currentWeek?tasks:(Array.isArray(store.weeks[week]?.tasks)?store.weeks[week].tasks:[]);rows.forEach(task=>{if(!task||task.custom===false)return;let date;try{date=dayDate(week,Number(task.day)||0);}catch(_){return;}records.push({task,week,date,listId:inferredListId(task)});});});
+ return records.sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
+}
+function workspaceRecordMatches(record,view){
+ const t=record.task,day=dateOnly(now),end=new Date(day);end.setDate(end.getDate()+7);const recordDate=dateOnly(record.date),listId=record.listId;
+ if(view==='today')return dateKey(recordDate)===dateKey(day);
+ if(view==='inbox')return listId==='inbox'||t.unscheduled||t.start==null;
+ if(view==='upcoming')return listId!=='inbox'&&!t.unscheduled&&t.start!=null&&recordDate>=day&&recordDate<end;
+ if(view.startsWith('list-'))return listId===view.slice(5);
+ return false;
+}
+function workspacePriorityValue(priority){return ({high:3,medium:2,low:1})[priority]||0;}
+function workspaceDateLabel(record){
+ if(record.task.start==null||record.task.unscheduled)return 'Not scheduled';
+ const todayKey=dateKey(now),tomorrow=new Date(dateOnly(now));tomorrow.setDate(tomorrow.getDate()+1);
+ const dateLabel=dateKey(record.date)===todayKey?'Today':dateKey(record.date)===dateKey(tomorrow)?'Tomorrow':fmtDate(record.date,{weekday:'short',day:'numeric',month:'short'});
+ return dateLabel+' · '+formatTime(record.task);
+}
+function workspaceTaskRow(record){
+ const t=record.task,priority=t.priority||'none',tags=Array.isArray(t.tags)?t.tags.filter(Boolean):[],subtasks=Array.isArray(t.subtasks)?t.subtasks:[];
+ const completedSubtasks=subtasks.filter(s=>typeof s==='object'&&s.done).length;
+ const priorityHtml=priority!=='none'?'<span class="workspace-meta-pill priority-'+escapeHtml(priority)+'">'+({high:'↑ High',medium:'→ Medium',low:'↓ Low'}[priority]||'Priority')+'</span>':'';
+ const dueHtml=t.dueDate?'<span class="workspace-meta-pill">Due '+escapeHtml(fmtDate(parseKey(t.dueDate),{day:'numeric',month:'short'}))+'</span>':'';
+ const scheduleHtml=record.listId==='inbox'||t.unscheduled||t.start==null?'<span class="workspace-meta-pill">Inbox</span>':'<span>'+escapeHtml(workspaceDateLabel(record))+'</span>';
+ const tagsHtml=tags.length?'<div class="workspace-task-tags">'+tags.map(tag=>'<span>#'+escapeHtml(tag)+'</span>').join('')+'</div>':'';
+ const subtasksHtml=subtasks.length?'<div class="workspace-task-subtasks">☷ '+completedSubtasks+'/'+subtasks.length+' subtasks</div>':'';
+ const label=WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Inbox',attrs=' data-workspace-week="'+escapeHtml(record.week)+'"';
+ return '<article class="workspace-task-row '+(t.done?'is-done':'')+'" data-workspace-id="'+escapeHtml(t.id)+'"'+attrs+'>'+
+  '<input class="workspace-task-check" type="checkbox" data-workspace-done="'+escapeHtml(t.id)+'"'+attrs+' aria-label="Mark '+escapeHtml(t.title)+' complete" '+(t.done?'checked':'')+'>'+
+  '<div class="workspace-task-main"><button type="button" class="workspace-task-title" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>'+escapeHtml(t.title)+'</button>'+
+  '<div class="workspace-task-meta">'+scheduleHtml+'<span class="workspace-meta-pill">'+escapeHtml(label)+'</span>'+priorityHtml+dueHtml+'</div>'+tagsHtml+subtasksHtml+(t.note?'<div class="workspace-task-subtasks">'+escapeHtml(t.note)+'</div>':'')+'</div>'+
+  '<div class="workspace-task-actions"><button type="button" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>✎</button><button type="button" title="Delete task" aria-label="Delete '+escapeHtml(t.title)+'" data-workspace-delete="'+escapeHtml(t.id)+'"'+attrs+'>×</button></div></article>';
+}
+function updateWorkspaceCounts(){
+ const all=workspaceRecords(),todayKey=dateKey(now),nextWeek=new Date(dateOnly(now));nextWeek.setDate(nextWeek.getDate()+7);
+ const ids={Today:'navCountToday',Inbox:'navCountInbox',Upcoming:'navCountUpcoming',Career:'navCountCareer',Study:'navCountStudy',Work:'navCountWork',Personal:'navCountPersonal',Languages:'navCountLanguage',Hobbies:'navCountHobbies',Other:'navCountOther'};
+ Object.entries(ids).forEach(([key,id])=>{const el=$(id);if(!el)return;const count=key==='Today'?all.filter(r=>dateKey(r.date)===todayKey).length:key==='Inbox'?all.filter(r=>r.listId==='inbox'||r.task.unscheduled||r.task.start==null).length:key==='Upcoming'?all.filter(r=>r.listId!=='inbox'&&!r.task.unscheduled&&r.task.start!=null&&dateOnly(r.date)>=dateOnly(now)&&dateOnly(r.date)<nextWeek).length:all.filter(r=>r.listId===({Career:'career',Study:'study',Work:'work',Personal:'personal',Languages:'language',Hobbies:'hobbies',Other:'other'})[key]).length;el.textContent=String(count);});
+}
+function renderWorkspaceTasks(){
+ const list=$('workspaceTaskList');if(!list)return;
+ const search=String($('workspaceSearch')?.value||'').trim().toLowerCase(),sort=$('workspaceSort')?.value||'date';
+ let items=workspaceRecords().filter(r=>workspaceRecordMatches(r,workspaceView));
+ if(search)items=items.filter(r=>[r.task.title,r.task.note,...(Array.isArray(r.task.tags)?r.task.tags:[])].join(' ').toLowerCase().includes(search));
+ if(sort==='priority')items.sort((a,b)=>workspacePriorityValue(b.task.priority)-workspacePriorityValue(a.task.priority)||a.date-b.date||(Number(a.task.start??9999)-Number(b.task.start??9999)));
+ else if(sort==='title')items.sort((a,b)=>String(a.task.title).localeCompare(String(b.task.title)));
+ else items.sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
+ const info=WORKSPACE_VIEW_INFO[workspaceView]||{title:(WORKSPACE_LISTS.find(x=>x.view===workspaceView)?.label||'Tasks'),description:'Tasks in this list.',emptyTitle:'No tasks in this list yet',emptyText:'Add a task to this list or edit an existing task to move it here.'};
+ $('taskWorkspaceTitle').textContent=info.title;$('taskWorkspaceDescription').textContent=info.description||'';
+ $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
+ list.innerHTML=items.length?items.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
+}
+function renderWorkspaceView(){
+ const isCalendar=workspaceView==='calendar';const taskWorkspace=$('taskWorkspace');if(taskWorkspace)taskWorkspace.hidden=isCalendar;
+ ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','dashboard'].forEach(id=>{const el=$(id);if(el)el.hidden=!isCalendar;});
+ document.querySelectorAll('[data-workspace-view]').forEach(button=>{const active=button.dataset.workspaceView===workspaceView;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false');});
+ renderWorkspaceTasks();updateWorkspaceCounts();
+}
+function setWorkspaceView(view){
+ if(!['today','inbox','upcoming','calendar','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view))return;
+ if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
+ renderWorkspaceView();if(view==='calendar')renderAll();
+}
+function quickCaptureWorkspaceTask(){
+ const input=$('workspaceCaptureInput'),title=String(input?.value||'').trim();if(!title)return;
+ const day=workspaceView==='today'?now.getDay():mobileDay;
+ createTask(day,title,'other',30,null,{min:0,max:1440,custom:true,note:''});
+ const t=tasks[tasks.length-1];t.listId='inbox';t.priority='none';t.tags=[];t.subtasks=[];t.dueDate=null;t.unscheduled=true;t.start=null;
+ input.value='';saveCurrent();renderAll();renderWorkspaceView();showToast('Added to Inbox');
+}
+function openWorkspaceRecord(id,week){
+ if(week!==currentWeek){saveCurrent();loadWeek(week);}
+ const t=tasks.find(x=>x.id===id);if(!t)return;if(t.fixed){openFixedSettings(id);return;}
+ const viewDefault=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):null;
+ openTaskModal(id,t.day,t.start,viewDefault);
+}
+function updateWorkspaceRecord(id,week,action){
+ if(week!==currentWeek){
+  const saved=store.weeks[week];if(!saved||!Array.isArray(saved.tasks))return;const item=saved.tasks.find(t=>t.id===id);if(!item)return;
+  if(action==='delete'){if(!confirm('Delete this task?'))return;saved.tasks=saved.tasks.filter(t=>t.id!==id);}else if(action==='toggle')item.done=!item.done;
+  saveStore();renderAll();return;
+ }
+ const item=tasks.find(t=>t.id===id);if(!item)return;
+ if(action==='delete'){if(!confirm('Delete this task?'))return;tasks=tasks.filter(t=>t.id!==id);}else if(action==='toggle')item.done=!item.done;
+ saveCurrent();renderAll();
+}
+function wireWorkspaceControls(){
+ $('workspaceSidebar').addEventListener('click',e=>{const button=e.target.closest('[data-workspace-view]');if(button){setWorkspaceView(button.dataset.workspaceView);return;}const action=e.target.closest('[data-workspace-action]')?.dataset.workspaceAction;if(action==='habits')openUtilityPanel('routineDetails','Habits & routines');if(action==='statistics')openDashboard();});
+ $('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();quickCaptureWorkspaceTask();});
+ $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
+ $('workspaceSearch').addEventListener('input',renderWorkspaceTasks);$('workspaceSort').addEventListener('change',renderWorkspaceTasks);
+ $('workspaceTaskList').addEventListener('change',e=>{const control=e.target.closest('[data-workspace-done]');if(control)updateWorkspaceRecord(control.dataset.workspaceDone,control.dataset.workspaceWeek,'toggle');});
+ $('workspaceTaskList').addEventListener('click',e=>{const edit=e.target.closest('[data-workspace-edit]');if(edit){openWorkspaceRecord(edit.dataset.workspaceEdit,edit.dataset.workspaceWeek);return;}const del=e.target.closest('[data-workspace-delete]');if(del)updateWorkspaceRecord(del.dataset.workspaceDelete,del.dataset.workspaceWeek,'delete');});
+}
+
 setup();
-renderReminders();nudgeDueReminders();
+renderWorkspaceView();renderReminders();nudgeDueReminders();
 function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}
 setInterval(refreshClock,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClock();});window.addEventListener('focus',refreshClock);
 })();
