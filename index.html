@@ -907,6 +907,7 @@ body.signin-required{overflow:hidden}
       <button class="workspace-nav-btn" type="button" data-workspace-view="inbox"><span class="workspace-nav-icon">⌑</span><span>Inbox</span><span class="workspace-nav-count" id="navCountInbox">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="upcoming"><span class="workspace-nav-icon">▦</span><span>Upcoming</span><span class="workspace-nav-count" id="navCountUpcoming">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="board"><span class="workspace-nav-icon">▤</span><span>Board</span></button>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="filters"><span class="workspace-nav-icon">⏷</span><span>Saved filters</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="calendar"><span class="workspace-nav-icon">▣</span><span>Calendar</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="matrix"><span class="workspace-nav-icon">⊞</span><span>Priority matrix</span></button>
       <div class="workspace-nav-divider"></div>
@@ -950,6 +951,22 @@ body.signin-required{overflow:hidden}
           <section class="kanban-column"><header><span class="kanban-status-dot todo-dot"></span><h3>To do</h3><span id="kanbanCountTodo">0</span></header><div class="kanban-column-body" id="kanbanListTodo"></div></section>
           <section class="kanban-column"><header><span class="kanban-status-dot progress-dot"></span><h3>In progress</h3><span id="kanbanCountProgress">0</span></header><div class="kanban-column-body" id="kanbanListProgress"></div></section>
           <section class="kanban-column"><header><span class="kanban-status-dot done-dot"></span><h3>Completed</h3><span id="kanbanCountDone">0</span></header><div class="kanban-column-body" id="kanbanListDone"></div></section>
+        </div>
+      </section>
+      <section class="saved-filters-workspace" id="filtersWorkspace" hidden aria-labelledby="filtersTitle">
+        <header class="saved-filters-heading"><div class="workspace-page-eyebrow">CUSTOM SMART LISTS</div><h2 id="filtersTitle">Saved filters</h2><p>Combine list, priority, status, due date and tags without duplicating tasks.</p></header>
+        <form class="filter-builder" id="savedFilterForm">
+          <label class="filter-field filter-name-field"><span>Filter name</span><input id="filterName" required maxlength="60" placeholder="e.g. High-priority career tasks"></label>
+          <label class="filter-field"><span>List</span><select id="filterList"><option value="all">All lists</option><option value="inbox">Inbox / unscheduled</option><option value="career">Career</option><option value="study">Study</option><option value="work">Work</option><option value="personal">Personal</option><option value="language">Languages</option><option value="hobbies">Hobbies</option><option value="other">Other</option></select></label>
+          <label class="filter-field"><span>Priority</span><select id="filterPriority"><option value="all">Any priority</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option><option value="none">No priority</option></select></label>
+          <label class="filter-field"><span>Status</span><select id="filterStatus"><option value="all">Any status</option><option value="todo">To do</option><option value="in-progress">In progress</option><option value="done">Completed</option></select></label>
+          <label class="filter-field"><span>Due date</span><select id="filterDue"><option value="all">Any due date</option><option value="overdue">Overdue</option><option value="7days">Due in 7 days</option><option value="30days">Due in 30 days</option><option value="no-date">No due date</option></select></label>
+          <label class="filter-field"><span>Tag contains</span><input id="filterTag" maxlength="40" placeholder="e.g. deep-work"></label>
+          <div class="filter-builder-actions"><button class="btn primary" type="submit">＋ Save filter</button></div>
+        </form>
+        <div class="saved-filter-layout">
+          <aside class="saved-filter-rail" aria-label="Your saved filters"><div class="saved-filter-rail-title">YOUR FILTERS <span id="savedFilterCount">0</span></div><div id="savedFilterList"></div></aside>
+          <section class="saved-filter-results" aria-label="Filtered tasks"><header><div><h3 id="activeFilterTitle">Choose a filter</h3><p id="activeFilterDescription">Save a filter above, then select it to see matching tasks.</p></div><span class="agenda-topline-badge" id="activeFilterResultCount">0 tasks</span></header><div id="savedFilterResults" class="workspace-task-list"></div></section>
         </div>
       </section>
       <section class="priority-matrix" id="priorityMatrix" hidden aria-labelledby="matrixTitle">
@@ -1367,7 +1384,7 @@ try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarVi
 let lastRenderedCalendarView=null;
 let tasks=[];
 let workspaceView='today';
-try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace))workspaceView=savedWorkspace;}catch(_){}
+try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace))workspaceView=savedWorkspace;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
 function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}if(!cloudApplyingRemote)queueCloudSave();}
@@ -1620,7 +1637,7 @@ function saveTemplateEditor(e){
   }
   saveStore();saveCurrent();syncSettingsForm();renderAll();closeTemplateEditor();showToast(currentKind==='workday'?'Work day template saved. Add shifts when ready.':'Class template saved. Add classes when ready.');
 }
-function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();renderKanbanBoard();updateCalendarPeriodLabel();}
+function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();renderKanbanBoard();renderSavedFilters();updateCalendarPeriodLabel();}
 function moveTask(id,newDay,preferredTime=null){
   const t=tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
@@ -1926,8 +1943,8 @@ function nudgeDueReminders(){const due=reminderDueOpen();if(!due.length)return;c
 
 
 function cloudFingerprint(payload){return JSON.stringify(payload);}
-function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month','agenda','year'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,focusSessions:focusSessions,habits:habits,countdowns:countdowns,calendarView:view};}
-function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;const hasHabits=Array.isArray(habits)&&habits.length>0;const hasCountdowns=Array.isArray(countdowns)&&countdowns.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||hasHabits||hasCountdowns||settingsChanged;}
+function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month','agenda','year'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,focusSessions:focusSessions,habits:habits,countdowns:countdowns,savedTaskFilters:savedTaskFilters,calendarView:view};}
+function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;const hasHabits=Array.isArray(habits)&&habits.length>0;const hasCountdowns=Array.isArray(countdowns)&&countdowns.length>0;const hasFilters=Array.isArray(savedTaskFilters)&&savedTaskFilters.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||hasHabits||hasCountdowns||hasFilters||settingsChanged;}
 function readCloudMeta(){try{return JSON.parse(localStorage.getItem(CLOUD_META_KEY)||'null');}catch(_){return null;}}
 function writeCloudMeta(revision,payload){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify({userId:cloudUser?.id||'',revision:Number(revision)||0,fingerprint:cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}catch(_){}}
 function setCloudStatus(message){const el=$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=$('cloudMenuBadge');if(badge){badge.textContent=cloudUser?(cloudReady?'Synced':'Account'):'Local';badge.title=message;}}
@@ -1957,6 +1974,7 @@ function saveCloudLocalPayload(payload){
   if(Array.isArray(payload?.focusSessions)){focusSessions=payload.focusSessions;localStorage.setItem(FOCUS_SESSIONS_KEY,JSON.stringify(focusSessions));}
   if(Array.isArray(payload?.habits)){habits=payload.habits;localStorage.setItem(HABITS_KEY,JSON.stringify(habits));}
   if(Array.isArray(payload?.countdowns)){countdowns=payload.countdowns;localStorage.setItem(COUNTDOWNS_KEY,JSON.stringify(countdowns));}
+  if(Array.isArray(payload?.savedTaskFilters)){savedTaskFilters=payload.savedTaskFilters;localStorage.setItem(TASK_FILTERS_KEY,JSON.stringify(savedTaskFilters));}
   if(['day','week','month','agenda','year'].includes(payload?.calendarView))localStorage.setItem('weekwise-calendar-view-v1',payload.calendarView);
   currentWeek=dateKey(sundayOf(now));mobileDay=now.getDay();monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);
   loadWeek(currentWeek);renderReminders();
@@ -2210,8 +2228,8 @@ function openCloudPanel(){renderCloudPanel();openUtilityPanel('cloudPanel','Clou
 function openSignInFromLanding(){const gate=$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=true;}openCloudPanel();}
 function finishSignInLanding(){const gate=$('signinLanding');if(!gate)return;if(activeUtilityPanel===$('cloudPanel'))closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;now=new Date();mobileDay=now.getDay();currentWeek=dateKey(sundayOf(now));monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}loadWeek(currentWeek);setWorkspaceView('today');renderReminders();const heading=$('calendarInstruction');if(heading)heading.hidden=true;showToast('Welcome to Weekwise. Here is today’s plan.');}
 
-function exportBackup(){const payload={app:'Weekwise',version:4,exportedAt:new Date().toISOString(),settings:store.settings,weeks:store.weeks,recurringTemplates:store.recurringTemplates||[],reminders,focusSessions,habits,countdowns};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${currentWeek}.json`;a.click();URL.revokeObjectURL(url);showToast('Backup exported');}
-function loadImport(file){const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!data.settings||!data.weeks)throw new Error('bad');store={settings:data.settings,weeks:data.weeks,recurringTemplates:Array.isArray(data.recurringTemplates)?data.recurringTemplates:[]};saveStore();if(Array.isArray(data.reminders)){reminders=data.reminders;saveReminders();}if(Array.isArray(data.focusSessions)){focusSessions=data.focusSessions;localStorage.setItem(FOCUS_SESSIONS_KEY,JSON.stringify(focusSessions));}if(Array.isArray(data.habits)){habits=data.habits;localStorage.setItem(HABITS_KEY,JSON.stringify(habits));}if(Array.isArray(data.countdowns)){countdowns=data.countdowns;localStorage.setItem(COUNTDOWNS_KEY,JSON.stringify(countdowns));}loadWeek(currentWeek);renderReminders();renderHabitTracker();renderCountdowns();showToast('Backup restored');}catch(e){showToast('That file does not look like a Weekwise backup.');}};reader.readAsText(file);}
+function exportBackup(){const payload={app:'Weekwise',version:4,exportedAt:new Date().toISOString(),settings:store.settings,weeks:store.weeks,recurringTemplates:store.recurringTemplates||[],reminders,focusSessions,habits,countdowns,savedTaskFilters};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${currentWeek}.json`;a.click();URL.revokeObjectURL(url);showToast('Backup exported');}
+function loadImport(file){const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!data.settings||!data.weeks)throw new Error('bad');store={settings:data.settings,weeks:data.weeks,recurringTemplates:Array.isArray(data.recurringTemplates)?data.recurringTemplates:[]};saveStore();if(Array.isArray(data.reminders)){reminders=data.reminders;saveReminders();}if(Array.isArray(data.focusSessions)){focusSessions=data.focusSessions;localStorage.setItem(FOCUS_SESSIONS_KEY,JSON.stringify(focusSessions));}if(Array.isArray(data.habits)){habits=data.habits;localStorage.setItem(HABITS_KEY,JSON.stringify(habits));}if(Array.isArray(data.countdowns)){countdowns=data.countdowns;localStorage.setItem(COUNTDOWNS_KEY,JSON.stringify(countdowns));}if(Array.isArray(data.savedTaskFilters)){savedTaskFilters=data.savedTaskFilters;localStorage.setItem(TASK_FILTERS_KEY,JSON.stringify(savedTaskFilters));}loadWeek(currentWeek);renderReminders();renderHabitTracker();renderCountdowns();showToast('Backup restored');}catch(e){showToast('That file does not look like a Weekwise backup.');}};reader.readAsText(file);}
 function shiftWeeks(n){const d=parseKey(currentWeek);d.setDate(d.getDate()+7*n);saveCurrent();loadWeek(dateKey(d));}
 function setCalendarView(view){if(view!=='day'&&view!=='week')return;if(calendarView===view)return;calendarView=view;try{localStorage.setItem('weekwise-calendar-view-v1',view);}catch(_){}renderAll();}
 function updateViewControls(){const dayBtn=$('dayViewBtn'),weekBtn=$('weekViewBtn');if(dayBtn){dayBtn.classList.toggle('active',calendarView==='day');dayBtn.setAttribute('aria-pressed',calendarView==='day'?'true':'false');}if(weekBtn){weekBtn.classList.toggle('active',calendarView==='week');weekBtn.setAttribute('aria-pressed',calendarView==='week'?'true':'false');}const prev=$('prevWeek'),next=$('nextWeek');if(prev){prev.title=calendarView==='day'?'Previous day':'Previous week';prev.setAttribute('aria-label',prev.title);}if(next){next.title=calendarView==='day'?'Next day':'Next week';next.setAttribute('aria-label',next.title);}}
@@ -2390,16 +2408,21 @@ function renderWorkspaceTasks(){
  list.innerHTML=items.length?items.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
 }
 function renderWorkspaceView(){
- const isCalendar=workspaceView==='calendar',isMatrix=workspaceView==='matrix',isBoard=workspaceView==='board';
- const taskWorkspace=$('taskWorkspace'),matrix=$('priorityMatrix'),board=$('kanbanBoard');
- if(taskWorkspace)taskWorkspace.hidden=isCalendar||isMatrix||isBoard;
- if(matrix)matrix.hidden=!isMatrix;if(board)board.hidden=!isBoard;
+ const isCalendar=workspaceView==='calendar',isMatrix=workspaceView==='matrix',isBoard=workspaceView==='board',isFilters=workspaceView==='filters';
+ const taskWorkspace=$('taskWorkspace'),matrix=$('priorityMatrix'),board=$('kanbanBoard'),filters=$('filtersWorkspace');
+ if(taskWorkspace)taskWorkspace.hidden=isCalendar||isMatrix||isBoard||isFilters;
+ if(matrix)matrix.hidden=!isMatrix;
+ if(board)board.hidden=!isBoard;
+ if(filters)filters.hidden=!isFilters;
  ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','dashboard'].forEach(id=>{const el=$(id);if(el)el.hidden=!isCalendar;});
  document.querySelectorAll('[data-workspace-view]').forEach(button=>{const active=button.dataset.workspaceView===workspaceView;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false');});
- renderWorkspaceTasks();updateWorkspaceCounts();if(isMatrix)renderPriorityMatrix();if(isBoard)renderKanbanBoard();
+ renderWorkspaceTasks();updateWorkspaceCounts();
+ if(isMatrix)renderPriorityMatrix();
+ if(isBoard)renderKanbanBoard();
+ if(isFilters)renderSavedFilters();
 }
 function setWorkspaceView(view){
- if(!['today','inbox','upcoming','board','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view))return;
+ if(!['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view))return;
  if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
  renderWorkspaceView();if(view==='calendar')renderAll();
 }
@@ -2436,6 +2459,19 @@ function wireWorkspaceControls(){
 $('kanbanBoard').addEventListener('change',e=>{const select=e.target.closest('[data-board-status]');if(select)updateBoardTaskStatus(select.dataset.boardStatus,select.dataset.boardWeek,select.value);});
 $('kanbanBoard').addEventListener('click',e=>{const edit=e.target.closest('[data-board-edit]');if(edit)openWorkspaceRecord(edit.dataset.boardEdit,edit.dataset.boardWeek);});
 $('kanbanAddTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));
+$('savedFilterForm').addEventListener('submit',saveFilterForm);
+$('savedFilterList').addEventListener('click',e=>{
+ const open=e.target.closest('[data-filter-open]');
+ if(open){activeSavedFilterId=open.dataset.filterOpen;renderSavedFilters();return;}
+ const remove=e.target.closest('[data-filter-delete]');if(remove)deleteSavedFilter(remove.dataset.filterDelete);
+});
+$('savedFilterResults').addEventListener('click',e=>{
+ const edit=e.target.closest('[data-workspace-edit]');if(edit){openWorkspaceRecord(edit.dataset.workspaceEdit,edit.dataset.workspaceWeek);return;}
+ const del=e.target.closest('[data-workspace-delete]');if(del)updateWorkspaceRecord(del.dataset.workspaceDelete,del.dataset.workspaceWeek,'delete');
+});
+$('savedFilterResults').addEventListener('change',e=>{
+ const control=e.target.closest('[data-workspace-done]');if(control)updateWorkspaceRecord(control.dataset.workspaceDone,control.dataset.workspaceWeek,'toggle');
+});
 $('priorityMatrix').addEventListener('change',e=>{const c=e.target.closest('[data-matrix-done]');if(c)updateWorkspaceRecord(c.dataset.matrixDone,c.dataset.matrixWeek,'toggle');});
 $('priorityMatrix').addEventListener('click',e=>{const b=e.target.closest('[data-matrix-edit]');if(b)openWorkspaceRecord(b.dataset.matrixEdit,b.dataset.matrixWeek);});
 $('matrixAddTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));
@@ -2739,6 +2775,78 @@ function updateBoardTaskStatus(id,week,status){
  if(week!==currentWeek){const saved=store.weeks[week];item=Array.isArray(saved?.tasks)?saved.tasks.find(t=>t.id===id):null;if(!item)return;item.status=status;item.done=status==='done';saveStore();}
  else{item=tasks.find(t=>t.id===id);if(!item)return;item.status=status;item.done=status==='done';saveCurrent();}
  renderAll();
+}
+
+
+const TASK_FILTERS_KEY='weekwise-saved-filters-v1';
+let savedTaskFilters=[];
+try{savedTaskFilters=JSON.parse(localStorage.getItem(TASK_FILTERS_KEY)||'[]');if(!Array.isArray(savedTaskFilters))savedTaskFilters=[];}catch(_){savedTaskFilters=[];}
+let activeSavedFilterId='';
+function savedFilterMatches(record,filter){
+ const t=record.task;
+ if(filter.listId&&filter.listId!=='all'&&record.listId!==filter.listId)return false;
+ const priority=t.priority||'none';
+ if(filter.priority&&filter.priority!=='all'&&priority!==filter.priority)return false;
+ const status=t.done||t.status==='done'?'done':(t.status==='in-progress'?'in-progress':'todo');
+ if(filter.status&&filter.status!=='all'&&status!==filter.status)return false;
+ const today=dateKey(now),due=t.dueDate||'';
+ if(filter.due==='overdue'&&(!due||due>=today||status==='done'))return false;
+ if(filter.due==='7days'&&(!due||due<today||due>addDaysToKey(today,7)))return false;
+ if(filter.due==='30days'&&(!due||due<today||due>addDaysToKey(today,30)))return false;
+ if(filter.due==='no-date'&&due)return false;
+ if(filter.tag){
+  const tags=Array.isArray(t.tags)?t.tags:[];
+  if(!tags.some(tag=>String(tag).toLowerCase().includes(String(filter.tag).toLowerCase())))return false;
+ }
+ return true;
+}
+function renderSavedFilters(){
+ const list=$('savedFilterList'),results=$('savedFilterResults');
+ if(!list||!results)return;
+ const active=savedTaskFilters.find(filter=>filter.id===activeSavedFilterId)||null;
+ $('savedFilterCount').textContent=String(savedTaskFilters.length);
+ list.innerHTML=savedTaskFilters.length?savedTaskFilters.map(filter=>{
+  const count=workspaceRecords().filter(record=>savedFilterMatches(record,filter)).length;
+  return '<div class="saved-filter-choice-wrap"><button type="button" class="saved-filter-choice '+(active&&active.id===filter.id?'active':'')+'" data-filter-open="'+escapeHtml(filter.id)+'"><span>'+escapeHtml(filter.title)+'</span><span>'+count+'</span></button><button type="button" class="saved-filter-delete" data-filter-delete="'+escapeHtml(filter.id)+'" aria-label="Delete '+escapeHtml(filter.title)+'">×</button></div>';
+ }).join(''):'<div class="saved-filter-empty">Build your first filter above.</div>';
+ if(!active){
+  $('activeFilterTitle').textContent='Choose a filter';
+  $('activeFilterDescription').textContent='Save a filter above, then select it to see matching tasks.';
+  $('activeFilterResultCount').textContent='0 tasks';
+  results.innerHTML='<div class="workspace-empty"><div><div class="workspace-empty-icon">⏷</div><h3>No filter selected</h3><p>Combine due dates, status, priority, list and tags.</p></div></div>';
+  return;
+ }
+ const records=workspaceRecords().filter(record=>savedFilterMatches(record,active)).sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
+ const description=[];
+ if(active.listId!=='all')description.push(active.listId);
+ if(active.priority!=='all')description.push(active.priority+' priority');
+ if(active.status!=='all')description.push(active.status.replace('-',' '));
+ if(active.due!=='all')description.push(active.due);
+ if(active.tag)description.push('#'+active.tag);
+ $('activeFilterTitle').textContent=active.title;
+ $('activeFilterDescription').textContent=description.length?description.join(' · '):'All tasks';
+ $('activeFilterResultCount').textContent=records.length+' task'+(records.length===1?'':'s');
+ results.innerHTML=records.length?records.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>No matching tasks</h3><p>Try changing the criteria or update a task’s details.</p></div></div>';
+}
+function saveFilterForm(e){
+ e.preventDefault();
+ const title=$('filterName').value.trim();
+ if(!title){$('filterName').focus();return;}
+ const filter={id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),title:title,listId:$('filterList').value,priority:$('filterPriority').value,status:$('filterStatus').value,due:$('filterDue').value,tag:$('filterTag').value.trim().replace(/^#/,'').toLowerCase(),createdAt:new Date().toISOString()};
+ savedTaskFilters.push(filter);activeSavedFilterId=filter.id;
+ try{localStorage.setItem(TASK_FILTERS_KEY,JSON.stringify(savedTaskFilters));}catch(_){showToast('Could not save filters on this device.');}
+ if(!cloudApplyingRemote)queueCloudSave();
+ $('filterName').value='';$('filterList').value='all';$('filterPriority').value='all';$('filterStatus').value='all';$('filterDue').value='all';$('filterTag').value='';
+ renderSavedFilters();showToast('Filter saved');
+}
+function deleteSavedFilter(id){
+ const filter=savedTaskFilters.find(item=>item.id===id);if(!filter)return;
+ if(!confirm('Delete saved filter "'+filter.title+'"?'))return;
+ savedTaskFilters=savedTaskFilters.filter(item=>item.id!==id);
+ if(activeSavedFilterId===id)activeSavedFilterId='';
+ try{localStorage.setItem(TASK_FILTERS_KEY,JSON.stringify(savedTaskFilters));}catch(_){}
+ if(!cloudApplyingRemote)queueCloudSave();
+ renderSavedFilters();showToast('Filter deleted');
 }
 
 setup();
