@@ -1222,7 +1222,7 @@ try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarVi
 let lastRenderedCalendarView=null;
 let tasks=[];
 let workspaceView='today';
-try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','calendar','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace))workspaceView=savedWorkspace;}catch(_){}
+try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','inbox','upcoming','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace))workspaceView=savedWorkspace;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
 function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}}if(!cloudApplyingRemote)queueCloudSave();}
@@ -1481,7 +1481,7 @@ function saveTemplateEditor(e){
   }
   saveStore();saveCurrent();syncSettingsForm();renderAll();closeTemplateEditor();showToast(currentKind==='workday'?'Work day template saved. Add shifts when ready.':'Class template saved. Add classes when ready.');
 }
-function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();}
+function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();}
 function moveTask(id,newDay,preferredTime=null){
   const t=tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
@@ -1679,7 +1679,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   $('modalListId').value=t?inferredListId(t):(defaultListId||'career');
   if(!t&&!defaultListId)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
-  $('modalPriority').value=t?.priority||'none';$('modalDueDate').value=t?.dueDate||'';
+  $('modalPriority').value=t?.priority||'none';$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalDueDate').value=t?.dueDate||'';
   $('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
   $('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
   $('modalNoSchedule').checked=!!(t&&(t.unscheduled||t.start==null))||(!t&&defaultListId==='inbox');
@@ -1719,7 +1719,7 @@ function saveModalTask(e){
     $('modalEndTime').setCustomValidity('');preferred=start;duration=end-start;
   }
   const day=Number($('modalDay').value),type=$('modalCategory').value,note=$('modalNote').value.trim();
-  const listId=$('modalListId').value,priority=$('modalPriority').value,dueDate=$('modalDueDate').value||null;
+  const listId=$('modalListId').value,priority=$('modalPriority').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null;
   const tags=[...new Set($('modalTags').value.split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))];
   const subtasks=$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false}));
   if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled on ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
@@ -1727,7 +1727,7 @@ function saveModalTask(e){
   if(id){
     const t=tasks.find(x=>x.id===id);
     if(t&&!t.fixed){
-      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.priority=priority;t.dueDate=dueDate;t.tags=tags;
+      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.priority=priority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.tags=tags;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...s,done:!!old.done}:{...s};});
       t.start=noSchedule?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));
@@ -1735,7 +1735,7 @@ function saveModalTask(e){
     }
   }else{
     createTask(day,title,type,duration,noSchedule?null:preferred,{min:0,max:1440,custom:true,note});
-    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||t.start===null;t.listId=listId;t.priority=priority;t.dueDate=dueDate;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
+    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||t.start===null;t.listId=listId;t.priority=priority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
   }
   saveCurrent();closeTaskModal();renderAll();
   if(noSchedule)showToast('Task saved to '+(listId==='inbox'?'Inbox':'your list')+'.');
@@ -1772,7 +1772,7 @@ function nudgeDueReminders(){const due=reminderDueOpen();if(!due.length)return;c
 
 
 function cloudFingerprint(payload){return JSON.stringify(payload);}
-function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,calendarView:view};}
+function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,focusSessions:focusSessions,calendarView:view};}
 function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||settingsChanged;}
 function readCloudMeta(){try{return JSON.parse(localStorage.getItem(CLOUD_META_KEY)||'null');}catch(_){return null;}}
 function writeCloudMeta(revision,payload){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify({userId:cloudUser?.id||'',revision:Number(revision)||0,fingerprint:cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}catch(_){}}
@@ -1800,6 +1800,7 @@ function saveCloudLocalPayload(payload){
    localStorage.setItem(STORE_KEY,JSON.stringify(store));
   }
   if(Array.isArray(payload?.reminders)){reminders=payload.reminders;localStorage.setItem(REMINDERS_KEY,JSON.stringify(reminders));}
+  if(Array.isArray(payload?.focusSessions)){focusSessions=payload.focusSessions;localStorage.setItem(FOCUS_SESSIONS_KEY,JSON.stringify(focusSessions));}
   if(['day','week','month'].includes(payload?.calendarView))localStorage.setItem('weekwise-calendar-view-v1',payload.calendarView);
   currentWeek=dateKey(sundayOf(now));mobileDay=now.getDay();monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);
   loadWeek(currentWeek);renderReminders();
@@ -2225,13 +2226,16 @@ function renderWorkspaceTasks(){
  list.innerHTML=items.length?items.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
 }
 function renderWorkspaceView(){
- const isCalendar=workspaceView==='calendar';const taskWorkspace=$('taskWorkspace');if(taskWorkspace)taskWorkspace.hidden=isCalendar;
+ const isCalendar=workspaceView==='calendar',isMatrix=workspaceView==='matrix';
+ const taskWorkspace=$('taskWorkspace'),matrix=$('priorityMatrix');
+ if(taskWorkspace)taskWorkspace.hidden=isCalendar||isMatrix;
+ if(matrix)matrix.hidden=!isMatrix;
  ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','dashboard'].forEach(id=>{const el=$(id);if(el)el.hidden=!isCalendar;});
  document.querySelectorAll('[data-workspace-view]').forEach(button=>{const active=button.dataset.workspaceView===workspaceView;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false');});
- renderWorkspaceTasks();updateWorkspaceCounts();
+ renderWorkspaceTasks();updateWorkspaceCounts();if(isMatrix)renderPriorityMatrix();
 }
 function setWorkspaceView(view){
- if(!['today','inbox','upcoming','calendar','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view))return;
+ if(!['today','inbox','upcoming','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view))return;
  if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
  renderWorkspaceView();if(view==='calendar')renderAll();
 }
@@ -2259,13 +2263,86 @@ function updateWorkspaceRecord(id,week,action){
  saveCurrent();renderAll();
 }
 function wireWorkspaceControls(){
- $('workspaceSidebar').addEventListener('click',e=>{const button=e.target.closest('[data-workspace-view]');if(button){setWorkspaceView(button.dataset.workspaceView);return;}const action=e.target.closest('[data-workspace-action]')?.dataset.workspaceAction;if(action==='habits')openUtilityPanel('routineDetails','Habits & routines');if(action==='statistics')openDashboard();});
+ $('workspaceSidebar').addEventListener('click',e=>{const button=e.target.closest('[data-workspace-view]');if(button){setWorkspaceView(button.dataset.workspaceView);return;}const action=e.target.closest('[data-workspace-action]')?.dataset.workspaceAction;if(action==='habits')openUtilityPanel('routineDetails','Habits & routines');if(action==='focus'){renderFocusPanel();openUtilityPanel('focusPanel','Focus timer');}if(action==='statistics')openDashboard();});
  $('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();quickCaptureWorkspaceTask();});
  $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
  $('workspaceSearch').addEventListener('input',renderWorkspaceTasks);$('workspaceSort').addEventListener('change',renderWorkspaceTasks);
  $('workspaceTaskList').addEventListener('change',e=>{const control=e.target.closest('[data-workspace-done]');if(control)updateWorkspaceRecord(control.dataset.workspaceDone,control.dataset.workspaceWeek,'toggle');});
  $('workspaceTaskList').addEventListener('click',e=>{const edit=e.target.closest('[data-workspace-edit]');if(edit){openWorkspaceRecord(edit.dataset.workspaceEdit,edit.dataset.workspaceWeek);return;}const del=e.target.closest('[data-workspace-delete]');if(del)updateWorkspaceRecord(del.dataset.workspaceDelete,del.dataset.workspaceWeek,'delete');});
+$('priorityMatrix').addEventListener('change',e=>{const c=e.target.closest('[data-matrix-done]');if(c)updateWorkspaceRecord(c.dataset.matrixDone,c.dataset.matrixWeek,'toggle');});
+$('priorityMatrix').addEventListener('click',e=>{const b=e.target.closest('[data-matrix-edit]');if(b)openWorkspaceRecord(b.dataset.matrixEdit,b.dataset.matrixWeek);});
+$('matrixAddTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));
+$('focusPreset').addEventListener('change',()=>{if(!focusRunning){focusInitialSeconds=Number($('focusPreset').value)*60;focusRemainingSeconds=focusInitialSeconds;focusMode='focus';focusStartedAt=null;renderFocusPanel();}});
+$('focusStartBtn').addEventListener('click',focusStartPause);
+$('focusResetBtn').addEventListener('click',focusReset);
+$('focusBreakBtn').addEventListener('click',focusTakeBreak);
 }
+
+
+const FOCUS_SESSIONS_KEY='weekwise-focus-sessions-v1';
+let focusSessions=[];try{focusSessions=JSON.parse(localStorage.getItem(FOCUS_SESSIONS_KEY)||'[]');if(!Array.isArray(focusSessions))focusSessions=[];}catch(_){focusSessions=[];}
+let focusMode='focus',focusInitialSeconds=1500,focusRemainingSeconds=1500,focusDeadline=0,focusInterval=null,focusRunning=false,focusStartedAt=null;
+function renderMatrixTask(record){
+ const t=record.task,attrs=' data-matrix-week="'+escapeHtml(record.week)+'"';
+ return '<article class="matrix-task"><input type="checkbox" data-matrix-done="'+escapeHtml(t.id)+'"'+attrs+' '+(t.done?'checked':'')+' aria-label="Complete '+escapeHtml(t.title)+'"><div><button type="button" class="matrix-task-title" data-matrix-edit="'+escapeHtml(t.id)+'"'+attrs+'>'+escapeHtml(t.title)+'</button><div class="matrix-task-meta">'+escapeHtml(record.listId==='inbox'?'Inbox':(WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Task'))+(t.dueDate?' · Due '+escapeHtml(fmtDate(parseKey(t.dueDate),{day:'numeric',month:'short'})):'')+'</div></div><button type="button" class="matrix-task-edit" title="Edit classification" aria-label="Edit '+escapeHtml(t.title)+'" data-matrix-edit="'+escapeHtml(t.id)+'"'+attrs+'>✎</button></article>';
+}
+function renderPriorityMatrix(){
+ const lists={do:[],schedule:[],delegate:[],later:[],unclassified:[]};
+ workspaceRecords().filter(r=>!r.task.done).forEach(r=>{
+  const imp=r.task.importance,urg=r.task.urgency;
+  if(!['important','not-important'].includes(imp)||!['urgent','not-urgent'].includes(urg)){lists.unclassified.push(r);return;}
+  if(imp==='important'&&urg==='urgent')lists.do.push(r);
+  else if(imp==='important'&&urg==='not-urgent')lists.schedule.push(r);
+  else if(imp==='not-important'&&urg==='urgent')lists.delegate.push(r);
+  else lists.later.push(r);
+ });
+ [['matrixDoList',lists.do],['matrixScheduleList',lists.schedule],['matrixDelegateList',lists.delegate],['matrixLaterList',lists.later],['matrixUnclassifiedList',lists.unclassified]].forEach(([id,items])=>{const el=$(id);if(el)el.innerHTML=items.length?items.map(renderMatrixTask).join(''):'<div class="matrix-empty">No tasks here yet.</div>';});
+ $('matrixUnclassifiedCount').textContent=String(lists.unclassified.length);
+}
+function renderFocusPanel(){
+ const select=$('focusTaskSelect');if(!select)return;
+ const prior=select.value,records=workspaceRecords().filter(r=>!r.task.done).sort((a,b)=>a.date-b.date);
+ select.innerHTML='<option value="">No linked task</option>'+records.map(r=>'<option value="'+escapeHtml(r.week+'::'+r.task.id)+'">'+escapeHtml(r.task.title+' · '+fmtDate(r.date,{day:'numeric',month:'short'}))+'</option>').join('');
+ if([...select.options].some(o=>o.value===prior))select.value=prior;
+ const totalFocus=focusSessions.reduce((n,s)=>n+Number(s.minutes||0),0),today=dateKey(now),todayFocus=focusSessions.filter(s=>dateKey(new Date(s.endedAt))===today).reduce((n,s)=>n+Number(s.minutes||0),0);
+ const summary=$('focusSummary');if(summary)summary.innerHTML='<div class="focus-stat"><small>Focus time today</small><strong>'+durationText(todayFocus)+'</strong></div><div class="focus-stat"><small>Total focus time</small><strong>'+durationText(totalFocus)+'</strong></div><div class="focus-stat"><small>Completed sessions</small><strong>'+focusSessions.length+'</strong></div>';
+ const history=$('focusHistory'),historyTotal=$('focusHistoryTotal');if(historyTotal)historyTotal.textContent=focusSessions.length+' session'+(focusSessions.length===1?'':'s');
+ if(history)history.innerHTML=focusSessions.slice().reverse().slice(0,6).map(s=>'<div class="focus-history-row"><div><strong>'+escapeHtml(s.taskTitle||'Focus session')+'</strong><small>'+escapeHtml(new Date(s.endedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))+'</small></div><span>'+Math.round(Number(s.minutes)||0)+' min</span></div>').join('')||'<div class="matrix-empty">Your completed focus sessions will appear here.</div>';
+ updateFocusDisplay();
+}
+function persistFocusSessions(){try{localStorage.setItem(FOCUS_SESSIONS_KEY,JSON.stringify(focusSessions));}catch(_){}if(!cloudApplyingRemote)queueCloudSave();}
+function focusStopInterval(){if(focusInterval!==null){clearInterval(focusInterval);focusInterval=null;}focusRunning=false;focusDeadline=0;}
+function updateFocusDisplay(){
+ const clock=$('focusClock');if(!clock)return;
+ const seconds=Math.max(0,Math.ceil(focusRunning?(focusDeadline-Date.now())/1000:focusRemainingSeconds)),minutes=Math.floor(seconds/60),secs=seconds%60;
+ clock.textContent=String(minutes).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+ const modeLabel=$('focusModeLabel');if(modeLabel)modeLabel.textContent=focusMode==='focus'?'FOCUS TIME':'SHORT BREAK';
+ const progress=$('focusProgressBar');if(progress){const base=focusMode==='focus'?focusInitialSeconds:300;progress.style.width=(Math.max(0,Math.min(1,seconds/Math.max(1,base)))*100)+'%';}
+ const start=$('focusStartBtn');if(start)start.textContent=focusRunning?'Pause':(focusRemainingSeconds<(focusMode==='focus'?focusInitialSeconds:300)?'Resume':'Start '+(focusMode==='focus'?'focus':'break'));
+ const message=$('focusTimerMessage');if(message)message.textContent=focusRunning?(focusMode==='focus'?'Stay with the selected task until the timer ends.':'Rest your eyes, stretch and step away from the screen.'):focusMode==='focus'?'One task. One session. No need to make it perfect.':'A short break helps you reset before the next session.';
+}
+function focusComplete(){
+ focusStopInterval();
+ if(focusMode==='focus'){
+  const selected=$('focusTaskSelect')?.value||'',split=selected.indexOf('::'),week=split>=0?selected.slice(0,split):'',id=split>=0?selected.slice(split+2):'';
+  const record=workspaceRecords().find(r=>r.week===week&&r.task.id===id),started=focusStartedAt||new Date(Date.now()-focusInitialSeconds*1000).toISOString();
+  focusSessions.push({id:uid(),taskId:id||null,taskTitle:record?.task.title||'',startedAt:started,endedAt:new Date().toISOString(),minutes:Math.round(focusInitialSeconds/60)});
+  if(focusSessions.length>500)focusSessions=focusSessions.slice(-500);
+  persistFocusSessions();focusMode='break';focusRemainingSeconds=300;focusStartedAt=null;showToast('Focus session complete. Take a short break.');
+ }else{
+  focusMode='focus';focusInitialSeconds=Number($('focusPreset').value||25)*60;focusRemainingSeconds=focusInitialSeconds;focusStartedAt=null;showToast('Break complete. Ready for another focus session?');
+ }
+ renderFocusPanel();
+}
+function focusTick(){if(!focusRunning)return;focusRemainingSeconds=Math.max(0,Math.ceil((focusDeadline-Date.now())/1000));if(focusRemainingSeconds<=0){focusComplete();return;}updateFocusDisplay();}
+function focusStartPause(){
+ if(focusRunning){focusRemainingSeconds=Math.max(0,Math.ceil((focusDeadline-Date.now())/1000));focusStopInterval();updateFocusDisplay();return;}
+ if(focusMode==='focus'&&focusRemainingSeconds===focusInitialSeconds)focusStartedAt=new Date().toISOString();
+ if(focusRemainingSeconds<=0)focusRemainingSeconds=focusMode==='focus'?focusInitialSeconds:300;
+ focusDeadline=Date.now()+focusRemainingSeconds*1000;focusRunning=true;if(focusInterval!==null)clearInterval(focusInterval);focusInterval=setInterval(focusTick,250);updateFocusDisplay();
+}
+function focusReset(){focusStopInterval();focusMode='focus';focusInitialSeconds=Number($('focusPreset').value||25)*60;focusRemainingSeconds=focusInitialSeconds;focusStartedAt=null;renderFocusPanel();}
+function focusTakeBreak(){focusStopInterval();focusMode='break';focusRemainingSeconds=300;focusStartedAt=null;renderFocusPanel();}
 
 setup();
 renderWorkspaceView();renderReminders();nudgeDueReminders();
