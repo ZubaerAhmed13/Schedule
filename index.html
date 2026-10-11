@@ -3668,7 +3668,7 @@ function applySelectedTaskTemplate(){
  $('modalRecurrence').value=['none','daily','weekly','monthly','yearly'].includes(template.recurrence)?template.recurrence:'none';
  const duration=String(template.duration||30);
  if(![...$('modalDuration').options].some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=durationLabel(Number(duration));$('modalDuration').add(option);}
- $('modalDuration').value=duration;$('modalNote').value=template.note||'';
+ $('modalDuration').value=duration;updateEndTimeFromDuration();$('modalNote').value=template.note||'';
  $('modalTags').value=Array.isArray(template.tags)?template.tags.join(', '):'';
  $('modalSubtasks').value=Array.isArray(template.subtasks)?template.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
  $('modalNoSchedule').checked=!!template.noSchedule;$('modalAllDay').checked=!!template.allDay&&!template.noSchedule;
