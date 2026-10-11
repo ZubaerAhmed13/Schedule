@@ -2579,13 +2579,6 @@ function setWorkspaceView(view){
  if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
  renderWorkspaceView();if(view==='calendar')renderAll();
 }
-function quickCaptureWorkspaceTask(){
- const input=$('workspaceCaptureInput'),title=String(input?.value||'').trim();if(!title)return;
- const day=workspaceView==='today'?now.getDay():mobileDay;
- createTask(day,title,'other',30,null,{min:0,max:1440,custom:true,note:''});
- const t=tasks[tasks.length-1];t.listId='inbox';t.priority='none';t.tags=[];t.subtasks=[];t.dueDate=null;t.unscheduled=true;t.start=null;
- input.value='';saveCurrent();renderAll();renderWorkspaceView();showToast('Added to Inbox');
-}
 function openWorkspaceRecord(id,week){
  if(week!==currentWeek){saveCurrent();loadWeek(week);}
  const t=tasks.find(x=>x.id===id);if(!t)return;if(t.fixed){openFixedSettings(id);return;}
@@ -3184,7 +3177,7 @@ function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,fol
   upsertRecurringTemplate(task.seriesId,occurrenceDate,fields);
   materializeRecurringRange(parseKey(weekKey),parseKey(addDaysToKey(weekKey,89)));
  }
- saveCurrent();
+ if(weekKey===currentWeek)saveCurrent();else saveStore();
  renderAll();renderWorkspaceView();
  return {task,weekKey,actualStart};
 }
