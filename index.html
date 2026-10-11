@@ -2708,7 +2708,7 @@ function workspaceRecordMatches(record,view){
  const t=record.task,day=dateOnly(now),todayKey=dateKey(day),end=new Date(day);end.setDate(end.getDate()+7);
  const recordDate=dateOnly(record.date),recordKey=dateKey(recordDate),listId=record.listId;
  if(view==='search')return true;
- if(view==='today')return (listId!=='inbox'&&recordKey===todayKey)||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
+ if(view==='today')return ((listId!=='inbox'||!!t.allDay||(!t.unscheduled&&t.start!==null&&t.start!==undefined))&&recordKey===todayKey)||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
  const tomorrowKey=dateKey(addDaysForView(day,1));
  if(view==='tomorrow')return (recordKey===tomorrowKey&&(!!t.allDay||(!t.unscheduled&&t.start!=null)))||(!t.done&&t.dueDate===tomorrowKey);
  if(view==='inbox')return listId==='inbox';
@@ -2761,7 +2761,7 @@ function updateWorkspaceCounts(){
   const el=$(id);if(!el)return;
   const tomorrowKey=dateKey(addDaysForView(now,1));
   const count=key==='Today'
-   ?all.filter(r=>(r.listId!=='inbox'&&dateKey(r.date)===todayKey)||(!r.task.done&&!!r.task.dueDate&&r.task.dueDate<=todayKey)).length
+   ?all.filter(r=>((r.listId!=='inbox'||!!r.task.allDay||(!r.task.unscheduled&&r.task.start!==null&&r.task.start!==undefined))&&dateKey(r.date)===todayKey)||(!r.task.done&&!!r.task.dueDate&&r.task.dueDate<=todayKey)).length
    :key==='Tomorrow'
     ?all.filter(r=>(dateKey(r.date)===tomorrowKey&&(r.task.allDay||(!r.task.unscheduled&&r.task.start!=null)))||(!r.task.done&&r.task.dueDate===tomorrowKey)).length
    :key==='Inbox'
