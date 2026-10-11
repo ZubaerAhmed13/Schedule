@@ -1086,6 +1086,7 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
   <div class="workspace-shell">
     <aside class="workspace-sidebar" id="workspaceSidebar" aria-label="Workspace navigation">
       <div class="workspace-sidebar-head">WORKSPACE</div>
+      <button class="workspace-nav-btn" type="button" data-workspace-view="search"><span class="workspace-nav-icon">⌕</span><span>Search</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="today"><span class="workspace-nav-icon">◷</span><span>Today</span><span class="workspace-nav-count" id="navCountToday">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="inbox"><span class="workspace-nav-icon">⌑</span><span>Inbox</span><span class="workspace-nav-count" id="navCountInbox">0</span></button>
       <button class="workspace-nav-btn" type="button" data-workspace-view="upcoming"><span class="workspace-nav-icon">▦</span><span>Upcoming</span><span class="workspace-nav-count" id="navCountUpcoming">0</span></button>
@@ -2624,7 +2625,7 @@ function syncWorkspaceLists(){
  WORKSPACE_LISTS=BUILTIN_WORKSPACE_LISTS.concat(store.customLists.filter(item=>item&&item.id&&item.name).map(item=>({id:item.id,label:item.name,view:'list-'+item.id,custom:true})));
  syncWorkspaceListOptions();renderWorkspaceCustomLists();
 }
-const WORKSPACE_VIEW_INFO={today:{title:'Today',description:'Focus on the tasks planned for today.',emptyTitle:'Nothing on your plan yet',emptyText:'Capture a task above, or add a scheduled activity from the calendar.'},inbox:{title:'Inbox',description:'Capture first. Decide when to do it later.',emptyTitle:'Your inbox is clear',emptyText:'Use the quick-capture box to collect tasks before scheduling them.'},upcoming:{title:'Upcoming',description:'See scheduled activities across the next seven days.',emptyTitle:'No upcoming tasks',emptyText:'Tasks scheduled for the next seven days will appear here.'},calendar:{title:'Calendar',description:'Time-block your activities.'}};
+const WORKSPACE_VIEW_INFO={search:{title:'Search all tasks',description:'Search across lists, folders, tags, notes and deadlines.',emptyTitle:'Search your whole workspace',emptyText:'Enter a task name, note, tag, list, folder or deadline to find matching tasks.'},today:{title:'Today',description:'Focus on the tasks planned for today.',emptyTitle:'Nothing on your plan yet',emptyText:'Capture a task above, or add a scheduled activity from the calendar.'},inbox:{title:'Inbox',description:'Capture first. Decide when to do it later.',emptyTitle:'Your inbox is clear',emptyText:'Use the quick-capture box to collect tasks before scheduling them.'},upcoming:{title:'Upcoming',description:'See scheduled activities across the next seven days.',emptyTitle:'No upcoming tasks',emptyText:'Tasks scheduled for the next seven days will appear here.'},calendar:{title:'Calendar',description:'Time-block your activities.'}};
 function workspaceRecords(){
  const records=[],keys=new Set([...Object.keys(store.weeks||{}),currentWeek]);
  [...keys].sort().forEach(week=>{const rows=week===currentWeek?tasks:(Array.isArray(store.weeks[week]?.tasks)?store.weeks[week].tasks:[]);rows.forEach(task=>{if(!task||task.custom===false)return;let date;try{date=dayDate(week,Number(task.day)||0);}catch(_){return;}records.push({task,week,date,listId:inferredListId(task)});});});
@@ -2672,6 +2673,7 @@ function renderWorkspaceTags(){
 function workspaceRecordMatches(record,view){
  const t=record.task,day=dateOnly(now),todayKey=dateKey(day),end=new Date(day);end.setDate(end.getDate()+7);
  const recordDate=dateOnly(record.date),recordKey=dateKey(recordDate),listId=record.listId;
+ if(view==='search')return true;
  if(view==='today')return recordKey===todayKey||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
  if(view==='inbox')return listId==='inbox';
  if(view==='upcoming'){
@@ -2766,7 +2768,7 @@ function renderWorkspaceTasks(){
  const list=$('workspaceTaskList');if(!list)return;
  const search=String($('workspaceSearch')?.value||'').trim().toLowerCase(),sort=$('workspaceSort')?.value||'date';
  let items=workspaceRecords().filter(r=>workspaceRecordMatches(r,workspaceView));
- if(search)items=items.filter(r=>[r.task.title,r.task.note,r.task.folderName,r.task.sectionName,...(Array.isArray(r.task.tags)?r.task.tags:[])].join(' ').toLowerCase().includes(search));
+ if(search)items=items.filter(r=>[r.task.title,r.task.note,r.task.folderName,r.task.sectionName,r.task.dueDate,r.task.priority,r.task.status,r.task.listId,WORKSPACE_LISTS.find(list=>list.id===r.listId)?.label,...(Array.isArray(r.task.tags)?r.task.tags:[])].join(' ').toLowerCase().includes(search));
  if(sort==='priority')items.sort((a,b)=>workspacePriorityValue(b.task.priority)-workspacePriorityValue(a.task.priority)||a.date-b.date||(Number(a.task.start??9999)-Number(b.task.start??9999)));
  else if(sort==='title')items.sort((a,b)=>String(a.task.title).localeCompare(String(b.task.title)));
  else items.sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
@@ -2775,6 +2777,7 @@ function renderWorkspaceTasks(){
  const info=WORKSPACE_VIEW_INFO[workspaceView]||{title:tagView?'#'+tagTitle:folderView?folderTitle:(WORKSPACE_LISTS.find(x=>x.view===workspaceView)?.label||'Tasks'),description:tagView?'Tasks tagged #'+tagTitle:folderView?'Tasks organized in this folder.':'Tasks in this list.',emptyTitle:tagView?'No tasks with this tag':folderView?'This folder is empty':'No tasks in this list yet',emptyText:tagView?'Add this tag to a task to make it appear here.':folderView?'Edit any task to place it in this folder, or create a task with this folder name.':'Add a task to this list or edit an existing task to move it here.'};
  $('taskWorkspaceTitle').textContent=info.title;$('taskWorkspaceDescription').textContent=info.description||'';
  $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':workspaceView.startsWith('folder:')?'Add a task to '+workspaceView.slice(7)+'…':workspaceView.startsWith('tag:')?'Add a task tagged #'+workspaceView.slice(4)+'…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
+ $('workspaceSearch').placeholder=workspaceView==='search'?'Search every list, folder, tag and deadline…':'Search tasks in this view';
  const shouldGroupSections=(workspaceView.startsWith('list-')||workspaceView.startsWith('folder:')||workspaceView.startsWith('tag:'))&&items.some(record=>String(record.task.sectionName||'').trim());
  const renderedItems=shouldGroupSections?renderWorkspaceTaskGroups(items):items.map(workspaceTaskRow).join('');
  renderTodayOverview();
@@ -2795,9 +2798,9 @@ function renderWorkspaceView(){
  if(isFilters)renderSavedFilters();
 }
 function setWorkspaceView(view){
- if(!['today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view)&&!WORKSPACE_LISTS.some(list=>list.view===view)&&!(typeof view==='string'&&(view.startsWith('folder:')||view.startsWith('tag:'))))return;
+ if(!['search','today','inbox','upcoming','board','filters','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view)&&!WORKSPACE_LISTS.some(list=>list.view===view)&&!(typeof view==='string'&&(view.startsWith('folder:')||view.startsWith('tag:'))))return;
  if(workspaceView!==view)saveCurrent();workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
- renderWorkspaceView();if(view==='calendar')renderAll();
+ renderWorkspaceView();if(view==='calendar')renderAll();if(view==='search')setTimeout(()=>$('workspaceSearch')?.focus(),0);
 }
 function openWorkspaceRecord(id,week){
  if(week!==currentWeek){saveCurrent();loadWeek(week);}
