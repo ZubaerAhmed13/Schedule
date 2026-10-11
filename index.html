@@ -760,6 +760,31 @@ body.signin-required{overflow:hidden}
 .focus-history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid #eceef6;border-radius:10px;background:#fff}.focus-history-row strong{display:block;color:#454b68;font-size:11px}.focus-history-row small{display:block;color:#969bae;font-size:9px;margin-top:2px}.focus-history-row>span{color:#696fd2;font-size:11px;font-weight:800;white-space:nowrap}
 @media(max-width:760px){.matrix-grid{grid-template-columns:1fr}.priority-matrix{padding:14px;border-radius:16px}.matrix-heading h2{font-size:23px}.focus-options{grid-template-columns:1fr}.focus-summary{gap:6px}.focus-stat{padding:9px}.focus-stat strong{font-size:16px}.focus-controls{gap:6px}.focus-controls .btn{padding:8px 10px}}
 
+
+.habit-tracker{margin:0 0 22px;padding:17px;border:1px solid #e2e5f1;border-radius:18px;background:linear-gradient(145deg,#fff,#fafaff);box-shadow:0 6px 20px rgba(45,50,95,.035)}
+.habit-tracker-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}.habit-tracker-head h3{margin:2px 0;color:#303550;font-size:20px;letter-spacing:-.5px}.habit-tracker-head p{margin:4px 0 0;color:#8990a5;font-size:11px}
+.habit-week-range{padding:6px 9px;border-radius:8px;background:#f0f1ff;color:#6469cb;font-size:10px;font-weight:800;white-space:nowrap}
+.habit-create-form{display:grid;grid-template-columns:72px minmax(130px,1.4fr) minmax(120px,1fr) 126px auto;gap:8px;align-items:end;padding:12px;border:1px solid #eceef7;border-radius:13px;background:#fff}
+.habit-create-field{display:grid;gap:5px;min-width:0}.habit-create-field>span{color:#8b91a6;font-size:9px;font-weight:800}
+.habit-create-field input,.habit-create-field select{width:100%;min-width:0;border:1px solid #e2e5f1;border-radius:9px;background:#fcfcff;padding:9px 10px;color:#343a58;font:inherit;font-size:11px}
+.habit-icon-field input{text-align:center;font-size:17px;padding:6px}.habit-create-actions{display:flex;gap:5px;align-items:center}.habit-create-actions .btn{white-space:nowrap;padding:9px 10px;font-size:10px}
+.habit-tracker-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 9px;color:#8d93a8;font-size:10px}.habit-tracker-summary strong{color:#555bc8}
+.habit-tracker-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.habit-track-card{min-width:0;padding:13px;border:1px solid #e9ebf5;border-radius:13px;background:#fff;transition:border-color .18s ease,transform .18s ease,box-shadow .18s ease}
+.habit-track-card:hover{border-color:#d6d9f2;box-shadow:0 5px 14px rgba(43,49,91,.045);transform:translateY(-1px)}
+.habit-track-head{display:flex;align-items:flex-start;gap:9px}.habit-track-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border-radius:11px;background:#f0f1ff;font-size:19px}
+.habit-track-info{flex:1;min-width:0}.habit-track-info h4{margin:0;color:#383e5b;font-size:12px;font-weight:800;overflow-wrap:anywhere}.habit-track-info p{margin:3px 0 0;color:#9298ac;font-size:10px}
+.habit-track-actions{display:flex;gap:2px}.habit-track-actions button{display:grid;place-items:center;width:25px;height:25px;border:1px solid transparent;border-radius:7px;background:transparent;color:#9499ad;font-size:12px}.habit-track-actions button:hover{background:#f2f3ff;color:#595fca}
+.habit-track-progress{display:flex;align-items:center;gap:8px;margin:12px 0 9px}.habit-track-progress-track{height:5px;flex:1;overflow:hidden;border-radius:99px;background:#eceefa}.habit-track-progress-track span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#666cdd,#8c83ea);transition:width .2s}
+.habit-track-progress strong{color:#656bce;font-size:10px;white-space:nowrap}.habit-checkin-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.habit-checkin-day{display:grid;place-items:center;gap:3px;min-width:0;padding:6px 0 5px;border:1px solid transparent;border-radius:8px;background:#f7f8fc;color:#8d93a8;font:inherit;font-size:8px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.habit-checkin-day strong{font-size:10px;font-weight:800}.habit-checkin-day.checked{border-color:#d9e7ff;background:#eaf0ff;color:#4d63c2}.habit-checkin-day.today{box-shadow:inset 0 0 0 1px #777ce0}
+.habit-track-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid #f0f1f7;color:#969bae;font-size:9px}
+.habit-history-dots{display:flex;align-items:center;gap:3px}.habit-history-dot{width:7px;height:7px;border-radius:2px;background:#eef0f5}.habit-history-dot.checked{background:#7d82e4}.habit-history-label{margin-right:4px}
+.habit-empty-state{padding:22px 12px;border:1px dashed #e0e3f0;border-radius:12px;text-align:center;color:#8f95a9;background:#fdfdff}.habit-empty-state strong{display:block;color:#525978;font-size:12px}.habit-empty-state p{margin:4px auto 0;max-width:330px;font-size:10px;line-height:1.5}
+@media(max-width:1060px){.habit-create-form{grid-template-columns:68px minmax(140px,1fr) minmax(120px,1fr)}.habit-create-actions{grid-column:1/-1;justify-content:flex-end}.habit-tracker-list{grid-template-columns:1fr}}
+@media(max-width:760px){.habit-tracker{padding:12px}.habit-tracker-head{flex-direction:column}.habit-week-range{align-self:flex-start}.habit-create-form{grid-template-columns:62px minmax(0,1fr)}.habit-name-field,.habit-create-field:nth-of-type(3),.habit-target-field{grid-column:span 2}.habit-create-actions{grid-column:1/-1}.habit-create-actions .btn{flex:1}.habit-track-card{padding:11px}.habit-checkin-days{gap:3px}}
+
 </style>
 </head>
 <body>
@@ -980,7 +1005,21 @@ body.signin-required{overflow:hidden}
 
   <details class="settings secondary-details utility-source" id="routineDetails">
     <summary>Habits & focus tips <span style="color:var(--muted);font-size:11px;font-weight:500">Your weekly rhythm in one place</span></summary>
-    <div class="inside"><section class="bottomgrid">
+    <div class="inside">
+    <section class="habit-tracker" aria-labelledby="habitTrackerTitle">
+      <header class="habit-tracker-head"><div><div class="workspace-page-eyebrow">REPEATABLE PROGRESS</div><h3 id="habitTrackerTitle">My habits</h3><p>Set a weekly target and check in on the days you practise.</p></div><div class="habit-week-range" id="habitWeekRange"></div></header>
+      <form id="habitForm" class="habit-create-form">
+        <input id="habitEditId" type="hidden">
+        <label class="habit-create-field habit-icon-field"><span>Icon</span><input id="habitIcon" maxlength="6" placeholder="🌱" aria-label="Habit emoji or icon"></label>
+        <label class="habit-create-field habit-name-field"><span>Habit name</span><input id="habitName" required maxlength="70" placeholder="e.g. Practise German"></label>
+        <label class="habit-create-field"><span>Goal (optional)</span><input id="habitGoal" maxlength="100" placeholder="e.g. 10 new words"></label>
+        <label class="habit-create-field habit-target-field"><span>Target per week</span><select id="habitTargetPerWeek"><option value="1">1 time</option><option value="2">2 times</option><option value="3">3 times</option><option value="4">4 times</option><option value="5" selected>5 times</option><option value="6">6 times</option><option value="7">Every day</option></select></label>
+        <div class="habit-create-actions"><button class="btn primary" type="submit" id="saveHabitBtn">＋ Add habit</button><button class="btn" type="button" id="cancelHabitEdit" hidden>Cancel</button></div>
+      </form>
+      <div class="habit-tracker-summary" id="habitTrackerSummary"></div>
+      <div class="habit-tracker-list" id="habitTrackerList" aria-live="polite"></div>
+    </section>
+    <section class="bottomgrid">
     <div class="panel"><h3>Your habit rhythm</h3><p class="sub">A repeatable baseline, not a perfection test.</p><div class="habitlist">
       <div class="habit"><span class="emoji">🇩🇪</span><div><strong>German</strong><small>30 min · 6 days/week</small></div></div>
       <div class="habit"><span class="emoji">🗣️</span><div><strong>English fluency</strong><small>20 min · 5 days/week</small></div></div>
@@ -1481,7 +1520,7 @@ function saveTemplateEditor(e){
   }
   saveStore();saveCurrent();syncSettingsForm();renderAll();closeTemplateEditor();showToast(currentKind==='workday'?'Work day template saved. Add shifts when ready.':'Class template saved. Add classes when ready.');
 }
-function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();}
+function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();}
 function moveTask(id,newDay,preferredTime=null){
   const t=tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
@@ -1772,8 +1811,8 @@ function nudgeDueReminders(){const due=reminderDueOpen();if(!due.length)return;c
 
 
 function cloudFingerprint(payload){return JSON.stringify(payload);}
-function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,focusSessions:focusSessions,calendarView:view};}
-function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||settingsChanged;}
+function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month'].includes(v))view=v;}catch(_){}return {version:1,store:store,reminders:reminders,focusSessions:focusSessions,habits:habits,calendarView:view};}
+function localHasWeekwiseData(){const hasActivities=Object.values(store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(reminders)&&reminders.length>0;const hasHabits=Array.isArray(habits)&&habits.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(store.settings)!==JSON.stringify(defaultSettings());}catch(_){}return hasActivities||hasNotes||hasHabits||settingsChanged;}
 function readCloudMeta(){try{return JSON.parse(localStorage.getItem(CLOUD_META_KEY)||'null');}catch(_){return null;}}
 function writeCloudMeta(revision,payload){try{localStorage.setItem(CLOUD_META_KEY,JSON.stringify({userId:cloudUser?.id||'',revision:Number(revision)||0,fingerprint:cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}catch(_){}}
 function setCloudStatus(message){const el=$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=$('cloudMenuBadge');if(badge){badge.textContent=cloudUser?(cloudReady?'Synced':'Account'):'Local';badge.title=message;}}
@@ -1801,6 +1840,7 @@ function saveCloudLocalPayload(payload){
   }
   if(Array.isArray(payload?.reminders)){reminders=payload.reminders;localStorage.setItem(REMINDERS_KEY,JSON.stringify(reminders));}
   if(Array.isArray(payload?.focusSessions)){focusSessions=payload.focusSessions;localStorage.setItem(FOCUS_SESSIONS_KEY,JSON.stringify(focusSessions));}
+  if(Array.isArray(payload?.habits)){habits=payload.habits;localStorage.setItem(HABITS_KEY,JSON.stringify(habits));}
   if(['day','week','month'].includes(payload?.calendarView))localStorage.setItem('weekwise-calendar-view-v1',payload.calendarView);
   currentWeek=dateKey(sundayOf(now));mobileDay=now.getDay();monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);
   loadWeek(currentWeek);renderReminders();
@@ -2263,7 +2303,7 @@ function updateWorkspaceRecord(id,week,action){
  saveCurrent();renderAll();
 }
 function wireWorkspaceControls(){
- $('workspaceSidebar').addEventListener('click',e=>{const button=e.target.closest('[data-workspace-view]');if(button){setWorkspaceView(button.dataset.workspaceView);return;}const action=e.target.closest('[data-workspace-action]')?.dataset.workspaceAction;if(action==='habits')openUtilityPanel('routineDetails','Habits & routines');if(action==='focus'){renderFocusPanel();openUtilityPanel('focusPanel','Focus timer');}if(action==='statistics')openDashboard();});
+ $('workspaceSidebar').addEventListener('click',e=>{const button=e.target.closest('[data-workspace-view]');if(button){setWorkspaceView(button.dataset.workspaceView);return;}const action=e.target.closest('[data-workspace-action]')?.dataset.workspaceAction;if(action==='habits'){renderHabitTracker();openUtilityPanel('routineDetails','Habits & routines');}if(action==='focus'){renderFocusPanel();openUtilityPanel('focusPanel','Focus timer');}if(action==='statistics')openDashboard();});
  $('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();quickCaptureWorkspaceTask();});
  $('workspaceAddTaskBtn').addEventListener('click',()=>{const def=workspaceView==='inbox'?'inbox':workspaceView.startsWith('list-')?workspaceView.slice(5):null;openTaskModal(null,workspaceView==='today'?now.getDay():mobileDay,workspaceView==='inbox'?null:nextQuarterHour(),def);});
  $('workspaceSearch').addEventListener('input',renderWorkspaceTasks);$('workspaceSort').addEventListener('change',renderWorkspaceTasks);
@@ -2276,6 +2316,13 @@ $('focusPreset').addEventListener('change',()=>{if(!focusRunning){focusInitialSe
 $('focusStartBtn').addEventListener('click',focusStartPause);
 $('focusResetBtn').addEventListener('click',focusReset);
 $('focusBreakBtn').addEventListener('click',focusTakeBreak);
+$('habitForm').addEventListener('submit',saveHabitForm);
+$('cancelHabitEdit').addEventListener('click',habitFormReset);
+$('habitTrackerList').addEventListener('click',e=>{
+ const check=e.target.closest('[data-habit-check]');if(check){toggleHabitCheck(check.dataset.habitCheck,check.dataset.habitDate);return;}
+ const edit=e.target.closest('[data-habit-edit]');if(edit){editHabit(edit.dataset.habitEdit);return;}
+ const del=e.target.closest('[data-habit-delete]');if(del)deleteHabit(del.dataset.habitDelete);
+});
 }
 
 
@@ -2343,6 +2390,43 @@ function focusStartPause(){
 }
 function focusReset(){focusStopInterval();focusMode='focus';focusInitialSeconds=Number($('focusPreset').value||25)*60;focusRemainingSeconds=focusInitialSeconds;focusStartedAt=null;renderFocusPanel();}
 function focusTakeBreak(){focusStopInterval();focusMode='break';focusRemainingSeconds=300;focusStartedAt=null;renderFocusPanel();}
+
+
+const HABITS_KEY='weekwise-habits-v1';
+let habits=[];try{habits=JSON.parse(localStorage.getItem(HABITS_KEY)||'[]');if(!Array.isArray(habits))habits=[];}catch(_){habits=[];}
+function habitWeekRange(){const start=sundayOf(now),end=new Date(start);end.setDate(end.getDate()+6);return fmtDate(start,{day:'numeric',month:'short'})+' – '+fmtDate(end,{day:'numeric',month:'short'});}
+function habitWeekKeys(){const start=sundayOf(now);return Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(d.getDate()+i);return dateKey(d);});}
+function habitCountThisWeek(habit){const keys=new Set(habit.checkIns||[]);return habitWeekKeys().filter(k=>keys.has(k)).length;}
+function habitStreak(habit){const checks=new Set(habit.checkIns||[]);let d=dateOnly(now),count=0;if(!checks.has(dateKey(d))){d.setDate(d.getDate()-1);if(!checks.has(dateKey(d)))return 0;}while(checks.has(dateKey(d))&&count<366){count++;d.setDate(d.getDate()-1);}return count;}
+function habitHistoryDots(habit){const checks=new Set(habit.checkIns||[]);let markup='';for(let i=27;i>=0;i--){const d=dateOnly(now);d.setDate(d.getDate()-i);const key=dateKey(d);markup+='<span class="habit-history-dot '+(checks.has(key)?'checked':'')+'" title="'+escapeHtml(fmtDate(d,{weekday:'short',day:'numeric',month:'short'}))+(checks.has(key)?' · completed':'')+'"></span>';}return markup;}
+function renderHabitTracker(){
+ const list=$('habitTrackerList');if(!list)return;
+ const range=$('habitWeekRange');if(range)range.textContent=habitWeekRange();
+ const total=habits.length,completed=habits.filter(h=>habitCountThisWeek(h)>=Math.max(1,Number(h.targetPerWeek)||1)).length;
+ const summary=$('habitTrackerSummary');if(summary)summary.innerHTML=total?'<span><strong>'+completed+'/'+total+'</strong> habits at weekly target</span><span>Last 28 days · check in on any day</span>':'<span>No habits yet. Add a habit to start your progress history.</span>';
+ if(!total){list.innerHTML='<div class="habit-empty-state"><strong>Build consistency, one check-in at a time.</strong><p>Create a habit above, choose a weekly target, then tap each day you complete it. Your check-ins and 28-day history are saved.</p></div>';return;}
+ const keys=habitWeekKeys(),todayKey=dateKey(now);
+ list.innerHTML=habits.map(h=>{
+  const checks=new Set(h.checkIns||[]),done=keys.filter(k=>checks.has(k)).length,target=Math.max(1,Math.min(7,Number(h.targetPerWeek)||5)),pct=Math.min(100,Math.round(done/target*100));
+  const days=keys.map(k=>{const d=parseKey(k),checked=checks.has(k),isToday=k===todayKey;return '<button type="button" class="habit-checkin-day '+(checked?'checked ':'')+(isToday?'today':'')+'" data-habit-check="'+escapeHtml(h.id)+'" data-habit-date="'+k+'" aria-pressed="'+(checked?'true':'false')+'" title="'+escapeHtml(fmtDate(d,{weekday:'long',day:'numeric',month:'short'}))+(checked?' · done':' · mark done')+'"><span>'+DAY_SHORT[d.getDay()]+'</span><strong>'+(checked?'✓':d.getDate())+'</strong></button>';}).join('');
+  const targetText='Target '+target+' time'+(target===1?'':'s')+' per week';
+  return '<article class="habit-track-card" data-habit-card="'+escapeHtml(h.id)+'"><header class="habit-track-head"><span class="habit-track-icon">'+escapeHtml(h.icon||'✦')+'</span><div class="habit-track-info"><h4>'+escapeHtml(h.title)+'</h4><p>'+escapeHtml(h.goal||targetText)+'</p></div><div class="habit-track-actions"><button type="button" data-habit-edit="'+escapeHtml(h.id)+'" aria-label="Edit '+escapeHtml(h.title)+'" title="Edit habit">✎</button><button type="button" data-habit-delete="'+escapeHtml(h.id)+'" aria-label="Delete '+escapeHtml(h.title)+'" title="Delete habit">×</button></div></header>'+
+  '<div class="habit-track-progress"><div class="habit-track-progress-track"><span style="width:'+pct+'%"></span></div><strong>'+done+'/'+target+'</strong></div><div class="habit-checkin-days" aria-label="Daily habit check-ins">'+days+'</div>'+
+  '<footer class="habit-track-foot"><span>'+(habitStreak(h)?'🔥 '+habitStreak(h)+' day streak':'28-day history')+'</span><div class="habit-history-dots"><span class="habit-history-label">History</span>'+habitHistoryDots(h)+'</div></footer></article>';
+ }).join('');
+}
+function persistHabits(){try{localStorage.setItem(HABITS_KEY,JSON.stringify(habits));}catch(_){showToast('Could not save habit history in this browser.');}if(!cloudApplyingRemote)queueCloudSave();}
+function habitFormReset(){$('habitEditId').value='';$('habitName').value='';$('habitIcon').value='';$('habitGoal').value='';$('habitTargetPerWeek').value='5';$('saveHabitBtn').textContent='＋ Add habit';$('cancelHabitEdit').hidden=true;}
+function saveHabitForm(e){
+ e.preventDefault();const title=$('habitName').value.trim();if(!title){$('habitName').focus();return;}
+ const id=$('habitEditId').value,icon=$('habitIcon').value.trim()||'✦',goal=$('habitGoal').value.trim(),targetPerWeek=Math.max(1,Math.min(7,Number($('habitTargetPerWeek').value)||5));
+ if(id){const habit=habits.find(h=>h.id===id);if(habit)Object.assign(habit,{title,icon,goal,targetPerWeek,updatedAt:new Date().toISOString()});}
+ else habits.push({id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,icon,goal,targetPerWeek,checkIns:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+ persistHabits();habitFormReset();renderHabitTracker();showToast(id?'Habit updated':'Habit added');
+}
+function editHabit(id){const habit=habits.find(h=>h.id===id);if(!habit)return;$('habitEditId').value=habit.id;$('habitName').value=habit.title||'';$('habitIcon').value=habit.icon||'';$('habitGoal').value=habit.goal||'';$('habitTargetPerWeek').value=String(habit.targetPerWeek||5);$('saveHabitBtn').textContent='Save changes';$('cancelHabitEdit').hidden=false;$('habitName').focus();}
+function toggleHabitCheck(id,date){const habit=habits.find(h=>h.id===id);if(!habit)return;const checks=new Set(habit.checkIns||[]);if(checks.has(date))checks.delete(date);else checks.add(date);habit.checkIns=[...checks].sort();habit.updatedAt=new Date().toISOString();persistHabits();renderHabitTracker();}
+function deleteHabit(id){const habit=habits.find(h=>h.id===id);if(!habit)return;if(!confirm('Delete the habit "'+habit.title+'"? Its check-in history will also be removed.'))return;habits=habits.filter(h=>h.id!==id);persistHabits();renderHabitTracker();showToast('Habit deleted');}
 
 setup();
 renderWorkspaceView();renderReminders();nudgeDueReminders();
