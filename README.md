@@ -32,6 +32,12 @@ Local browser storage keeps the planner responsive and supports offline use afte
 
 Use **Export backup** before clearing browser data or moving devices. The JSON backup includes task records, recurring rules, reminders, focus history, habits, countdowns and saved filters. Calendar `.ics` export is for transferring events to another calendar; it does not establish a live two-way calendar integration.
 
+## Share lists and use an AI planning tool
+
+From a task view, use **Share / export** to create a portable Weekwise JSON list file, then use **Import list** in another Weekwise workspace to copy the tasks. The import preserves task details and recurring rules when they are included in the export, and it clears the original reminder alert times so they do not unexpectedly notify the recipient. This is file-based transfer, **not live collaborative editing**.
+
+In the task editor, **Copy planning prompt** copies a prompt containing the current task details and asks an AI tool to suggest actionable subtasks. Weekwise does not send that prompt to an AI service. Paste it into the AI tool you choose, then paste the returned checklist into the task's Subtasks field.
+
 ## Offline app
 
 After the site is first opened online, the service worker caches the application shell for later offline use. Supabase account access and cross-device sync require an internet connection.
