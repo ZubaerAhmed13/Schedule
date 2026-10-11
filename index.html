@@ -1994,7 +1994,8 @@ $('dashboardWeekPicker').addEventListener('change',function(){if(!$('dashboardWe
 $('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);});
 
 $('thisWeek').addEventListener('click',weekwiseAnimateCalendar);
-$('daysGrid').addEventListener('click',function(e){if(e.target.closest('[data-mobile-day]'))weekwiseAnimateCalendar();});
+$('mobileDayPicker').addEventListener('click',function(e){if(e.target.closest('[data-mobile-day]'))weekwiseAnimateCalendar();});
+$('daysGrid').addEventListener('click',function(e){if(e.target.closest('[data-month-day],[data-month-event]'))weekwiseAnimateCalendar();});
 setup();
 renderReminders();nudgeDueReminders();
 function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}
