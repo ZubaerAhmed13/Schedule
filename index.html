@@ -1034,6 +1034,12 @@ body[data-theme="dark"] .workspace-tag-hash{background:#34304a;color:#d7cbff}
 @media(max-width:600px){.today-overview{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.today-overview-card{padding:10px}.today-overview-card strong{font-size:15px}}
 body[data-theme="dark"] .today-overview-card{background:#202633;border-color:#363e50}body[data-theme="dark"] .today-overview-card strong{color:#edf0f7}body[data-theme="dark"] .today-progress-track{background:#353c50}
 
+
+.task-extra-reminders{margin-top:8px;border:1px solid #e7e9f3;border-radius:9px;padding:7px 9px;background:#fbfbff}
+.task-extra-reminders summary{list-style:none;cursor:pointer;color:#777e98;font-size:10px;font-weight:750}.task-extra-reminders summary::-webkit-details-marker{display:none}.task-extra-reminders summary:after{content:"＋";float:right;color:#989eb1}.task-extra-reminders[open] summary:after{content:"−"}
+.task-extra-reminder-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding-top:10px}.task-extra-reminder-fields label{display:grid;gap:4px;margin:0!important;color:#8d93a8!important;font-size:9px!important;font-weight:750!important}.task-extra-reminder-fields input{width:100%;min-width:0;font-size:10px!important;padding:7px!important}
+body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#384154}body[data-theme="dark"] .task-extra-reminders summary{color:#aab3c6}
+
 </style>
 </head>
 <body>
@@ -1393,7 +1399,7 @@ body[data-theme="dark"] .today-overview-card{background:#202633;border-color:#36
   </div>
   <div class="field"><label for="modalRecurrence">Repeat</label><select id="modalRecurrence"><option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option></select><div class="hint">Future occurrences are added automatically.</div></div>
   <div class="field"><label for="modalDueDate">Due date (optional)</label><input id="modalDueDate" type="date" /></div>
-  <div class="field"><label for="modalReminderAt">Remind me at (optional)</label><input id="modalReminderAt" type="datetime-local" /><div class="hint">An alert while Weekwise is open; browser notifications need permission.</div></div>
+  <div class="field"><label for="modalReminderAt">Reminders (optional)</label><input id="modalReminderAt" type="datetime-local" /><div class="hint">An alert while Weekwise is open; browser notifications need permission.</div><details class="task-extra-reminders"><summary>Add up to 4 more reminders</summary><div class="task-extra-reminder-fields"><label for="modalReminderAt2">Reminder 2<input id="modalReminderAt2" type="datetime-local" /></label><label for="modalReminderAt3">Reminder 3<input id="modalReminderAt3" type="datetime-local" /></label><label for="modalReminderAt4">Reminder 4<input id="modalReminderAt4" type="datetime-local" /></label><label for="modalReminderAt5">Reminder 5<input id="modalReminderAt5" type="datetime-local" /></label></div></details></div>
   <div class="field"><label for="modalTags">Tags (optional)</label><input id="modalTags" maxlength="180" placeholder="e.g. deep-work, urgent" /><div class="hint">Separate tags with commas.</div></div>
   <div class="field" style="grid-column:1/-1"><label for="modalSubtasks">Subtasks (optional)</label><textarea id="modalSubtasks" rows="2" maxlength="800" placeholder="One step per line"></textarea></div>
   <div class="field" style="grid-column:1/-1"><label for="modalNote">Note (optional)</label><input id="modalNote" maxlength="180" placeholder="A small reminder or desired outcome" /></div>
@@ -2044,6 +2050,10 @@ function defaultFolderName(listId){
  if(['personal','hobbies','other'].includes(listId))return 'Personal';
  return 'Inbox';
 }
+function taskReminderTimes(task){
+ const source=Array.isArray(task?.reminderTimes)?task.reminderTimes:(task?.reminderAt?[task.reminderAt]:[]);
+ return [...new Set(source.map(value=>String(value||'').trim()).filter(Boolean))].slice(0,5);
+}
 function updateModalScheduleVisibility(){
   const noSchedule=!!$('modalNoSchedule')?.checked,allDay=!!$('modalAllDay')?.checked;
   const fields=$('taskSchedulingFields');if(fields)fields.hidden=noSchedule||allDay;
@@ -2061,7 +2071,10 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   if(!t&&!defaultListId&&!folderView)$('modalListId').value=({job:'career',study:'study',language:'language',life:'personal',hobby:'hobbies',other:'other'})[$('modalCategory').value]||'career';
   $('modalFolder').value=t?.folderName||(folderView?selectedFolder:defaultFolderName($('modalListId').value));
   $('modalSection').value=t?.sectionName||'';
-  $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';$('modalReminderAt').value=t?.reminderAt||'';
+  $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';const existingReminderTimes=taskReminderTimes(t);
+  $('modalReminderAt').value=existingReminderTimes[0]||'';
+  [2,3,4,5].forEach((n,index)=>{const input=$('modalReminderAt'+n);if(input)input.value=existingReminderTimes[index+1]||'';});
+  const extraReminderDetails=document.querySelector('.task-extra-reminders');if(extraReminderDetails)extraReminderDetails.open=existingReminderTimes.length>1;
   $('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
   if(!t&&workspaceView.startsWith('tag:'))$('modalTags').value=workspaceView.slice(4);
   $('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
@@ -2104,16 +2117,16 @@ function saveModalTask(e){
   }
   const day=Number($('modalDay').value),type=$('modalCategory').value,note=$('modalNote').value.trim(),recurrence=$('modalRecurrence').value;
   const occurrenceDate=dateKey(dayDate(currentWeek,day));
-  const listId=$('modalListId').value,folderName=$('modalFolder').value.trim()||defaultFolderName($('modalListId').value),sectionName=$('modalSection').value.trim(),priority=$('modalPriority').value,status=$('modalStatus').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null,reminderAt=$('modalReminderAt').value||null;
+  const listId=$('modalListId').value,folderName=$('modalFolder').value.trim()||defaultFolderName($('modalListId').value),sectionName=$('modalSection').value.trim(),priority=$('modalPriority').value,status=$('modalStatus').value,importance=$('modalImportance').value,urgency=$('modalUrgency').value,dueDate=$('modalDueDate').value||null,reminderTimes=[...new Set([1,2,3,4,5].map(n=>$('modalReminderAt'+(n===1?'':n)).value||'').filter(Boolean))].sort().slice(0,5),reminderAt=reminderTimes[0]||null;
   const tags=[...new Set($('modalTags').value.split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))];
   const subtasks=$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false}));
   if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled on ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
-  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,allDay,note,recurrence,listId,folderName,sectionName,priority,status,importance,urgency,dueDate,reminderAt,tags,subtasks};
+  let actualStart=null,seriesId=null,templateFields={title,type,duration,start:preferred,allDay,note,recurrence,listId,folderName,sectionName,priority,status,importance,urgency,dueDate,reminderAt,reminderTimes,tags,subtasks};
   if(id){
     const t=tasks.find(x=>x.id===id);
     if(t&&!t.fixed){
       const oldSeriesId=t.seriesId||null;
-      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderAt=reminderAt;t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;
+      t.title=title;t.day=day;t.type=type;t.duration=duration;t.note=note;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedTimes=(Array.isArray(t.reminderNotifiedTimes)?t.reminderNotifiedTimes:[]).filter(value=>reminderTimes.includes(value));if(t.reminderNotifiedAt&&reminderTimes.includes(t.reminderNotifiedAt)&&!t.reminderNotifiedTimes.includes(t.reminderNotifiedAt))t.reminderNotifiedTimes.push(t.reminderNotifiedAt);t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...s,id:old.id||s.id,done:!!old.done}:{...s};});
       t.start=noSchedule||allDay?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
@@ -2128,7 +2141,7 @@ function saveModalTask(e){
     }
   }else{
     createTask(day,title,type,duration,noSchedule||allDay?null:preferred,{min:0,max:1440,custom:true,note});
-    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||(!allDay&&t.start===null);t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
+    const t=tasks[tasks.length-1];t.unscheduled=noSchedule||(!allDay&&t.start===null);t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.reminderNotifiedTimes=[];t.tags=tags;t.subtasks=subtasks;actualStart=t.start;
     if(recurrence!=='none'){
       seriesId=uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
       upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
