@@ -656,9 +656,38 @@ input::placeholder,textarea::placeholder{color:#626d89!important;opacity:1}
 .cloud-auth-tab:disabled,.cloud-form-actions .btn:disabled,.cloud-password-toggle:disabled{opacity:.58;cursor:wait}
 @media(max-width:650px){.cloud-auth-options{align-items:flex-start}.cloud-auth-options span{max-width:60%}.cloud-auth-fields input{font-size:16px}}
 
+
+/* Sign-in-first landing screen. */
+body.signin-required{overflow:hidden}
+.signin-landing{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:22px;background:radial-gradient(ellipse at 10% 10%,rgba(220,224,255,.84),transparent 38%),radial-gradient(ellipse at 90% 92%,rgba(210,247,232,.76),transparent 34%),#f7f8fc;overflow-y:auto}
+.signin-landing[hidden]{display:none!important}
+.signin-card{width:min(100%,440px);padding:clamp(24px,5vw,42px);border:1px solid rgba(224,226,242,.92);border-radius:28px;background:rgba(255,255,255,.9);box-shadow:0 22px 80px rgba(47,53,106,.11);text-align:center;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.signin-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:32px;font-size:18px;font-weight:800;letter-spacing:-.4px;color:#282b43}
+.signin-calendar-icon{display:grid;grid-template-columns:repeat(4,10px);gap:5px;justify-content:center;width:max-content;margin:0 auto 27px;padding:12px;border:1px solid #e5e7f5;border-radius:16px;background:#fafaff}
+.signin-calendar-icon span{width:10px;height:10px;border-radius:4px;background:#e5e8fb}
+.signin-calendar-icon span:nth-child(3n+1){background:#777cf0}
+.signin-calendar-icon span:nth-child(5n){background:#55bd95}
+.signin-eyebrow{margin:0 0 9px;color:#676bd6;font-size:10px;font-weight:900;letter-spacing:1.7px}
+.signin-card h1{margin:0;color:#252940;font-size:clamp(27px,5vw,35px);font-weight:780;letter-spacing:-1.2px;line-height:1.1}
+.signin-description{max-width:325px;margin:14px auto 25px;color:#747b92;font-size:13px;line-height:1.65}
+.signin-continue{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 16px;border-radius:13px;font-size:13px}
+.signin-continue span{font-size:18px;line-height:1}
+.signin-local-note{margin:16px 0 0;color:#9297aa;font-size:10px;line-height:1.5}
+@media(max-width:480px){.signin-landing{padding:13px}.signin-card{border-radius:22px}.signin-brand{margin-bottom:27px}}
 </style>
 </head>
 <body>
+<div class="signin-landing" id="signinLanding" role="dialog" aria-modal="true" aria-labelledby="signinLandingTitle">
+  <div class="signin-card">
+    <div class="signin-brand"><div class="logo">✦</div><span>Weekwise</span></div>
+    <div class="signin-calendar-icon"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <p class="signin-eyebrow">YOUR TIME, YOUR PLAN</p>
+    <h1 id="signinLandingTitle">Your day, at a glance.</h1>
+    <p class="signin-description">Sign in to see today's schedule and keep your activities and reminders synced across your devices.</p>
+    <button class="btn primary signin-continue" id="signinLandingContinue" type="button">Sign in to Weekwise <span aria-hidden="true">→</span></button>
+    <p class="signin-local-note">Your schedule stays saved on this device while you sign in.</p>
+  </div>
+</div>
 <div class="wrap">
   <header class="topbar">
     <div class="brand"><div class="logo">✦</div><div><h1>Weekwise</h1><p>Your personal planning space</p></div></div>
