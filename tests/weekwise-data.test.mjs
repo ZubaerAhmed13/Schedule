@@ -92,3 +92,5 @@ test('plan bridge installs one checked transaction and retains prior raw data in
 });
 
 test('a collection changed by another tab is rejected before overwriting its records',()=>{const s=memoryStorage({habits:'[]'});data.readCollection(s,'habits');s.setItem('habits','[{"id":"other-tab","title":"Retain"}]');assert.throws(()=>data.writeCollection(s,'habits',[]),/Another tab/);assert.equal(JSON.parse(s.getItem('habits'))[0].id,'other-tab');assert.throws(()=>data.commitStorage(s,[['habits','[]']],'checkpoint'),/Another tab/);assert.equal(s.getItem('checkpoint'),null);});
+
+test('successive checked writes from the same tab refresh the baseline',()=>{const s=memoryStorage({planner:'first'});data.commitStorage(s,[['planner','second']]);data.commitStorage(s,[['planner','third']]);assert.equal(s.getItem('planner'),'third');s.setItem('planner','other-tab');assert.throws(()=>data.commitStorage(s,[['planner','stale']]),/Another tab/);assert.equal(s.getItem('planner'),'other-tab');});

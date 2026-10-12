@@ -1061,4 +1061,3 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
 .calendar-connection-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:60%}
 .calendar-connection-actions .btn{font-size:10px;padding:8px 10px}
 @media(max-width:600px){.calendar-connection-row{flex-direction:column}.calendar-connection-actions{max-width:none;width:100%;justify-content:stretch}.calendar-connection-actions .btn{flex:1;min-width:0}}
-
