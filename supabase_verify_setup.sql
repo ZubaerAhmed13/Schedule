@@ -152,6 +152,71 @@ with checks as (
       )
       then 'PASS' else 'NOT CONFIGURED' end,
     'Only the service role should execute the atomic push delivery claim'
+  union all
+  select
+    'calendar OAuth state table',
+    case when to_regclass('public.weekwise_calendar_oauth_states') is not null then 'PASS' else 'NOT CONFIGURED' end,
+    'Run supabase_calendar_setup.sql before connecting Google Calendar or Outlook'
+  union all
+  select
+    'calendar connection table',
+    case when to_regclass('public.weekwise_calendar_connections') is not null then 'PASS' else 'NOT CONFIGURED' end,
+    'Encrypted provider credentials are stored server-side in this table'
+  union all
+  select
+    'calendar event-link table',
+    case when to_regclass('public.weekwise_calendar_event_links') is not null then 'PASS' else 'NOT CONFIGURED' end,
+    'Per-event mappings are required to avoid duplicates and detect conflicts'
+  union all
+  select
+    'calendar OAuth state isolation',
+    case when
+      coalesce((select c.relrowsecurity from pg_class c where c.oid = to_regclass('public.weekwise_calendar_oauth_states')), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_calendar_oauth_states'), 'SELECT'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_calendar_oauth_states'), 'SELECT'), false)
+      then 'PASS' else 'NOT CONFIGURED' end,
+    'OAuth state and PKCE verifier data must not be readable by browser roles'
+  union all
+  select
+    'calendar encrypted token isolation',
+    case when
+      coalesce((select c.relrowsecurity from pg_class c where c.oid = to_regclass('public.weekwise_calendar_connections')), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_calendar_connections'), 'SELECT'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_calendar_connections'), 'SELECT'), false)
+      then 'PASS' else 'NOT CONFIGURED' end,
+    'Encrypted access/refresh tokens must be inaccessible to browser roles'
+  union all
+  select
+    'calendar OAuth state consume RPC',
+    case when
+      to_regprocedure('public.weekwise_consume_calendar_oauth_state(text)') is not null
+      and exists (
+        select 1 from pg_proc p
+        join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public'
+          and p.proname = 'weekwise_consume_calendar_oauth_state'
+          and has_function_privilege('service_role', p.oid, 'EXECUTE')
+          and not has_function_privilege('authenticated', p.oid, 'EXECUTE')
+          and not has_function_privilege('anon', p.oid, 'EXECUTE')
+      )
+      then 'PASS' else 'NOT CONFIGURED' end,
+    'Only the server-side calendar handler should consume one-time OAuth state'
+  union all
+  select
+    'calendar cloud-save RPC',
+    case when
+      to_regprocedure('public.weekwise_calendar_save_cloud(uuid,jsonb,bigint)') is not null
+      and exists (
+        select 1 from pg_proc p
+        join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public'
+          and p.proname = 'weekwise_calendar_save_cloud'
+          and has_function_privilege('service_role', p.oid, 'EXECUTE')
+          and not has_function_privilege('authenticated', p.oid, 'EXECUTE')
+          and not has_function_privilege('anon', p.oid, 'EXECUTE')
+      )
+      then 'PASS' else 'NOT CONFIGURED' end,
+    'Calendar sync requires a server-only revision-checked cloud-save RPC'
 )
 select check_name, status, details
 from checks

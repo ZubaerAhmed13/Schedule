@@ -1,2 +1,5 @@
 [functions.weekwise-push]
 verify_jwt = false
+
+[functions.weekwise-calendar]
+verify_jwt = false

@@ -1063,6 +1063,15 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
 .task-ai-helper .btn{flex:0 0 auto;white-space:nowrap}
 @media(max-width:760px){.workspace-head-actions{width:100%;justify-content:stretch}.workspace-head-actions .btn{flex:1;min-width:0;padding:8px 9px;font-size:10px}.task-ai-helper{align-items:stretch;flex-direction:column}.task-ai-helper .btn{width:100%}}
 
+
+.calendar-connection-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.calendar-connection-row:last-of-type{border-bottom:0}
+.calendar-connection-row strong{display:block;color:var(--ink);font-size:13px}
+.calendar-connection-row p{margin:4px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
+.calendar-connection-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:60%}
+.calendar-connection-actions .btn{font-size:10px;padding:8px 10px}
+@media(max-width:600px){.calendar-connection-row{flex-direction:column}.calendar-connection-actions{max-width:none;width:100%;justify-content:stretch}.calendar-connection-actions .btn{flex:1;min-width:0}}
+
 </style>
 </head>
 <body>
@@ -1094,6 +1103,7 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
           <hr class="menu-divider">
           <div class="menu-section-label">ACCOUNT & SETTINGS</div>
           <button class="btn reminders-menu-button" id="cloudMenuBtn" role="menuitem"><span class="menu-item-icon">☁</span><span>Cloud sync & account</span><span id="cloudMenuBadge" class="reminder-badge">Local</span></button>
+          <button class="btn" id="calendarConnectionsMenuBtn" role="menuitem"><span class="menu-item-icon">↔</span><span>Calendar connections</span></button>
           <button class="btn" id="menuSettingsBtn" role="menuitem"><span class="menu-item-icon">⚙</span><span>Work day & weekly settings</span></button>
           <hr class="menu-divider">
           <div class="menu-section-label">BACKUP & OUTPUT</div>
@@ -1331,6 +1341,30 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
         <div class="cloud-form-actions"><button class="btn" id="cloudUseRemote" type="button">Use cloud version</button><button class="btn primary" id="cloudUseLocal" type="button">Keep this device's version</button></div>
       </div>
       <p class="cloud-footnote">Your existing local schedules and sticky notes stay on this device. The first sync asks before replacing data when both copies contain changes. Cloud access requires the Weekwise database setup to be completed in Supabase.</p>
+    </div>
+  </details>
+
+  <details class="settings secondary-details utility-source" id="calendarConnectionsPanel">
+    <summary>Calendar connections <span style="color:var(--muted);font-size:11px;font-weight:500">Google Calendar and Microsoft Outlook</span></summary>
+    <div class="inside">
+      <p id="calendarConnectionsStatus" class="cloud-status" role="status" aria-live="polite">Calendar connections require the optional OAuth setup.</p>
+      <div class="calendar-connection-row">
+        <div><strong>Google Calendar</strong><p id="googleCalendarConnectionDetail">Not connected.</p></div>
+        <div class="calendar-connection-actions">
+          <button type="button" class="btn primary" id="connectGoogleCalendarBtn">Connect Google Calendar</button>
+          <button type="button" class="btn" id="syncGoogleCalendarBtn" hidden>Sync now</button>
+          <button type="button" class="btn danger" id="disconnectGoogleCalendarBtn" hidden>Disconnect</button>
+        </div>
+      </div>
+      <div class="calendar-connection-row">
+        <div><strong>Microsoft Outlook</strong><p id="microsoftCalendarConnectionDetail">Not connected.</p></div>
+        <div class="calendar-connection-actions">
+          <button type="button" class="btn primary" id="connectMicrosoftCalendarBtn">Connect Outlook</button>
+          <button type="button" class="btn" id="syncMicrosoftCalendarBtn" hidden>Sync now</button>
+          <button type="button" class="btn danger" id="disconnectMicrosoftCalendarBtn" hidden>Disconnect</button>
+        </div>
+      </div>
+      <p class="cloud-footnote">Calendar sync uses the connected account's primary calendar and covers 30 days in the past through 90 days ahead. It imports new events and detects two-sided edits; simultaneous edits or deletions are reported as conflicts instead of silently overwritten. Sync requires cloud data to be up to date first. Disconnect removes Weekwise's stored tokens and links; use your Google/Microsoft account settings to revoke provider consent too.</p>
     </div>
   </details>
   <div class="unscheduled" id="unscheduledBox"><h3>⚠ A few activities need a time</h3><p id="unscheduledText">These blocks did not fit around your shifts. Move them to another day or adjust the shift times.</p></div>
@@ -3985,6 +4019,38 @@ async function copyTaskPlanningPrompt(){
  }
 }
 
+
+window.weekwiseCalendarBridge = {
+  isReady() { return !!(cloudClient && cloudUser && cloudReady && !cloudConflict); },
+  async prepareSync() {
+    if (!cloudClient || !cloudUser) throw new Error("Sign in to Weekwise before synchronizing a calendar.");
+    if (cloudConflict) throw new Error("Resolve the Weekwise cloud conflict before calendar synchronization.");
+    if (!cloudReady) throw new Error("Wait for Weekwise cloud sync to finish before synchronizing a calendar.");
+    if (cloudBusy) throw new Error("Weekwise is already saving cloud changes. Wait a moment and retry.");
+    if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer = null; }
+    const current = cloudFingerprint(buildCloudPayload());
+    const meta = readCloudMeta();
+    if (meta?.userId !== cloudUser.id || meta?.fingerprint !== current) await saveCloudSnapshot();
+    const fresh = cloudFingerprint(buildCloudPayload());
+    const after = readCloudMeta();
+    if (cloudConflict) throw new Error("Resolve the Weekwise cloud conflict before calendar synchronization.");
+    if (after?.userId !== cloudUser.id || after?.fingerprint !== fresh) {
+      throw new Error("Weekwise could not confirm that your latest changes reached the cloud. Open Cloud sync and retry.");
+    }
+    return { userId: cloudUser.id };
+  },
+  openPanel() { openUtilityPanel("calendarConnectionsPanel", "Calendar connections"); },
+  async reloadAfterSync() {
+    if (!cloudUser) throw new Error("Sign in to Weekwise before reloading synchronized calendar events.");
+    await startCloudForUser(cloudUser, true);
+    if (cloudConflict) throw new Error("Calendar data was saved, but Weekwise detected a concurrent edit. Resolve the cloud conflict before further sync.");
+    renderAll();
+    renderWorkspaceView();
+    renderReminders();
+  },
+  toast(message) { showToast(String(message || "")); }
+};
+
 setup();
 renderWorkspaceView();renderReminders();nudgeDueReminders();renderTaskNotificationSettings();checkTaskReminders();setInterval(checkTaskReminders,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkTaskReminders();});window.addEventListener('focus',checkTaskReminders);
 function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}
@@ -3997,5 +4063,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 </script>
 <script src="./weekwise-push.js"></script>
+<script src="./weekwise-calendar.js"></script>
 </body>
 </html>
