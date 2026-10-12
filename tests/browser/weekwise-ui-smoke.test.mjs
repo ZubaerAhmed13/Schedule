@@ -214,7 +214,7 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     await createScheduledTask(page, originalTitle);
     await createScheduledTask(page, secondTitle);
 
-    await page.locator("#daysGrid [data-edit]").filter({ hasText: originalTitle }).first().click();
+    await page.locator("#daysGrid .cal-event .event-title[data-edit]").filter({ hasText: originalTitle }).first().click();
     await page.locator("#taskModal").waitFor({ state: "visible" });
     const originalId = await page.locator("#editTaskId").inputValue();
     assert.ok(originalId, "editing must target the existing record ID");
@@ -275,7 +275,7 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
       { timeout: 10000 }
     );
 
-    await page.locator("#daysGrid [data-edit]").filter({ hasText: editedTitle }).first().click();
+    await page.locator("#daysGrid .cal-event .event-title[data-edit]").filter({ hasText: editedTitle }).first().click();
     await page.locator("#taskModal").waitFor({ state: "visible" });
     assert.equal(await page.locator("#editTaskId").inputValue(), originalId, "edit keeps the original activity ID");
     assert.equal(await page.locator("#modalTitleInput").inputValue(), editedTitle, "latest saved title is reopened");
@@ -311,12 +311,14 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     await secondEscape;
     await page.locator("#taskModal").waitFor({ state: "hidden" });
 
-    await page.locator("#daysGrid [data-edit]").filter({ hasText: editedTitle }).first().click();
+    await page.locator("#daysGrid .cal-event .event-title[data-edit]").filter({ hasText: editedTitle }).first().click();
     assert.equal(await page.locator("#modalNote").inputValue(), savedNote, "discarding edits leaves persisted values unchanged");
     await page.locator("#closeModal").click();
     await page.locator("#taskModal").waitFor({ state: "hidden" });
 
-    await page.locator("#daysGrid [data-edit]").filter({ hasText: secondTitle }).first().click();
+    await page.locator("#daysGrid .cal-event .event-title[data-edit]").filter({ hasText: secondTitle }).first().click();
+    await page.locator("#taskModal").waitFor({ state: "visible", timeout: 5000 });
+    assert.notEqual(await page.locator("#editTaskId").inputValue(), "", "switching records opens the editor in edit mode");
     assert.equal(await page.locator("#modalTitleInput").inputValue(), secondTitle, "switching records loads the second title");
     assert.notEqual(await page.locator("#editTaskId").inputValue(), originalId, "the second record has a distinct ID");
     assert.notEqual(await page.locator("#modalNote").inputValue(), "This change must be discarded",
