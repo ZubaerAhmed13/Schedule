@@ -44,7 +44,7 @@ Follow docs/CALENDAR_OAUTH_SETUP.md for the exact callback URL, provider setup a
 
 Local browser storage keeps the planner responsive and supports offline use after the app shell has been cached. When signed in and configured, Supabase synchronizes the saved task store, reminders, focus history, habits, countdowns and saved filters. If a remote/local conflict is detected, Weekwise pauses sync and asks which copy to keep rather than silently overwriting either copy.
 
-Use **Export backup** before clearing browser data or moving devices. The JSON backup includes task records, recurring rules, reminders, focus history, habits, countdowns and saved filters. Calendar `.ics` export is for transferring events to another calendar; it does not establish a live two-way calendar integration.
+Use **Export backup** before clearing browser data or moving devices. The JSON backup includes task records, recurring rules, reminders, focus history, habits, countdowns and saved filters. **Unsaved or archived editor drafts are separate, device-local recovery material and are not in that backup.** To preserve them, open Settings → Data & privacy → **Export unsaved editor history**. This exports only the current planner owner's draft records, including damaged original bytes, without deleting them. Treat the downloaded JSON as sensitive plaintext and store it privately. Calendar `.ics` export is for transferring events to another calendar; it does not establish a live two-way calendar integration.
 
 ## Share lists and use an AI planning tool
 
@@ -62,7 +62,7 @@ The planner does not auto-fill a sample routine. Add real tasks and use recurrin
 
 ## Weekwise 2.0 review branch
 
-Draft PR [#16](https://github.com/ZubaerAhmed13/Schedule/pull/16) upgrades the actual app with Today/Insights, green responsive navigation, Smart Week Builder, Recover My Week, linked task splitting, timestamp-based focus, scheduled habits and safer local/cloud persistence. Existing tools remain available. No merge, production deployment or database migration is performed automatically.
+The merged core upgrade [#16](https://github.com/ZubaerAhmed13/Schedule/pull/16) upgraded the actual app with Today/Insights, green responsive navigation, Smart Week Builder, Recover My Week, linked task splitting, timestamp-based focus, scheduled habits and safer local/cloud persistence. Existing tools remain available. Follow-up PRs [#17](https://github.com/ZubaerAhmed13/Schedule/pull/17) (draft recovery and bounded task-list rendering) and [#18](https://github.com/ZubaerAhmed13/Schedule/pull/18) (editor-history export) remain separate review changes, not live deployment. No production database migration is performed automatically.
 
 Plan supports multiple availability windows, explicit duration estimates, preferred focus periods, daily limits, breaks and daily/weekly buffer. Review suggestions, adjust a placement using **Check placement**, and apply selected changes. Undo protects newer edits. Recovery moves existing IDs and retains original details/history. Unknown/impossible work remains visible.
 
