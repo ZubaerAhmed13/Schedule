@@ -133,7 +133,7 @@ function credentials(provider: Provider) {
       clientSecret: requiredEnv("GOOGLE_CALENDAR_CLIENT_SECRET"),
       authEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
       tokenEndpoint: "https://oauth2.googleapis.com/token",
-      scopes: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/userinfo.email"],
+      scopes: ["https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/userinfo.email"],
     };
   }
   return {
@@ -420,6 +420,7 @@ async function refreshConnectionToken(
   const tokens = await exchangeToken(connection.provider, {
     grant_type: "refresh_token",
     refresh_token: refreshToken,
+    ...(connection.provider === "microsoft" ? { scope: credentials(connection.provider).scopes.join(" ") } : {}),
   });
   const newRefreshToken = typeof tokens.refresh_token === "string" ? tokens.refresh_token : refreshToken;
   const expiresIn = Math.max(60, Math.min(86400, Number(tokens.expires_in) || 3600));
@@ -586,7 +587,7 @@ function moveOrUpdateTask(
     task = {
       id: taskId,
       title: event.title || "Untitled calendar event",
-      day: isoDateParts(fields.dateKey).day === 0 ? 0 : new Date(Date.UTC(...Object.values(isoDateParts(fields.dateKey)) as [number, number, number])).getUTCDay(),
+      day: new Date(Date.UTC(isoDateParts(fields.dateKey).year, isoDateParts(fields.dateKey).month - 1, isoDateParts(fields.dateKey).day)).getUTCDay(),
       type: "other",
       duration: fields.duration,
       start: fields.start,
@@ -896,7 +897,7 @@ async function synchronizeCalendar(
   userId: string,
   provider: Provider,
   timezoneInput: unknown,
-): Promise<Json> {
+): Promise<Json | Response> {
   const timezone = safeTimeZone(timezoneInput);
   const { data: connection, error: connectionError } = await admin.from("weekwise_calendar_connections")
     .select("*").eq("user_id", userId).eq("provider", provider).maybeSingle();
@@ -1260,7 +1261,7 @@ async function main(request: Request): Promise<Response> {
       const provider = body.provider;
       if (!providerValid(provider)) return jsonResponse({ error: "Choose a calendar provider." }, 400);
       const result = await synchronizeCalendar(admin, user.id, provider, body.timezone);
-      return jsonResponse(result as Json);
+      return result instanceof Response ? result : jsonResponse(result);
     }
 
     return jsonResponse({ error: "Unknown Weekwise calendar action." }, 400);
