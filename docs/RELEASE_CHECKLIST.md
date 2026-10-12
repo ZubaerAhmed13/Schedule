@@ -38,3 +38,9 @@ Never expose OAuth/VAPID/service-role/AI secrets in browser code. Never run prod
 
 - [x] Editor-history export preserves current/archived and malformed drafts while excluding other owners. Node/release CI passed: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307144930; 26 built-client browser tests passed: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307145282.
 - [x] UI and README warn that exported JSON contains sensitive plaintext; export leaves local archives unchanged (browser assertion). No automatic deletion is implemented.
+
+## Calendar display safety
+
+- [ ] Verify the new Month/Year Sunday-vs-Monday display order using Node and built-client browser tests on the final PR commit.
+- [ ] Verify task weeks and recurring occurrence IDs are unchanged when switching grid preference; weekly planning remains Sunday-canonical.
+- [ ] Keep arbitrary fixed IANA zone conversion and full Monday-canonical week migration blocked pending a separate, tested migration design.
