@@ -246,6 +246,14 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
 
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => document.querySelector("#signinLanding")?.hidden === true, null, { timeout: 15000 });
+    // Reload may restore the task workspace rather than the calendar panel. Reopen
+    // Calendar explicitly before interacting with calendar-only edit controls.
+    await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();
+    await page.locator("#calendarToolbar").waitFor({ state: "visible", timeout: 5000 });
+    await page.locator("#weekViewBtn").click();
+    await page.waitForFunction(
+      () => document.querySelector("#weekViewBtn")?.getAttribute("aria-pressed") === "true"
+    );
     await page.waitForFunction(
       title => document.querySelector("#daysGrid")?.innerText.includes(title),
       editedTitle,
