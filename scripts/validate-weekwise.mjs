@@ -174,8 +174,9 @@ const liveDiagnosticsPath = path.join(root, ".github", "workflows", "supabase-li
 if (fs.existsSync(liveDiagnosticsPath)) {
   const liveWorkflow = fs.readFileSync(liveDiagnosticsPath, "utf8");
   if (/workflow_dispatch/.test(liveWorkflow) &&
-      /\/auth\/v1\/health/.test(liveWorkflow) &&
-      /\/auth\/v1\/settings/.test(liveWorkflow) &&
+      /\/auth\/v1/.test(liveWorkflow) &&
+      /auth_base\/health/.test(liveWorkflow) &&
+      /auth_base\/settings/.test(liveWorkflow) &&
       /Google OAuth sign-in/.test(liveWorkflow) &&
       /Microsoft\/Azure OAuth sign-in/.test(liveWorkflow) &&
       /not an end-to-end OAuth test/.test(liveWorkflow) &&
