@@ -168,6 +168,46 @@ if (fs.existsSync(deploymentWorkflowPath)) {
   } else fail("Pages deploy workflow contains both shell blocks");
 } else fail("Pages deployment workflow exists for validation");
 
+
+// Keep the opt-in/live-triggered Supabase diagnostic read-only and syntax-valid.
+const liveDiagnosticsPath = path.join(root, ".github", "workflows", "supabase-live-diagnostics.yml");
+if (fs.existsSync(liveDiagnosticsPath)) {
+  const liveWorkflow = fs.readFileSync(liveDiagnosticsPath, "utf8");
+  if (/workflow_dispatch/.test(liveWorkflow) &&
+      /\/auth\/v1\/health/.test(liveWorkflow) &&
+      /\/auth\/v1\/settings/.test(liveWorkflow) &&
+      /Google OAuth sign-in/.test(liveWorkflow) &&
+      /Microsoft\/Azure OAuth sign-in/.test(liveWorkflow) &&
+      /not an end-to-end OAuth test/.test(liveWorkflow) &&
+      /GITHUB_STEP_SUMMARY/.test(liveWorkflow) &&
+      !/SUPABASE_SERVICE_ROLE_KEY|service_role_key/i.test(liveWorkflow)) {
+    pass("live Supabase workflow checks public Auth health/provider flags without service-role credentials");
+  } else fail("live Supabase workflow checks public Auth health/provider flags without service-role credentials");
+
+  const lines = liveWorkflow.split("\n");
+  const shellBlocks = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!/^ {8}run:\s*\|\s*$/.test(lines[i])) continue;
+    const body = [];
+    for (let j = i + 1; j < lines.length; j += 1) {
+      if (lines[j].trim() === "") {
+        body.push("");
+        continue;
+      }
+      if (!/^ {10}/.test(lines[j])) break;
+      body.push(lines[j].slice(10));
+    }
+    shellBlocks.push(body.join("\n"));
+  }
+  if (shellBlocks.length === 3) {
+    for (const [index, shell] of shellBlocks.entries()) {
+      const result = spawnSync("bash", ["-n"], { input: shell, encoding: "utf8" });
+      if (result.status === 0) pass(`Supabase diagnostics shell block ${index + 1} parses`);
+      else fail(`Supabase diagnostics shell block ${index + 1} parses: ${result.stderr.trim()}`);
+    }
+  } else fail("Supabase diagnostic workflow contains all three shell blocks");
+} else fail("live Supabase diagnostic workflow exists");
+
 if (failures.length) {
   console.error(`\\n${failures.length} release sanity check(s) failed.`);
   process.exit(1);
