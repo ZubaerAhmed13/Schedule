@@ -33,6 +33,13 @@ The repository now includes a service-worker Web Push implementation, authentica
 
 The browser notification option already in Weekwise works while the app is running; it is not a substitute for server-driven Web Push. Never commit a VAPID private key or service-role key.
 
+
+## Google Calendar and Outlook (optional)
+
+Weekwise now includes code for secure Google Calendar and Microsoft Outlook OAuth, primary-calendar sync, encrypted provider tokens and conflict-aware event reconciliation. It is **not active in production until you configure provider OAuth clients/secrets in Supabase, run supabase_calendar_setup.sql, deploy the weekwise-calendar Edge Function and pass real calendar round-trip tests**.
+
+Follow docs/CALENDAR_OAUTH_SETUP.md for the exact callback URL, provider setup and safe secret configuration. Do not put client secrets, refresh tokens, or the AES encryption key in this repository. The existing .ics import/export remains available separately.
+
 ## Data, privacy and backups
 
 Local browser storage keeps the planner responsive and supports offline use after the app shell has been cached. When signed in and configured, Supabase synchronizes the saved task store, reminders, focus history, habits, countdowns and saved filters. If a remote/local conflict is detected, Weekwise pauses sync and asks which copy to keep rather than silently overwriting either copy.
