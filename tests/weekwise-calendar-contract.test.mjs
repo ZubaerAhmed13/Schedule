@@ -14,7 +14,7 @@ test("calendar OAuth uses PKCE, one-use state and server-side encrypted tokens",
   assert.match(edge, /code_challenge_method", "S256"/);
   assert.match(edge, /weekwise_calendar_oauth_states/);
   assert.match(edge, /weekwise_consume_calendar_oauth_state/);
-  assert.match(edge, /expires_at > now\(\)/);
+  assert.match(sql, /expires_at > now\(\)/);
   assert.match(edge, /AES-GCM/);
   assert.match(edge, /WEEKWISE_CALENDAR_ENCRYPTION_KEY/);
   assert.match(edge, /encrypted_refresh_token/);
