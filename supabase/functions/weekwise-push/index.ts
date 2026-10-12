@@ -58,6 +58,22 @@ function constantTimeEqual(a: string, b: string): boolean {
   return difference === 0;
 }
 
+
+function isTrustedPushEndpoint(candidate: string): boolean {
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443")) return false;
+    const host = url.hostname.toLowerCase();
+    return host === "fcm.googleapis.com" ||
+      host === "push.services.mozilla.com" ||
+      host === "updates.push.services.mozilla.com" ||
+      host === "web.push.apple.com" ||
+      host.endsWith(".notify.windows.com");
+  } catch {
+    return false;
+  }
+}
+
 function validTimeZone(candidate: unknown): string {
   if (typeof candidate !== "string" || candidate.length > 100) return "UTC";
   try {
@@ -252,7 +268,7 @@ Deno.serve(async (request) => {
       const subscription = body.subscription as BrowserPushSubscription | undefined;
       const endpoint = String(subscription?.endpoint ?? "");
       const keys = subscription?.keys;
-      if (!endpoint.startsWith("https://") || endpoint.length > 4096 ||
+      if (!isTrustedPushEndpoint(endpoint) || endpoint.length > 4096 ||
           !keys || typeof keys.p256dh !== "string" || typeof keys.auth !== "string" ||
           keys.p256dh.length > 512 || keys.auth.length > 512) {
         return jsonResponse({ error: "The browser returned an invalid push subscription." }, 400);
@@ -272,7 +288,7 @@ Deno.serve(async (request) => {
 
     if (action === "unsubscribe") {
       const endpoint = String(body.endpoint ?? "");
-      if (!endpoint.startsWith("https://") || endpoint.length > 4096) return jsonResponse({ error: "Invalid push endpoint." }, 400);
+      if (!isTrustedPushEndpoint(endpoint) || endpoint.length > 4096) return jsonResponse({ error: "Invalid push endpoint." }, 400);
       const { error } = await admin.from("weekwise_push_subscriptions").delete()
         .eq("endpoint", endpoint)
         .eq("user_id", auth.user.id);
@@ -281,14 +297,19 @@ Deno.serve(async (request) => {
     }
 
     if (action === "status") {
+      const endpoint = String(body.endpoint ?? "");
       const { data, error } = await admin.from("weekwise_push_subscriptions")
         .select("endpoint,timezone,updated_at").eq("user_id", auth.user.id);
       if (error) throw new Error("Could not read background reminder status.");
-      return jsonResponse({ ok: true, devices: (data ?? []).map((item: { endpoint: string; timezone: string; updated_at: string }) => ({
-        endpoint: item.endpoint,
-        timezone: item.timezone,
-        updatedAt: item.updated_at,
-      })) });
+      const devices = data ?? [];
+      const current = devices.find((item: { endpoint: string }) => item.endpoint === endpoint);
+      return jsonResponse({
+        ok: true,
+        enabled: Boolean(current),
+        deviceCount: devices.length,
+        timezone: current?.timezone ?? null,
+        updatedAt: current?.updated_at ?? null,
+      });
     }
 
     return jsonResponse({ error: "Unknown Weekwise push action." }, 400);
