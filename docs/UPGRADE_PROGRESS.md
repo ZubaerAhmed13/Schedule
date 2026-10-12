@@ -56,3 +56,11 @@ Light and dark screenshots have been visually reviewed at 1440/820/390px. Furthe
 - Privacy/account deletion tooling, audit retention/export policy and full security/accessibility certification need separate reviewed work.
 
 The core planning/recovery and reliability upgrade is a concrete review candidate. It is not a claim that all 32 sections or all production integrations are complete.
+
+## 12 October 2026 continuation — editor history privacy export
+
+PR #17 (`codex/weekwise-completion`) implements editor draft restore and bounded visible task lists. Its GitHub checks passed at commit `adcc3cb5bf75069c43814267a9056f1d550fc9b9`, but it is still a separate unmerged PR. Main already contains the core upgrade from PR #16; statements above about its not being deployed describe the earlier review stage.
+
+This continuation adds an explicit owner-scoped editor-history export under Settings → Data & privacy. Unlike the ordinary planner backup, this exports current and previously archived editor drafts, retaining even malformed bytes. Other accounts' archives are not included. No automatic deletion is performed. History is local-only, plaintext when downloaded, and the export is bounded to 10 MB / 2,000 records. All 26 built-client browser tests passed at commit `5c57ccb13c29e226c3ff353bedf6232f10593564` (https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307145282); release/Node validation (https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307144930) and Supabase Edge checks (https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307144917) also passed. The browser test verified export and owner separation without removing raw archives. In this isolated CI browser the 1k/5k/10k synthetic-list navigation-to-paint samples were 41/165/195 ms, with 100 rows initially visible; these are synthetic measurements, not Core Web Vitals or real-device assurances.
+
+**Still outstanding:** Optional account-deletion workflows need separate reviewed destructive-action design. Fixed IANA-timezone conversion, configurable week display start, bulk recurring-rule preview, real backend credential/device checks, manual accessibility and installed-PWA review are not completed by this feature. No production Supabase or main-branch changes are made in this continuation.

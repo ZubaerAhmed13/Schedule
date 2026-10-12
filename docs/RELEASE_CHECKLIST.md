@@ -33,3 +33,8 @@ Review branch only. A passing source/test suite is not a production deployment o
 - [ ] After release, verify `build-info.json` matches the exact commit/run and review installed-client updates.
 
 Never expose OAuth/VAPID/service-role/AI secrets in browser code. Never run production SQL, merge or deploy merely because a source check passes.
+
+## Additional privacy-export gate
+
+- [x] Editor-history export preserves current/archived and malformed drafts while excluding other owners. Node/release CI passed: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307144930; 26 built-client browser tests passed: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307145282.
+- [x] UI and README warn that exported JSON contains sensitive plaintext; export leaves local archives unchanged (browser assertion). No automatic deletion is implemented.
