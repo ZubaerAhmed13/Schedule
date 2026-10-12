@@ -128,6 +128,12 @@ with checks as (
       coalesce((select c.relrowsecurity from pg_class c where c.oid = to_regclass('public.weekwise_push_subscriptions')), false)
       and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'SELECT'), false)
       and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'SELECT'), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'INSERT'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'INSERT'), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'UPDATE'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'UPDATE'), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'DELETE'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'DELETE'), false)
       then 'PASS' else 'NOT CONFIGURED' end,
     'RLS must be enabled and browser roles must not have direct SELECT access'
   union all
