@@ -36,6 +36,7 @@ create table if not exists public.weekwise_calendar_event_links (
   weekwise_fingerprint text not null,
   provider_updated_at timestamptz,
   provider_event_start_at timestamptz,
+  origin text not null default 'weekwise' check (origin in ('weekwise', 'provider')),
   synced_at timestamptz not null default now(),
   primary key (user_id, provider, task_id),
   unique (user_id, provider, provider_event_id)
