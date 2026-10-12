@@ -327,7 +327,7 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     await page.locator("#addTaskBtn").click();
     assert.equal(await page.locator("#editTaskId").inputValue(), "", "new activity mode clears any selected record ID");
     assert.equal(await page.locator("#modalTitleInput").inputValue(), "", "new activity mode starts with a clean title field");
-    assert.equal(await page.locator("#modalTitle").innerText(), "Add an activity", "the modal clearly returns to creation mode");
+    assert.equal(await page.locator("#modalTitle").innerText(), "Add a task", "the modal clearly returns to creation mode");
     await page.locator("#closeModal").click();
     await page.locator("#taskModal").waitFor({ state: "hidden" });
   } finally {
