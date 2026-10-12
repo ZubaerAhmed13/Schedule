@@ -226,6 +226,10 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     await page.locator("#modalDay").selectOption(String(nextDay));
     await page.locator("#modalTime").fill("19:00");
     await page.locator("#modalEndTime").fill("19:45");
+    // Commit the end-time field explicitly; the form syncs its duration on blur.
+    await page.locator("#modalEndTime").press("Tab");
+    assert.equal(await page.locator("#modalDuration").inputValue(), "45",
+      "changing the end time updates the saved duration before submission");
     await page.locator("#saveTaskBtn").click();
     await page.locator("#taskModal").waitFor({ state: "hidden" });
 
