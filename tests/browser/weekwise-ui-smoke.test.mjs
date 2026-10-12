@@ -106,6 +106,7 @@ async function createScheduledTask(page, title) {
   await page.locator("#modalDay").selectOption(String(new Date().getDay()));
   await page.locator("#modalTime").fill("17:30");
   await page.locator("#modalEndTime").fill("18:00");
+  if(page.viewportSize().width<=430){const fits=await page.locator('#taskModal .modal').evaluate(dialog=>{const bounds=dialog.getBoundingClientRect();return [...dialog.querySelectorAll('input,select,textarea')].filter(el=>el.getClientRects().length).every(el=>{const r=el.getBoundingClientRect();return r.left>=bounds.left-1&&r.right<=bounds.right+1;});});assert.equal(fits,true,'mobile editor controls fit inside the dialog');}
   if(title==="Cross-view regression activity"||title==="Mobile regression activity")await page.screenshot({animations:'disabled',path:path.join(root,"test-results","editor-"+page.viewportSize().width+".png")});
   await page.locator("#saveTaskBtn").click();
   await page.locator("#taskModal").waitFor({ state: "hidden" });
