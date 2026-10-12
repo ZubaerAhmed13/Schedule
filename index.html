@@ -2159,7 +2159,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   updateModalScheduleVisibility();
   taskModalInitialFingerprint=taskModalFingerprint();
   modal.classList.add('show');
-  setTimeout(()=>{
+  (()=>{
     const titleInput=$('modalTitleInput');
     if(t){
       hideActivitySuggestions();
@@ -2173,7 +2173,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
     }else{
       titleInput.focus();
     }
-  },30);
+  })();
 }
 function closeTaskModal(force=false){
   const modal=$('taskModal');

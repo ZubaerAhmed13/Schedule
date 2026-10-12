@@ -89,6 +89,7 @@ function serveStatic(req, res) {
     const ext = path.extname(target).toLowerCase();
     const mime = ext === ".html" ? "text/html; charset=utf-8"
       : ext === ".js" ? "text/javascript; charset=utf-8"
+      : ext === ".css" ? "text/css; charset=utf-8"
       : ext === ".json" || ext === ".webmanifest" ? "application/json; charset=utf-8"
       : ext === ".svg" ? "image/svg+xml"
       : "application/octet-stream";
@@ -223,6 +224,8 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     const nextDay = (new Date().getDay() + 1) % 7;
     await page.locator("#modalTitleInput").fill(editedTitle);
     await page.locator("#modalNote").fill(savedNote);
+    assert.equal(await page.locator("#modalTitleInput").inputValue(),editedTitle,"focusing notes must not insert text into the title");
+    assert.equal(await page.locator("#modalNote").inputValue(),savedNote);
     await page.locator("#modalDay").selectOption(String(nextDay));
     await page.locator("#modalTime").fill("19:00");
     await page.locator("#modalEndTime").fill("19:45");
@@ -436,6 +439,7 @@ test('Plan is usable on desktop, tablet and mobile and warns about unknown estim
   try{
    await createFlexibleTask(page,'Unknown duration','');await openFuturePlan(page);
    assert.equal(await page.locator('[name="planProposal"]').count(),0);
+   assert.equal(await page.locator('#planSummary').evaluate(el=>getComputedStyle(el).display),'grid','Plan stylesheet loads and applies');
    assert.match(await page.locator('#planUnscheduled').innerText(),/Duration unknown/);
    assert.equal(await page.locator('#planApply').isDisabled(),true);
    assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true,'Plan fits viewport '+viewport.width);
