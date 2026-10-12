@@ -119,6 +119,14 @@ function providerValid(value: unknown): value is Provider {
   return value === "google" || value === "microsoft";
 }
 
+function encryptionConfigured(): boolean {
+  try {
+    return fromBase64Url(Deno.env.get("WEEKWISE_CALENDAR_ENCRYPTION_KEY") ?? "").length === 32;
+  } catch {
+    return false;
+  }
+}
+
 function providerConfigured(provider: Provider): boolean {
   if (provider === "google") {
     return Boolean(Deno.env.get("GOOGLE_CALENDAR_CLIENT_ID") && Deno.env.get("GOOGLE_CALENDAR_CLIENT_SECRET"));
@@ -255,6 +263,9 @@ function appRedirect(status: string, provider?: string, reason?: string): Respon
 }
 
 async function startOAuth(admin: ReturnType<typeof adminClient>, userId: string, provider: Provider) {
+  if (!encryptionConfigured()) {
+    return jsonResponse({ error: "Calendar token encryption is not configured in Supabase yet.", code: "encryption_not_configured" }, 503);
+  }
   if (!providerConfigured(provider)) {
     return jsonResponse({
       error: provider === "google"
@@ -899,6 +910,9 @@ async function synchronizeCalendar(
   timezoneInput: unknown,
 ): Promise<Json | Response> {
   const timezone = safeTimeZone(timezoneInput);
+  if (provider === "microsoft" && timezone !== "UTC" && !COMMON_WINDOWS_TIMEZONES[timezone]) {
+    throw new Error("Outlook calendar sync does not yet have a verified Windows time-zone mapping for " + timezone + ". Use Google Calendar or change this device to a supported time zone before syncing.");
+  }
   const { data: connection, error: connectionError } = await admin.from("weekwise_calendar_connections")
     .select("*").eq("user_id", userId).eq("provider", provider).maybeSingle();
   if (connectionError) throw new Error("Could not read this calendar connection.");
@@ -1229,6 +1243,7 @@ async function main(request: Request): Promise<Response> {
         configured: {
           google: providerConfigured("google"),
           microsoft: providerConfigured("microsoft"),
+          encryption: encryptionConfigured(),
         },
         providers: {
           google: rows.find(row => row.provider === "google") ?? null,
