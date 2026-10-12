@@ -1919,7 +1919,7 @@ function saveTemplateEditor(e){
   saveStore();saveCurrent();syncSettingsForm();renderAll();closeTemplateEditor();showToast(currentKind==='workday'?'Work day template saved. Add shifts when ready.':'Class template saved. Add classes when ready.');
 }
 function updateCalendarVisibility(){
- ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','unscheduledBox'].forEach(id=>{const el=$(id);if(el)el.hidden=workspaceView!=='calendar';});
+ ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','unscheduledBox'].forEach(id=>{const el=$(id);if(el)el.hidden=workspaceView!=='calendar'||(['mobileDayPicker','mobileHelp'].includes(id)&&!['day','week'].includes(calendarView));});
 }
 function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();renderKanbanBoard();renderSavedFilters();updateCalendarPeriodLabel();updateCalendarVisibility();}
 function moveTask(id,newDay,preferredTime=null){
@@ -2681,7 +2681,7 @@ renderDays=function(){
  if(calendarView==='agenda'){grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';weekwiseRenderAgenda();updateCalendarPeriodLabel();return;}
  if(calendarView==='year'){grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';weekwiseRenderYear();updateCalendarPeriodLabel();return;}
  grid.style.height='';grid.style.minHeight='';grid.style.maxHeight='';
- const picker=$('mobileDayPicker');if(picker)picker.hidden=false;const help=$('mobileHelp');if(help)help.hidden=false;
+ const picker=$('mobileDayPicker');if(picker)picker.hidden=workspaceView!=='calendar';const help=$('mobileHelp');if(help)help.hidden=workspaceView!=='calendar';
  weekwiseOriginalRenderDays();weekwiseRenderBreaks();updateCalendarPeriodLabel();
 };
 updateViewControls=function(){
