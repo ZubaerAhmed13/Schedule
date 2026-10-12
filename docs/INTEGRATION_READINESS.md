@@ -44,7 +44,7 @@ Choose the email-confirmation policy deliberately. Then perform a real registrat
 
 ## 3. Calendar OAuth: code ready, provider setup required
 
-The repository now includes the calendar connection UI, server-side PKCE OAuth callback, encrypted access/refresh-token storage, Google Calendar and Microsoft Graph handlers, per-event links, a revision-checked cloud-save RPC, and sync conflict detection. Live connection is not verified yet because provider app registrations/client secrets and the Supabase migration have not been configured from this environment.
+The repository now includes the calendar connection UI, server-side PKCE OAuth callback, encrypted access/refresh-token storage, Google Calendar and Microsoft Graph handlers, per-event links, a revision-checked cloud-save RPC, and sync conflict detection. Live connection is not verified yet because this environment has not configured or independently confirmed the provider app registrations/client secrets and Supabase migration.
 
 Follow docs/CALENDAR_OAUTH_SETUP.md. The remaining production steps are:
 
@@ -60,7 +60,7 @@ The live Auth workflow previously found Google and Microsoft/Azure Supabase sign
 
 The repository includes the service-worker `push` and notification-click handlers, opt-in browser control, authenticated `weekwise-push` Edge Function, server-only subscription and delivery tables, an atomic deduplication claim, timezone conversion, stale-subscription cleanup, and an optional one-minute Cron setup. The UI does not report background reminders enabled until the current device subscription is registered with the signed-in account.
 
-It is **not yet verified as live** because the production Supabase database has not been migrated, VAPID/private dispatcher secrets are not configured from this environment, and the Cron job has not been installed. Follow [docs/BACKGROUND_PUSH_SETUP.md](BACKGROUND_PUSH_SETUP.md), then test a future reminder with the app closed. The service worker caching the app shell alone never proved push delivery.
+It is **not yet verified as live** because this environment has no confirmed evidence that the production database migration, VAPID/private dispatcher secrets, Vault values, and Cron job are configured. We did not change them. Follow [docs/BACKGROUND_PUSH_SETUP.md](BACKGROUND_PUSH_SETUP.md), verify the existing project setup, and then test a future reminder with the app closed. The service worker caching the app shell alone never proved push delivery.
 
 The dispatcher only reads the latest synced cloud snapshot, skips reminders more than 24 hours late, rejects untrusted push endpoint hostnames, and keeps subscription/delivery records unavailable to browser roles. This still needs real delivery tests with the app closed and with revoked/expired subscriptions and timezone changes.
 
