@@ -1,6 +1,6 @@
 # Weekwise background reminders (Web Push)
 
-This adds service-worker Web Push delivery, separate from the existing reminder loop that runs only while the app is open. It is **not live until the SQL, Edge Function secrets, and scheduler below have been configured in the target Supabase project**. The dispatcher is guarded by an application-level cron secret; only server-side secrets authorize dispatch.
+This repository contains the service-worker Web Push implementation, separate from the existing reminder loop that runs only while the app is open. It is **not verified as live until you confirm the SQL migration, Edge Function secrets, and scheduler are configured in the target Supabase project and a closed-app delivery test succeeds**. The dispatcher is guarded by an application-level cron secret; only server-side secrets authorize dispatch.
 
 ## What it adds
 
