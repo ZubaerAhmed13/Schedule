@@ -27,6 +27,9 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Embed deployment identity
+        run: |
+          printf '{"commit":"%s","run_id":"%s"}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > build-info.json
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
@@ -37,14 +40,39 @@ jobs:
       - name: Smoke-test the published Weekwise app
         env:
           SITE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+          EXPECTED_RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
           test -n "$SITE_URL"
+          site_root="${SITE_URL%/}"
           curl --fail --silent --show-error --location --retry 10 --retry-all-errors --retry-delay 5 "$SITE_URL" -o /tmp/weekwise-live.html
           grep -qi '<title>Weekwise' /tmp/weekwise-live.html
           grep -q 'SUPABASE_PUBLISHABLE_KEY' /tmp/weekwise-live.html
-          if grep -Eiq 'SUPABASE_SERVICE_ROLE_KEY|service_role_key[[:space:]]*[:=][[:space:]]*["'][^"']+["']' /tmp/weekwise-live.html; then
+          if grep -Eiq "SUPABASE_SERVICE_ROLE_KEY|service_role_key[[:space:]]*[:=][[:space:]]*[\"'][^\"']+[\"']" /tmp/weekwise-live.html; then
             echo "Refusing deployment: a possible service-role secret was found in public HTML."
             exit 1
           fi
-          echo "Published Weekwise HTML is reachable, identifies itself correctly, and contains no obvious service-role secret."
+
+          # Verify that Pages serves the exact commit that this workflow deployed.
+          # The run query parameter avoids reusing a cached build-info response.
+          build_info="/tmp/weekwise-build-info.json"
+          build_info_url="$site_root/build-info.json?run=$EXPECTED_RUN_ID"
+          verified=false
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error --location "$build_info_url" -o "$build_info"; then
+              published_commit="$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).commit || "")' "$build_info")"
+              published_run_id="$(node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).run_id || ""))' "$build_info")"
+              if [ "$published_commit" = "$EXPECTED_COMMIT" ] && [ "$published_run_id" = "$EXPECTED_RUN_ID" ]; then
+                verified=true
+                break
+              fi
+            fi
+            echo "Waiting for Pages propagation (attempt $attempt/12)..."
+            sleep 5
+          done
+          if [ "$verified" != true ]; then
+            echo "Pages did not serve the expected commit/run marker."
+            exit 1
+          fi
+          echo "Published HTML is reachable, contains the expected public client config, exposes no obvious service-role secret, and matches commit $EXPECTED_COMMIT."
