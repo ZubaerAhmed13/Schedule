@@ -202,6 +202,97 @@ test("one scheduled activity stays connected across Day, Week, Month, Agenda and
   }
 });
 
+
+test("activity editor saves edits, reopens fresh values, isolates records, and protects unsaved changes", async () => {
+  const { context, page } = await openPlanner({ width: 1440, height: 1000 });
+  try {
+    const originalTitle = "Editor lifecycle activity A";
+    const secondTitle = "Editor lifecycle activity B";
+    const editedTitle = "Editor lifecycle activity A updated";
+    const savedNote = "Edited note survives reload";
+
+    await createScheduledTask(page, originalTitle);
+    await createScheduledTask(page, secondTitle);
+
+    await page.locator("#daysGrid [data-edit]").filter({ hasText: originalTitle }).first().click();
+    await page.locator("#taskModal").waitFor({ state: "visible" });
+    const originalId = await page.locator("#editTaskId").inputValue();
+    assert.ok(originalId, "editing must target the existing record ID");
+    assert.equal(await page.locator("#modalTitleInput").inputValue(), originalTitle);
+
+    const nextDay = (new Date().getDay() + 1) % 7;
+    await page.locator("#modalTitleInput").fill(editedTitle);
+    await page.locator("#modalNote").fill(savedNote);
+    await page.locator("#modalDay").selectOption(String(nextDay));
+    await page.locator("#modalTime").fill("19:00");
+    await page.locator("#modalEndTime").fill("19:45");
+    await page.locator("#saveTaskBtn").click();
+    await page.locator("#taskModal").waitFor({ state: "hidden" });
+    await page.waitForFunction(
+      title => document.querySelector("#daysGrid")?.innerText.includes(title),
+      editedTitle,
+      { timeout: 10000 }
+    );
+
+    assert.equal(await countStoredTasksNamed(page, originalTitle), 0, "editing must not leave an old-title duplicate");
+    assert.equal(await countStoredTasksNamed(page, editedTitle), 1, "editing must update one canonical record");
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => document.querySelector("#signinLanding")?.hidden === true, null, { timeout: 15000 });
+    await page.waitForFunction(
+      title => document.querySelector("#daysGrid")?.innerText.includes(title),
+      editedTitle,
+      { timeout: 10000 }
+    );
+
+    await page.locator("#daysGrid [data-edit]").filter({ hasText: editedTitle }).first().click();
+    await page.locator("#taskModal").waitFor({ state: "visible" });
+    assert.equal(await page.locator("#editTaskId").inputValue(), originalId, "edit keeps the original activity ID");
+    assert.equal(await page.locator("#modalTitleInput").inputValue(), editedTitle, "latest saved title is reopened");
+    assert.equal(await page.locator("#modalNote").inputValue(), savedNote, "latest saved note is reopened");
+    assert.equal(await page.locator("#modalDay").inputValue(), String(nextDay), "edited day is persisted");
+    assert.equal(await page.locator("#modalTime").inputValue(), "19:00", "edited start time is persisted");
+    assert.equal(await page.locator("#modalEndTime").inputValue(), "19:45", "edited end time is persisted");
+
+    const dismissedPrompt = page.waitForEvent("dialog");
+    await page.locator("#modalNote").fill("This change must be discarded");
+    await page.keyboard.press("Escape");
+    const dismissDialog = await dismissedPrompt;
+    assert.match(dismissDialog.message(), /discard your unsaved changes/i);
+    await dismissDialog.dismiss();
+    assert.equal(await page.locator("#taskModal").isVisible(), true, "declining discard keeps the editor open");
+
+    const acceptedPrompt = page.waitForEvent("dialog");
+    await page.keyboard.press("Escape");
+    const acceptDialog = await acceptedPrompt;
+    assert.match(acceptDialog.message(), /discard your unsaved changes/i);
+    await acceptDialog.accept();
+    await page.locator("#taskModal").waitFor({ state: "hidden" });
+
+    await page.locator("#daysGrid [data-edit]").filter({ hasText: editedTitle }).first().click();
+    assert.equal(await page.locator("#modalNote").inputValue(), savedNote, "discarding edits leaves persisted values unchanged");
+    await page.locator("#closeModal").click();
+    await page.locator("#taskModal").waitFor({ state: "hidden" });
+
+    await page.locator("#daysGrid [data-edit]").filter({ hasText: secondTitle }).first().click();
+    assert.equal(await page.locator("#modalTitleInput").inputValue(), secondTitle, "switching records loads the second title");
+    assert.notEqual(await page.locator("#editTaskId").inputValue(), originalId, "the second record has a distinct ID");
+    assert.notEqual(await page.locator("#modalNote").inputValue(), "This change must be discarded",
+      "the second editor must not inherit the first editor's unsaved value");
+    await page.locator("#closeModal").click();
+    await page.locator("#taskModal").waitFor({ state: "hidden" });
+
+    await page.locator("#addTaskBtn").click();
+    assert.equal(await page.locator("#editTaskId").inputValue(), "", "new activity mode clears any selected record ID");
+    assert.equal(await page.locator("#modalTitleInput").inputValue(), "", "new activity mode starts with a clean title field");
+    assert.equal(await page.locator("#modalTitle").innerText(), "Add an activity", "the modal clearly returns to creation mode");
+    await page.locator("#closeModal").click();
+    await page.locator("#taskModal").waitFor({ state: "hidden" });
+  } finally {
+    await context.close();
+  }
+});
+
 test("mobile planner remains usable without page-level horizontal overflow", async () => {
   const { context, page } = await openPlanner({ width: 390, height: 844 });
   try {
