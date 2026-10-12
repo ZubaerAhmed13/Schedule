@@ -180,6 +180,12 @@ function fromBase64Url(value: string): Uint8Array {
   return Uint8Array.from(binary, char => char.charCodeAt(0));
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
 }
@@ -214,16 +220,16 @@ function encryptionKeyBytes(): Uint8Array {
 }
 
 async function aesKey(): Promise<CryptoKey> {
-  return crypto.subtle.importKey("raw", encryptionKeyBytes(), "AES-GCM", false, ["encrypt", "decrypt"]);
+  return crypto.subtle.importKey("raw", toArrayBuffer(encryptionKeyBytes()), "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
 async function encryptText(value: string): Promise<string> {
   const iv = randomBytes(12);
   const key = await aesKey();
   const ciphertext = new Uint8Array(await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
+    { name: "AES-GCM", iv: toArrayBuffer(iv) },
     key,
-    new TextEncoder().encode(value),
+    toArrayBuffer(new TextEncoder().encode(value)),
   ));
   return base64Url(iv) + "." + base64Url(ciphertext);
 }
@@ -233,7 +239,7 @@ async function decryptText(value: string): Promise<string> {
   if (pieces.length !== 2) throw new Error("Stored calendar credential has an invalid format.");
   const key = await aesKey();
   const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: fromBase64Url(pieces[0]) },
+    { name: "AES-GCM", iv: toArrayBuffer(fromBase64Url(pieces[0])) },
     key,
     fromBase64Url(pieces[1]),
   );
@@ -1165,7 +1171,7 @@ async function synchronizeCalendar(
     try {
       const updatedEvent = await writeProviderEvent(provider, accessToken, current, timezone, eventId);
       const fingerprint = await taskFingerprint(current.task, current.dateKey);
-      const linkRow = {
+      const linkRow: CalendarLink = {
         user_id: userId,
         provider,
         task_id: taskId,
