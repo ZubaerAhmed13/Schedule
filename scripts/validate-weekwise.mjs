@@ -91,6 +91,16 @@ if (/let savedPayload=null;[\s\S]*?finally\{\s*cloudBusy=false;[\s\S]*?if\(saved
   fail("cloud save re-queues edits made while a request is in flight");
 }
 
+if (appSource.includes("function taskModalFingerprint()") &&
+    appSource.includes("This activity is no longer available") &&
+    appSource.includes("Discard your unsaved changes") &&
+    appSource.includes("closeTaskModal(true)") &&
+    appSource.includes("$('closeModal').addEventListener('click',()=>closeTaskModal())")) {
+  pass("activity editor guards stale records and protects unsaved changes");
+} else {
+  fail("activity editor guards stale records and protects unsaved changes");
+}
+
 const inviteSqlPath = path.join(root, "supabase_invite_code_setup.sql");
 if (fs.existsSync(inviteSqlPath)) {
   const inviteSql = fs.readFileSync(inviteSqlPath, "utf8");
