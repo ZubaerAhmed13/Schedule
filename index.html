@@ -4039,6 +4039,7 @@ window.weekwiseCalendarBridge = {
     }
     return { userId: cloudUser.id };
   },
+  openPanel() { openUtilityPanel("calendarConnectionsPanel", "Calendar connections"); },
   async reloadAfterSync() {
     if (!cloudUser) throw new Error("Sign in to Weekwise before reloading synchronized calendar events.");
     await startCloudForUser(cloudUser, true);
