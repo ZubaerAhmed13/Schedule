@@ -241,7 +241,7 @@ async function decryptText(value: string): Promise<string> {
   const plaintext = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: toArrayBuffer(fromBase64Url(pieces[0])) },
     key,
-    fromBase64Url(pieces[1]),
+    toArrayBuffer(fromBase64Url(pieces[1])),
   );
   return new TextDecoder().decode(plaintext);
 }
