@@ -121,10 +121,10 @@ if (fs.existsSync(diagnosticPath)) {
 const integrationGuidePath = path.join(root, "docs", "INTEGRATION_READINESS.md");
 if (fs.existsSync(integrationGuidePath)) {
   const integrationGuide = fs.readFileSync(integrationGuidePath, "utf8");
-  if (/OAuth status and requirements/i.test(integrationGuide) &&
-      /Background push(?::| status and requirements)/i.test(integrationGuide) &&
+  if (/Calendar OAuth: code ready, provider setup required/i.test(integrationGuide) &&
+      /Background push: code ready, external activation required/i.test(integrationGuide) &&
       /Data safety/i.test(integrationGuide) &&
-      /not implemented/i.test(integrationGuide)) {
+      /not live until/i.test(integrationGuide)) {
     pass("integration guide distinguishes implemented features from external setup requirements");
   } else fail("integration guide distinguishes implemented features from external setup requirements");
 } else fail("integration readiness guide exists");
@@ -263,6 +263,58 @@ if (/addEventListener\(['"]push['"]/.test(fs.readFileSync(sw, "utf8")) &&
     /weekwise-push\.js/.test(fs.readFileSync(sw, "utf8"))) {
   pass("service worker handles Web Push and caches the push client");
 } else fail("service worker handles Web Push and caches the push client");
+
+
+
+// Calendar OAuth must keep provider secrets server-side and use revision-conflict protection.
+const calendarEdgePath = path.join(root, "supabase", "functions", "weekwise-calendar", "index.ts");
+const calendarSqlPath = path.join(root, "supabase_calendar_setup.sql");
+const calendarClientPath = path.join(root, "weekwise-calendar.js");
+if (fs.existsSync(calendarEdgePath) && fs.existsSync(calendarSqlPath) && fs.existsSync(calendarClientPath)) {
+  const calendarEdge = fs.readFileSync(calendarEdgePath, "utf8");
+  const calendarSql = fs.readFileSync(calendarSqlPath, "utf8");
+  const calendarClient = fs.readFileSync(calendarClientPath, "utf8");
+  if (/code_challenge_method", "S256"/.test(calendarEdge) &&
+      /weekwise_consume_calendar_oauth_state/.test(calendarEdge) &&
+      /AES-GCM/.test(calendarEdge) &&
+      /WEEKWISE_CALENDAR_ENCRYPTION_KEY/.test(calendarEdge) &&
+      /auth\.getUser\(\)/.test(calendarEdge) &&
+      /weekwise_calendar_save_cloud/.test(calendarEdge) &&
+      /localChanged && remoteChanged/.test(calendarEdge)) {
+    pass("calendar OAuth uses PKCE, encrypted tokens, validated sessions and revision-aware sync");
+  } else fail("calendar OAuth uses PKCE, encrypted tokens, validated sessions and revision-aware sync");
+
+  if (/alter table public\.weekwise_calendar_connections enable row level security/i.test(calendarSql) &&
+      /revoke all on table public\.weekwise_calendar_connections from public, anon, authenticated/i.test(calendarSql) &&
+      /revoke all on function public\.weekwise_consume_calendar_oauth_state\(text\) from public, anon, authenticated/i.test(calendarSql) &&
+      /revoke all on function public\.weekwise_calendar_save_cloud\(uuid, jsonb, bigint\) from public, anon, authenticated/i.test(calendarSql) &&
+      /origin text not null default 'weekwise'/.test(calendarSql)) {
+    pass("calendar tokens, OAuth transactions and event links are server-only");
+  } else fail("calendar tokens, OAuth transactions and event links are server-only");
+
+  if (/functions\.invoke\("weekwise-calendar"/.test(calendarClient) &&
+      /new URL\(response\.authorizationUrl\)/.test(calendarClient) &&
+      /url\.protocol !== "https:"/.test(calendarClient) &&
+      !/GOOGLE_CALENDAR_CLIENT_SECRET|MICROSOFT_CALENDAR_CLIENT_SECRET|WEEKWISE_CALENDAR_ENCRYPTION_KEY/i.test(calendarClient)) {
+    pass("calendar browser UI uses the Edge Function and embeds no provider secrets");
+  } else fail("calendar browser UI uses the Edge Function and embeds no provider secrets");
+
+  try {
+    new vm.Script(calendarClient, { filename: "weekwise-calendar.js" });
+    pass("weekwise-calendar.js parses");
+  } catch (error) {
+    fail(`weekwise-calendar.js parses: ${error.message}`);
+  }
+
+  const edgeWorkflowPath = path.join(root, ".github", "workflows", "check-edge-functions.yml");
+  if (fs.existsSync(edgeWorkflowPath)) {
+    const edgeWorkflow = fs.readFileSync(edgeWorkflowPath, "utf8");
+    if (/deno check --no-lock supabase\/functions\/weekwise-push\/index\.ts/.test(edgeWorkflow) &&
+        /deno check --no-lock supabase\/functions\/weekwise-calendar\/index\.ts/.test(edgeWorkflow)) {
+      pass("Deno type-check workflow covers both Supabase Edge Functions");
+    } else fail("Deno type-check workflow covers both Supabase Edge Functions");
+  } else fail("Supabase Edge Function type-check workflow exists");
+} else fail("calendar OAuth server, SQL and client files exist");
 
 if (failures.length) {
   console.error(`\\n${failures.length} release sanity check(s) failed.`);
