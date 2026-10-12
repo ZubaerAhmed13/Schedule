@@ -80,7 +80,7 @@ function updateDurationFromEnd(){
 function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function escapeHtml(str){return String(str??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function defaultClassTemplate(){return {title:'Master’s coursework self-study',days:[1,3,5,0],duration:75,start:'13:00'};}
-function defaultSettings(){return {timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,theme:'system',shifts:DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:defaultClassTemplate()};}
+function defaultSettings(){return {timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,calendarGridStartDay:0,travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,theme:'system',shifts:DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:defaultClassTemplate()};}
 let plannerStorageBlocked=false,plannerStorageError="";
 function loadStore(){
   try{
@@ -157,8 +157,8 @@ function setupSystemThemeListener(){
   if(media.addEventListener)media.addEventListener('change',changed);else if(media.addListener)media.addListener(changed);
  }catch(_){}
 }
-function syncSettingsForm(){ $('weekStart').value=currentWeek; $('tripDay').value=store.settings.travelDay; $('tripStart').value=store.settings.travelStart||'09:00'; $('cookDay').value=store.settings.cookStartDay; $('tripDestination').value=store.settings.destination||'';const breakToggle=$('showBreaks');if(breakToggle)breakToggle.checked=store.settings.showBreaks!==false;const themeSelect=$('themeMode');if(themeSelect){themeSelect.value=store.settings.theme||'system';applyThemePreference(themeSelect.value);}renderShiftFields();}
-function settingsFromForm(){const shifts=DAY_NAMES.map((_,i)=>({enabled:!!document.querySelector(`[data-shift-enabled="${i}"]`)?.checked,start:document.querySelector(`[data-shift-start="${i}"]`)?.value||'09:00',end:document.querySelector(`[data-shift-end="${i}"]`)?.value||'17:00'}));return {...store.settings,travelDay:Number($('tripDay').value),travelStart:$('tripStart').value||'09:00',destination:$('tripDestination').value.trim(),cookStartDay:Number($('cookDay').value),showBreaks:!!$('showBreaks')?.checked,theme:$('themeMode')?.value||store.settings.theme||'system',shifts,classTemplate:store.settings.classTemplate||defaultClassTemplate()};}
+function syncSettingsForm(){ $('weekStart').value=currentWeek;const calendarGridStartDay=$('calendarGridStartDay');if(calendarGridStartDay)calendarGridStartDay.value=String(WeekwiseCalendarLayout.firstDay(store.settings.calendarGridStartDay)); $('tripDay').value=store.settings.travelDay; $('tripStart').value=store.settings.travelStart||'09:00'; $('cookDay').value=store.settings.cookStartDay; $('tripDestination').value=store.settings.destination||'';const breakToggle=$('showBreaks');if(breakToggle)breakToggle.checked=store.settings.showBreaks!==false;const themeSelect=$('themeMode');if(themeSelect){themeSelect.value=store.settings.theme||'system';applyThemePreference(themeSelect.value);}renderShiftFields();}
+function settingsFromForm(){const shifts=DAY_NAMES.map((_,i)=>({enabled:!!document.querySelector(`[data-shift-enabled="${i}"]`)?.checked,start:document.querySelector(`[data-shift-start="${i}"]`)?.value||'09:00',end:document.querySelector(`[data-shift-end="${i}"]`)?.value||'17:00'}));return {...store.settings,travelDay:Number($('tripDay').value),travelStart:$('tripStart').value||'09:00',destination:$('tripDestination').value.trim(),cookStartDay:Number($('cookDay').value),showBreaks:!!$('showBreaks')?.checked,calendarGridStartDay:WeekwiseCalendarLayout.firstDay($('calendarGridStartDay')?.value),theme:$('themeMode')?.value||store.settings.theme||'system',shifts,classTemplate:store.settings.classTemplate||defaultClassTemplate()};}
 function overlap(a,b){return a.start < b.start+b.duration && b.start < a.start+a.duration;}
 function canPlace(dayTasks,start,duration){const candidate={start,duration};return !dayTasks.some(t=>t.start!=null && overlap(candidate,t));}
 function findSlot(dayIndex,duration,preferred=600,min=420,max=1320,dayTasks=null){const occupied=dayTasks||tasks.filter(t=>t.day===dayIndex);const candidates=[];for(let start=min;start+duration<=max;start+=15)candidates.push(start);candidates.sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred));return candidates.find(start=>canPlace(occupied,start,duration))??null;}
@@ -1156,8 +1156,8 @@ function weekwiseRenderMonth(){
  const grid=$('daysGrid');grid.classList.add('month-mode');grid.setAttribute('aria-label','Monthly calendar');
  const picker=$('mobileDayPicker');if(picker)picker.hidden=true;const help=$('mobileHelp');if(help)help.hidden=true;
  updateViewControls();
- const year=monthAnchor.getFullYear(),month=monthAnchor.getMonth(),first=new Date(year,month,1),start=sundayOf(first),days=new Date(year,month+1,0).getDate(),count=Math.ceil((first.getDay()+days)/7)*7;
- let markup='<div class="month-calendar">'+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){return '<div class="month-weekday">'+d+'</div>';}).join('');
+ const year=monthAnchor.getFullYear(),month=monthAnchor.getMonth(),layout=WeekwiseCalendarLayout.month(year,month,store.settings.calendarGridStartDay),start=layout.start,count=layout.count;
+ let markup='<div class="month-calendar">'+layout.weekdays.map(function(i){return '<div class="month-weekday">'+DAY_SHORT[i]+'</div>';}).join('');
  for(let i=0;i<count;i++){
   const date=new Date(start);date.setDate(start.getDate()+i);
   const key=dateKey(date),inMonth=date.getMonth()===month,isToday=key===dateKey(now),items=weekwiseTasksOnDate(date);
@@ -1793,8 +1793,8 @@ function weekwiseRenderYear(){
  const countByDate=new Map();workspaceRecords().forEach(r=>{const key=dateKey(r.date);countByDate.set(key,(countByDate.get(key)||0)+1);});
  let markup='<div class="agenda-calendar"><div class="agenda-topline"><div><h3>'+calendarYear+' at a glance</h3><p>Choose any date to open its Day view.</p></div><span class="agenda-topline-badge">12 months</span></div><div class="year-calendar">';
  for(let month=0;month<12;month++){
-  const first=new Date(calendarYear,month,1),firstDay=sundayOf(first),days=new Date(calendarYear,month+1,0).getDate(),total=Math.ceil((first.getDay()+days)/7)*7;
-  markup+='<section class="year-month"><header class="year-month-head"><h3>'+first.toLocaleDateString('en-GB',{month:'long'})+'</h3><span>'+Array.from(countByDate.entries()).filter(([key])=>{const d=parseKey(key);return d.getFullYear()===calendarYear&&d.getMonth()===month;}).reduce((n,[,v])=>n+v,0)+' tasks</span></header><div class="year-month-grid">'+['S','M','T','W','T','F','S'].map(d=>'<span class="year-weekday">'+d+'</span>').join('');
+  const first=new Date(calendarYear,month,1),layout=WeekwiseCalendarLayout.month(calendarYear,month,store.settings.calendarGridStartDay),firstDay=layout.start,total=layout.count;
+  markup+='<section class="year-month"><header class="year-month-head"><h3>'+first.toLocaleDateString('en-GB',{month:'long'})+'</h3><span>'+Array.from(countByDate.entries()).filter(([key])=>{const d=parseKey(key);return d.getFullYear()===calendarYear&&d.getMonth()===month;}).reduce((n,[,v])=>n+v,0)+' tasks</span></header><div class="year-month-grid">'+layout.weekdays.map(i=>'<span class="year-weekday">'+WeekwiseCalendarLayout.DAY_LETTER[i]+'</span>').join('');
   for(let i=0;i<total;i++){
    const date=new Date(firstDay);date.setDate(firstDay.getDate()+i);
    const key=dateKey(date),inMonth=date.getMonth()===month,n=countByDate.get(key)||0,today=key===dateKey(now);

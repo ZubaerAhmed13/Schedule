@@ -520,3 +520,31 @@ test('privacy settings download owner-scoped editor history without deleting dra
   assert.equal(unchanged,'{unreadable but preserved');
  }finally{await context.close();}
 });
+
+
+test('Monday-first Month and Year preference survives reload without migrating Sunday task weeks',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  const initial=await readPlannerStore(page);
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
+  await page.locator('[data-settings-panel="settingsPanel"]').first().click();
+  await page.locator('#calendarGridStartDay').selectOption('1');
+  await page.locator('#applySettings').click();
+  await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();
+  await page.locator('#monthViewBtn').click();
+  assert.deepEqual(await page.locator('.month-weekday').allTextContents(),['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
+  const first=await page.locator('.month-day-cell').first().getAttribute('data-month-day');
+  const expected=await page.evaluate(()=>{const today=new Date(),start=new Date(today.getFullYear(),today.getMonth(),1,12);start.setDate(start.getDate()-(start.getDay()+6)%7);return [start.getFullYear(),String(start.getMonth()+1).padStart(2,'0'),String(start.getDate()).padStart(2,'0')].join('-')});
+  assert.equal(first,expected);
+  await page.locator('#yearViewBtn').click();
+  assert.deepEqual(await page.locator('.year-month').first().locator('.year-weekday').allInnerTexts(),['M','T','W','T','F','S','S']);
+  await page.reload();
+  await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();
+  await page.locator('#monthViewBtn').click();
+  assert.equal(await page.locator('.month-weekday').first().textContent(),'Mon');
+  const after=await readPlannerStore(page);
+  assert.deepEqual(after.weeks,initial.weeks);
+  assert.equal(after.settings.calendarGridStartDay,1);
+ }finally{await context.close();}
+});
