@@ -197,12 +197,17 @@
         (response.updatedInCalendar || 0) + " updated in calendar",
         conflicts.length + " conflicts"
       ].join(" · ");
-      setStatus(providerNames[provider] + " sync finished: " + summary + ". Range: " + (response.range?.from || "") + " to " + (response.range?.to || "") + ".");
+      const conflictDetails = conflicts.slice(0, 3).map(item => item.title + ": " + item.reason).join(" | ");
+      setStatus(
+        providerNames[provider] + " sync finished: " + summary + ". Range: " +
+        (response.range?.from || "") + " to " + (response.range?.to || "") +
+        (conflictDetails ? ". Conflicts: " + conflictDetails : "."),
+        conflicts.length > 0
+      );
       if (conflicts.length) {
-        const headline = conflicts.slice(0, 3).map(item => item.title + ": " + item.reason).join(" | ");
-        if (bridge.toast) bridge.toast("Calendar sync found " + conflicts.length + " conflict(s). Review Calendar connections for details.");
+        if (bridge.toast) bridge.toast("Calendar sync found " + conflicts.length + " conflict(s). Review the Calendar connections status for details.");
         const status = $("calendarConnectionsStatus");
-        if (status) status.title = headline;
+        if (status) status.title = conflictDetails;
       } else if (bridge.toast) {
         bridge.toast(providerNames[provider] + " synced with Weekwise.");
       }
@@ -269,7 +274,7 @@
 
   function init() {
     $("calendarConnectionsMenuBtn")?.addEventListener("click", () => {
-      openUtilityPanel("calendarConnectionsPanel", "Calendar connections");
+      window.weekwiseCalendarBridge?.openPanel?.();
       refreshStatus();
     });
     $("connectGoogleCalendarBtn")?.addEventListener("click", () => connect("google"));
