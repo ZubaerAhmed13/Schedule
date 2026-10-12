@@ -64,7 +64,7 @@ if (!fs.existsSync(indexPath)) {
 }
 
 // Parse all independent local scripts, including the additive data/planning modules.
-for (const filename of ["js/weekwise-data.js", "js/weekwise-planning.js", "js/weekwise-plan-ui.js", "js/weekwise-app.js", "js/weekwise-focus.js", "js/weekwise-cloud-transport.js", "js/weekwise-experience.js", "js/weekwise-accessibility.js", "js/weekwise-habits.js", "js/weekwise-pwa.js", "js/weekwise-drafts.js", "js/weekwise-list-window.js"]) {
+for (const filename of ["js/weekwise-data.js", "js/weekwise-calendar-layout.js", "js/weekwise-planning.js", "js/weekwise-plan-ui.js", "js/weekwise-app.js", "js/weekwise-focus.js", "js/weekwise-cloud-transport.js", "js/weekwise-experience.js", "js/weekwise-accessibility.js", "js/weekwise-habits.js", "js/weekwise-pwa.js", "js/weekwise-drafts.js", "js/weekwise-list-window.js"]) {
   try { new vm.Script(fs.readFileSync(path.join(root, filename), "utf8"), { filename }); pass(filename + " parses"); }
   catch (error) { fail(filename + " parses: " + error.message); }
 }
