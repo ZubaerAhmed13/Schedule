@@ -34,7 +34,16 @@ with checks as (
       from pg_policies
       where schemaname = 'public'
         and tablename = 'weekwise_cloud_data'
-        and policyname in ('weekwise_cloud_select_own','weekwise_cloud_insert_own','weekwise_cloud_update_own')
+        and 'authenticated' = any(roles)
+        and (
+          (policyname = 'weekwise_cloud_select_own' and cmd = 'SELECT'
+            and coalesce(qual, '') ilike '%auth.uid%' and coalesce(qual, '') ilike '%user_id%')
+          or (policyname = 'weekwise_cloud_insert_own' and cmd = 'INSERT'
+            and coalesce(with_check, '') ilike '%auth.uid%' and coalesce(with_check, '') ilike '%user_id%')
+          or (policyname = 'weekwise_cloud_update_own' and cmd = 'UPDATE'
+            and coalesce(qual, '') ilike '%auth.uid%' and coalesce(qual, '') ilike '%user_id%'
+            and coalesce(with_check, '') ilike '%auth.uid%' and coalesce(with_check, '') ilike '%user_id%')
+        )
     ) then 'PASS' else 'FAIL' end,
     'Expected own-row SELECT, INSERT and UPDATE policies: ' ||
       (select count(*)::text from pg_policies
@@ -117,8 +126,8 @@ with checks as (
     'background push subscription isolation',
     case when
       coalesce((select c.relrowsecurity from pg_class c where c.oid = to_regclass('public.weekwise_push_subscriptions')), false)
-      and not has_table_privilege('anon', 'public.weekwise_push_subscriptions', 'SELECT')
-      and not has_table_privilege('authenticated', 'public.weekwise_push_subscriptions', 'SELECT')
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'SELECT'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'SELECT'), false)
       then 'PASS' else 'NOT CONFIGURED' end,
     'RLS must be enabled and browser roles must not have direct SELECT access'
   union all
