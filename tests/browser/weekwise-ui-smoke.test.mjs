@@ -106,6 +106,7 @@ async function createScheduledTask(page, title) {
   await page.locator("#modalDay").selectOption(String(new Date().getDay()));
   await page.locator("#modalTime").fill("17:30");
   await page.locator("#modalEndTime").fill("18:00");
+  if(title==="Cross-view regression activity"||title==="Mobile regression activity")await page.screenshot({path:path.join(root,"test-results","editor-"+page.viewportSize().width+".png")});
   await page.locator("#saveTaskBtn").click();
   await page.locator("#taskModal").waitFor({ state: "hidden" });
   await page.waitForFunction(

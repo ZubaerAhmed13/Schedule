@@ -26,7 +26,7 @@ The main module is still large. Further separation should follow measured behavi
 
 Editors/capture write canonical weekly records. Shared task/calendar views read the same IDs. The planning bridge snapshots in-memory current-week tasks plus stored weeks. Preview is pure. Apply checks account, storage-recovery flags, timezone review, cloud conflict, full snapshot, age and local DST validity, then revalidates the deterministic proposals and persists one cloned store before installing it in memory.
 
-Undo requires the post-apply store and account to remain unchanged. It never overwrites intervening edits. Restore and cloud application use checked multi-key writes with checkpoints/rollback. Normal task/collection save failures restore the previous in-memory records and interrupt the success path.
+Undo requires the post-apply store and account to remain unchanged. It never overwrites intervening edits. Restore and cloud application use checked multi-key writes with checkpoints/rollback. Normal task/collection save failures restore the previous in-memory records and interrupt the success path. Checked writers refresh per-key baselines after their own writes; newer records from another tab are rejected before replacement or automatic upload.
 
 Account changes checkpoint the previous owner's payload and isolate the next owner's cache. Device-only data is retained separately; adoption into an account with existing local work requires an explicit choice. Unsaved task-editor fields are retained under an owner-specific draft key during account changes. Draft restoration is not yet exposed in the interface.
 

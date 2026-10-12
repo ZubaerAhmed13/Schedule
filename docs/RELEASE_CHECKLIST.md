@@ -19,7 +19,7 @@ Review branch only. A passing source/test suite is not a production deployment o
 
 ## Required before claiming production readiness
 
-- [ ] Final PR checks green on the released commit.
+- [x] All 55 Node tests, 22 browser tests and both Edge checks pass at 92b2d14; inspect the final follow-up/released commit separately.
 - [ ] Human keyboard/screen-reader, contrast, 200% zoom and actual phone-keyboard review.
 - [ ] Installed-PWA upgrade, standalone layout and interrupted install review.
 - [ ] Actual historical user/backup upgrade in an isolated profile.

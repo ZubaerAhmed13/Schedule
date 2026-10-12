@@ -30,9 +30,11 @@ The actual existing app has been upgraded; features/data have not been replaced 
 
 ## Validation
 
-Run `node scripts/validate-weekwise.mjs`, `node --test tests/*.test.mjs`, `node scripts/build-weekwise.mjs` and the remote browser workflow. Current local suite has 54 tests. Browser suite has 22 regressions against the built `dist/` client, isolated Supabase fixtures and a real service worker for offline testing. CI artifacts contain desktop/tablet/phone light/dark screenshots. Both existing Supabase Edge Functions are type-checked separately.
+Run `node scripts/validate-weekwise.mjs`, `node --test tests/*.test.mjs`, `node scripts/build-weekwise.mjs` and the remote browser workflow. Current local suite has 55 tests. Browser suite has 22 regressions against the built `dist/` client, isolated Supabase fixtures and a real service worker for offline testing. CI artifacts contain desktop/tablet/phone light/dark screenshots. Both existing Supabase Edge Functions are type-checked separately.
 
-At `a07720c5fe6a938911eaf6ab2bf5a4e44f1aeebe`, all 17 then-current browser tests, release checks and both Edge Function checks passed. At `21a5a7aefe7e83fbe4c0b2eebe781574740d843a`, 20 of 21 expanded browser tests passed; two-device testing exposed redundant startup saves and a forced calendar-view change. Both are corrected and the expanded suite is rerun on this review candidate. See the PR's latest checks for the authoritative final result.
+At `92b2d14373c9081bf0fbc4a5ea2b488ee2e6c779`, all 55 Node tests, all 22 browser regressions, release checks and both Supabase Edge Function type checks passed. Browser run: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38302083912. The final UI follow-up normalizes the task editor's field layout and adds desktop/mobile editor screenshots; inspect the PR's latest checks for its own result.
+
+Browser QA found and resolved redundant startup cloud saves, a forced calendar-view change and stale storage baselines after same-tab writes. Normal planner writes now use the checked writer, while changed records from another tab remain protected.
 
 Light and dark screenshots have been visually reviewed at 1440/820/390px. Further shared theme refinements follow those findings. A synthetic Node scheduling benchmark produced medians around 8/37/56 ms for 1,000/5,000/10,000 records in this workspace (Node v24); this is not a browser Core Web Vitals result.
 
