@@ -132,6 +132,9 @@ async function openPlanner(viewport) {
     return !!gate && gate.hidden === true;
   }, null, { timeout: 15000 });
   await page.waitForFunction(() => document.querySelector("#daysGrid") !== null, null, { timeout: 5000 });
+  // Sign-in intentionally lands on Today; navigate to Calendar before asserting calendar controls.
+  await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();
+  await page.locator("#calendarToolbar").waitFor({ state: "visible", timeout: 5000 });
   return { context, page };
 }
 
