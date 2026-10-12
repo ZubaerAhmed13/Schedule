@@ -22,6 +22,17 @@ This document separates code that exists from services that must be configured i
 
 The application sends the submitted invite code in auth user metadata. A database trigger is the enforcement boundary; client-side validation alone is not security. Test signup with (a) missing code, (b) invalid code, and (c) valid code using a controlled test account. Only the valid code should create an account. Do not paste a service-role key into the repository or browser.
 
+## 2A. Check the live Supabase Auth service
+
+A read-only GitHub Actions workflow, **Weekwise Supabase live diagnostics**, runs on pushes to `main` and can be started manually from **Actions → Weekwise Supabase live diagnostics → Run workflow**. It reads only the public project URL and publishable client key already used by the app, then checks the public Auth health/settings endpoints and reports whether Email, Google, and Microsoft/Azure providers are flagged as enabled.
+
+This is a live backend probe, but it is deliberately limited:
+
+- It does not prove a valid OAuth client secret, redirect URI, provider consent, or a complete login round trip.
+- Provider flags are for Supabase sign-in providers. They do not grant calendar access to Google Calendar or Microsoft Graph.
+- It does not test the database schema/RLS; use the read-only SQL diagnostic above in the Supabase SQL Editor for that.
+- It does not create accounts, send test emails, change settings, or touch user planner data.
+
 ## 2. Configure and verify Supabase Auth
 
 In **Authentication → URL Configuration**:
