@@ -343,19 +343,11 @@ async function providerAccount(provider: Provider, accessToken: string): Promise
       return { email: body.email ?? null, calendarTimezone: null };
     }
 
-    const response = await fetch("https://graph.microsoft.com/v1.0/me/mailboxSettings?$select=timeZone", {
-      headers: { Authorization: "Bearer " + accessToken },
-    });
-    let calendarTimezone: string | null = null;
-    if (response.ok) {
-      const body = await response.json() as { timeZone?: string };
-      calendarTimezone = body.timeZone ?? null;
-    }
     const profileResponse = await fetch("https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName", {
       headers: { Authorization: "Bearer " + accessToken },
     });
     const profile = profileResponse.ok ? await profileResponse.json() as { mail?: string; userPrincipalName?: string } : {};
-    return { email: profile.mail ?? profile.userPrincipalName ?? null, calendarTimezone };
+    return { email: profile.mail ?? profile.userPrincipalName ?? null, calendarTimezone: null };
   } catch {
     return { email: null, calendarTimezone: null };
   }
@@ -740,6 +732,7 @@ async function fetchJson(url: string, accessToken: string, init: RequestInit = {
   return body;
 }
 
+// This integration deliberately syncs only the connected user's primary calendar.
 async function listRemoteEvents(
   provider: Provider,
   accessToken: string,
