@@ -43,6 +43,8 @@ test("client-side push controls use authenticated function calls and no server s
   assert.match(clientScript, /Notification\.requestPermission\(\)/);
   assert.match(clientScript, /pushManager\.subscribe\(/);
   assert.match(clientScript, /pushManager\.getSubscription\(/);
+  assert.match(clientScript, /navigator\.serviceWorker\.ready\.then\(\(\) => refreshState\(\)\)/);
+  assert.match(clientScript, /invoke\("status", \{ endpoint: subscription\?\.endpoint \|\| "" \}\)/);
   assert.match(clientScript, /unsubscribe/);
   assert.doesNotMatch(clientScript, /SUPABASE_SERVICE_ROLE_KEY|VAPID_PRIVATE_KEY|WEEKWISE_PUSH_CRON_SECRET/i);
 });
