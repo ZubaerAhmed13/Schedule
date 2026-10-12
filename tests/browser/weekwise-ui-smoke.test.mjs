@@ -228,14 +228,21 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     await page.locator("#modalEndTime").fill("19:45");
     await page.locator("#saveTaskBtn").click();
     await page.locator("#taskModal").waitFor({ state: "hidden" });
+
+    assert.equal(await countStoredTasksNamed(page, originalTitle), 0, "editing must not leave an old-title duplicate");
+    assert.equal(await countStoredTasksNamed(page, editedTitle), 1, "editing must update one canonical record");
+
+    // The editor moved the task to another day. Switch to Week explicitly so the
+    // assertion is independent of whether the app initially opened in Day view.
+    await page.locator("#weekViewBtn").click();
+    await page.waitForFunction(
+      () => document.querySelector("#weekViewBtn")?.getAttribute("aria-pressed") === "true"
+    );
     await page.waitForFunction(
       title => document.querySelector("#daysGrid")?.innerText.includes(title),
       editedTitle,
       { timeout: 10000 }
     );
-
-    assert.equal(await countStoredTasksNamed(page, originalTitle), 0, "editing must not leave an old-title duplicate");
-    assert.equal(await countStoredTasksNamed(page, editedTitle), 1, "editing must update one canonical record");
 
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => document.querySelector("#signinLanding")?.hidden === true, null, { timeout: 15000 });
