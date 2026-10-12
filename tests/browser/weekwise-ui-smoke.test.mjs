@@ -492,3 +492,31 @@ test('autosaved editor drafts survive reload and are restored without changing c
 test('a draft of a changed activity restores as a copy and preserves the newer original',async()=>{const {context,page}=await openPlanner({width:1440,height:1000});try{await createScheduledTask(page,'Original activity');await page.locator('#daysGrid .event-title[data-edit]').filter({hasText:'Original activity'}).first().click();await page.locator('#modalNote').fill('My pending draft note');await page.waitForFunction(()=>!!localStorage.getItem('weekwise-editor-draft-v1:weekwise-browser-test-user'));await page.evaluate(()=>{const store=JSON.parse(localStorage.getItem('weekwise-planner-v2'));const task=Object.values(store.weeks).flatMap(w=>w.tasks).find(t=>t.title==='Original activity');task.note='A newer edit';localStorage.setItem('weekwise-planner-v2',JSON.stringify(store));});await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#restoreEditorDraft').click();assert.equal(await page.locator('#editTaskId').inputValue(),'');assert.equal(await page.locator('#modalNoSchedule').isChecked(),true);assert.equal(await page.locator('#modalNote').inputValue(),'My pending draft note');const current=Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).find(t=>t.title==='Original activity');assert.equal(current.note,'A newer edit');}finally{await context.close();}});
 
 test('10,000-record lists keep bounded DOM, search all records and preserve full canonical data',async()=>{const {context,page}=await openPlanner({width:1440,height:1000});try{const metrics=[];for(const count of [1000,5000,10000]){await page.evaluate(count=>{const store=JSON.parse(localStorage.getItem('weekwise-planner-v2')),week=Object.keys(store.weeks)[0];store.weeks[week].tasks=Array.from({length:count},(_,i)=>({id:'large-'+i,title:'Synthetic responsibility '+String(i).padStart(5,'0'),day:i%7,start:null,duration:30,unscheduled:true,done:false,listId:'inbox',folderName:'Large dataset',type:'other'}));localStorage.setItem('weekwise-planner-v2',JSON.stringify(store));},count);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);const measurement=await page.evaluate(()=>new Promise(resolve=>{const start=performance.now();document.querySelector('#workspaceSidebar [data-workspace-view="inbox"]').click();requestAnimationFrame(()=>requestAnimationFrame(()=>resolve({navigationToPaintMs:Math.round(performance.now()-start),rows:document.querySelectorAll('#workspaceTaskList .workspace-task-row').length})));}));assert.equal(measurement.rows,100);metrics.push({records:count,...measurement});assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).length,count);}console.log('Synthetic browser list measurements: '+JSON.stringify(metrics));await page.locator('#workspaceTaskList [data-list-more]').click();assert.equal(await page.locator('#workspaceTaskList .workspace-task-row').count(),200);await page.locator('#workspaceSearch').fill('Synthetic responsibility 09999');assert.equal(await page.locator('#workspaceTaskList .workspace-task-row').count(),1);assert.match(await page.locator('#workspaceTaskList').innerText(),/09999/);assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).length,10000);await page.screenshot({animations:'disabled',path:path.join(root,'test-results','large-list-search.png')});}finally{await context.close();}});
+
+
+test('privacy settings download owner-scoped editor history without deleting drafts',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await page.locator('#globalCaptureBtn').click();
+  await page.locator('#modalTitleInput').fill('Private unfinished export test');
+  await page.waitForFunction(()=>Object.keys(localStorage).some(k=>k.startsWith('weekwise-editor-draft-v1:')));
+  const owner=await page.evaluate(()=>{
+   const current=Object.keys(localStorage).find(k=>k.startsWith('weekwise-editor-draft-v1:'));
+   const owner=current.slice('weekwise-editor-draft-v1:'.length);
+   localStorage.setItem('weekwise-editor-draft-archive-v1:'+owner+':old','{unreadable but preserved');
+   localStorage.setItem('weekwise-editor-draft-v1:another-owner','private other owner');
+   return owner;
+  });
+  await page.reload();
+  await page.locator('[data-workspace-view="settings"]').first().click();
+  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#exportEditorHistoryBtn').click()]);
+  const history=JSON.parse(fs.readFileSync(await download.path(),'utf8'));
+  assert.equal(history.owner,owner);
+  assert.equal(history.kind,'editor-draft-history');
+  assert.ok(history.entries.some(e=>e.raw==='{unreadable but preserved'));
+  assert.ok(history.entries.some(e=>e.raw.includes('Private unfinished export test')));
+  assert.ok(!history.entries.some(e=>e.raw==='private other owner'));
+  const unchanged=await page.evaluate(owner=>localStorage.getItem('weekwise-editor-draft-archive-v1:'+owner+':old'),owner);
+  assert.equal(unchanged,'{unreadable but preserved');
+ }finally{await context.close();}
+});
