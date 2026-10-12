@@ -612,9 +612,15 @@ function taskModalFingerprint(){
     .filter(el=>el.id&&['INPUT','SELECT','TEXTAREA'].includes(el.tagName))
     .map(el=>[el.id,el.type==='checkbox'||el.type==='radio'?el.checked:el.value]));
 }
-let taskModalInitialFingerprint='';
+let taskModalInitialFingerprint='',editorSession=null,editorDraftTimer=null;
+function draftFields(){return Object.fromEntries([...$('taskForm').elements].filter(el=>WeekwiseDrafts.FIELDS.has(el.id)).map(el=>[el.id,el.type==='checkbox'?el.checked:el.value]));}
+function checkpointEditorDraft(){if(!editorSession||!$('taskModal').classList.contains('show')||editorSession.owner!==currentDataOwner||taskModalFingerprint()===taskModalInitialFingerprint)return;WeekwiseDrafts.save(localStorage,{version:2,...editorSession,fields:draftFields(),savedAt:new Date().toISOString()});renderDraftNotice();}
+function renderDraftNotice(){const result=WeekwiseDrafts.read(localStorage,currentDataOwner);$('editorDraftNotice').hidden=!result;if(!result)return;$('editorDraftTitle').textContent=result.error?'Editor draft needs recovery':'Unsaved editor draft';$('editorDraftDescription').textContent=result.error?'The original draft is preserved. Download it before discarding or recovering it.':(result.draft.fields.modalTitleInput||'Untitled task')+' · saved on this device';$('restoreEditorDraft').disabled=!!result.error;}
+function retireEditorDraft(){const result=WeekwiseDrafts.read(localStorage,currentDataOwner);if(result?.draft&&result.draft.sessionId===editorSession?.sessionId){WeekwiseDrafts.discard(localStorage,currentDataOwner,result.raw);renderDraftNotice();}}
+function restoreEditorDraft(){try{const result=WeekwiseDrafts.read(localStorage,currentDataOwner);if(!result||result.error)throw new Error(result?.error||'No saved editor draft.');if($('taskModal').classList.contains('show')&&taskModalFingerprint()!==taskModalInitialFingerprint){showToast('Save or close your current editor before restoring a draft.');return;}const draft=result.draft,id=draft.fields.editTaskId||'',record=id?workspaceRecords().find(r=>r.task.id===id&&r.week===draft.week):null,same=record&&draft.base===JSON.stringify(record.task);if(same){openWorkspaceRecord(id,draft.week);}else openTaskModal(null,Number(draft.fields.modalDay)||now.getDay(),null,'inbox');const fields={...draft.fields};if(!same){fields.editTaskId='';fields.modalNoSchedule=true;fields.modalAllDay=false;fields.modalRecurrence='none';fields.modalRecurrenceScope='occurrence';}for(const [name,value]of Object.entries(fields)){const el=$(name);if(!el||!$('taskForm').contains(el))continue;if(el.type==='checkbox')el.checked=!!value;else if(el.tagName==='SELECT'){if(![...el.options].some(o=>o.value===value)){if(name!=='modalDuration'||!/^\d+$/.test(value)||Number(value)>1440)continue;const option=document.createElement('option');option.value=value;option.textContent=durationLabel(Number(value));el.add(option);}el.value=value;}else el.value=value;}editorSession={owner:currentDataOwner,sessionId:draft.sessionId,week:currentWeek,base:same?draft.base:null};updateModalScheduleVisibility();hideActivitySuggestions();showToast(same?'Draft restored to its original activity. Save when ready.':id?'The original activity changed. Recovered as a new unscheduled draft; review before saving.':'Draft restored. Review and save when ready.');$('modalTitleInput').focus({preventScroll:true});}catch(error){showToast(error.message);}}
 function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   const modal=$('taskModal');const t=id?tasks.find(t=>t.id===id):null;
+  editorSession={owner:currentDataOwner,sessionId:uid(),week:currentWeek,base:t?JSON.stringify(t):null};
   if(id&&!t){showToast('This activity is no longer available. It may have been moved or deleted. Refresh the list and try again.');return;}
   renderTaskTemplateOptions();$('taskTemplateSelect').value='';$('deleteTaskTemplateBtn').disabled=true;
   $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit task':'Add a task';
@@ -666,6 +672,7 @@ function closeTaskModal(force=false){
   if(!modal||!modal.classList.contains('show'))return;
   if(!force&&taskModalFingerprint()!==taskModalInitialFingerprint){
     if(!window.confirm('Discard your unsaved changes?'))return;
+    try{retireEditorDraft();}catch(error){showToast(error.message);return;}
   }
   modal.classList.remove('show');
   taskModalInitialFingerprint='';
@@ -728,7 +735,8 @@ function saveModalTask(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();r
     }else t.recurrence='none';
   }
   if(seriesId||recurrence!=='none')materializeRecurringRange(parseKey(currentWeek),parseKey(addDaysToKey(currentWeek,89)));
-  saveCurrent();closeTaskModal(true);renderAll();
+  saveCurrent();let retainedDraftMessage='';try{retireEditorDraft();}catch(error){retainedDraftMessage='Task saved; its draft is retained: '+error.message;}closeTaskModal(true);renderAll();
+  if(retainedDraftMessage){showToast(retainedDraftMessage);return;}
   if(recurrence!=='none')showToast('Task saved · repeating '+recurrence+'.');
   else if(allDay)showToast('All-day event saved for '+fmtDate(dayDate(currentWeek,day),{weekday:'short',day:'numeric',month:'short'})+'.');
   else if(noSchedule)showToast('Task saved to '+(listId==='inbox'?'Inbox':'your list')+'.');
@@ -806,7 +814,7 @@ function isolatePlannerOwner(nextOwner){
  if(currentDataOwner===nextOwner)return;
  const previousOwner=currentDataOwner,payload=JSON.parse(JSON.stringify(buildCloudPayload()));
  if(focusState?.owner===previousOwner){focusState=WeekwiseFocus.pause(focusState);WeekwiseData.commitStorage(localStorage,[['weekwise-focus-active-v1:'+previousOwner,JSON.stringify(focusState)]]);}
- const modal=$('taskModal');if(modal?.classList.contains('show')&&taskModalFingerprint()!==taskModalInitialFingerprint){const draft=Object.fromEntries([...$('taskForm').elements].filter(el=>el.id&&['INPUT','SELECT','TEXTAREA'].includes(el.tagName)).map(el=>[el.id,el.type==='checkbox'?el.checked:el.value]));localStorage.setItem('weekwise-editor-draft-v1:'+previousOwner,JSON.stringify(draft));}
+ checkpointEditorDraft();
  localStorage.setItem('weekwise-account-cache-v1:'+previousOwner,JSON.stringify({payload,meta:readCloudMeta()}));
  closeTaskModal(true);
  // First-time local capture belongs to the account the user deliberately signs into.
@@ -1392,9 +1400,11 @@ function renderWorkspaceTaskGroups(items){
 }
 
 function experienceData(){return {active:workspaceView==='insights',owner:currentDataOwner,week:dateKey(sundayOf(now)),today:dateKey(now),minute:now.getHours()*60+now.getMinutes(),store,records:workspaceRecords().map(r=>({...r,dateKey:dateKey(r.date)})),focusSessions,habits,signedIn:!!cloudUser,syncLabel:$('cloudMenuBadge').textContent};}
-function renderExperience(){renderZoneNotice();if(!window.WeekwiseExperience)return;const data=experienceData();WeekwiseExperience.renderInsights(data);WeekwiseExperience.renderSettings(data);}
+function renderExperience(){renderDraftNotice();renderZoneNotice();if(!window.WeekwiseExperience)return;const data=experienceData();WeekwiseExperience.renderInsights(data);WeekwiseExperience.renderSettings(data);}
 function renderTodayOverview(){const panel=$('todayOverview');panel.hidden=workspaceView!=='today';if(!panel.hidden)WeekwiseExperience.renderToday({...experienceData(),active:true});}
 
+function listPage(key,items){const scoped=currentDataOwner+'::'+key,page=WeekwiseListWindow.page(scoped,items);return {...page,key:scoped};}
+function listPageFooter(page){return page.total>WeekwiseListWindow.SIZE?'<div class="list-page-footer" role="status"><span>Showing '+page.shown+' of '+page.total+' tasks</span>'+(page.hasMore?'<button class="btn" type="button" data-list-more="'+escapeHtml(page.key)+'">Show '+Math.min(WeekwiseListWindow.SIZE,page.total-page.shown)+' more</button>':'')+'</div>':'';}
 function renderWorkspaceTasks(){
  const list=$('workspaceTaskList');if(!list)return;
  const search=String($('workspaceSearch')?.value||'').trim().toLowerCase(),sort=$('workspaceSort')?.value||'date';
@@ -1410,7 +1420,7 @@ function renderWorkspaceTasks(){
  $('workspaceCaptureInput').placeholder=workspaceView==='inbox'?'Quick capture to Inbox…':workspaceView.startsWith('folder:')?'Add a task to '+workspaceView.slice(7)+'…':workspaceView.startsWith('tag:')?'Add a task tagged #'+workspaceView.slice(4)+'…':'Add a task to your inbox…';$('workspaceAddTaskBtn').textContent=workspaceView==='inbox'?'＋ Add to Inbox':'＋ Add task';
  $('workspaceSearch').placeholder=workspaceView==='search'?'Search every list, folder, tag and deadline…':'Search tasks in this view';
  const shouldGroupSections=(workspaceView.startsWith('list-')||workspaceView.startsWith('folder:')||workspaceView.startsWith('tag:'))&&items.some(record=>String(record.task.sectionName||'').trim());
- const renderedItems=shouldGroupSections?renderWorkspaceTaskGroups(items):items.map(workspaceTaskRow).join('');
+ const page=listPage('workspace:'+workspaceView+'|'+search+'|'+sort,items);const renderedItems=(shouldGroupSections?renderWorkspaceTaskGroups(page.records):page.records.map(workspaceTaskRow).join(''))+listPageFooter(page);
  renderTodayOverview();
  list.innerHTML=items.length?renderedItems:'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
 }
@@ -1559,7 +1569,7 @@ function renderPriorityMatrix(){
   else if(imp==='not-important'&&urg==='urgent')lists.delegate.push(r);
   else lists.later.push(r);
  });
- [['matrixDoList',lists.do],['matrixScheduleList',lists.schedule],['matrixDelegateList',lists.delegate],['matrixLaterList',lists.later],['matrixUnclassifiedList',lists.unclassified]].forEach(([id,items])=>{const el=$(id);if(el)el.innerHTML=items.length?items.map(renderMatrixTask).join(''):'<div class="matrix-empty">No tasks here yet.</div>';});
+ [['matrixDoList',lists.do],['matrixScheduleList',lists.schedule],['matrixDelegateList',lists.delegate],['matrixLaterList',lists.later],['matrixUnclassifiedList',lists.unclassified]].forEach(([id,items])=>{const el=$(id),page=listPage('matrix:'+id,items);if(el)el.innerHTML=items.length?page.records.map(renderMatrixTask).join('')+listPageFooter(page):'<div class="matrix-empty">No tasks here yet.</div>';});
  $('matrixUnclassifiedCount').textContent=String(lists.unclassified.length);
 }
 function taskLoggedFocusMinutes(taskId){return Math.round(focusSessions.filter(s=>s.taskId===taskId).reduce((total,s)=>total+Number(s.minutes||0),0));}
@@ -1834,7 +1844,7 @@ function renderKanbanBoard(){
  [['todo','kanbanListTodo','kanbanCountTodo'],['in-progress','kanbanListProgress','kanbanCountProgress'],['done','kanbanListDone','kanbanCountDone']].forEach(([status,listId,countId])=>{
   const list=$(listId),count=$(countId),items=groups[status].sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
   if(count)count.textContent=String(items.length);
-  if(list)list.innerHTML=items.length?items.map(renderKanbanCard).join(''):'<div class="kanban-empty">No tasks in this column.</div>';
+  const page=listPage('board:'+status,items);if(list)list.innerHTML=items.length?page.records.map(renderKanbanCard).join('')+listPageFooter(page):'<div class="kanban-empty">No tasks in this column.</div>';
  });
 }
 function updateBoardTaskStatus(id,week,status){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
@@ -1894,7 +1904,7 @@ function renderSavedFilters(){
  $('activeFilterTitle').textContent=active.title;
  $('activeFilterDescription').textContent=description.length?description.join(' · '):'All tasks';
  $('activeFilterResultCount').textContent=records.length+' task'+(records.length===1?'':'s');
- results.innerHTML=records.length?records.map(workspaceTaskRow).join(''):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>No matching tasks</h3><p>Try changing the criteria or update a task’s details.</p></div></div>';
+ const page=listPage('filter:'+active.id,records);results.innerHTML=records.length?page.records.map(workspaceTaskRow).join('')+listPageFooter(page):'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>No matching tasks</h3><p>Try changing the criteria or update a task’s details.</p></div></div>';
 }
 function saveFilterForm(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
  e.preventDefault();
@@ -2604,6 +2614,7 @@ window.weekwiseCalendarBridge = {
 
 WeekwiseExperience.init({edit:openWorkspaceRecord,focus(id,week){const record=workspaceRecords().find(r=>r.task.id===id&&r.week===week);if(!record)return;const state=ensureFocusState();if(state.runningSince!==null||state.activeMs>0){openUtilityPanel('focusPanel','Focus timer');showToast('Finish or reset your current session before choosing another task.');return;}focusState=freshFocus('focus',state.totalSeconds,{id,week,title:record.task.title});persistActiveFocus();openUtilityPanel('focusPanel','Focus timer');renderFocusPanel();focusStartPause();},navigate:setWorkspaceView,panel:openUtilityPanel,render:renderExperience,review(week,review){if(!WeekwiseData.validDate(week))throw new Error('Choose a valid week.');if(!dataCanWrite())throw new Error('Editing is paused for data recovery.');store.settings.weeklyReviews={...(store.settings.weeklyReviews||{}),[week]:{...review,updatedAt:new Date().toISOString()}};if(!saveStore())throw new Error('Could not save your review.');}});
 $('captureConfirmApply').onclick=()=>{$('captureConfirmDialog').close();quickCaptureWorkspaceTask(false,true);};$('captureKeepRaw').onclick=()=>{$('captureConfirmDialog').close();quickCaptureWorkspaceTask(true,true);};$('captureCancel').onclick=()=>$('captureConfirmDialog').close();
+$('restoreEditorDraft').onclick=restoreEditorDraft;$('downloadEditorDraft').onclick=()=>{const result=WeekwiseDrafts.read(localStorage,currentDataOwner);if(!result)return;const url=URL.createObjectURL(new Blob([result.raw],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='weekwise-editor-draft.json';a.click();URL.revokeObjectURL(url);};$('discardEditorDraft').onclick=()=>{const result=WeekwiseDrafts.read(localStorage,currentDataOwner);if(!result||!confirm('Discard the saved editor draft? Download it first if you need a copy.'))return;try{WeekwiseDrafts.discard(localStorage,currentDataOwner,result.raw);renderDraftNotice();}catch(error){showToast(error.message);}};$('taskForm').addEventListener('input',()=>{clearTimeout(editorDraftTimer);editorDraftTimer=setTimeout(()=>{try{checkpointEditorDraft();}catch(error){showToast(error.message);}},500);});window.addEventListener('beforeunload',()=>{try{checkpointEditorDraft();}catch(_){}});document.addEventListener('click',e=>{const button=e.target.closest('[data-list-more]');if(!button)return;WeekwiseListWindow.more(button.dataset.listMore);if(workspaceView==='board')renderKanbanBoard();else if(workspaceView==='matrix')renderPriorityMatrix();else if(workspaceView==='filters')renderSavedFilters();else renderWorkspaceTasks();const next=[...document.querySelectorAll('[data-list-more]')].find(el=>el.dataset.listMore===button.dataset.listMore);next?.focus();});
 $('globalCaptureBtn').onclick=()=>openTaskModal(null,now.getDay(),null,'inbox');$('mobileNavigationToggle').onclick=()=>{const open=document.body.classList.toggle('navigation-expanded');$('mobileNavigationToggle').setAttribute('aria-expanded',String(open));};
 $('workspaceSidebar').addEventListener('click',e=>{if(e.target.closest('[data-workspace-view]')||e.target.closest('[data-workspace-action]')){document.body.classList.remove('navigation-expanded');$('mobileNavigationToggle').setAttribute('aria-expanded','false');}});
 $('signinLocalContinue').onclick=()=>{try{isolatePlannerOwner('local');cloudUser=null;cloudReady=false;localStorage.setItem('weekwise-local-mode-v1','true');finishSignInLanding();setCloudStatus('Device-only planning. Your changes are saved locally.');}catch(error){setCloudStatus('Could not open the device planner: '+error.message);}};
