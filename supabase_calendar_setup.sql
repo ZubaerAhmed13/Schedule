@@ -112,6 +112,11 @@ begin
     return;
   end if;
 
+  if current_row.data is not distinct from p_data then
+    return query select true, current_row.revision, current_row.data, current_row.updated_at;
+    return;
+  end if;
+
   return query
     update public.weekwise_cloud_data as cloud_row
        set data = p_data,
