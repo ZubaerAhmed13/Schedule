@@ -24,3 +24,5 @@ jobs:
           deno-version: v2.x
       - name: Type-check Web Push handler
         run: deno check --no-lock supabase/functions/weekwise-push/index.ts
+      - name: Type-check Google and Microsoft calendar handler
+        run: deno check --no-lock supabase/functions/weekwise-calendar/index.ts
