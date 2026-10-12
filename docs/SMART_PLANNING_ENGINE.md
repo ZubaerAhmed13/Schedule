@@ -1,45 +1,51 @@
-# Smart Week Builder — initial beta
+# Smart Week Builder and Recover My Week
 
-This increment builds schedules for unscheduled, unfinished, non-recurring flexible tasks. It does not implement Recover My Week, task splitting, recurring occurrence moves, preferred focus periods, manual preview placement or multiple availability windows. These remain explicit continuation work.
+Both features consume real canonical records and require explicit approval. They are deterministic feasibility heuristics, not globally optimal schedules or promises that every deadline is achievable.
 
-## Inputs and units
+## Inputs and capacity
 
-Sunday week bucket, canonical weekly records, selected weekdays, one daily start/end availability window, daily buffer and break after each task. Defaults are editable 09:00–17:00 Monday–Friday, 60-minute buffer and 10-minute breaks; the app does not infer that these suit every user.
+Editable preferences include selected weekdays, default hours, up to 28 custom weekday windows, daily buffer, weekly buffer, following breaks, maximum daily planned minutes and an optional preferred focus period. Custom windows replace default hours on that weekday. Overlapping windows and calendar commitments are unioned. Gaps between windows stay unavailable.
 
-Dates use validated calendar-day ordinals, avoiding fixed-millisecond local day subtraction across DST. Scheduling coordinates are local calendar minutes. The UI states that it uses the device time zone. On acceptance it rejects nonexistent local start times and placements whose actual elapsed duration differs across a DST clock change. It does not support arbitrary user-selected IANA zones yet.
+Capacity calculation:
 
-Past planning time is trimmed using today's local date and next minute. Proposals start on 15-minute boundaries. Single tasks stay within one availability window/day; overnight existing commitments still block subsequent days, including when they begin in the previous week.
+1. Include only selected planning windows after the current local minute.
+2. Remove the union of scheduled commitments, including overnight spillover from other weeks.
+3. Conservatively block the full date for all-day events.
+4. Remove configured breaks following existing commitments.
+5. Reserve daily buffer, then apply the daily limit after existing committed time.
+6. Reserve the weekly buffer from the remaining intervals.
+7. Each suggestion consumes its duration plus its following break.
 
-## Capacity
+Buffer is reserved from the end of available intervals and may span fragments. Capacity display separates selected hours, committed time, buffer, remaining task capacity and preview remainder. Daily-limit reservation is available in the engine output. Unknown estimates and deadline/continuous-slot problems remain visible; unused capacity does not prove that a task fits.
 
-1. Include only the user's chosen future planning hours.
-2. Union all scheduled commitments; overlapping busy minutes count once.
-3. All-day calendar entries conservatively block the full date. This is disclosed in Plan.
-4. Remove a break after existing timed commitments; only intersections with available hours consume capacity.
-5. Reserve daily buffer from the end of the remaining free intervals (can span fragments).
-6. Remaining free minutes are flexible capacity. Each proposed task also consumes its configured following break.
+## Scheduling precedence
 
-Calendar time outside planning boundaries, sleep and unchosen days never count as capacity. The current beta reserves daily buffer, not a separate weekly-buffer preference. Capacity tiles distinguish available time, committed time, buffer, flexible capacity and preview remainder. Required workload uses only known task estimates; unknown estimates remain explicit. Aggregate surplus is not a guarantee that every deadline/continuous task fits.
+Build considers unfinished unscheduled flexible backlog tasks dated no later than the chosen week end. Fixed/workday/all-day/attendance-only/container tasks, recurring tasks and already scheduled tasks stay in place.
 
-## Deterministic precedence
+Require an explicit positive duration: `estimatedDurationMinutes`, or the older explicit `focusEstimateMinutes`. Recovery may reuse the already planned calendar duration. Automatic capture defaults are never treated as a measured estimate.
 
-- Preserve every scheduled commitment, completed record, fixed task (`fixed`, `workday`, type fixed or schedulingMode fixed), all-day entry and recurring series/occurrence.
-- Consider unscheduled backlog tasks whose original date is no later than the chosen week end. Do not pull future tasks forward from later weeks.
-- Require a positive integer `focusEstimateMinutes`; do not infer it from automatic 30-minute capture defaults.
-- Sort by earliest due date, highest priority, flexible before optional when otherwise tied, source week, stable ID. Optional activity priority can still be deliberately raised by the user.
-- Try the earliest continuous free slot ending by the date-only deadline (local end of day), with room for the following break.
-- Keep anything that cannot fit unscheduled and give a reason. Never expand availability, move fixed events or modify deadlines to hide an impossible plan.
+Order: earliest deadline, highest priority, flexible before optional when tied, source week, stable ID. Try a feasible preferred-focus slot first; otherwise use the earliest continuous free slot. Starts align to 15-minute boundaries. The entire duration and following break must fit; date-only deadlines mean local end of day. Never extend availability or change deadlines automatically.
 
-This is a feasibility heuristic; it does not claim globally optimal placement. A larger high-priority task may use space a later smaller task could have filled. Users can adjust priorities, durations, availability or selected acceptances and regenerate.
+Manual date/time edits require **Check placement**, which regenerates and validates the preview. Invalid overrides stay unscheduled with an explanation. Other preferences regenerate from the deterministic rules.
 
-## Preview, acceptance and Undo
+## Recovery
 
-Preview is pure and contains proposed slots, unscheduled reasons, unknown-estimate count, existing overlap warnings and capacity. All proposals are initially selected; users may deselect any. Apply only runs after explicit action and only if planner/account matches the snapshot, no cloud conflict/storage recovery is active, starts remain in the future, and the preview is at most five minutes old.
+Recover detects unfinished past timed activities and overlapping timed commitments. Fixed, completed, all-day and explicitly completion-free events are protected. Flexible recurring occurrences may be moved as an exception. Existing slots remain blockers while building the preview, so accepting only part of a proposal cannot create a collision with an unselected source task. This deliberately sacrifices some capacity rather than assuming every move will be approved.
 
-Apply validates all moves on a clone, retains IDs/reminders/subtasks/details and writes the canonical store once. A cross-week task moves; it is not duplicated. Existing reminders retain their exact original timestamps, which may need user review after scheduling. Reminder rescheduling is deliberately not automatic.
+The interface explains what changed, what can move, the original slot and what cannot fit. Apply moves the existing ID, keeps original details/reminder timestamps, appends rescheduling history and marks recurring overrides. Global occurrence lookup across all weeks prevents the old occurrence from regenerating after a cross-week move. Original reminder times are retained; users should review them after scheduling.
 
-Undo reverses the last plan only while the planner is unchanged. It does not rewind newer edits. A pre-plan raw-store checkpoint remains locally after reload for manual recovery. Cloud changes continue through the existing revision-checked RPC; local acceptance does not prove remote synchronization.
+## Splitting
 
-## Test coverage
+Only unfinished flexible non-recurring tasks can be split. Users enter 2–12 named parts with explicit 5–1440-minute estimates; the app does not invent personalized estimates. The original parent ID, notes and existing subtasks remain. Its old calendar slot is retained in `planningOriginalSchedule`, while it becomes an unscheduled parent. Each child is a separate schedulable record linked to the parent. Reminders are not duplicated onto children. Linked completion is reconciled across weeks. Splitting is a separate explicitly approved, checkpointed change before placement acceptance.
 
-Unit/behavior tests cover overlap union, capacity, deadlines, priorities, estimates, impossible workloads, excluded records, preview purity, selected acceptance, stable details, cross-week moves, previous-week overnight blocking, calendar offsets across DST/year boundaries and no partial mutation on rejection. Browser CI covers real UI preview/select/apply/reload/undo plus desktop/tablet/mobile widths. Full timezone, offline service-worker, simultaneous-device and recovery regressions are still required.
+## Acceptance and Undo
+
+Preview does not write data. All suggestions start selected; individual suggestions can be declined. Apply rejects stale accounts/stores, unresolved conflicts, damaged storage, unreviewed timezone changes, past starts, previews older than five minutes, nonexistent local times and DST duration discontinuities. It regenerates the expected placements before applying all selected moves to a clone and committing one checked local write.
+
+Guarded Undo reverses the last accepted plan only while the store/account is unchanged. Pre-plan/pre-split raw checkpoints remain on the device after reload. Undo does not rewind habit, reminder or focus collections. Local success is not equivalent to confirmed cloud sync.
+
+## Tests and limits
+
+Tests cover capacity union, multiple windows, buffers/limits, focus preference, deadlines, unknown/impossible work, fixed protection, selected acceptance, tampered slots, immutable failure, split links, overnight boundaries, DST calendar ordinals, recovery history and recurring cross-week identity. Browser tests exercise actual preview/apply/reload/Undo, splitting and recurring recovery.
+
+Device-local scheduling, Sunday canonical buckets and date-only deadlines remain explicit limits. There is no arbitrary IANA-zone conversion, auto deadline adjustment, recurring-series rescheduler or automatic semantic AI task breakdown.

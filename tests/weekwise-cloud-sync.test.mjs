@@ -16,7 +16,7 @@ function makeContext() {
   let payload = { version: 1, tasks: ["before"] };
   let queueCalls = 0;
   const context = {
-    plannerStorageBlocked: false,
+    plannerStorageBlocked: false,localStorage:{getItem:()=>null},STORE_KEY:'planner',lastSavedDisk:null,
     WeekwiseData: {blockedKeys:()=>[]},
     cloudClient: { rpc: () => new Promise((resolve, reject) => { resolveRpc = resolve; rejectRpc = reject; }) },
     cloudUser: { id: "test-user" },
@@ -113,3 +113,5 @@ test("network errors release the lock and report failure without discarding loca
 test('an old account response cannot mark a new account synced or change its revision',async()=>{
  const f=makeContext(),saving=f.context.saveCloudSnapshot();await Promise.resolve();f.context.cloudSessionEpoch++;f.context.cloudUser={id:'new-user'};f.context.cloudRevision=20;f.getResolveRpc()({data:[{saved:true,revision:5}],error:null});await saving;assert.equal(f.context.cloudRevision,20);assert.ok(!f.getStatuses().some(m=>m.startsWith('All changes synced')));
 });
+
+test('cloud queue skips unchanged snapshots and queues actual local changes',()=>{const start=html.indexOf('function queueCloudSave(){'),end=html.indexOf('\nasync function saveCloudSnapshot()',start),payload={version:1,store:{}};const fingerprint=JSON.stringify(payload);let timers=0;const c={plannerStorageBlocked:false,localStorage:{getItem:()=>null},STORE_KEY:'planner',lastSavedDisk:null,WeekwiseData:{blockedKeys:()=>[]},cloudClient:{},cloudUser:{id:'a'},cloudReady:true,cloudApplyingRemote:false,cloudConflict:null,cloudSyncTimer:null,readCloudMeta:()=>({userId:'a',fingerprint}),buildCloudPayload:()=>payload,cloudFingerprint:JSON.stringify,setCloudStatus(){},setTimeout:()=>++timers,clearTimeout(){}};vm.runInNewContext(html.slice(start,end),c);c.queueCloudSave();assert.equal(timers,0);payload.localChange=true;c.queueCloudSave();assert.equal(timers,1);});

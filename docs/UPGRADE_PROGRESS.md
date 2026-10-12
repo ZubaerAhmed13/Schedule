@@ -1,61 +1,56 @@
 # Weekwise 2.0 upgrade progress
 
-## Phase completed
+## Review candidate
 
-Phase 0 repository audit and protection planning completed. Phase 1 first engineering increment implemented. An initial Phase 3 Smart Week Builder beta is integrated; the complete Phase 1 refactor and Phases 2–6 are not finished.
+Development branch: `codex/weekwise-2-foundation`.
+Draft PR: https://github.com/ZubaerAhmed13/Schedule/pull/16.
+Baseline main: `dc5167a299fc1f9cd00fe889619dd8a6ef335b4c`.
 
-## What improved
+The actual existing app has been upgraded; features/data have not been replaced by a demo. Main, the live website and the production database remain unchanged. The user authorized branch publication and draft review; production actions are separate.
 
-- Removed title-based startup deletion and custom-only week filtering; retain every validated record and week field.
-- Corrupt planner data pauses saving/cloud upload and offers original-byte recovery.
-- Existing recurring occurrences retain edited fields/history on reload.
-- JSON restore validates input before mutation, requires confirmation, retains a checkpoint and rolls back local writes on failure.
-- Sync badges distinguish failed, pending, review and confirmed success states.
-- New Plan screen previews capacity/placements using real records, selected approval, single-key checked persistence and guarded Undo.
-- Scheduling behaviors added to the editor; existing explicit focus estimate is reused rather than inventing a duration.
-- New modules, scoped responsive styles, release checks and regressions preserve the buildless GitHub Pages architecture.
+## Implemented
 
-## Important files
+- Extracted application logic and legacy styles into files; added pure modules and narrow UI bridges.
+- Green light/dark design system, five primary destinations, phone bottom navigation and accessible secondary tools.
+- Today: next time block, up to three user-chosen priorities, timeline, saved-availability capacity and relevant deadline notices.
+- Insights: genuine task completion, unioned scheduled time, recorded focus, explicit estimates, habit check-ins and saved weekly reflection. Estimates are never presented as measured work.
+- Smart Week Builder: multiple windows, breaks, daily/weekly buffer, daily limit, preferred focus, explicit durations, stable explainable ordering and deadline risks.
+- Editable preview placements, selected acceptance, stale/account/DST guards, independent feasibility revalidation, checked persistence and guarded Undo.
+- Recover: unfinished/conflicting flexible activities, fixed protection, recurring occurrence exceptions, original IDs/details/history and global duplicate prevention.
+- Explicitly named/estimated task parts, retained parent/subtask structure and linked completion reconciliation.
+- Focus timer persists epochs and excludes pauses; partial finishing, short/long breaks, account ownership and deduplicated history are supported.
+- Habit weekdays, paused/rest/skipped days, retained check-ins and honest foreground reminders.
+- Interpreted natural capture asks for review; users can keep their original text.
+- Corrupt primary/auxiliary data is preserved and blocks writes; invalid backups are rejected; confirmed restore checkpoints and rolls back included keys.
+- Quota/save failures restore prior records and interrupt success messages. Another-tab changes are rejected before stale writes or cloud uploads.
+- Account isolation, immutable token capture, late-response guards, checked cloud application and no redundant clean-snapshot saves.
+- Device-only entry, real offline create/reload coverage, versioned frontend-only build and explicit update activation.
+- Timezone metadata/review guard retains wall times; imports are bounded and unsupported foreign TZID imports are rejected rather than silently reinterpreted.
+- Optional RPC hardening and a read-only privilege diagnostic are prepared, not executed.
 
-`index.html`: bounded data safety fixes, additive Plan markup/editor fields and bridge.
-`js/weekwise-data.js`: validation/storage/checkpoint/status.
-`js/weekwise-planning.js`: pure deterministic capacity and schedule engine.
-`js/weekwise-plan-ui.js`: preview, selection, apply and guarded Undo.
-`css/weekwise-plan.css`: green responsive Plan components and dark theme.
-`sw.js`: v76 shell additions and failed-HTTP cache protection.
-`tests/*`, browser CI and release validator: behavior/regression checks and screenshots.
-All seven requested architecture/audit/planning/design/data/release/progress documents are present; README includes running/testing guidance.
+## Validation
 
-## Existing features preserved
+Run `node scripts/validate-weekwise.mjs`, `node --test tests/*.test.mjs`, `node scripts/build-weekwise.mjs` and the remote browser workflow. Current local suite has 54 tests. Browser suite has 22 regressions against the built `dist/` client, isolated Supabase fixtures and a real service worker for offline testing. CI artifacts contain desktop/tablet/phone light/dark screenshots. Both existing Supabase Edge Functions are type-checked separately.
 
-No removal of task views, projects/folders/tags, board/filters/matrix, calendars, recurrence rules/exclusions, reminders, habits, focus, countdowns, file imports/exports, integration code or invite enforcement. Node cloud race/conflict and calendar/push contracts pass. Existing browser tests remain; new branch CI must verify calendar/editor/mobile regressions. Production source and database are unchanged until review.
+At `a07720c5fe6a938911eaf6ab2bf5a4e44f1aeebe`, all 17 then-current browser tests, release checks and both Edge Function checks passed. At `21a5a7aefe7e83fbe4c0b2eebe781574740d843a`, 20 of 21 expanded browser tests passed; two-device testing exposed redundant startup saves and a forced calendar-view change. Both are corrected and the expanded suite is rerun on this review candidate. See the PR's latest checks for the authoritative final result.
 
-## Tests performed
+Light and dark screenshots have been visually reviewed at 1440/820/390px. Further shared theme refinements follow those findings. A synthetic Node scheduling benchmark produced medians around 8/37/56 ms for 1,000/5,000/10,000 records in this workspace (Node v24); this is not a browser Core Web Vitals result.
 
-Baseline: sanity checks passed and 14/14 Node tests. Baseline GitHub release/browser/Edge type-check/Auth-diagnostic/Pages runs succeeded at dc5167a.
-After implementation: sanity checks, 36/36 Node tests, browser test syntax check and git whitespace check pass locally. Local Playwright launch blocked: Chromium binary absent. GitHub CI at 76b5bb7 passed all 9 browser tests and both Deno Edge Function checks. Styled CI screenshots were downloaded and visually reviewed at 1440/820/390px. That review found calendar-only controls leaking into Plan after calendar rendering; workspace visibility is now reapplied after rendering, with regressions added. No private backend round trips were run. New browser tests cover preview purity/selected acceptance/Undo/reload, 1440/820/390px layout, unknown estimates, legacy and occurrence history, corrupt storage and invalid backup. Browser screenshots are retained in CI artifacts when generated.
+## External release requirements
 
-## External setup required
+1. Review/authorize merge and Pages deployment, then verify the exact build-info commit/run.
+2. Validate private Supabase test accounts, own-row/cross-user RLS, token expiry, invitation enforcement and real two-device/offline reconnect behavior.
+3. Stage/review the optional `weekwise_rpc_hardening.sql`; it changes privileges and function execution mode. No production SQL is automatically run.
+4. Configure and test OAuth/VAPID/calendar/push services only when those optional integrations are wanted. Contract tests do not establish live delivery or provider consent.
+5. Complete human screen-reader, contrast/text-zoom, actual mobile keyboard and installed-PWA reviews.
 
-No new backend setup for the Plan beta. Real Supabase/test-account, provider and push verification remain separate work; follow existing INTEGRATION_READINESS, CALENDAR_OAUTH_SETUP and BACKGROUND_PUSH_SETUP docs. Do not change production SQL/provider settings or deploy without authorization.
+## Precise continuation checklist
 
-## Known limitations
+- Arbitrary fixed IANA-zone rendering/conversion and configurable week start remain unfinished; canonical storage remains Sunday/device-local.
+- A saved-rule edit affects newly created occurrences while retaining existing materialized history. Bulk changes to already saved future occurrences need a separate reviewed preview design.
+- Owner-specific unsaved editor drafts are checkpointed, but a draft-restore interface is pending. Damaged missing backup collections require explicit manual recovery; no silent reset is offered.
+- Add measured browser benchmarks/virtualization for very large visible lists. The Node engine benchmark does not prove full UI performance.
+- Continue separating the main module into tested state/view APIs.
+- Privacy/account deletion tooling, audit retention/export policy and full security/accessibility certification need separate reviewed work.
 
-Beta uses one daily availability window/device local time, date-only deadlines and focus estimates. Existing scheduled/recurring/all-day tasks are never moved. Recovery, splitting, focus preferences, manually adjusted previews, separate estimated calendar duration and arbitrary timezone preference are unfinished. Auxiliary-store corruption, cloud account races/atomic remote restoration, full PWA update behavior, auth-gated offline UX, full-app visual redesign/accessibility and measured browser performance remain open. A shared recovery checkpoint is local-only and not encrypted.
-
-## Next priorities / continuation checklist
-
-1. Read CI results and fix any actual regression; inspect desktop/tablet/mobile screenshots.
-2. Add browser coverage for valid restore, stale preview/Undo and storage-quota refusal; exercise offline PWA and light/dark keyboard flows.
-3. Protect auxiliary stores and account switching/in-flight auth saves; strengthen cloud application atomicity and status events.
-4. Extract legacy CSS/view modules in small tested increments; redesign main navigation and Today with existing features retained.
-5. Complete planner constraints: user availability windows/focus periods, separate estimated calendar duration, recurrence-safe move semantics and Recover My Week.
-6. Implement persisted active focus timing and measured insights, then conduct private backend verification, security/a11y/performance/release work.
-
-This is a concrete incremental upgrade, not a finished premium-product release.
-
-## Review status
-
-The user authorized uploading the development branch. The changes are published on `codex/weekwise-2-foundation` in draft pull request #16: https://github.com/ZubaerAhmed13/Schedule/pull/16. No merge, production deployment or database modification is included in that authorization.
-
-At commit 602981f20c49ef256beb8a967eb042844e1f2adb, GitHub release checks and both Supabase Edge Function type checks passed. The first browser run passed 7 of 9 tests, including Smart Week Builder and all three responsive widths. It exposed editor persistence and legacy-record equality failures. Calendar layout was mutating task records with temporary lane fields; rendering now uses copies. The editor failure was a delayed focus callback stealing focus during note entry; editor focus is now set synchronously on open. The screenshot run also exposed missing CSS MIME handling in the test server; it now serves CSS correctly and the responsive regression verifies styled grid layout. All 9 browser tests passed at 76b5bb7. The final follow-up adds screenshot-driven calendar-control visibility fixes; verify its own CI before release. The initial review package remains a snapshot of the work before branch publication.
+The core planning/recovery and reliability upgrade is a concrete review candidate. It is not a claim that all 32 sections or all production integrations are complete.

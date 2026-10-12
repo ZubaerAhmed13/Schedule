@@ -1,33 +1,33 @@
 # Data compatibility, backup and rollback
 
-## What changes
+## Compatibility
 
-No production SQL or storage-key migration. Planner key `weekwise-planner-v2`, cloud envelope version 1 and JSON backup version 6 remain. Optional schedulingMode and settings.planning fields are additive. Existing unknown planner/task/week fields are preserved; export includes extension fields.
+No production database or destructive storage migration is executed. Planner key `weekwise-planner-v2`, cloud envelope version 1 and backup version 6 remain. New fields are additive and unknown task/week/store extensions are retained. Baseline IDs, completed records, non-custom tasks, reminders and recurring exceptions survive reload.
 
-Startup no longer deletes records by title or filters out records without custom:true. Saved recurring occurrences retain notes, reminders, completion/subtasks and edited schedules on reload. Existing v1 Monday-to-Sunday migration retains top-level fields, task IDs, week metadata and the original v1 key. Validate/migrate on an isolated copy before deploying to legacy users.
+The existing v1 Monday-to-Sunday conversion retains the original v1 key, IDs and metadata. Canonical weeks remain Sunday buckets; configurable week start and fixed-zone conversion require a separately tested migration/design. Do not reinterpret historical calendar data to implement a preference superficially.
 
-## Backups
+Recurring reload uses a global occurrence lookup. Editing one occurrence marks an exception; editing a rule affects new occurrences. Stopping a rule sets an end boundary and retains every already materialized occurrence, including completed and edited history. The editor explains these conservative scope semantics.
 
-Use More → Export backup before a production upgrade, clearing browser data or account migration. JSON backups contain personal task details and histories; keep them private. ICS transfer remains a separate calendar format.
+## Backups and restore
 
-Restore accepts supported legacy versions through 6 (or the older settings/weeks envelope without version), limits input to 10 MB, validates dates/IDs/task primitives and collection shapes, rejects unsafe object keys and unsupported future versions, then asks for explicit replacement confirmation. Missing optional collections in older backups retain the device's current collections.
+Settings → Data & privacy or More → Export backup downloads canonical tasks, extension fields, rules, collections and history, without authentication tokens. Keep backups private. ICS is a calendar-transfer format, not a complete application backup.
 
-Before writes, `weekwise-pre-restore-v1` stores previous raw values of every key that will be replaced. If checkpoint creation fails, no data is replaced. If later writes fail, restore rolls back saved raw values; an incomplete rollback is reported. The checkpoint contains private data and is local-only. It is not a substitute for a downloadable backup and is not synchronized.
+Restore accepts supported envelopes through version 6 and legacy settings/weeks envelopes. It limits files to 10 MB, validates record primitives/IDs/dates/collection shapes, rejects unsafe object keys and future versions, then requires replacement confirmation. Missing optional collections retain the current device collection.
 
-## Corrupt planner recovery
+Before writing, `weekwise-pre-restore-v1` stores previous raw values for included keys. Checkpoint failure aborts before replacement. Later failure rolls back prior raw values; an incomplete rollback is explicitly reported. Normal task/collection saves also interrupt success reporting on failure and restore prior in-memory records.
 
-Unreadable/malformed primary planner data leaves its original bytes intact. Planner saving and cloud upload are paused. A persistent notice offers Download original local data. Keep that file, then restore a known valid backup. Do not export the empty fallback view as though it were the damaged original. Other independent collections have not received equivalent corruption guards yet; audit and protect them in the next reliability increment.
+## Damaged data
 
-## Plan checkpoints
+Primary planner and auxiliary collection parse failures retain their original bytes. Editing and automatic cloud upload pause. Download original local data from the recovery notice, retain that file, then restore a compatible known-good backup. Never export an empty fallback as though it were the damaged original. A restore clears the recovery guard only for the keys actually restored. If the backup lacks a damaged collection or active-timer key, retain/export that original and use an isolated profile for manual recovery; the app deliberately does not silently reset it.
 
-`weekwise-pre-plan-v1` retains the raw planner before the last accepted plan. In-memory Undo works while the planner/account remains unchanged. After newer edits, Undo refuses to erase them. Reload does not retain the Undo button; the checkpoint remains for manual recovery.
+## Accounts and checkpoints
 
-A developer can recover a checkpoint in an isolated profile: parse checkpoint JSON, find the planner-key raw value in entries, validate it with WeekwiseData.parseStore, construct a version-6 backup envelope using that settings/weeks snapshot and compatible auxiliary collections, then use the normal confirmed restore. Do not clear storage or directly overwrite a live account during diagnosis.
+Account caches use owner-specific keys. A transition preserves the previous payload, isolates the next account and retains device-only work separately. Adoption of existing device-only work into a signed-in account requires a choice. Unsaved task editor fields are checkpointed by owner during a transition; a draft-restoration UI remains pending. Checkpoints may contain private data, are not encrypted and are not synced automatically.
 
-## Rollback
+`weekwise-pre-plan-v1` and `weekwise-pre-split-v1` retain prior raw planners. Undo is in-memory and refuses to overwrite newer edits. A checkpoint can be turned into a version-6 backup in an isolated profile, validated with `WeekwiseData.parseStore`, then restored through the normal confirmed flow. Never clear storage or overwrite a live account while diagnosing.
 
-Keep main unchanged until PR review and release gates pass. Revert code with a normal new commit; do not force-push. Export current data before downgrading. The baseline has automatic-deletion heuristics, so an older build must be tested against an isolated copy before use. Version-6 backups preserve additive fields but an older restore implementation may ignore unknown top-level extensions.
+## Code rollback
 
-## Remaining tests
+The review branch is `codex/weekwise-2-foundation`, draft PR #16. Main stays unchanged until release authorization. Revert using a normal new commit. Export data before downgrade; the old baseline has deletion heuristics and must not be reintroduced into a real profile without isolated compatibility checks.
 
-Real legacy fixtures from all historical formats, full valid-restore E2E including collection rollback, quota exhaustion in a browser, independent-store corruption, simultaneous-device sync and account switching are required before production readiness. New unit and browser regressions establish a bounded foundation, not complete certification.
+Browser coverage includes legacy and recurring history, damaged primary/habit bytes, invalid restore, valid confirmed restore, quota failure, account separation and actual offline reload. Real historical backups and private test-account/backend verification remain release gates.

@@ -1,30 +1,45 @@
-# Weekwise 2.0 architecture — first increment
+# Weekwise 2.0 architecture
 
-The existing app remains buildless HTML/CSS/JavaScript, served from the root under `/Schedule/`. No framework, bundler, backend migration or new runtime dependency is introduced.
+Weekwise retains the existing HTML/CSS/JavaScript application and Supabase endpoints. Canonical data remains compatible with the baseline; no production database migration has been executed. Main and the public website remain unchanged while draft PR #16 is reviewed.
 
-## Modules
+## Client modules
 
-- `index.html`: existing IIFE owns canonical state, editor, views, integrations, recurrence and utilities. The initial refactor is deliberately bounded; this file still needs gradual decomposition.
-- `js/weekwise-data.js`: standalone validation, legacy-compatible backup parsing, checked storage transactions and conservative sync-status labels. Does not filter user records or contact a service.
-- `js/weekwise-planning.js`: deterministic pure interval/capacity/scheduling functions and immutable selected-plan application. Shares only the validator dependency; independently exercised in Node.
-- `js/weekwise-plan-ui.js`: Plan screen. Depends on a narrow bridge for snapshots, account identity, checked persistence and opening an existing task editor. Recommendations do not modify storage.
-- `css/weekwise-plan.css`: additive responsive green design tokens scoped to Plan, including body-based dark theme. Existing styles are retained pending screenshot-led consolidation.
-- Existing `weekwise-calendar.js`, `weekwise-push.js`, Supabase functions and SQL remain intact.
+| File | Responsibility |
+| --- | --- |
+| `index.html` | Semantic markup, public Supabase configuration and relative asset references |
+| `js/weekwise-app.js` | Canonical state, preserved editors/views/utilities, recurrence, integration bridges and cloud orchestration |
+| `js/weekwise-data.js` | Validation, recovery guards, checked local transactions and sync labels |
+| `js/weekwise-planning.js` | Pure availability/capacity engine, deterministic proposals, recovery, selected application and linked splitting |
+| `js/weekwise-plan-ui.js` | Preferences, custom windows, placement review, selected approval, checkpoints and guarded Undo |
+| `js/weekwise-focus.js` | Timestamp-based elapsed time, pause/resume and session records |
+| `js/weekwise-cloud-transport.js` | Capture and validate the session identity/token for one RPC write |
+| `js/weekwise-habits.js` | Scheduled days, skipped/rest days, paused habits and streak semantics |
+| `js/weekwise-experience.js` | Read-only Today/Insights derivation and weekly-review interface |
+| `js/weekwise-accessibility.js` | Modal focus containment, restoration and inert background |
+| `js/weekwise-pwa.js` | Service-worker registration and explicit waiting-update prompt |
+| `css/weekwise-legacy.css` | Extracted existing styles for preserved feature compatibility |
+| `css/weekwise-plan.css`, `css/weekwise.css` | Planning components and shared green design tokens/responsive overrides |
 
-## Data flow
+The main module is still large. Further separation should follow measured behavior, with pure state APIs replacing individual legacy functions incrementally. This refactor removes executable app logic and legacy styles from HTML without replacing working features.
 
-Capture/editor → canonical weekly records → shared views / read-only Plan snapshot → scheduling proposal → user-selected acceptance → checked single-key local transaction → existing revision-aware cloud queue.
+## State and transactions
 
-The planner adapter snapshots the current in-memory task array together with persisted weeks. Before a plan write it checks the full planner snapshot, current account, blocked-storage flag and cloud conflict. All selected task moves are performed on a clone, validated, persisted, then installed in memory. User IDs and full record details remain stable.
+Editors/capture write canonical weekly records. Shared task/calendar views read the same IDs. The planning bridge snapshots in-memory current-week tasks plus stored weeks. Preview is pure. Apply checks account, storage-recovery flags, timezone review, cloud conflict, full snapshot, age and local DST validity, then revalidates the deterministic proposals and persists one cloned store before installing it in memory.
 
-Undo keeps the prior planner snapshot in memory and requires the current planner to match the post-plan fingerprint. Any intervening planner edit pauses Undo rather than overwriting newer work. The pre-plan checkpoint persists separately for manual recovery after reload. Reminders/habit/focus collections are not part of a plan transaction and are never rewound by plan Undo.
+Undo requires the post-apply store and account to remain unchanged. It never overwrites intervening edits. Restore and cloud application use checked multi-key writes with checkpoints/rollback. Normal task/collection save failures restore the previous in-memory records and interrupt the success path.
 
-## Compatibility
+Account changes checkpoint the previous owner's payload and isolate the next owner's cache. Device-only data is retained separately; adoption into an account with existing local work requires an explicit choice. Unsaved task-editor fields are retained under an owner-specific draft key during account changes. Draft restoration is not yet exposed in the interface.
 
-Canonical storage remains `weekwise-planner-v2`; cloud payload version remains 1; backup envelope remains version 6. Additive task field `schedulingMode` is flexible/fixed/optional. Planning preferences live under `store.settings.planning`. Existing `focusEstimateMinutes` provides explicit estimates; automatic capture duration is not assumed to be an estimate. Older data can omit both fields.
+Cloud saves deep-copy their payload and capture the authenticated token, user ID and session epoch. A late response from an old account cannot update the next account's revision/status. Revision conflicts pause automatic uploads. Provider preparation verifies identity again after awaiting the cloud save.
 
-Existing completed, fixed and non-custom records are retained. Existing recurring occurrences are not re-materialized over their saved fields. Editing a recurring series retains the existing explicit future-occurrence reset path.
+## Compatibility and time
 
-## Deployment and limitations
+Storage key remains `weekwise-planner-v2`; cloud payload version is 1; JSON backup version is 6. Existing extension fields, IDs, completed history, reminders, recurring exceptions and week metadata are retained. New fields are additive: scheduling mode, explicit duration estimate, completion requirement, Today highlight, split links/history, planning preferences, weekly reviews, habit schedules and recorded device timezone.
 
-Relative asset paths support GitHub Pages. Cache generation v76 includes new modules/CSS. Service worker does not replace its offline HTML with a failing HTTP response. A comprehensive atomic PWA upgrade protocol and offline auth/local-use UX remain pending. New checks parse each new module and CI retains planning screenshots. Do not claim comprehensive offline reliability from cache code or Node tests.
+Canonical weeks remain Sunday buckets. Display times use the device's local timezone; changing to another recorded zone requires explicit review before editing/reminder checks. Clock times are retained, not silently converted. Arbitrary fixed-zone rendering, timezone conversion and configurable week start are not implemented. Existing legacy data without timezone metadata uses the current device zone until it is next saved.
+
+## Build and offline behavior
+
+Source remains directly serveable. `node scripts/build-weekwise.mjs` creates a clean `dist/` containing only client assets. It appends a reproducible content version to every JS/CSS reference and the service-worker shell/cache name. SQL, docs, tests and server functions are excluded from Pages uploads. Deployment identity is retained in `build-info.json`.
+
+Service-worker install caches one matching shell. Navigation falls back to that shell when offline; failed network requests do not replace it. Only allowlisted static assets are cached. Auth/API responses are excluded. A waiting update is activated by the user, with reload confirmation when an editor is open. Device-only use works without the Supabase CDN and is covered by an actual offline browser regression.

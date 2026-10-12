@@ -125,14 +125,14 @@ try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if([
 try{const shortcutView=new URLSearchParams(window.location.search).get('view');if(['today','tomorrow','inbox','plan','calendar'].includes(shortcutView))workspaceView=shortcutView;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
-let lastSavedStore=JSON.stringify(store);
+let lastSavedStore=JSON.stringify(store),lastSavedDisk=localStorage.getItem(STORE_KEY);
 function storageSaveError(message){const error=new Error(message);error.name='WeekwiseStorageError';showToast(message);return error;}
 window.addEventListener('error',event=>{if(event.error?.name==='WeekwiseStorageError'){event.preventDefault();showToast(event.error.message);}});
-function checkedCollectionSave(key,value,restore){try{WeekwiseData.writeCollection(localStorage,key,value);}catch(error){const raw=localStorage.getItem(key);if(raw!==null){try{restore(WeekwiseData.validateCollection(JSON.parse(raw)));}catch(_){}}else restore([]);throw storageSaveError('Could not save this change. Previous records remain on this device.');}if(!cloudApplyingRemote)queueCloudSave();}
+function checkedCollectionSave(key,value,restore){try{WeekwiseData.writeCollection(localStorage,key,value);}catch(error){const raw=localStorage.getItem(key);if(raw!==null){try{restore(WeekwiseData.readCollection(localStorage,key));}catch(_){}}else restore([]);throw storageSaveError(error.message.startsWith('Another tab')?error.message:'Could not save this change. Previous records remain on this device.');}if(!cloudApplyingRemote)queueCloudSave();}
 function saveStore(){
  if(plannerStorageBlocked||WeekwiseData.blockedKeys().length)return false;
- try{if(!store.settings.timeZone)store.settings.timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;const raw=JSON.stringify(store);localStorage.setItem(STORE_KEY,raw);lastSavedStore=raw;}
- catch(error){store=JSON.parse(lastSavedStore);tasks=JSON.parse(JSON.stringify(store.weeks[currentWeek]?.tasks||[]));throw storageSaveError('Could not save this change. Your previous planner remains on this device.');}
+ try{if(localStorage.getItem(STORE_KEY)!==lastSavedDisk){const fresh=WeekwiseData.parseStore(localStorage.getItem(STORE_KEY));lastSavedStore=JSON.stringify(fresh);lastSavedDisk=localStorage.getItem(STORE_KEY);throw new Error('Another tab changed your planner. Its records are preserved. Reload before continuing.');}if(!store.settings.timeZone)store.settings.timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;const raw=JSON.stringify(store);localStorage.setItem(STORE_KEY,raw);lastSavedStore=raw;lastSavedDisk=raw;}
+ catch(error){store=JSON.parse(lastSavedStore);tasks=JSON.parse(JSON.stringify(store.weeks[currentWeek]?.tasks||[]));throw storageSaveError(error.message.startsWith('Another tab')?error.message:'Could not save this change. Your previous planner remains on this device.');}
  if(!cloudApplyingRemote)queueCloudSave();return true;
 }
 function reconcileSplitTasks(){const all=workspaceRecords().map(r=>r.task),byId=new Map(all.map(t=>[t.id,t]));for(const parent of all){if(!parent.planningChildren?.length)continue;for(const sub of parent.subtasks||[]){if(sub.taskId&&byId.has(sub.taskId)){const child=byId.get(sub.taskId);sub.title=child.title;sub.done=!!child.done;}}const children=parent.planningChildren.map(id=>byId.get(id)).filter(Boolean);if(children.length===parent.planningChildren.length){parent.done=children.every(t=>t.done)&&(!parent.subtasks?.length||parent.subtasks.every(s=>s.done));parent.status=parent.done?'done':'todo';}}}
@@ -787,6 +787,7 @@ function validateCloudPayload(payload){
  return payload;
 }
 function saveCloudLocalPayload(payload){
+ if(localStorage.getItem(STORE_KEY)!==lastSavedDisk)throw new Error('Another tab has local changes. Reload this tab before downloading cloud data.');
  if(plannerStorageBlocked||WeekwiseData.blockedKeys().length)throw new Error('Stored data needs recovery before cloud changes can be applied.');
  const safe=JSON.parse(JSON.stringify(validateCloudPayload(payload)));
  safe.store.settings={...defaultSettings(),...safe.store.settings};safe.store.customLists=safe.store.customLists||[];safe.store.recurringTemplates=safe.store.recurringTemplates||[];
@@ -796,7 +797,7 @@ function saveCloudLocalPayload(payload){
  WeekwiseData.commitStorage(localStorage,entries,'weekwise-pre-cloud-v1');
  cloudApplyingRemote=true;
  try{
-  store=safe.store;lastSavedStore=JSON.stringify(store);
+  store=safe.store;lastSavedStore=JSON.stringify(store);lastSavedDisk=localStorage.getItem(STORE_KEY);
   if(safe.reminders)reminders=safe.reminders;if(safe.focusSessions)focusSessions=safe.focusSessions;if(safe.habits)habits=safe.habits;if(safe.countdowns)countdowns=safe.countdowns;if(safe.savedTaskFilters)savedTaskFilters=safe.savedTaskFilters;if(safe.taskTemplates)taskTemplates=safe.taskTemplates;
   syncWorkspaceLists();currentWeek=dateKey(sundayOf(now));mobileDay=now.getDay();monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);loadWeek(currentWeek);renderReminders();
  }finally{cloudApplyingRemote=false;}
@@ -804,7 +805,7 @@ function saveCloudLocalPayload(payload){
 function isolatePlannerOwner(nextOwner){
  if(currentDataOwner===nextOwner)return;
  const previousOwner=currentDataOwner,payload=JSON.parse(JSON.stringify(buildCloudPayload()));
- if(focusState?.owner===previousOwner){focusState=WeekwiseFocus.pause(focusState);localStorage.setItem('weekwise-focus-active-v1:'+previousOwner,JSON.stringify(focusState));}
+ if(focusState?.owner===previousOwner){focusState=WeekwiseFocus.pause(focusState);WeekwiseData.commitStorage(localStorage,[['weekwise-focus-active-v1:'+previousOwner,JSON.stringify(focusState)]]);}
  const modal=$('taskModal');if(modal?.classList.contains('show')&&taskModalFingerprint()!==taskModalInitialFingerprint){const draft=Object.fromEntries([...$('taskForm').elements].filter(el=>el.id&&['INPUT','SELECT','TEXTAREA'].includes(el.tagName)).map(el=>[el.id,el.type==='checkbox'?el.checked:el.value]));localStorage.setItem('weekwise-editor-draft-v1:'+previousOwner,JSON.stringify(draft));}
  localStorage.setItem('weekwise-account-cache-v1:'+previousOwner,JSON.stringify({payload,meta:readCloudMeta()}));
  closeTaskModal(true);
@@ -813,6 +814,7 @@ function isolatePlannerOwner(nextOwner){
  const cached=WeekwiseData.readJSON(localStorage,'weekwise-account-cache-v1:'+nextOwner,value=>{validateCloudPayload(value.payload);return value;},null);
  if(WeekwiseData.blockedKeys().length)throw new Error('This account cache needs recovery. Export the original data before continuing.');
  const next=cached?.payload||{version:1,store:{settings:defaultSettings(),weeks:{},recurringTemplates:[],customLists:[]},reminders:[],focusSessions:[],habits:[],countdowns:[],savedTaskFilters:[],taskTemplates:[]};
+ for(const name of ['reminders','focusSessions','habits','countdowns','savedTaskFilters','taskTemplates'])if(!Array.isArray(next[name]))next[name]=[];
  saveCloudLocalPayload(next);currentDataOwner=nextOwner;
  localStorage.setItem(CLOUD_META_KEY,JSON.stringify(cached?.meta||{userId:nextOwner==='local'?'':nextOwner,revision:0,fingerprint:cloudFingerprint(buildCloudPayload())}));
  focusState=null;
@@ -831,12 +833,15 @@ function showCloudConflict(row){
  setCloudStatus('Both this device and the cloud have changes. Choose which version to keep.');
 }
 function queueCloudSave(){
+ if(localStorage.getItem(STORE_KEY)!==lastSavedDisk||['weekwise-reminders-v1','weekwise-focus-sessions-v1','weekwise-habits-v1','weekwise-countdowns-v1','weekwise-saved-filters-v1','weekwise-task-templates-v1'].some(key=>WeekwiseData.unchanged?.(localStorage,key)===false)){setCloudStatus('Another tab changed this planner. Reload before syncing.');return;}
  if(plannerStorageBlocked||WeekwiseData.blockedKeys().length||!cloudClient||!cloudUser||!cloudReady||cloudApplyingRemote||cloudConflict)return;
+ const meta=readCloudMeta();if(meta?.userId===cloudUser.id&&meta.fingerprint===cloudFingerprint(buildCloudPayload())){if(cloudSyncTimer){clearTimeout(cloudSyncTimer);cloudSyncTimer=null;}return;}
  if(cloudSyncTimer)clearTimeout(cloudSyncTimer);
  setCloudStatus('Changes saved on this device. Syncing to cloud…');
  cloudSyncTimer=setTimeout(()=>{cloudSyncTimer=null;saveCloudSnapshot();},900);
 }
 async function saveCloudSnapshot(){
+ if(localStorage.getItem(STORE_KEY)!==lastSavedDisk||['weekwise-reminders-v1','weekwise-focus-sessions-v1','weekwise-habits-v1','weekwise-countdowns-v1','weekwise-saved-filters-v1','weekwise-task-templates-v1'].some(key=>WeekwiseData.unchanged?.(localStorage,key)===false)){setCloudStatus('Another tab changed this planner. Reload before syncing.');return;}
  if(plannerStorageBlocked||WeekwiseData.blockedKeys().length||!cloudClient||!cloudUser||!cloudReady||cloudApplyingRemote||cloudConflict||cloudBusy)return;
  cloudBusy=true;
  const payload=JSON.parse(JSON.stringify(buildCloudPayload())),expectedRevision=cloudRevision,savingUserId=cloudUser.id,savingEpoch=cloudSessionEpoch;
@@ -1066,7 +1071,7 @@ async function checkCloudForRemoteChanges(){
 }
 function openCloudPanel(){renderCloudPanel();openUtilityPanel('cloudPanel','Cloud sync & account');}
 function openSignInFromLanding(){const gate=$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=true;}openCloudPanel();}
-function finishSignInLanding(){const gate=$('signinLanding');if(!gate)return;if(activeUtilityPanel===$('cloudPanel'))closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;now=new Date();mobileDay=now.getDay();currentWeek=dateKey(sundayOf(now));monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);calendarView='day';try{localStorage.setItem('weekwise-calendar-view-v1','day');}catch(_){}loadWeek(currentWeek);setWorkspaceView('today');restoreFocusState();renderReminders();const heading=$('calendarInstruction');if(heading)heading.hidden=true;showToast('Welcome to Weekwise. Here is today’s plan.');}
+function finishSignInLanding(){const gate=$('signinLanding');if(!gate)return;if(activeUtilityPanel===$('cloudPanel'))closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;now=new Date();mobileDay=now.getDay();currentWeek=dateKey(sundayOf(now));monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);loadWeek(currentWeek);setWorkspaceView('today');restoreFocusState();renderReminders();const heading=$('calendarInstruction');if(heading)heading.hidden=true;showToast('Welcome to Weekwise. Here is today’s plan.');}
 
 function exportBackup(){if(plannerStorageBlocked||WeekwiseData.blockedKeys().length){showToast('Download the original data from the recovery notice before restoring.');return;}const payload={...store,app:'Weekwise',version:6,exportedAt:new Date().toISOString(),settings:store.settings,weeks:store.weeks,recurringTemplates:store.recurringTemplates||[],customLists:store.customLists||[],reminders,focusSessions,habits,countdowns,savedTaskFilters,taskTemplates};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${currentWeek}.json`;a.click();URL.revokeObjectURL(url);showToast('Backup exported');}
 async function loadImport(file){
@@ -1079,7 +1084,7 @@ async function loadImport(file){
   const collections=[['reminders',REMINDERS_KEY],['focusSessions',FOCUS_SESSIONS_KEY],['habits',HABITS_KEY],['countdowns',COUNTDOWNS_KEY],['savedTaskFilters',TASK_FILTERS_KEY],['taskTemplates',TASK_TEMPLATES_KEY]];
   const entries=[[STORE_KEY,JSON.stringify(restored)],...collections.filter(([name])=>Array.isArray(data[name])).map(([name,key])=>[key,JSON.stringify(data[name])])];
   WeekwiseData.commitStorage(localStorage,entries,'weekwise-pre-restore-v1');
-  WeekwiseData.clearBlocked(entries.map(([key])=>key));plannerStorageBlocked=false;plannerStorageError='';store=restored;lastSavedStore=JSON.stringify(store);
+  WeekwiseData.clearBlocked(entries.map(([key])=>key));plannerStorageBlocked=false;plannerStorageError='';store=restored;lastSavedStore=JSON.stringify(store);lastSavedDisk=localStorage.getItem(STORE_KEY);
   if(Array.isArray(data.reminders))reminders=data.reminders;
   if(Array.isArray(data.focusSessions))focusSessions=data.focusSessions;
   if(Array.isArray(data.habits))habits=data.habits;
@@ -1538,7 +1543,7 @@ function restoreFocusState(){
  focusInterval=setInterval(focusTick,1000);renderFocusPanel();if(WeekwiseData.blockedKeys().length)showStorageRecoveryNotice();
 }
 function ensureFocusState(){if(!focusState||focusState.owner!==focusOwner())restoreFocusState();return focusState;}
-function persistActiveFocus(){try{localStorage.setItem(focusStateKey(),JSON.stringify(focusState));return true;}catch(_){showToast('Could not save this focus timer. Your previous session remains on this device.');return false;}}
+function persistActiveFocus(){try{WeekwiseData.commitStorage(localStorage,[[focusStateKey(),JSON.stringify(focusState)]]);return true;}catch(_){showToast('Could not save this focus timer. Your previous session remains on this device.');return false;}}
 
 function renderMatrixTask(record){
  const t=record.task,attrs=' data-matrix-week="'+escapeHtml(record.week)+'"';
@@ -2614,12 +2619,13 @@ window.WeekwisePlanUI.init({
   if(plannerStorageBlocked||WeekwiseData.blockedKeys().length)throw new Error('Stored planner data needs recovery before planning changes can be saved.');
   if(zoneNeedsReview())throw new Error('Review the time zone notice before applying a plan.');
   if(cloudConflict)throw new Error('Resolve the cloud conflict before applying a plan.');
+  if(localStorage.getItem(STORE_KEY)!==lastSavedDisk)throw new Error('Another tab changed the saved planner. Reload and build a fresh preview.');
   if(account!==(cloudUser?.id||'local'))throw new Error('Your account changed. Build a fresh preview.');
   const snapshot=JSON.parse(JSON.stringify(store));snapshot.weeks[currentWeek]={...snapshot.weeks[currentWeek],tasks:JSON.parse(JSON.stringify(tasks))};
   if(JSON.stringify({store:snapshot,currentWeek})!==expected)throw new Error('Your planner changed. Build a fresh preview.');
   WeekwiseData.validateStore(next);
   WeekwiseData.commitStorage(localStorage,[[STORE_KEY,JSON.stringify(next)]],checkpointKey);
-  store=next;lastSavedStore=JSON.stringify(store);tasks=JSON.parse(JSON.stringify(store.weeks[currentWeek]?.tasks||[]));
+  store=next;lastSavedStore=JSON.stringify(store);lastSavedDisk=localStorage.getItem(STORE_KEY);tasks=JSON.parse(JSON.stringify(store.weeks[currentWeek]?.tasks||[]));
   syncSettingsForm();renderAll();queueCloudSave();
  }
 });

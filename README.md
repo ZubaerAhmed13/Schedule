@@ -60,35 +60,40 @@ After the site is first opened online, the service worker caches the application
 
 The planner does not auto-fill a sample routine. Add real tasks and use recurring rules or the reusable work/class templates when you need them. Habit check-ins remain separate from ordinary task completion, and changing a task between views edits the same underlying task record.
 
-## Weekwise 2.0 development branch
+## Weekwise 2.0 review branch
 
-The first upgrade increment adds **Plan → Smart Week Builder (Beta)**. Set planning weekdays/hours, buffer and breaks; unscheduled flexible tasks with an explicit **Estimated focus** can be previewed, selected and scheduled. Existing timed/fixed/recurring/all-day commitments remain protected. Accepted changes are saved locally and use the existing revision-aware sync queue. Undo is available while the planner has not changed since acceptance. Unknown estimates and work that cannot fit are shown honestly. Recovery planning and the complete redesign remain future work.
+Draft PR [#16](https://github.com/ZubaerAhmed13/Schedule/pull/16) upgrades the actual app with Today/Insights, green responsive navigation, Smart Week Builder, Recover My Week, linked task splitting, timestamp-based focus, scheduled habits and safer local/cloud persistence. Existing tools remain available. No merge, production deployment or database migration is performed automatically.
 
-The increment also preserves legacy/non-custom records and edited recurring occurrences, protects corrupt planner data, and adds validated/confirmed backup restoration with a local recovery checkpoint. See [audit](docs/WEEKWISE_2_AUDIT.md), [architecture](docs/WEEKWISE_2_ARCHITECTURE.md), [planning rules](docs/SMART_PLANNING_ENGINE.md), [design system](docs/DESIGN_SYSTEM.md), [backup and rollback](docs/DATA_MIGRATION_AND_BACKUP.md), [release gates](docs/RELEASE_CHECKLIST.md) and [progress](docs/UPGRADE_PROGRESS.md).
+Plan supports multiple availability windows, explicit duration estimates, preferred focus periods, daily limits, breaks and daily/weekly buffer. Review suggestions, adjust a placement using **Check placement**, and apply selected changes. Undo protects newer edits. Recovery moves existing IDs and retains original details/history. Unknown/impossible work remains visible.
 
-### Run and test
+Choose **Continue on this device** without an account. After the shell is cached, local capture/editing works offline. A waiting app update is activated explicitly. Backups/restore and recovery checkpoints preserve history; another tab or account cannot silently replace the current planner.
 
-No application build or npm dependency installation is needed to serve the app. With Node 22+ and Python 3:
+See [audit](docs/WEEKWISE_2_AUDIT.md), [architecture](docs/WEEKWISE_2_ARCHITECTURE.md), [planning rules](docs/SMART_PLANNING_ENGINE.md), [design system](docs/DESIGN_SYSTEM.md), [backup/rollback](docs/DATA_MIGRATION_AND_BACKUP.md), [release gates](docs/RELEASE_CHECKLIST.md) and [progress/remaining work](docs/UPGRADE_PROGRESS.md). Scheduling is device-local with Sunday canonical weeks; arbitrary fixed-zone conversion/configurable week start remain future work.
 
-```sh
-python3 -m http.server 8000
-```
+### Run, build and test
 
-Open `http://localhost:8000/`. Supabase account behavior depends on the existing external configuration and allowed redirects; use an isolated browser/test account for manual verification.
-
-Dependency-free checks:
+Source can be served directly with any ordinary static server. Production Pages uses a frontend-only build with matching content versions:
 
 ```sh
 node scripts/validate-weekwise.mjs
 node --test tests/*.test.mjs
+node scripts/build-weekwise.mjs
+node scripts/benchmark-planning.mjs
 ```
 
-Browser CI uses an isolated Supabase stub and pinned Playwright, without touching real accounts:
+`dist/` contains only client assets and the deployment marker. Backend SQL/functions, tests and docs are excluded from published Pages files. The benchmark uses synthetic data and is not a browser Core Web Vitals measurement.
+
+Browser CI installs pinned Playwright and uses isolated mock Supabase accounts without touching the live database. One regression blocks all external requests and tests a real service worker offline. To reproduce in a supported browser environment:
 
 ```sh
 npm install --no-save --no-audit --no-fund playwright@1.56.1
 npx playwright install chromium
-node --test tests/browser/weekwise-ui-smoke.test.mjs
+node scripts/build-weekwise.mjs
+WEEKWISE_TEST_SITE_ROOT=dist node --test tests/browser/weekwise-ui-smoke.test.mjs
 ```
 
-Screenshots from the new Plan tests are saved to `test-results/` and uploaded as a CI artifact. Deno checks cover existing Supabase functions separately. Passing these checks is not proof of live OAuth, Web Push, GDPR compliance or full production readiness. Review the release checklist before merging/deploying.
+Screenshots go to `test-results/` and a CI artifact. Existing Deno function checks run separately. Passing tests do not prove live OAuth, Web Push, complete accessibility or production readiness.
+
+### Optional database hardening
+
+`weekwise_rpc_hardening.sql` replaces the save RPC with an owner-scoped, revision-locked function and revokes direct authenticated table writes. Stage it and review `supabase_verify_rpc_hardening.sql` before requesting production approval. The migration is prepared only; it has not been executed. Apply it after the original setup script, which otherwise retains its original grants.

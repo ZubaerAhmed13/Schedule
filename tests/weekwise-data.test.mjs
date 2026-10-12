@@ -67,7 +67,7 @@ test('sync badge never reports synced for errors, pending writes or conflicts',(
 function planBridgeFixture(options={}) {
  const storage=memoryStorage({'weekwise-planner-v2':JSON.stringify(fixture())},options.failAt);
  let bridge;
- const c={store:fixture(),currentWeek:'2026-10-11',tasks:[structuredClone(task)],cloudUser:{id:'user-a'},cloudConflict:null,plannerStorageBlocked:false,zoneNeedsReview:()=>false,WeekwiseData:data,localStorage:storage,STORE_KEY:'weekwise-planner-v2',JSON,Date,syncSettingsForm(){},renderAll(){},queueCloudSave(){},window:{WeekwisePlanUI:{init(value){bridge=value;}}}};
+ const c={store:fixture(),currentWeek:'2026-10-11',tasks:[structuredClone(task)],cloudUser:{id:'user-a'},cloudConflict:null,plannerStorageBlocked:false,zoneNeedsReview:()=>false,WeekwiseData:data,localStorage:storage,STORE_KEY:'weekwise-planner-v2',lastSavedDisk:storage.getItem('weekwise-planner-v2'),JSON,Date,syncSettingsForm(){},renderAll(){},queueCloudSave(){},window:{WeekwisePlanUI:{init(value){bridge=value;}}}};
  const start=html.indexOf('window.WeekwisePlanUI.init({'),end=html.indexOf('\n});',start)+5;
  vm.runInNewContext(html.slice(start,end),c);
  return {c,storage,get bridge(){return bridge;}};
@@ -90,3 +90,5 @@ test('plan bridge installs one checked transaction and retains prior raw data in
  f.bridge.commit(expected,'user-a',next,'checkpoint');assert.equal(f.c.tasks[0].start,900);
  assert.equal(JSON.parse(f.storage.getItem('checkpoint')).entries[0][1],old);
 });
+
+test('a collection changed by another tab is rejected before overwriting its records',()=>{const s=memoryStorage({habits:'[]'});data.readCollection(s,'habits');s.setItem('habits','[{"id":"other-tab","title":"Retain"}]');assert.throws(()=>data.writeCollection(s,'habits',[]),/Another tab/);assert.equal(JSON.parse(s.getItem('habits'))[0].id,'other-tab');assert.throws(()=>data.commitStorage(s,[['habits','[]']],'checkpoint'),/Another tab/);assert.equal(s.getItem('checkpoint'),null);});

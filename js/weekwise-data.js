@@ -1,6 +1,9 @@
 /* Non-destructive validation and checked local transactions. No network access. */
 (function (root) {
   'use strict';
+  const baselines=new WeakMap();
+  function remember(storage,key,raw){let values=baselines.get(storage);if(!values){values=new Map();baselines.set(storage,values);}values.set(key,raw);}
+  function unchanged(storage,key){const values=baselines.get(storage);return !values?.has(key)||values.get(key)===storage.getItem(key);}
   const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
   const plain = value => !!value && typeof value === 'object' && !Array.isArray(value);
   function validDate(key) {
@@ -59,10 +62,12 @@
     return store;
   }
   function commitStorage(storage, entries, checkpointKey) {
+    for(const [key] of entries)if(!unchanged(storage,key))throw new Error('Another tab changed this collection. Reload it before saving.');
     const before = entries.map(([key]) => [key, storage.getItem(key)]);
     if (checkpointKey) storage.setItem(checkpointKey, JSON.stringify({ version: 1, createdAt: new Date().toISOString(), entries: before }));
     try {
       for (const [key, raw] of entries) storage.setItem(key, raw);
+      for(const [key,raw] of entries)remember(storage,key,raw);
     } catch (error) {
       let rollbackFailed = false;
       for (const [key, raw] of before) {
@@ -74,7 +79,7 @@
   }
   const blocked = new Map();
   function readJSON(storage,key,validator,fallback) {
-    try { const raw=storage.getItem(key); if(raw===null)return fallback;return validator(JSON.parse(raw)); }
+    try { const raw=storage.getItem(key);remember(storage,key,raw); if(raw===null)return fallback;return validator(JSON.parse(raw)); }
     catch(error) { blocked.set(key,error.message||'Stored data cannot be read.');return fallback; }
   }
   function validateCollection(value) {
@@ -84,7 +89,8 @@
   function readCollection(storage,key) {return readJSON(storage,key,validateCollection,[]);}
   function writeCollection(storage,key,value) {
     if(blocked.has(key))throw new Error('This saved collection needs recovery before it can be changed.');
-    validateCollection(value);storage.setItem(key,JSON.stringify(value));return true;
+    if(!unchanged(storage,key))throw new Error('Another tab changed this collection. Reload it before saving.');
+    validateCollection(value);const raw=JSON.stringify(value);storage.setItem(key,raw);remember(storage,key,raw);return true;
   }
   function clearBlocked(keys) {for(const key of keys)blocked.delete(key);}
   function blockedKeys() {return [...blocked.keys()];}
@@ -96,5 +102,5 @@
     if (/^All changes synced|^Account created and cloud sync is ready/i.test(message)) return 'Synced';
     return 'Saved locally';
   }
-  root.WeekwiseData = Object.freeze({ MAX_BACKUP_BYTES, validDate, validateStore, parseStore, parseBackup, storeFromBackup, commitStorage, syncLabel, readJSON, validateCollection, readCollection, writeCollection, clearBlocked, blockedKeys });
+  root.WeekwiseData = Object.freeze({ MAX_BACKUP_BYTES, validDate, validateStore, parseStore, parseBackup, storeFromBackup, commitStorage, syncLabel, readJSON, validateCollection, readCollection, writeCollection, clearBlocked, blockedKeys, unchanged });
 })(typeof window !== 'undefined' ? window : globalThis);
