@@ -102,6 +102,32 @@ if (fs.existsSync(inviteSqlPath)) {
   } else fail("rerunning invite setup does not reactivate a revoked invite");
 } else fail("invite-code SQL exists for validation");
 
+
+// Integration-readiness artifacts must exist and remain explicitly non-destructive.
+const diagnosticPath = path.join(root, "supabase_verify_setup.sql");
+if (fs.existsSync(diagnosticPath)) {
+  const diagnostic = fs.readFileSync(diagnosticPath, "utf8");
+  if (/read-only integration diagnostics/i.test(diagnostic) &&
+      /public\.weekwise_cloud_data/i.test(diagnostic) &&
+      /public\.weekwise_save/i.test(diagnostic) &&
+      /weekwise_require_referral_code/i.test(diagnostic) &&
+      /select check_name, status, details/i.test(diagnostic) &&
+      !/\b(insert\s+into|update\s+\w|delete\s+from|drop\s+|create\s+|alter\s+)/i.test(diagnostic)) {
+    pass("Supabase diagnostics cover schema, RPC, RLS and invite setup without writes");
+  } else fail("Supabase diagnostics cover schema, RPC, RLS and invite setup without writes");
+} else fail("read-only Supabase diagnostic SQL exists");
+
+const integrationGuidePath = path.join(root, "docs", "INTEGRATION_READINESS.md");
+if (fs.existsSync(integrationGuidePath)) {
+  const integrationGuide = fs.readFileSync(integrationGuidePath, "utf8");
+  if (/OAuth status and requirements/i.test(integrationGuide) &&
+      /Background push status and requirements/i.test(integrationGuide) &&
+      /Data safety/i.test(integrationGuide) &&
+      /not implemented/i.test(integrationGuide)) {
+    pass("integration guide distinguishes implemented features from external setup requirements");
+  } else fail("integration guide distinguishes implemented features from external setup requirements");
+} else fail("integration readiness guide exists");
+
 if (failures.length) {
   console.error(`\\n${failures.length} release sanity check(s) failed.`);
   process.exit(1);
