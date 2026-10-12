@@ -532,7 +532,7 @@ test('Monday-first Month and Year preference survives reload without migrating S
   await page.locator('#applySettings').click();
   await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();
   await page.locator('#monthViewBtn').click();
-  assert.deepEqual(await page.locator('.month-weekday').allInnerTexts(),['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
+  assert.deepEqual(await page.locator('.month-weekday').allTextContents(),['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
   const first=await page.locator('.month-day-cell').first().getAttribute('data-month-day');
   const expected=await page.evaluate(()=>{const today=new Date(),start=new Date(today.getFullYear(),today.getMonth(),1,12);start.setDate(start.getDate()-(start.getDay()+6)%7);return [start.getFullYear(),String(start.getMonth()+1).padStart(2,'0'),String(start.getDate()).padStart(2,'0')].join('-')});
   assert.equal(first,expected);
@@ -542,7 +542,7 @@ test('Monday-first Month and Year preference survives reload without migrating S
   await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
   await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();
   await page.locator('#monthViewBtn').click();
-  assert.equal(await page.locator('.month-weekday').first().innerText(),'Mon');
+  assert.equal(await page.locator('.month-weekday').first().textContent(),'Mon');
   const after=await readPlannerStore(page);
   assert.deepEqual(after.weeks,initial.weeks);
   assert.equal(after.settings.calendarGridStartDay,1);
