@@ -1,0 +1,79 @@
+name: Weekwise Supabase live diagnostics
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "supabase-live-diagnostics"
+  cancel-in-progress: true
+
+jobs:
+  auth-health:
+    name: Check live Supabase Auth settings
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Weekwise
+        uses: actions/checkout@v4
+
+      - name: Read public Supabase client configuration
+        run: |
+          node <<'NODE' >> "$GITHUB_ENV"
+          const fs = require("node:fs");
+          const html = fs.readFileSync("index.html", "utf8");
+          const url = html.match(/const SUPABASE_URL='([^']+)'/);
+          const key = html.match(/const SUPABASE_PUBLISHABLE_KEY='([^']+)'/);
+          if (!url || !key || !/^https:\/\//.test(url[1]) || !key[1].trim()) {
+            throw new Error("Could not safely read the public Supabase URL and publishable key from index.html.");
+          }
+          process.stdout.write("SUPABASE_URL=" + url[1] + "\n");
+          process.stdout.write("SUPABASE_PUBLIC_KEY=" + key[1] + "\n");
+          NODE
+
+      - name: Probe live Auth endpoints
+        run: |
+          set -euo pipefail
+          auth_base="${SUPABASE_URL%/}/auth/v1"
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 \
+            -H "apikey: $SUPABASE_PUBLIC_KEY" \
+            "$auth_base/health" -o /tmp/weekwise-auth-health.json
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 \
+            -H "apikey: $SUPABASE_PUBLIC_KEY" \
+            "$auth_base/settings" -o /tmp/weekwise-auth-settings.json
+
+      - name: Report actual public Auth configuration
+        run: |
+          node <<'NODE' | tee -a "$GITHUB_STEP_SUMMARY"
+          const fs = require("node:fs");
+          const health = JSON.parse(fs.readFileSync("/tmp/weekwise-auth-health.json", "utf8"));
+          const settings = JSON.parse(fs.readFileSync("/tmp/weekwise-auth-settings.json", "utf8"));
+          if (!settings.external || typeof settings.external !== "object") {
+            throw new Error("Auth settings endpoint did not return the expected external-provider status object.");
+          }
+          const check = (name, enabled) => {
+            const value = enabled === true ? "ENABLED" : enabled === false ? "NOT ENABLED" : "NOT REPORTED";
+            console.log("| " + name + " | " + value + " |");
+          };
+          console.log("## Live Supabase Auth diagnostics");
+          console.log("");
+          console.log("- Auth health endpoint: **reachable** (" + (health.name || "Auth") + ").");
+          console.log("- Sign-up globally disabled: **" + (settings.disable_signup === true ? "YES" : settings.disable_signup === false ? "NO" : "NOT REPORTED") + "**.");
+          console.log("");
+          console.log("| Provider | Reported state |");
+          console.log("|---|---|");
+          check("Email/password auth", settings.external.email);
+          check("Google OAuth sign-in", settings.external.google);
+          check("Microsoft/Azure OAuth sign-in", settings.external.azure);
+          console.log("");
+          console.log("> These are live Supabase Auth flags, not an end-to-end OAuth test and not Google Calendar or Microsoft Graph access. This check does not inspect or change database schema, users, redirect allowlists, client secrets, or planner data.");
+          if (settings.external.email === false) {
+            throw new Error("Email/password provider is disabled, but Weekwise currently depends on it.");
+          }
+          if (settings.disable_signup === true) {
+            throw new Error("Supabase Auth reports sign-up disabled; Weekwise's registration flow cannot be assumed to work.");
+          }
+          NODE
