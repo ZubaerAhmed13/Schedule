@@ -1094,6 +1094,7 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
           <hr class="menu-divider">
           <div class="menu-section-label">ACCOUNT & SETTINGS</div>
           <button class="btn reminders-menu-button" id="cloudMenuBtn" role="menuitem"><span class="menu-item-icon">☁</span><span>Cloud sync & account</span><span id="cloudMenuBadge" class="reminder-badge">Local</span></button>
+          <button class="btn" id="calendarConnectionsMenuBtn" role="menuitem"><span class="menu-item-icon">↔</span><span>Calendar connections</span></button>
           <button class="btn" id="menuSettingsBtn" role="menuitem"><span class="menu-item-icon">⚙</span><span>Work day & weekly settings</span></button>
           <hr class="menu-divider">
           <div class="menu-section-label">BACKUP & OUTPUT</div>
@@ -1331,6 +1332,30 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
         <div class="cloud-form-actions"><button class="btn" id="cloudUseRemote" type="button">Use cloud version</button><button class="btn primary" id="cloudUseLocal" type="button">Keep this device's version</button></div>
       </div>
       <p class="cloud-footnote">Your existing local schedules and sticky notes stay on this device. The first sync asks before replacing data when both copies contain changes. Cloud access requires the Weekwise database setup to be completed in Supabase.</p>
+    </div>
+  </details>
+
+  <details class="settings secondary-details utility-source" id="calendarConnectionsPanel">
+    <summary>Calendar connections <span style="color:var(--muted);font-size:11px;font-weight:500">Google Calendar and Microsoft Outlook</span></summary>
+    <div class="inside">
+      <p id="calendarConnectionsStatus" class="cloud-status" role="status" aria-live="polite">Calendar connections require the optional OAuth setup.</p>
+      <div class="calendar-connection-row">
+        <div><strong>Google Calendar</strong><p id="googleCalendarConnectionDetail">Not connected.</p></div>
+        <div class="calendar-connection-actions">
+          <button type="button" class="btn primary" id="connectGoogleCalendarBtn">Connect Google Calendar</button>
+          <button type="button" class="btn" id="syncGoogleCalendarBtn" hidden>Sync now</button>
+          <button type="button" class="btn danger" id="disconnectGoogleCalendarBtn" hidden>Disconnect</button>
+        </div>
+      </div>
+      <div class="calendar-connection-row">
+        <div><strong>Microsoft Outlook</strong><p id="microsoftCalendarConnectionDetail">Not connected.</p></div>
+        <div class="calendar-connection-actions">
+          <button type="button" class="btn primary" id="connectMicrosoftCalendarBtn">Connect Outlook</button>
+          <button type="button" class="btn" id="syncMicrosoftCalendarBtn" hidden>Sync now</button>
+          <button type="button" class="btn danger" id="disconnectMicrosoftCalendarBtn" hidden>Disconnect</button>
+        </div>
+      </div>
+      <p class="cloud-footnote">Calendar sync uses the connected account's primary calendar and covers 30 days in the past through 90 days ahead. It imports new events and detects two-sided edits; simultaneous edits or deletions are reported as conflicts instead of silently overwritten. Sync requires cloud data to be up to date first. Disconnect removes Weekwise's stored tokens and links; use your Google/Microsoft account settings to revoke provider consent too.</p>
     </div>
   </details>
   <div class="unscheduled" id="unscheduledBox"><h3>⚠ A few activities need a time</h3><p id="unscheduledText">These blocks did not fit around your shifts. Move them to another day or adjust the shift times.</p></div>
