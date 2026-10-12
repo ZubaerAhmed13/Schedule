@@ -35,6 +35,7 @@ create policy weekwise_cloud_update_own
   with check (auth.uid() = user_id);
 
 grant select, insert, update on public.weekwise_cloud_data to authenticated;
+grant all on public.weekwise_cloud_data to service_role;
 revoke all on public.weekwise_cloud_data from anon;
 
 create or replace function public.weekwise_save(
