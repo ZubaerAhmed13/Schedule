@@ -16,6 +16,7 @@ function makeContext() {
   let payload = { version: 1, tasks: ["before"] };
   let queueCalls = 0;
   const context = {
+    plannerStorageBlocked: false,
     cloudClient: { rpc: () => new Promise((resolve, reject) => { resolveRpc = resolve; rejectRpc = reject; }) },
     cloudUser: { id: "test-user" },
     cloudReady: true,

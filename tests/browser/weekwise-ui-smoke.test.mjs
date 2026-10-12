@@ -381,3 +381,99 @@ test("calendar connections panel reports backend-not-configured instead of imply
     await context.close();
   }
 });
+
+async function readPlannerStore(page) {
+  return page.evaluate(() => JSON.parse(localStorage.getItem('weekwise-planner-v2')));
+}
+async function createFlexibleTask(page,title,estimate='60',mode='flexible') {
+  await page.locator('#addTaskBtn').click();
+  await page.locator('#modalTitleInput').fill(title);
+  await page.locator('#modalNoSchedule').check();
+  await page.locator('#modalFocusEstimate').fill(estimate);
+  await page.locator('#modalSchedulingMode').selectOption(mode);
+  await page.locator('#saveTaskBtn').click();
+  await page.locator('#taskModal').waitFor({state:'hidden'});
+}
+async function openFuturePlan(page) {
+  await page.locator('#workspaceSidebar [data-workspace-view="plan"]').click();
+  const futureWeek=await page.evaluate(()=>{const date=new Date();date.setDate(date.getDate()+7-date.getDay());return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');});
+  await page.locator('#planWeek').fill(futureWeek);
+  await page.locator('#planPreferences button[type="submit"]').click();
+  await page.locator('#planResults').waitFor({state:'visible'});
+}
+
+test('Smart Week Builder previews without writes, accepts selected tasks, persists and safely undoes',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ try{
+  await createFlexibleTask(page,'Plan task A');await createFlexibleTask(page,'Plan task B');await createFlexibleTask(page,'Protected fixed task','60','fixed');
+  await page.locator('#workspaceSidebar [data-workspace-view="plan"]').click();
+  const before=await readPlannerStore(page);await openFuturePlan(page);
+  assert.deepEqual(await readPlannerStore(page),before,'generating a preview never writes tasks');
+  assert.equal(await page.locator('[name="planProposal"]').count(),2,'fixed tasks are excluded');
+  await page.locator('[name="planProposal"]').nth(1).uncheck();
+  await page.locator('#planApply').click();
+  await page.waitForFunction(()=>document.querySelector('#planStatus')?.textContent.includes('1 tasks scheduled'));
+  const after=await readPlannerStore(page),all=Object.values(after.weeks).flatMap(w=>w.tasks);
+  assert.equal(all.filter(t=>t.title==='Plan task A').length,1);assert.equal(all.filter(t=>t.title==='Plan task B').length,1);
+  const scheduled=all.filter(t=>t.title.startsWith('Plan task')&&t.start!==null);assert.equal(scheduled.length,1);
+  assert.equal(all.find(t=>t.title==='Protected fixed task').start,null);
+  await page.locator('#planUndo').click();assert.deepEqual(await readPlannerStore(page),before,'undo restores the same identifiers and fields');
+  await openFuturePlan(page);await page.locator('#planApply').click();
+  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).filter(t=>t.title.startsWith('Plan task')&&t.start!==null).length,2,'accepted placements survive reload');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
+test('Plan is usable on desktop, tablet and mobile and warns about unknown estimates',async()=>{
+ for(const viewport of [{width:1440,height:1000},{width:820,height:1180},{width:390,height:844}]){
+  const {context,page}=await openPlanner(viewport);
+  try{
+   await createFlexibleTask(page,'Unknown duration','');await openFuturePlan(page);
+   assert.equal(await page.locator('[name="planProposal"]').count(),0);
+   assert.match(await page.locator('#planUnscheduled').innerText(),/Duration unknown/);
+   assert.equal(await page.locator('#planApply').isDisabled(),true);
+   assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true,'Plan fits viewport '+viewport.width);
+   await page.screenshot({path:path.join(root,'test-results',`plan-${viewport.width}.png`),fullPage:true});
+  }finally{await context.close();}
+ }
+});
+
+test('legacy non-custom records and recurring occurrence exceptions survive application reload',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  const expected=await page.evaluate(()=>{
+   const store=JSON.parse(localStorage.getItem('weekwise-planner-v2')),week=Object.keys(store.weeks)[0];
+   const date=new Date(week+'T12:00:00');date.setDate(date.getDate()+1);
+   const key=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+   const task={id:'legacy-record',title:'German practice',day:1,start:600,duration:60,custom:false,fixed:true,done:true,note:'Preserve history',reminderTimes:[key+'T09:00']};
+   const occurrence={id:'rec-exception',title:'Occurrence exception',day:1,start:800,duration:45,custom:true,seriesId:'series',occurrenceDate:key,note:'My edited occurrence',subtasks:[{id:'part',title:'Keep completed',done:true}]};
+   store.weeks[week].tasks=[task,occurrence];store.weeks[week].metadata='Keep';
+   store.recurringTemplates=[{id:'series',title:'Template title',frequency:'weekly',days:[1],startDate:key,duration:30,start:900}];
+   localStorage.setItem('weekwise-planner-v2',JSON.stringify(store));return {week,task,occurrence};
+  });
+  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  const stored=await readPlannerStore(page);assert.deepEqual(stored.weeks[expected.week].tasks.find(t=>t.id==='legacy-record'),expected.task);
+  assert.deepEqual(stored.weeks[expected.week].tasks.find(t=>t.id==='rec-exception'),expected.occurrence);assert.equal(stored.weeks[expected.week].metadata,'Keep');
+ }finally{await context.close();}
+});
+
+test('corrupt planner storage stays untouched and exposes a recovery notice',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await page.evaluate(()=>localStorage.setItem('weekwise-planner-v2','{damaged original'));
+  await page.reload({waitUntil:'domcontentloaded'});await page.locator('#storageRecoveryNotice').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),'{damaged original');
+  assert.match(await page.locator('#storageRecoveryNotice').innerText(),/paused to protect/);
+ }finally{await context.close();}
+});
+
+test('invalid backup is rejected before replacing local records',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await createScheduledTask(page,'Preserve before invalid restore');const before=await readPlannerStore(page);
+  await page.locator('#importFile').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({settings:[],weeks:{}}))});
+  await page.waitForFunction(()=>document.querySelector('#toast')?.textContent.includes('must be objects'));
+  assert.deepEqual(await readPlannerStore(page),before);
+ }finally{await context.close();}
+});

@@ -62,6 +62,12 @@ if (!fs.existsSync(indexPath)) {
   }
 }
 
+// Parse all independent local scripts, including the additive data/planning modules.
+for (const filename of ["js/weekwise-data.js", "js/weekwise-planning.js", "js/weekwise-plan-ui.js"]) {
+  try { new vm.Script(fs.readFileSync(path.join(root, filename), "utf8"), { filename }); pass(filename + " parses"); }
+  catch (error) { fail(filename + " parses: " + error.message); }
+}
+
 for (const filename of ["manifest.webmanifest"]) {
   const full = path.join(root, filename);
   try {

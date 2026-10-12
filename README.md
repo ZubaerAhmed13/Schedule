@@ -59,3 +59,36 @@ After the site is first opened online, the service worker caches the application
 ## Empty-by-design planner
 
 The planner does not auto-fill a sample routine. Add real tasks and use recurring rules or the reusable work/class templates when you need them. Habit check-ins remain separate from ordinary task completion, and changing a task between views edits the same underlying task record.
+
+## Weekwise 2.0 development branch
+
+The first upgrade increment adds **Plan → Smart Week Builder (Beta)**. Set planning weekdays/hours, buffer and breaks; unscheduled flexible tasks with an explicit **Estimated focus** can be previewed, selected and scheduled. Existing timed/fixed/recurring/all-day commitments remain protected. Accepted changes are saved locally and use the existing revision-aware sync queue. Undo is available while the planner has not changed since acceptance. Unknown estimates and work that cannot fit are shown honestly. Recovery planning and the complete redesign remain future work.
+
+The increment also preserves legacy/non-custom records and edited recurring occurrences, protects corrupt planner data, and adds validated/confirmed backup restoration with a local recovery checkpoint. See [audit](docs/WEEKWISE_2_AUDIT.md), [architecture](docs/WEEKWISE_2_ARCHITECTURE.md), [planning rules](docs/SMART_PLANNING_ENGINE.md), [design system](docs/DESIGN_SYSTEM.md), [backup and rollback](docs/DATA_MIGRATION_AND_BACKUP.md), [release gates](docs/RELEASE_CHECKLIST.md) and [progress](docs/UPGRADE_PROGRESS.md).
+
+### Run and test
+
+No application build or npm dependency installation is needed to serve the app. With Node 22+ and Python 3:
+
+```sh
+python3 -m http.server 8000
+```
+
+Open `http://localhost:8000/`. Supabase account behavior depends on the existing external configuration and allowed redirects; use an isolated browser/test account for manual verification.
+
+Dependency-free checks:
+
+```sh
+node scripts/validate-weekwise.mjs
+node --test tests/*.test.mjs
+```
+
+Browser CI uses an isolated Supabase stub and pinned Playwright, without touching real accounts:
+
+```sh
+npm install --no-save --no-audit --no-fund playwright@1.56.1
+npx playwright install chromium
+node --test tests/browser/weekwise-ui-smoke.test.mjs
+```
+
+Screenshots from the new Plan tests are saved to `test-results/` and uploaded as a CI artifact. Deno checks cover existing Supabase functions separately. Passing these checks is not proof of live OAuth, Web Push, GDPR compliance or full production readiness. Review the release checklist before merging/deploying.

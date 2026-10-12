@@ -1,5 +1,5 @@
-const CACHE_NAME = 'weekwise-static-v75';
-const APP_SHELL = ['./', './index.html', './weekwise-push.js', './weekwise-calendar.js', './manifest.webmanifest', './icons/icon.svg'];
+const CACHE_NAME = 'weekwise-static-v76';
+const APP_SHELL = ['./', './index.html', './js/weekwise-data.js', './js/weekwise-planning.js', './js/weekwise-plan-ui.js', './css/weekwise-plan.css', './weekwise-push.js', './weekwise-calendar.js', './manifest.webmanifest', './icons/icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
   self.skipWaiting();
@@ -70,8 +70,10 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+      }
       return response;
     }).catch(() => caches.match('./index.html')));
     return;
