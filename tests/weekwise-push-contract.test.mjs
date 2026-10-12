@@ -17,6 +17,7 @@ test("background push records cannot be queried or mutated by browser roles", ()
     assert.match(sql, new RegExp("grant all on table public\\." + table + " to service_role", "i"));
   }
   assert.match(sql, /auth\.role\(\)[\s\S]{0,100}service_role/i);
+  assert.match(sql, /security definer[\s\S]{0,100}set search_path = pg_catalog, auth/i);
   assert.match(sql, /status <> 'sent'[\s\S]{0,160}attempted_at < now\(\) - interval '5 minutes'/i);
   assert.match(sql, /revoke all on function public\.weekwise_claim_push_delivery\(uuid, text, text\) from public, anon, authenticated/i);
 });
