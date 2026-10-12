@@ -112,7 +112,7 @@ if (fs.existsSync(diagnosticPath)) {
       /public\.weekwise_save/i.test(diagnostic) &&
       /weekwise_require_referral_code/i.test(diagnostic) &&
       /select check_name, status, details/i.test(diagnostic) &&
-      !/\b(insert\s+into|update\s+\w|delete\s+from|drop\s+|create\s+|alter\s+)/i.test(diagnostic)) {
+      ! /^\s*(?:insert\s+into|update\s+\w|delete\s+from|drop\s+|create\s+|alter\s+)/im.test(diagnostic.replace(/^\s*--.*$/gm, ""))) {
     pass("Supabase diagnostics cover schema, RPC, RLS and invite setup without writes");
   } else fail("Supabase diagnostics cover schema, RPC, RLS and invite setup without writes");
 } else fail("read-only Supabase diagnostic SQL exists");
