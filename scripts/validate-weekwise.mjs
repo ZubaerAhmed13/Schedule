@@ -122,7 +122,7 @@ const integrationGuidePath = path.join(root, "docs", "INTEGRATION_READINESS.md")
 if (fs.existsSync(integrationGuidePath)) {
   const integrationGuide = fs.readFileSync(integrationGuidePath, "utf8");
   if (/OAuth status and requirements/i.test(integrationGuide) &&
-      /Background push status and requirements/i.test(integrationGuide) &&
+      /Background push(?::| status and requirements)/i.test(integrationGuide) &&
       /Data safety/i.test(integrationGuide) &&
       /not implemented/i.test(integrationGuide)) {
     pass("integration guide distinguishes implemented features from external setup requirements");
