@@ -227,8 +227,20 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     await page.locator("#modalTime").fill("19:00");
     await page.locator("#modalEndTime").fill("19:45");
     // Commit the end-time field explicitly; the form syncs its duration on blur.
+    const endTimeState = async () => page.evaluate(() => ({
+      start: document.querySelector("#modalTime")?.value,
+      end: document.querySelector("#modalEndTime")?.value,
+      duration: document.querySelector("#modalDuration")?.value,
+      active: document.activeElement?.id,
+      startValidity: document.querySelector("#modalTime")?.validationMessage,
+      endValidity: document.querySelector("#modalEndTime")?.validationMessage
+    }));
+    const afterFill = await endTimeState();
     await page.locator("#modalEndTime").press("Tab");
-    assert.equal(await page.locator("#modalDuration").inputValue(), "45",
+    const afterBlur = await endTimeState();
+    console.log("End-time sync diagnostics", JSON.stringify({ afterFill, afterBlur }));
+    assert.equal(afterBlur.end, "19:45", "end-time input retains the value entered by the user");
+    assert.equal(afterBlur.duration, "45",
       "changing the end time updates the saved duration before submission");
     await page.locator("#saveTaskBtn").click();
     await page.locator("#taskModal").waitFor({ state: "hidden" });
