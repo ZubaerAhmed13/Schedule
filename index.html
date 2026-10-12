@@ -1737,7 +1737,7 @@ function renderDays(){
   renderMobileDayPicker();
   const dayEvents=[];
   for(let day=0;day<7;day++){
-    const arranged=tasks.filter(t=>t.day===day&&t.start!==null&&t.start!==undefined).sort((a,b)=>a.start-b.start||b.duration-a.duration);
+    const arranged=tasks.filter(t=>t.day===day&&t.start!==null&&t.start!==undefined).map(t=>({...t})).sort((a,b)=>a.start-b.start||b.duration-a.duration);
     // Greedy interval lanes keep overlapping fixed blocks visible side-by-side.
     const clusters=[];let cluster=[],clusterEnd=-1;
     arranged.forEach(t=>{const st=Number(t.start),en=st+Math.max(1,Number(t.duration)||1);if(cluster.length&&st>=clusterEnd){clusters.push(cluster);cluster=[];clusterEnd=-1;}cluster.push(t);clusterEnd=Math.max(clusterEnd,en);});if(cluster.length)clusters.push(cluster);

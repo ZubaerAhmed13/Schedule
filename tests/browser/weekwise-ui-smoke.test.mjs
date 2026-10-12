@@ -245,7 +245,12 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     await page.locator("#taskModal").waitFor({ state: "hidden" });
 
     assert.equal(await countStoredTasksNamed(page, originalTitle), 0, "editing must not leave an old-title duplicate");
-    assert.equal(await countStoredTasksNamed(page, editedTitle), 1, "editing must update one canonical record");
+    const editorSavedState = await page.evaluate(() => ({
+      tasks: Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2') || '{}').weeks || {}).flatMap(w => w.tasks || []).map(t => ({id:t.id,title:t.title,day:t.day,start:t.start})),
+      toast: document.querySelector('#toast')?.textContent,
+      titleField: document.querySelector('#modalTitleInput')?.value
+    }));
+    assert.equal(await countStoredTasksNamed(page, editedTitle), 1, "editing must update one canonical record: " + JSON.stringify(editorSavedState));
 
     // The editor moved the task to another day. Switch to Week explicitly so the
     // assertion is independent of whether the app initially opened in Day view.

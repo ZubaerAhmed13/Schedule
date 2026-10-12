@@ -54,6 +54,8 @@ Beta uses one daily availability window/device local time, date-only deadlines a
 
 This is a concrete incremental upgrade, not a finished premium-product release.
 
-## Publishing blocker
+## Review status
 
-The source is committed on the local development branch. Automatic approval review rejected the attempted GitHub push because uploading changed source to the public repository requires explicit authorization. The remote branch and PR were not created; no new remote CI ran. Main, GitHub Pages and production databases remain unchanged. The downloadable review package contains a Git patch series and the documentation so the work remains reviewable while authorization is pending.
+The user authorized uploading the development branch. The changes are published on `codex/weekwise-2-foundation` in draft pull request #16: https://github.com/ZubaerAhmed13/Schedule/pull/16. No merge, production deployment or database modification is included in that authorization.
+
+At commit 602981f20c49ef256beb8a967eb042844e1f2adb, GitHub release checks and both Supabase Edge Function type checks passed. The first browser run passed 7 of 9 tests, including Smart Week Builder and all three responsive widths. It exposed editor persistence and legacy-record equality failures. Calendar layout was mutating task records with temporary lane fields; rendering now uses copies. Editor persistence remains under investigation. Review the final CI result and screenshots before release. The initial review package remains a snapshot of the work before branch publication.
