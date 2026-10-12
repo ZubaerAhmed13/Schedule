@@ -221,3 +221,28 @@ test("mobile planner remains usable without page-level horizontal overflow", asy
     await context.close();
   }
 });
+
+test("calendar connections panel reports backend-not-configured instead of implying OAuth is active", async () => {
+  const { context, page } = await openPlanner({ width: 1280, height: 900 });
+  const pageErrors = [];
+  page.on("pageerror", error => pageErrors.push(error.message));
+  try {
+    await page.locator("#moreActions > summary").click();
+    await page.locator("#calendarConnectionsMenuBtn").click();
+
+    const status = page.locator("#calendarConnectionsStatus");
+    await status.waitFor({ state: "visible", timeout: 5000 });
+    await page.waitForFunction(() => {
+      const text = document.querySelector("#calendarConnectionsStatus")?.textContent || "";
+      return /calendar service is not deployed|calendar backend is reachable|credentials are not configured|not configured/i.test(text);
+    }, null, { timeout: 5000 });
+
+    assert.equal(await page.locator("#connectGoogleCalendarBtn").isDisabled(), true,
+      "Google connect remains disabled when no OAuth backend/configuration is present");
+    assert.equal(await page.locator("#connectMicrosoftCalendarBtn").isDisabled(), true,
+      "Microsoft connect remains disabled when no OAuth backend/configuration is present");
+    assert.deepEqual(pageErrors, [], "calendar panel does not introduce browser runtime errors");
+  } finally {
+    await context.close();
+  }
+});
