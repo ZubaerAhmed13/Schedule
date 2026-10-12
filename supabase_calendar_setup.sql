@@ -60,7 +60,7 @@ create or replace function public.weekwise_consume_calendar_oauth_state(p_state_
 returns table (user_id uuid, provider text, code_verifier text)
 language plpgsql
 security definer
-set search_path = pg_catalog, public, auth
+set search_path = pg_catalog, auth
 as $function$
 begin
   if coalesce(auth.role(), '') <> 'service_role' then
@@ -89,7 +89,7 @@ create or replace function public.weekwise_calendar_save_cloud(
 returns table (saved boolean, revision bigint, data jsonb, updated_at timestamptz)
 language plpgsql
 security definer
-set search_path = pg_catalog, public, auth
+set search_path = pg_catalog, auth
 as $function$
 declare
   current_row public.weekwise_cloud_data%rowtype;
