@@ -238,7 +238,6 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     const afterFill = await endTimeState();
     await page.locator("#modalEndTime").press("Tab");
     const afterBlur = await endTimeState();
-    console.log("End-time sync diagnostics", JSON.stringify({ afterFill, afterBlur }));
     assert.equal(afterBlur.end, "19:45", "end-time input retains the value entered by the user");
     assert.equal(afterBlur.duration, "45",
       "changing the end time updates the saved duration before submission");
