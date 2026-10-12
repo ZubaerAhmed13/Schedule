@@ -443,6 +443,9 @@ test('Plan is usable on desktop, tablet and mobile and warns about unknown estim
    assert.match(await page.locator('#planUnscheduled').innerText(),/Duration unknown/);
    assert.equal(await page.locator('#planApply').isDisabled(),true);
    assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true,'Plan fits viewport '+viewport.width);
+   assert.equal(await page.locator('#mobileDayPicker').isVisible(),false,'calendar day controls stay within Calendar');
+   assert.equal(await page.locator('#unscheduledBox').isVisible(),false,'Plan uses its own unscheduled-task feedback');
+   await page.locator('#toast.show').waitFor({state:'hidden'});
    await page.screenshot({path:path.join(root,'test-results',`plan-${viewport.width}.png`),fullPage:true});
   }finally{await context.close();}
  }

@@ -8,9 +8,10 @@ This branch is a review candidate; merging/publishing is a separate authorized a
 - [x] Add bounded backup validation, confirmed restore and recovery checkpoint.
 - [x] Add explicit planning preview/acceptance, checked local persistence and guarded Undo.
 - [x] Cache added modules/CSS and bump release cache generation.
-- [ ] New branch browser CI passes including editor, calendar and Plan tests.
-- [ ] New branch Supabase Edge Functions type-check in CI.
-- [ ] Review screenshot artifacts at desktop/tablet/mobile widths and light/dark variants.
+- [x] Browser CI passed at 76b5bb7 including editor, calendar and Plan tests; rerun after follow-up changes.
+- [x] Both Supabase Edge Functions type-checked in CI at 76b5bb7.
+- [x] Reviewed styled light-theme screenshots at desktop/tablet/mobile widths.
+- [ ] Review dark-theme screenshots and installed-PWA layouts.
 - [ ] Complete keyboard, screen-reader, contrast, zoom and modal focus review.
 - [ ] Validate an actual legacy-user upgrade and valid backup restore in an isolated profile.
 - [ ] Verify installed PWA update/offline loading; independently confirm local use without online sign-in.
