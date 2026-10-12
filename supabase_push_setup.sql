@@ -49,7 +49,7 @@ create or replace function public.weekwise_claim_push_delivery(
 returns boolean
 language plpgsql
 security definer
-set search_path = pg_catalog, public, auth
+set search_path = pg_catalog, auth
 as $function$
 declare
   claimed_id bigint;
