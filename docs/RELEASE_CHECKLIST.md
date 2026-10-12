@@ -36,5 +36,5 @@ Never expose OAuth/VAPID/service-role/AI secrets in browser code. Never run prod
 
 ## Additional privacy-export gate
 
-- [ ] Confirm editor-history export includes current and archived drafts for the active owner, preserves malformed raw content, and omits other owners' records (Node and built-client browser tests added; final CI confirmation required).
-- [ ] Confirm exported JSON is treated as sensitive plaintext; no archive is deleted automatically.
+- [x] Editor-history export preserves current/archived and malformed drafts while excluding other owners. Node/release CI passed: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307144930; 26 built-client browser tests passed: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307145282.
+- [x] UI and README warn that exported JSON contains sensitive plaintext; export leaves local archives unchanged (browser assertion). No automatic deletion is implemented.
