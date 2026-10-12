@@ -106,7 +106,7 @@ function loadStore(){
 }
 function loadReminders(){return WeekwiseData.readCollection(localStorage,REMINDERS_KEY);}
 let reminders=loadReminders();
-function saveReminders(){try{WeekwiseData.writeCollection(localStorage,REMINDERS_KEY,reminders);}catch(_){showToast('Could not save reminders in this browser. Export a backup when available.');}if(!cloudApplyingRemote)queueCloudSave();}
+function saveReminders(){checkedCollectionSave(REMINDERS_KEY,reminders,value=>reminders=value);}
 let store=loadStore();
 currentDataOwner=readCloudMeta()?.userId||'local';
 if(!store.settings)store.settings=defaultSettings();if(!store.weeks)store.weeks={};if(!Array.isArray(store.recurringTemplates))store.recurringTemplates=[];if(!Array.isArray(store.customLists))store.customLists=[];if(!store.settings.shifts)store.settings.shifts=defaultSettings().shifts;if(!store.settings.classTemplate)store.settings.classTemplate=defaultClassTemplate();
@@ -125,10 +125,14 @@ try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if([
 try{const shortcutView=new URLSearchParams(window.location.search).get('view');if(['today','tomorrow','inbox','plan','calendar'].includes(shortcutView))workspaceView=shortcutView;}catch(_){}
 let toastTimer;
 let storageWarningShown=false;
+let lastSavedStore=JSON.stringify(store);
+function storageSaveError(message){const error=new Error(message);error.name='WeekwiseStorageError';showToast(message);return error;}
+window.addEventListener('error',event=>{if(event.error?.name==='WeekwiseStorageError'){event.preventDefault();showToast(event.error.message);}});
+function checkedCollectionSave(key,value,restore){try{WeekwiseData.writeCollection(localStorage,key,value);}catch(error){const raw=localStorage.getItem(key);if(raw!==null){try{restore(WeekwiseData.validateCollection(JSON.parse(raw)));}catch(_){}}else restore([]);throw storageSaveError('Could not save this change. Previous records remain on this device.');}if(!cloudApplyingRemote)queueCloudSave();}
 function saveStore(){
  if(plannerStorageBlocked||WeekwiseData.blockedKeys().length)return false;
- try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}
- catch(e){if(!storageWarningShown){storageWarningShown=true;showToast('Local saving is unavailable in this browser. Export a backup to keep your changes.');}return false;}
+ try{const raw=JSON.stringify(store);localStorage.setItem(STORE_KEY,raw);lastSavedStore=raw;}
+ catch(error){store=JSON.parse(lastSavedStore);tasks=JSON.parse(JSON.stringify(store.weeks[currentWeek]?.tasks||[]));throw storageSaveError('Could not save this change. Your previous planner remains on this device.');}
  if(!cloudApplyingRemote)queueCloudSave();return true;
 }
 function reconcileSplitTasks(){const all=workspaceRecords().map(r=>r.task),byId=new Map(all.map(t=>[t.id,t]));for(const parent of all){if(!parent.planningChildren?.length)continue;for(const sub of parent.subtasks||[]){if(sub.taskId&&byId.has(sub.taskId)){const child=byId.get(sub.taskId);sub.title=child.title;sub.done=!!child.done;}}const children=parent.planningChildren.map(id=>byId.get(id)).filter(Boolean);if(children.length===parent.planningChildren.length){parent.done=children.every(t=>t.done)&&(!parent.subtasks?.length||parent.subtasks.every(s=>s.done));parent.status=parent.done?'done':'todo';}}}
@@ -624,7 +628,8 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('modalSection').value=t?.sectionName||'';
   $('modalSchedulingMode').value=t?.schedulingMode||((t?.fixed||t?.workday||t?.type==='fixed')?'fixed':'flexible');
   $('modalPriority').value=t?.priority||'none';$('modalStatus').value=t?.done?'done':(t?.status||'todo');$('modalDurationEstimate').value=t?.estimatedDurationMinutes??'';$('modalRequiresCompletion').checked=t?.requiresCompletion!==false;$('modalTodayPriority').checked=!!t?.todayPriority;
-  $('modalFocusEstimate').value=t?.focusEstimateMinutes?String(t.focusEstimateMinutes):'';$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';const existingReminderTimes=taskReminderTimes(t);
+  $('modalFocusEstimate').value=t?.focusEstimateMinutes?String(t.focusEstimateMinutes):'';$('modalImportance').value=t?.importance||'unclassified';$('modalUrgency').value=t?.urgency||'unclassified';$('modalRecurrenceScope').value='occurrence';$('modalRecurrenceScope').disabled=!t?.seriesId;
+  $('modalRecurrence').value=t?.recurrence||'none';$('modalDueDate').value=t?.dueDate||'';const existingReminderTimes=taskReminderTimes(t);
   $('modalReminderAt').value=existingReminderTimes[0]||'';
   [2,3,4,5].forEach((n,index)=>{const input=$('modalReminderAt'+n);if(input)input.value=existingReminderTimes[index+1]||'';});
   const extraReminderDetails=document.querySelector('.task-extra-reminders');if(extraReminderDetails)extraReminderDetails.open=existingReminderTimes.length>1;
@@ -697,7 +702,7 @@ function saveModalTask(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();r
   const attachments=attachmentParse.valid;
   const subtasks=$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:uid(),title,done:false}));
   if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&currentDayHasConfiguredShift(day)){showToast(`A Work day block is already scheduled on ${DAY_NAMES[day]}. Choose another day or use Work day settings.`);updateActivityTemplateStates();return;}
-  let actualStart=null,seriesId=null,templateFields={title,type,schedulingMode,duration,start:preferred,allDay,note,recurrence,listId,folderName,sectionName,priority,status,focusEstimateMinutes,importance,urgency,dueDate,reminderAt,reminderTimes,tags,subtasks,attachments};
+  let actualStart=null,seriesId=null,templateFields={title,type,schedulingMode,estimatedDurationMinutes,requiresCompletion,duration,start:preferred,allDay,note,recurrence,listId,folderName,sectionName,priority,status,focusEstimateMinutes,importance,urgency,dueDate,reminderAt,reminderTimes,tags,subtasks,attachments};
   if(id){
     const t=tasks.find(x=>x.id===id);
     if(t&&!t.fixed){
@@ -707,12 +712,11 @@ function saveModalTask(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();r
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...old,...s,id:old.id||s.id,done:!!old.done}:{...s};});
       t.start=noSchedule||allDay?null:findSlot(day,duration,preferred,0,1440,tasks.filter(x=>x.day===day&&x.id!==id));t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
       if(recurrence==='none'){
-        if(oldSeriesId)stopRecurringSeries(t,occurrenceDate);
+        if(oldSeriesId){if($('modalRecurrenceScope').value==='occurrence'){const rule=store.recurringTemplates.find(r=>r.id===oldSeriesId);if(rule)rule.excludedDates=[...new Set([...(rule.excludedDates||[]),t.occurrenceDate||occurrenceDate])];t.seriesId=null;t.recurrence='none';t.occurrenceDate=null;}else stopRecurringSeries(t,occurrenceDate,$('modalRecurrenceScope').value);}
         else{t.recurrence='none';t.seriesId=null;t.occurrenceDate=null;}
       }else{
         seriesId=oldSeriesId||uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
-        if(oldSeriesId)clearFutureOccurrences(seriesId,occurrenceDate);
-        upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
+        if(oldSeriesId&&$('modalRecurrenceScope').value==='occurrence'){t.recurrenceOverride=true;}else{const anchor=$('modalRecurrenceScope').value==='series'?(store.recurringTemplates.find(r=>r.id===seriesId)?.startDate||occurrenceDate):occurrenceDate;upsertRecurringTemplate(seriesId,anchor,templateFields);}
       }
     }
   }else{
@@ -792,7 +796,7 @@ function saveCloudLocalPayload(payload){
  WeekwiseData.commitStorage(localStorage,entries,'weekwise-pre-cloud-v1');
  cloudApplyingRemote=true;
  try{
-  store=safe.store;
+  store=safe.store;lastSavedStore=JSON.stringify(store);
   if(safe.reminders)reminders=safe.reminders;if(safe.focusSessions)focusSessions=safe.focusSessions;if(safe.habits)habits=safe.habits;if(safe.countdowns)countdowns=safe.countdowns;if(safe.savedTaskFilters)savedTaskFilters=safe.savedTaskFilters;if(safe.taskTemplates)taskTemplates=safe.taskTemplates;
   syncWorkspaceLists();currentWeek=dateKey(sundayOf(now));mobileDay=now.getDay();monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);loadWeek(currentWeek);renderReminders();
  }finally{cloudApplyingRemote=false;}
@@ -1075,7 +1079,7 @@ async function loadImport(file){
   const collections=[['reminders',REMINDERS_KEY],['focusSessions',FOCUS_SESSIONS_KEY],['habits',HABITS_KEY],['countdowns',COUNTDOWNS_KEY],['savedTaskFilters',TASK_FILTERS_KEY],['taskTemplates',TASK_TEMPLATES_KEY]];
   const entries=[[STORE_KEY,JSON.stringify(restored)],...collections.filter(([name])=>Array.isArray(data[name])).map(([name,key])=>[key,JSON.stringify(data[name])])];
   WeekwiseData.commitStorage(localStorage,entries,'weekwise-pre-restore-v1');
-  WeekwiseData.clearBlocked(entries.map(([key])=>key));plannerStorageBlocked=false;plannerStorageError='';store=restored;
+  WeekwiseData.clearBlocked(entries.map(([key])=>key));plannerStorageBlocked=false;plannerStorageError='';store=restored;lastSavedStore=JSON.stringify(store);
   if(Array.isArray(data.reminders))reminders=data.reminders;
   if(Array.isArray(data.focusSessions))focusSessions=data.focusSessions;
   if(Array.isArray(data.habits))habits=data.habits;
@@ -1511,7 +1515,7 @@ renderTaskNotificationSettings();
 $('habitForm').addEventListener('submit',saveHabitForm);
 $('cancelHabitEdit').addEventListener('click',habitFormReset);
 $('habitTrackerList').addEventListener('click',e=>{
- const check=e.target.closest('[data-habit-check]');if(check){toggleHabitCheck(check.dataset.habitCheck,check.dataset.habitDate);return;}
+ const skip=e.target.closest('[data-habit-skip]');if(skip){skipHabitToday(skip.dataset.habitSkip);return;}const check=e.target.closest('[data-habit-check]');if(check){toggleHabitCheck(check.dataset.habitCheck,check.dataset.habitDate);return;}
  const edit=e.target.closest('[data-habit-edit]');if(edit){editHabit(edit.dataset.habitEdit);return;}
  const del=e.target.closest('[data-habit-delete]');if(del)deleteHabit(del.dataset.habitDelete);
 });
@@ -1521,8 +1525,8 @@ $('habitTrackerList').addEventListener('click',e=>{
 const FOCUS_SESSIONS_KEY='weekwise-focus-sessions-v1';
 let focusSessions=WeekwiseData.readCollection(localStorage,FOCUS_SESSIONS_KEY);
 let focusState=null,focusInterval=null;
-function dataCanWrite(){if(plannerStorageBlocked||WeekwiseData.blockedKeys().length){showToast('Editing is paused to protect stored data. Restore a valid backup using the recovery notice.');return false;}return true;}
-function focusOwner(){return cloudUser?.id||'local';}
+function dataCanWrite(){if(cloudUser&&currentDataOwner!==cloudUser.id){showToast('Your account is changing. Wait until its planner is ready.');return false;}if(plannerStorageBlocked||WeekwiseData.blockedKeys().length){showToast('Editing is paused to protect stored data. Restore a valid backup using the recovery notice.');return false;}return true;}
+function focusOwner(){return currentDataOwner;}
 function focusStateKey(){return 'weekwise-focus-active-v1:'+focusOwner();}
 function freshFocus(mode='focus',seconds=1500,task=null){return WeekwiseFocus.create({id:uid(),owner:focusOwner(),mode,seconds,task});}
 function restoreFocusState(){
@@ -1574,7 +1578,7 @@ function renderFocusPanel(){
  if(history)history.innerHTML=focusSessions.slice().reverse().slice(0,6).map(s=>'<div class="focus-history-row"><div><strong>'+escapeHtml(s.taskTitle||'Focus session')+'</strong><small>'+escapeHtml(new Date(s.endedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))+'</small></div><span>'+Math.round(Number(s.minutes)||0)+' min</span></div>').join('')||'<div class="matrix-empty">Your completed focus sessions will appear here.</div>';
  updateFocusDisplay();
 }
-function persistFocusSessions(){try{WeekwiseData.writeCollection(localStorage,FOCUS_SESSIONS_KEY,focusSessions);}catch(_){}if(!cloudApplyingRemote)queueCloudSave();}
+function persistFocusSessions(){checkedCollectionSave(FOCUS_SESSIONS_KEY,focusSessions,value=>focusSessions=value);}
 function updateFocusDisplay(){
  const state=ensureFocusState(),seconds=WeekwiseFocus.remaining(state),clock=$('focusClock');if(!clock)return;
  clock.textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
@@ -1613,7 +1617,7 @@ let habits=WeekwiseData.readCollection(localStorage,HABITS_KEY);
 function habitWeekRange(){const start=sundayOf(now),end=new Date(start);end.setDate(end.getDate()+6);return fmtDate(start,{day:'numeric',month:'short'})+' – '+fmtDate(end,{day:'numeric',month:'short'});}
 function habitWeekKeys(){const start=sundayOf(now);return Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(d.getDate()+i);return dateKey(d);});}
 function habitCountThisWeek(habit){const keys=new Set(habit.checkIns||[]);return habitWeekKeys().filter(k=>keys.has(k)).length;}
-function habitStreak(habit){const checks=new Set(habit.checkIns||[]);let d=dateOnly(now),count=0;if(!checks.has(dateKey(d))){d.setDate(d.getDate()-1);if(!checks.has(dateKey(d)))return 0;}while(checks.has(dateKey(d))&&count<366){count++;d.setDate(d.getDate()-1);}return count;}
+function habitStreak(habit){return WeekwiseHabits.streak(habit,dateKey(now));}
 function habitHistoryDots(habit){const checks=new Set(habit.checkIns||[]);let markup='';for(let i=27;i>=0;i--){const d=dateOnly(now);d.setDate(d.getDate()-i);const key=dateKey(d);markup+='<span class="habit-history-dot '+(checks.has(key)?'checked':'')+'" title="'+escapeHtml(fmtDate(d,{weekday:'short',day:'numeric',month:'short'}))+(checks.has(key)?' · completed':'')+'"></span>';}return markup;}
 function renderHabitTracker(){
  const list=$('habitTrackerList');if(!list)return;
@@ -1624,54 +1628,45 @@ function renderHabitTracker(){
  const keys=habitWeekKeys(),todayKey=dateKey(now);
  list.innerHTML=habits.map(h=>{
   const checks=new Set(h.checkIns||[]),done=keys.filter(k=>checks.has(k)).length,target=Math.max(1,Math.min(7,Number(h.targetPerWeek)||5)),pct=Math.min(100,Math.round(done/target*100));
-  const days=keys.map(k=>{const d=parseKey(k),checked=checks.has(k),isToday=k===todayKey,isFuture=k>todayKey;return '<button type="button" class="habit-checkin-day '+(checked?'checked ':'')+(isToday?'today':'')+'" data-habit-check="'+escapeHtml(h.id)+'" data-habit-date="'+k+'" aria-pressed="'+(checked?'true':'false')+'" '+(isFuture?'disabled':'')+' title="'+escapeHtml(fmtDate(d,{weekday:'long',day:'numeric',month:'short'}))+(isFuture?' · future day':checked?' · done':' · mark done')+'"><span>'+DAY_SHORT[d.getDay()]+'</span><strong>'+(checked?'✓':d.getDate())+'</strong></button>';}).join('');
+  const days=keys.map(k=>{const d=parseKey(k),checked=checks.has(k),isToday=k===todayKey,isFuture=k>todayKey,isRest=!WeekwiseHabits.due(h,k);return '<button type="button" class="habit-checkin-day '+(checked?'checked ':'')+(isToday?'today':'')+'" data-habit-check="'+escapeHtml(h.id)+'" data-habit-date="'+k+'" aria-pressed="'+(checked?'true':'false')+'" '+((isFuture||h.paused)?'disabled':'')+' title="'+escapeHtml(fmtDate(d,{weekday:'long',day:'numeric',month:'short'}))+(h.paused?' · paused':isRest?' · rest or skipped day':isFuture?' · future day':checked?' · done':' · mark done')+'"><span>'+DAY_SHORT[d.getDay()]+'</span><strong>'+(checked?'✓':isRest?'—':d.getDate())+'</strong></button>';}).join('');
   const targetText='Target '+target+' time'+(target===1?'':'s')+' per week';
   return '<article class="habit-track-card" data-habit-card="'+escapeHtml(h.id)+'"><header class="habit-track-head"><span class="habit-track-icon">'+escapeHtml(h.icon||'✦')+'</span><div class="habit-track-info"><h4>'+escapeHtml(h.title)+'</h4><p>'+escapeHtml(h.goal||targetText)+'</p></div><div class="habit-track-actions"><button type="button" data-habit-edit="'+escapeHtml(h.id)+'" aria-label="Edit '+escapeHtml(h.title)+'" title="Edit habit">✎</button><button type="button" data-habit-delete="'+escapeHtml(h.id)+'" aria-label="Delete '+escapeHtml(h.title)+'" title="Delete habit">×</button></div></header>'+
   '<div class="habit-track-progress"><div class="habit-track-progress-track"><span style="width:'+pct+'%"></span></div><strong>'+done+'/'+target+'</strong></div><div class="habit-checkin-days" aria-label="Daily habit check-ins">'+days+'</div>'+
-  '<footer class="habit-track-foot"><span>'+(habitStreak(h)?'🔥 '+habitStreak(h)+' day streak':'28-day history')+'</span><div class="habit-history-dots"><span class="habit-history-label">History</span>'+habitHistoryDots(h)+'</div></footer></article>';
+  '<div class="plan-actions"><button class="btn" type="button" data-habit-skip="'+escapeHtml(h.id)+'">'+((h.skippedDates||[]).includes(todayKey)?'Restore today':'Skip today')+'</button></div><footer class="habit-track-foot"><span>'+(habitStreak(h)?'🔥 '+habitStreak(h)+' day streak':'28-day history')+'</span><div class="habit-history-dots"><span class="habit-history-label">History</span>'+habitHistoryDots(h)+'</div></footer></article>';
  }).join('');
 }
-function persistHabits(){try{WeekwiseData.writeCollection(localStorage,HABITS_KEY,habits);}catch(_){showToast('Could not save habit history in this browser.');}if(!cloudApplyingRemote)queueCloudSave();}
-function habitFormReset(){$('habitEditId').value='';$('habitName').value='';$('habitIcon').value='';$('habitGoal').value='';$('habitTargetPerWeek').value='5';$('saveHabitBtn').textContent='＋ Add habit';$('cancelHabitEdit').hidden=true;}
+function persistHabits(){checkedCollectionSave(HABITS_KEY,habits,value=>habits=value);}
+function habitFormReset(){document.querySelectorAll('[name=habitDay]').forEach(el=>el.checked=true);$('habitPaused').checked=false;$('habitReminderTime').value='';$('habitEditId').value='';$('habitName').value='';$('habitIcon').value='';$('habitGoal').value='';$('habitTargetPerWeek').value='5';$('saveHabitBtn').textContent='＋ Add habit';$('cancelHabitEdit').hidden=true;}
 function saveHabitForm(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
  e.preventDefault();const title=$('habitName').value.trim();if(!title){$('habitName').focus();return;}
+ const scheduledDays=[...document.querySelectorAll('[name=habitDay]:checked')].map(el=>Number(el.value)),paused=$('habitPaused').checked,reminderTime=$('habitReminderTime').value;if(!scheduledDays.length){showToast('Choose at least one scheduled day.');return;}
  const id=$('habitEditId').value,icon=$('habitIcon').value.trim()||'✦',goal=$('habitGoal').value.trim(),targetPerWeek=Math.max(1,Math.min(7,Number($('habitTargetPerWeek').value)||5));
- if(id){const habit=habits.find(h=>h.id===id);if(habit)Object.assign(habit,{title,icon,goal,targetPerWeek,updatedAt:new Date().toISOString()});}
- else habits.push({id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,icon,goal,targetPerWeek,checkIns:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+ if(id){const habit=habits.find(h=>h.id===id);if(habit)Object.assign(habit,{title,icon,goal,targetPerWeek,scheduledDays,paused,reminderTime,updatedAt:new Date().toISOString()});}
+ else habits.push({id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,icon,goal,targetPerWeek,scheduledDays,paused,reminderTime,skippedDates:[],checkIns:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
  persistHabits();habitFormReset();renderHabitTracker();showToast(id?'Habit updated':'Habit added');
 }
-function editHabit(id){const habit=habits.find(h=>h.id===id);if(!habit)return;$('habitEditId').value=habit.id;$('habitName').value=habit.title||'';$('habitIcon').value=habit.icon||'';$('habitGoal').value=habit.goal||'';$('habitTargetPerWeek').value=String(habit.targetPerWeek||5);$('saveHabitBtn').textContent='Save changes';$('cancelHabitEdit').hidden=false;$('habitName').focus();}
-function toggleHabitCheck(id,date){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}const habit=habits.find(h=>h.id===id);if(!habit)return;const checks=new Set(habit.checkIns||[]);if(checks.has(date))checks.delete(date);else checks.add(date);habit.checkIns=[...checks].sort();habit.updatedAt=new Date().toISOString();persistHabits();renderHabitTracker();}
+function editHabit(id){const habit=habits.find(h=>h.id===id);if(!habit)return;document.querySelectorAll('[name=habitDay]').forEach(el=>el.checked=(habit.scheduledDays||[0,1,2,3,4,5,6]).includes(Number(el.value)));$('habitPaused').checked=!!habit.paused;$('habitReminderTime').value=habit.reminderTime||'';$('habitEditId').value=habit.id;$('habitName').value=habit.title||'';$('habitIcon').value=habit.icon||'';$('habitGoal').value=habit.goal||'';$('habitTargetPerWeek').value=String(habit.targetPerWeek||5);$('saveHabitBtn').textContent='Save changes';$('cancelHabitEdit').hidden=false;$('habitName').focus();}
+function toggleHabitCheck(id,date){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}const habit=habits.find(h=>h.id===id);if(!habit||habit.paused||date>dateKey(now))return;const checks=new Set(habit.checkIns||[]);if(checks.has(date))checks.delete(date);else checks.add(date);habit.checkIns=[...checks].sort();habit.updatedAt=new Date().toISOString();persistHabits();renderHabitTracker();}
+function skipHabitToday(id){if(!dataCanWrite())return;const h=habits.find(h=>h.id===id),today=dateKey(now);if(!h||h.paused)return;if((h.checkIns||[]).includes(today)){showToast('Today is already completed. Its check-in is preserved.');return;}const dates=new Set(h.skippedDates||[]);if(dates.has(today))dates.delete(today);else dates.add(today);h.skippedDates=[...dates].sort();persistHabits();renderHabitTracker();}
+function checkHabitReminders(){if(!dataCanWrite()||document.hidden)return;const today=dateKey(new Date()),d=new Date(),minute=d.getHours()*60+d.getMinutes();let changed=false;for(const h of habits){if(!h.reminderTime||!WeekwiseHabits.due(h,today)||(h.checkIns||[]).includes(today)||h.lastReminderDate===today||timeMins(h.reminderTime)>minute)continue;showToast('Habit reminder: '+h.title);h.lastReminderDate=today;changed=true;}if(changed)persistHabits();}
 function deleteHabit(id){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}const habit=habits.find(h=>h.id===id);if(!habit)return;if(!confirm('Delete the habit "'+habit.title+'"? Its check-in history will also be removed.'))return;habits=habits.filter(h=>h.id!==id);persistHabits();renderHabitTracker();showToast('Habit deleted');}
 
 
 function addDaysToKey(key,delta){const d=parseKey(key);d.setDate(d.getDate()+delta);return dateKey(d);}
 function recurrenceDateMatches(template,date){
  const anchor=parseKey(template.startDate),key=dateKey(date);
- if(key<template.startDate)return false;
+ if(key<template.startDate||(template.endDate&&key>template.endDate))return false;
  if(template.frequency==='daily')return true;
  if(template.frequency==='weekly')return date.getDay()===anchor.getDay();
  if(template.frequency==='monthly'){const last=new Date(date.getFullYear(),date.getMonth()+1,0).getDate();return date.getDate()===Math.min(anchor.getDate(),last);}
  if(template.frequency==='yearly'){const last=new Date(date.getFullYear(),anchor.getMonth()+1,0).getDate();return date.getMonth()===anchor.getMonth()&&date.getDate()===Math.min(anchor.getDate(),last);}
  return false;
 }
-function clearFutureOccurrences(seriesId,fromDate){
- Object.values(store.weeks||{}).forEach(week=>{
-  if(!Array.isArray(week?.tasks))return;
-  week.tasks=week.tasks.filter(item=>!(item.seriesId===seriesId&&item.occurrenceDate&&item.occurrenceDate>fromDate));
- });
- tasks=tasks.filter(item=>!(item.seriesId===seriesId&&item.occurrenceDate&&item.occurrenceDate>fromDate));
-}
-function stopRecurringSeries(task,fromDate){
+function stopRecurringSeries(task,fromDate,scope='future'){
  const seriesId=task?.seriesId;if(!seriesId)return;
- store.recurringTemplates=(store.recurringTemplates||[]).filter(template=>template.id!==seriesId);
- clearFutureOccurrences(seriesId,fromDate);
- Object.values(store.weeks||{}).forEach(week=>{
-  if(!Array.isArray(week?.tasks))return;
-  week.tasks.forEach(item=>{if(item.seriesId===seriesId){item.seriesId=null;item.recurrence='none';item.occurrenceDate=null;}});
- });
- tasks.forEach(item=>{if(item.seriesId===seriesId){item.seriesId=null;item.recurrence='none';item.occurrenceDate=null;}});
- task.seriesId=null;task.recurrence='none';task.occurrenceDate=null;
+ const rule=store.recurringTemplates.find(t=>t.id===seriesId);if(rule){rule.endDate=scope==='series'?addDaysToKey(rule.startDate,-1):addDaysToKey(fromDate,-1);rule.updatedAt=new Date().toISOString();}
+ task.recurrence='none';task.recurrenceOverride=true;
+ // Keep every materialized occurrence, including completed and edited history.
 }
 function upsertRecurringTemplate(id,occurrenceDate,fields){
  if(!Array.isArray(store.recurringTemplates))store.recurringTemplates=[];
@@ -1680,7 +1675,7 @@ function upsertRecurringTemplate(id,occurrenceDate,fields){
  const reminderRules=reminderValues.map(value=>({offsetDays:Math.round((parseKey(value.slice(0,10))-parseKey(occurrenceDate))/86400000),time:value.slice(11,16)})).filter(rule=>/^\d{2}:\d{2}$/.test(rule.time));
  const reminderOffsetDays=reminderRules[0]?.offsetDays??null,reminderTime=reminderRules[0]?.time??null;
  let template=store.recurringTemplates.find(item=>item.id===id);
- const value={id,startDate:occurrenceDate,frequency:fields.recurrence,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,allDay:!!fields.allDay,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:'todo',focusEstimateMinutes:fields.focusEstimateMinutes??null,importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,reminderRules,tags:[...(fields.tags||[])],attachments:[...(fields.attachments||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ const value={id,startDate:occurrenceDate,frequency:fields.recurrence,schedulingMode:fields.schedulingMode||'flexible',estimatedDurationMinutes:fields.estimatedDurationMinutes??null,requiresCompletion:fields.requiresCompletion!==false,title:fields.title,type:fields.type,duration:fields.duration,start:fields.start,allDay:!!fields.allDay,note:fields.note,listId:fields.listId,folderName:fields.folderName,sectionName:fields.sectionName,priority:fields.priority,status:'todo',focusEstimateMinutes:fields.focusEstimateMinutes??null,importance:fields.importance,urgency:fields.urgency,dueOffsetDays,reminderOffsetDays,reminderTime,reminderRules,tags:[...(fields.tags||[])],attachments:[...(fields.attachments||[])],subtasks:(fields.subtasks||[]).map(s=>({...s,done:false})),excludedDates:template?.excludedDates||[],createdAt:template?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
  if(template)Object.assign(template,value);else{template=value;store.recurringTemplates.push(template);}
  return template;
 }
@@ -1714,7 +1709,7 @@ function materializeRecurringRange(rangeStart,rangeEnd){
    const reminderAt=reminderTimes[0]||null;
    const priorNotified=[...(Array.isArray(existing?.reminderNotifiedTimes)?existing.reminderNotifiedTimes:[])];if(existing?.reminderNotifiedAt)priorNotified.push(existing.reminderNotifiedAt);
    const reminderNotifiedTimes=[...new Set(priorNotified.filter(value=>reminderTimes.includes(value)))];
-   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),focusEstimateMinutes:template.focusEstimateMinutes??null,custom:true,fixed:false,schedulingMode:template.schedulingMode||'flexible',note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],attachments:[...(template.attachments||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),focusEstimateMinutes:template.focusEstimateMinutes??null,estimatedDurationMinutes:template.estimatedDurationMinutes??null,requiresCompletion:template.requiresCompletion!==false,custom:true,fixed:false,schedulingMode:template.schedulingMode||'flexible',note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],attachments:[...(template.attachments||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
    if(existing)Object.assign(existing,values);
    else {const created={id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values};rows.push(created);occurrences.set(template.id+'::'+occurrenceDate,created);}
   }
@@ -1800,7 +1795,7 @@ function renderCountdowns(){
   return '<article class="countdown-card '+(past?'past ':'')+(nearest?.id===c.id?'nearest':'')+'" data-countdown-card="'+escapeHtml(c.id)+'"><header class="countdown-card-head"><span class="countdown-card-icon">'+escapeHtml(c.icon||'⌛')+'</span><div class="countdown-card-info"><h4>'+escapeHtml(c.title)+'</h4><p>'+escapeHtml(fmtDate(parseKey(c.date),{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+'</p></div><div class="countdown-card-actions"><button type="button" data-countdown-edit="'+escapeHtml(c.id)+'" aria-label="Edit '+escapeHtml(c.title)+'" title="Edit">✎</button><button type="button" data-countdown-delete="'+escapeHtml(c.id)+'" aria-label="Delete '+escapeHtml(c.title)+'" title="Delete">×</button></div></header><div class="countdown-card-number">'+escapeHtml(d.number)+'</div><div class="countdown-card-label">'+escapeHtml(d.label)+'</div>'+(c.note?'<div class="countdown-card-note">'+escapeHtml(c.note)+'</div>':'')+'</article>';
  }).join('');
 }
-function persistCountdowns(){try{WeekwiseData.writeCollection(localStorage,COUNTDOWNS_KEY,countdowns);}catch(_){showToast('Could not save countdowns on this device.');}if(!cloudApplyingRemote)queueCloudSave();}
+function persistCountdowns(){checkedCollectionSave(COUNTDOWNS_KEY,countdowns,value=>countdowns=value);}
 function resetCountdownForm(){$('countdownEditId').value='';$('countdownTitle').value='';$('countdownDate').value='';$('countdownIcon').value='';$('countdownNote').value='';$('saveCountdownBtn').textContent='＋ Add countdown';$('cancelCountdownEdit').hidden=true;}
 function saveCountdownForm(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
  e.preventDefault();const title=$('countdownTitle').value.trim(),date=$('countdownDate').value;if(!title||!date){$('countdownForm').reportValidity();return;}
@@ -1900,7 +1895,7 @@ function saveFilterForm(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();
  if(!title){$('filterName').focus();return;}
  const filter={id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),title:title,listId:$('filterList').value,priority:$('filterPriority').value,status:$('filterStatus').value,due:$('filterDue').value,tag:$('filterTag').value.trim().replace(/^#/,'').toLowerCase(),createdAt:new Date().toISOString()};
  savedTaskFilters.push(filter);activeSavedFilterId=filter.id;
- try{WeekwiseData.writeCollection(localStorage,TASK_FILTERS_KEY,savedTaskFilters);}catch(_){showToast('Could not save filters on this device.');}
+ checkedCollectionSave(TASK_FILTERS_KEY,savedTaskFilters,value=>savedTaskFilters=value);
  if(!cloudApplyingRemote)queueCloudSave();
  $('filterName').value='';$('filterList').value='all';$('filterPriority').value='all';$('filterStatus').value='all';$('filterDue').value='all';$('filterTag').value='';
  renderSavedFilters();showToast('Filter saved');
@@ -1910,7 +1905,7 @@ function deleteSavedFilter(id){if(!dataCanWrite()){arguments[0]?.preventDefault?
  if(!confirm('Delete saved filter "'+filter.title+'"?'))return;
  savedTaskFilters=savedTaskFilters.filter(item=>item.id!==id);
  if(activeSavedFilterId===id)activeSavedFilterId='';
- try{WeekwiseData.writeCollection(localStorage,TASK_FILTERS_KEY,savedTaskFilters);}catch(_){}
+ checkedCollectionSave(TASK_FILTERS_KEY,savedTaskFilters,value=>savedTaskFilters=value);
  if(!cloudApplyingRemote)queueCloudSave();
  renderSavedFilters();showToast('Filter deleted');
 }
@@ -2082,9 +2077,10 @@ function addCapturedTaskForDate(title,targetDate,startMinutes,dueDate,listId,fol
  renderAll();renderWorkspaceView();
  return {task,weekKey,actualStart};
 }
-function quickCaptureWorkspaceTask(){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
+function quickCaptureWorkspaceTask(keepRaw=false,approved=false){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
  const input=$('workspaceCaptureInput'),raw=String(input?.value||'').trim();if(!raw)return;
- const parsed=parseWeekwiseNaturalCapture(raw,now),title=parsed.title;
+ const parsed=keepRaw?{title:raw}:parseWeekwiseNaturalCapture(raw,now),title=parsed.title;
+ if(!keepRaw&&!approved&&(parsed.date||parsed.timeMatched||(parsed.recurrence&&parsed.recurrence!=='none'))){$('captureInterpretation').textContent=title+' · '+(parsed.date?'Date '+dateKey(parsed.date)+' · ':'')+(parsed.timeMatched?'Start '+minsTime(parsed.timeMinutes)+' · ':'')+(parsed.recurrence&&parsed.recurrence!=='none'?'Repeats '+parsed.recurrence:'');$('captureOriginal').textContent='Original: '+raw;$('captureConfirmDialog').showModal();return;}
  if(!title){showToast('Add a task name before the date or time.');return;}
  const date=parsed.date||dateOnly(now),dueDate=parsed.date?dateKey(parsed.date):null;
  const listId=defaultCaptureList();
@@ -2171,10 +2167,12 @@ function parseICSProperties(text){
  return events;
 }
 async function importCalendarICS(file){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
- const raw=await file.text(),events=parseICSProperties(raw);
+ if(file.size>WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Calendar file must be smaller than 10 MB.');
+ const raw=await file.text(),events=parseICSProperties(raw);if(events.length>10000)throw new Error('Import up to 10,000 events at a time.');
  if(!events.length){showToast('No calendar events were found in that .ics file.');return;}
  let added=0,skipped=0,invalid=0,changedCurrent=false,changedOther=false;
  for(const event of events){
+  if(event.DTSTART?.params?.TZID&&event.DTSTART.params.TZID!==Intl.DateTimeFormat().resolvedOptions().timeZone){invalid++;continue;}
   const start=parseICSDateProperty(event.DTSTART),end=parseICSDateProperty(event.DTEND);
   const title=unescapeICSText(event.SUMMARY?.value)||'Imported calendar event';
   if(!start){invalid++;continue;}
@@ -2289,11 +2287,8 @@ function readModalTaskTemplate(){
   attachments:parseTaskAttachmentInput($('modalAttachments').value).valid,
   noSchedule:!!$('modalNoSchedule').checked,allDay:!!$('modalAllDay').checked,createdAt:new Date().toISOString()};
 }
-function persistTaskTemplates(){
- try{WeekwiseData.writeCollection(localStorage,TASK_TEMPLATES_KEY,taskTemplates);}
- catch(_){showToast('Could not save templates in this browser.');}
- if(!cloudApplyingRemote)queueCloudSave();renderTaskTemplateOptions();
-}
+function persistTaskTemplates(){checkedCollectionSave(TASK_TEMPLATES_KEY,taskTemplates,value=>taskTemplates=value);renderTaskTemplateOptions();}
+
 function saveModalAsTaskTemplate(){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
  const attachmentParse=parseTaskAttachmentInput($('modalAttachments').value);if(attachmentParse.invalid.length){$('modalAttachments').focus();showToast('Use complete http:// or https:// URLs for attachments.');return;}
  const fields=readModalTaskTemplate();if(!fields.title){$('modalTitleInput').focus();showToast('Enter a task name before saving a template.');return;}
@@ -2599,6 +2594,7 @@ window.weekwiseCalendarBridge = {
 };
 
 WeekwiseExperience.init({edit:openWorkspaceRecord,focus(id,week){const record=workspaceRecords().find(r=>r.task.id===id&&r.week===week);if(!record)return;const state=ensureFocusState();if(state.runningSince!==null||state.activeMs>0){openUtilityPanel('focusPanel','Focus timer');showToast('Finish or reset your current session before choosing another task.');return;}focusState=freshFocus('focus',state.totalSeconds,{id,week,title:record.task.title});persistActiveFocus();openUtilityPanel('focusPanel','Focus timer');renderFocusPanel();focusStartPause();},navigate:setWorkspaceView,panel:openUtilityPanel,render:renderExperience,review(week,review){if(!WeekwiseData.validDate(week))throw new Error('Choose a valid week.');if(!dataCanWrite())throw new Error('Editing is paused for data recovery.');store.settings.weeklyReviews={...(store.settings.weeklyReviews||{}),[week]:{...review,updatedAt:new Date().toISOString()}};if(!saveStore())throw new Error('Could not save your review.');}});
+$('captureConfirmApply').onclick=()=>{$('captureConfirmDialog').close();quickCaptureWorkspaceTask(false,true);};$('captureKeepRaw').onclick=()=>{$('captureConfirmDialog').close();quickCaptureWorkspaceTask(true,true);};$('captureCancel').onclick=()=>$('captureConfirmDialog').close();
 $('globalCaptureBtn').onclick=()=>openTaskModal(null,now.getDay(),null,'inbox');$('mobileNavigationToggle').onclick=()=>{const open=document.body.classList.toggle('navigation-expanded');$('mobileNavigationToggle').setAttribute('aria-expanded',String(open));};
 $('workspaceSidebar').addEventListener('click',e=>{if(e.target.closest('[data-workspace-view]')||e.target.closest('[data-workspace-action]')){document.body.classList.remove('navigation-expanded');$('mobileNavigationToggle').setAttribute('aria-expanded','false');}});
 $('signinLocalContinue').onclick=()=>{try{isolatePlannerOwner('local');cloudUser=null;cloudReady=false;localStorage.setItem('weekwise-local-mode-v1','true');finishSignInLanding();setCloudStatus('Device-only planning. Your changes are saved locally.');}catch(error){setCloudStatus('Could not open the device planner: '+error.message);}};
@@ -2618,13 +2614,13 @@ window.WeekwisePlanUI.init({
   if(JSON.stringify({store:snapshot,currentWeek})!==expected)throw new Error('Your planner changed. Build a fresh preview.');
   WeekwiseData.validateStore(next);
   WeekwiseData.commitStorage(localStorage,[[STORE_KEY,JSON.stringify(next)]],checkpointKey);
-  store=next;tasks=JSON.parse(JSON.stringify(store.weeks[currentWeek]?.tasks||[]));
+  store=next;lastSavedStore=JSON.stringify(store);tasks=JSON.parse(JSON.stringify(store.weeks[currentWeek]?.tasks||[]));
   syncSettingsForm();renderAll();queueCloudSave();
  }
 });
 
 showStorageRecoveryNotice();
-renderWorkspaceView();renderReminders();nudgeDueReminders();renderTaskNotificationSettings();checkTaskReminders();setInterval(checkTaskReminders,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkTaskReminders();});window.addEventListener('focus',checkTaskReminders);
-function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();if(dateChanged){renderReminders();nudgeDueReminders();}}
+renderWorkspaceView();renderReminders();nudgeDueReminders();renderTaskNotificationSettings();checkTaskReminders();setInterval(()=>{checkTaskReminders();checkHabitReminders();},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkTaskReminders();});window.addEventListener('focus',checkTaskReminders);
+function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();renderTodayOverview();renderExperience();if(dateChanged){renderReminders();nudgeDueReminders();}}
 setInterval(refreshClock,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClock();});window.addEventListener('focus',refreshClock);
 })();

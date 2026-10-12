@@ -362,7 +362,7 @@
         <label class="habit-create-field habit-icon-field"><span>Icon</span><input id="habitIcon" maxlength="6" placeholder="🌱" aria-label="Habit emoji or icon"></label>
         <label class="habit-create-field habit-name-field"><span>Habit name</span><input id="habitName" required maxlength="70" placeholder="e.g. Practise German"></label>
         <label class="habit-create-field"><span>Goal (optional)</span><input id="habitGoal" maxlength="100" placeholder="e.g. 10 new words"></label>
-        <label class="habit-create-field habit-target-field"><span>Target per week</span><select id="habitTargetPerWeek"><option value="1">1 time</option><option value="2">2 times</option><option value="3">3 times</option><option value="4">4 times</option><option value="5" selected>5 times</option><option value="6">6 times</option><option value="7">Every day</option></select></label>
+        <fieldset class="habit-schedule"><legend>Scheduled days</legend><label><input name="habitDay" type="checkbox" value="0" checked>Sun</label><label><input name="habitDay" type="checkbox" value="1" checked>Mon</label><label><input name="habitDay" type="checkbox" value="2" checked>Tue</label><label><input name="habitDay" type="checkbox" value="3" checked>Wed</label><label><input name="habitDay" type="checkbox" value="4" checked>Thu</label><label><input name="habitDay" type="checkbox" value="5" checked>Fri</label><label><input name="habitDay" type="checkbox" value="6" checked>Sat</label></fieldset><label class="habit-create-field"><span>Foreground reminder time</span><input id="habitReminderTime" type="time"><small>While Weekwise is open</small></label><label><input id="habitPaused" type="checkbox"> Pause this habit</label><label class="habit-create-field habit-target-field"><span>Target per week</span><select id="habitTargetPerWeek"><option value="1">1 time</option><option value="2">2 times</option><option value="3">3 times</option><option value="4">4 times</option><option value="5" selected>5 times</option><option value="6">6 times</option><option value="7">Every day</option></select></label>
         <div class="habit-create-actions"><button class="btn primary" type="submit" id="saveHabitBtn">＋ Add habit</button><button class="btn" type="button" id="cancelHabitEdit" hidden>Cancel</button></div>
       </form>
       <div class="habit-tracker-summary" id="habitTrackerSummary"></div>
@@ -436,7 +436,7 @@
     <div class="field"><label for="modalEndTime">End time</label><input id="modalEndTime" class="time24" data-time24-end type="text" inputmode="numeric" maxlength="5" placeholder="11:00" value="10:30" required title="Use 24-hour end time. Use 24:00 for midnight." /><div class="hint">24-hour time; use 24:00 for midnight.</div></div>
     <div class="field duration-field"><label for="modalDuration">Duration</label><select id="modalDuration"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30" selected>30 minutes</option><option value="35">35 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option><option value="75">1 hour 15 minutes</option><option value="90">1 hour 30 minutes</option><option value="120">2 hours</option><option value="180">3 hours</option><option value="540">9 hours</option></select><div class="hint">Duration updates automatically when you change the end time.</div></div>
   </div>
-  <div class="field"><label for="modalRecurrence">Repeat</label><select id="modalRecurrence"><option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option></select><div class="hint">Future occurrences are added automatically.</div></div>
+  <div class="field"><label for="modalRecurrence">Repeat</label><select id="modalRecurrence"><option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option></select><div class="hint">Future occurrences are added automatically.</div></div><div class="field"><label for="modalRecurrenceScope">Apply recurring changes to</label><select id="modalRecurrenceScope"><option value="occurrence">This occurrence</option><option value="future">Rule from this occurrence onward</option><option value="series">Entire recurring rule</option></select><div class="hint">Saved occurrences and their history are retained. Rule changes affect newly created occurrences.</div></div>
   <div class="field"><label for="modalDueDate">Due date (optional)</label><input id="modalDueDate" type="date" /></div>
   <div class="field"><label for="modalReminderAt">Reminders (optional)</label><input id="modalReminderAt" type="datetime-local" /><div class="hint">An alert while Weekwise is open; browser notifications need permission.</div><details class="task-extra-reminders"><summary>Add up to 4 more reminders</summary><div class="task-extra-reminder-fields"><label for="modalReminderAt2">Reminder 2<input id="modalReminderAt2" type="datetime-local" /></label><label for="modalReminderAt3">Reminder 3<input id="modalReminderAt3" type="datetime-local" /></label><label for="modalReminderAt4">Reminder 4<input id="modalReminderAt4" type="datetime-local" /></label><label for="modalReminderAt5">Reminder 5<input id="modalReminderAt5" type="datetime-local" /></label></div></details></div>
   <div class="field"><label for="modalTags">Tags (optional)</label><input id="modalTags" maxlength="180" placeholder="e.g. deep-work, urgent" /><div class="hint">Separate tags with commas.</div></div>
@@ -460,9 +460,11 @@
     <div class="utility-content" id="utilityModalContent"></div>
   </section>
 </div>
+<dialog id="captureConfirmDialog" class="weekwise-dialog" aria-labelledby="captureConfirmTitle"><h2 id="captureConfirmTitle">Review your capture</h2><p id="captureInterpretation"></p><p id="captureOriginal"></p><div class="plan-actions"><button class="btn primary" id="captureConfirmApply">Use these details</button><button class="btn" id="captureKeepRaw">Keep original text</button><button class="btn" id="captureCancel">Cancel</button></div></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="./js/weekwise-data.js"></script>
 <script src="./js/weekwise-cloud-transport.js"></script>
+<script src="./js/weekwise-habits.js"></script>
 <script src="./js/weekwise-focus.js"></script>
 <script src="./js/weekwise-planning.js"></script>
 <script src="./js/weekwise-plan-ui.js"></script>
@@ -474,11 +476,7 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_jwdzJMi4VxXUHEOVasrcOg_ax0A5scL';
 <script src="./js/weekwise-experience.js"></script>
 <script src="./js/weekwise-accessibility.js"></script>
 <script src="./js/weekwise-app.js"></script>
-<script>
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
-}
-</script>
+<script src="./js/weekwise-pwa.js"></script>
 <script src="./weekwise-push.js"></script>
 <script src="./weekwise-calendar.js"></script>
 </body>

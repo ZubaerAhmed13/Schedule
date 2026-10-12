@@ -7,17 +7,18 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const siteRoot=path.resolve(root,process.env.WEEKWISE_TEST_SITE_ROOT||".");
 let server;
 let browser;
 let origin;
 
 const supabaseStub = String.raw`
 (() => {
- let user={id:'weekwise-browser-test-user',email:'browser-test@example.invalid'},listener=null;
+ let user={id:'weekwise-browser-test-user',email:'browser-test@example.invalid'},listeners=[];
  const session=()=>user?{access_token:'browser-test-access-token:'+user.id,user}:null;
- const client={auth:{onAuthStateChange(fn){listener=fn;return {data:{subscription:{unsubscribe(){}}}};},async getSession(){return {data:{session:session()}};},async getUser(){return {data:{user}};},async signOut(){user=null;listener?.('SIGNED_OUT',null);return {};},async signInWithPassword(){return {data:{session:session(),user}};},async signUp(){return {data:{session:session(),user}};},async resetPasswordForEmail(){return {};}}
+ const client={auth:{onAuthStateChange(fn){listeners.push(fn);return {data:{subscription:{unsubscribe(){}}}};},async getSession(){return {data:{session:session()}};},async getUser(){return {data:{user}};},async signOut(){user=null;listeners.forEach(fn=>fn('SIGNED_OUT',null));return {};},async signInWithPassword(){return {data:{session:session(),user}};},async signUp(){return {data:{session:session(),user}};},async resetPasswordForEmail(){return {};}}
  ,from(){return {select(){return {eq(key,id){return {async maybeSingle(){const response=await fetch('/__weekwise_test_cloud?user='+encodeURIComponent(id));return {data:await response.json(),error:null};}};}};}};}};
- window.WeekwiseTestAuth={setUser(id){user=id?{id,email:id+'@example.invalid'}:null;listener?.(user?'SIGNED_IN':'SIGNED_OUT',session());}};
+ window.WeekwiseTestAuth={setUser(id){user=id?{id,email:id+'@example.invalid'}:null;listeners.forEach(fn=>fn(user?'SIGNED_IN':'SIGNED_OUT',session()));}};
  window.supabase={createClient(){return client;}};
 })();
 `;
@@ -25,8 +26,8 @@ const mockRows=new Map();
 
 function serveStatic(req, res) {
   const pathname = decodeURIComponent(new URL(req.url || "/", origin || "http://127.0.0.1").pathname);
-  let target = path.resolve(root, "." + pathname);
-  if (target !== root && !target.startsWith(root + path.sep)) {
+  let target = path.resolve(siteRoot, "." + pathname);
+  if (target !== siteRoot && !target.startsWith(siteRoot + path.sep)) {
     res.writeHead(403);
     res.end("Forbidden");
     return;
@@ -462,6 +463,12 @@ test('keyboard dialog traps focus and restores the opener; Insights reviews pers
 });
 
 test('device-only planner works offline after its service worker has cached the app',async()=>{
- const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});await context.route('https://**/*',route=>route.abort());const page=await context.newPage();try{await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#workspaceCaptureInput').fill('Offline responsibility');await page.locator('#workspaceCaptureForm button[type=submit]').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await countStoredTasksNamed(page,'Offline responsibility'),1);await page.locator('#workspaceCaptureInput').fill('Created without network');await page.locator('#workspaceCaptureForm button[type=submit]').click();assert.equal(await countStoredTasksNamed(page,'Created without network'),1);assert.equal(await page.locator('#cloudMenuBadge').innerText(),'Local');await page.screenshot({path:path.join(root,'test-results','today-offline-mobile.png'),fullPage:true});
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});await context.route('https://**/*',route=>route.abort());const page=await context.newPage();try{await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#workspaceCaptureInput').fill('Offline responsibility');await page.locator('#workspaceCaptureForm button[type=submit]').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await countStoredTasksNamed(page,'Offline responsibility'),1);await page.locator('#workspaceCaptureInput').fill('Created without network');await page.locator('#workspaceCaptureForm button[type=submit]').click();assert.equal(await countStoredTasksNamed(page,'Created without network'),1);assert.equal(await page.locator('#cloudMenuBadge').textContent(),'Local');await page.screenshot({path:path.join(root,'test-results','today-offline-mobile.png'),fullPage:true});
  }finally{await context.close();}
 });
+
+test('failed local task save keeps the previous records and never reports success',async()=>{const {context,page}=await openPlanner({width:1440,height:1000});try{await createScheduledTask(page,'Saved before quota failure');const before=await readPlannerStore(page);await page.locator('#addTaskBtn').click();await page.locator('#modalTitleInput').fill('Must not appear saved');await page.evaluate(()=>{const original=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='weekwise-planner-v2')throw new DOMException('Test quota','QuotaExceededError');return original.call(this,key,value);};});await page.locator('#saveTaskBtn').click();assert.equal(await page.locator('#taskModal').isVisible(),true);assert.match(await page.locator('#toast').textContent(),/Could not save/);assert.deepEqual(await readPlannerStore(page),before);}finally{await context.close();}});
+
+test('a damaged habit collection blocks writes without replacing its original bytes',async()=>{const {context,page}=await openPlanner({width:1440,height:1000});try{await page.evaluate(()=>localStorage.setItem('weekwise-habits-v1','{original damaged habits'));await page.reload({waitUntil:'domcontentloaded'});await page.locator('#storageRecoveryNotice').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-habits-v1')),'{original damaged habits');assert.match(await page.locator('#storageRecoveryNotice').innerText(),/paused to protect/);}finally{await context.close();}});
+
+test('interpreted capture asks for review and can keep the original text',async()=>{const {context,page}=await openPlanner({width:1440,height:1000});try{await page.locator('#workspaceSidebar [data-workspace-view="inbox"]').click();await page.locator('#workspaceCaptureInput').fill('Submit report tomorrow at 15:00');const before=await readPlannerStore(page);await page.locator('#workspaceCaptureForm button[type=submit]').click();await page.locator('#captureConfirmDialog').waitFor({state:'visible'});assert.deepEqual(await readPlannerStore(page),before);await page.locator('#captureKeepRaw').click();assert.equal(await countStoredTasksNamed(page,'Submit report tomorrow at 15:00'),1);}finally{await context.close();}});
