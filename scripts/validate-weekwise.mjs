@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -127,6 +128,45 @@ if (fs.existsSync(integrationGuidePath)) {
     pass("integration guide distinguishes implemented features from external setup requirements");
   } else fail("integration guide distinguishes implemented features from external setup requirements");
 } else fail("integration readiness guide exists");
+
+
+// The Pages deployment must identify its build and verify the live site serves that exact revision.
+const deploymentWorkflowPath = path.join(root, ".github", "workflows", "deploy-pages.yml");
+if (fs.existsSync(deploymentWorkflowPath)) {
+  const deploymentWorkflow = fs.readFileSync(deploymentWorkflowPath, "utf8");
+  if (/Embed deployment identity/.test(deploymentWorkflow) &&
+      /build-info\.json/.test(deploymentWorkflow) &&
+      /EXPECTED_COMMIT/.test(deploymentWorkflow) &&
+      /EXPECTED_RUN_ID/.test(deploymentWorkflow) &&
+      /published_commit/.test(deploymentWorkflow) &&
+      /published_run_id/.test(deploymentWorkflow) &&
+      /Smoke-test the published Weekwise app/.test(deploymentWorkflow)) {
+    pass("Pages deployment publishes a build marker and checks the live commit/run identity");
+  } else fail("Pages deployment publishes a build marker and checks the live commit/run identity");
+
+  const lines = deploymentWorkflow.split("\n");
+  const shellBlocks = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!/^ {8}run:\s*\|\s*$/.test(lines[i])) continue;
+    const body = [];
+    for (let j = i + 1; j < lines.length; j += 1) {
+      if (lines[j].trim() === "") {
+        body.push("");
+        continue;
+      }
+      if (!/^ {10}/.test(lines[j])) break;
+      body.push(lines[j].slice(10));
+    }
+    shellBlocks.push(body.join("\n"));
+  }
+  if (shellBlocks.length >= 2) {
+    for (const [index, shell] of shellBlocks.entries()) {
+      const result = spawnSync("bash", ["-n"], { input: shell, encoding: "utf8" });
+      if (result.status === 0) pass(`Pages deploy shell block ${index + 1} parses`);
+      else fail(`Pages deploy shell block ${index + 1} parses: ${result.stderr.trim()}`);
+    }
+  } else fail("Pages deploy workflow contains both shell blocks");
+} else fail("Pages deployment workflow exists for validation");
 
 if (failures.length) {
   console.error(`\\n${failures.length} release sanity check(s) failed.`);
