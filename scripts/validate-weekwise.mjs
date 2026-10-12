@@ -94,7 +94,8 @@ if (/let savedPayload=null;[\s\S]*?finally\{\s*cloudBusy=false;[\s\S]*?if\(saved
 if (appSource.includes("function taskModalFingerprint()") &&
     appSource.includes("This activity is no longer available") &&
     appSource.includes("Discard your unsaved changes") &&
-    appSource.includes("closeTaskModal(true)")) {
+    appSource.includes("closeTaskModal(true)") &&
+    appSource.includes("$('closeModal').addEventListener('click',()=>closeTaskModal())")) {
   pass("activity editor guards stale records and protects unsaved changes");
 } else {
   fail("activity editor guards stale records and protects unsaved changes");

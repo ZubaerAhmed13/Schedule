@@ -254,6 +254,15 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     assert.equal(await page.locator("#modalTime").inputValue(), "19:00", "edited start time is persisted");
     assert.equal(await page.locator("#modalEndTime").inputValue(), "19:45", "edited end time is persisted");
 
+    const cancelPrompt = page.waitForEvent("dialog");
+    await page.locator("#modalNote").fill("Cancel should ask before discarding");
+    await page.locator("#closeModal").click();
+    const cancelDialog = await cancelPrompt;
+    assert.match(cancelDialog.message(), /discard your unsaved changes/i);
+    await cancelDialog.dismiss();
+    assert.equal(await page.locator("#taskModal").isVisible(), true, "declining Cancel keeps the editor open");
+    assert.equal(await page.locator("#modalNote").inputValue(), "Cancel should ask before discarding");
+
     const dismissedPrompt = page.waitForEvent("dialog");
     await page.locator("#modalNote").fill("This change must be discarded");
     await page.keyboard.press("Escape");
