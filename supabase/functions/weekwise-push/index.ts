@@ -65,6 +65,7 @@ function isTrustedPushEndpoint(candidate: string): boolean {
     if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443")) return false;
     const host = url.hostname.toLowerCase();
     return host === "fcm.googleapis.com" ||
+      host === "notify.windows.com" ||
       host === "push.services.mozilla.com" ||
       host === "updates.push.services.mozilla.com" ||
       host === "web.push.apple.com" ||
