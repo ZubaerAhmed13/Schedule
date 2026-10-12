@@ -97,3 +97,7 @@ Screenshots go to `test-results/` and a CI artifact. Existing Deno function chec
 ### Optional database hardening
 
 `weekwise_rpc_hardening.sql` replaces the save RPC with an owner-scoped, revision-locked function and revokes direct authenticated table writes. Stage it and review `supabase_verify_rpc_hardening.sql` before requesting production approval. The migration is prepared only; it has not been executed. Apply it after the original setup script, which otherwise retains its original grants.
+
+### Calendar display preference (review branch)
+
+Settings → Work day & weekly settings → **Month and year start day** offers Sunday or Monday as the first weekday column. It is a presentation preference only; it **never moves tasks** and Weekwise's underlying weekly planning records remain Sunday–Saturday. Time-zone conversion is not implemented by this setting, and saved wall times are still guarded when the device's zone changes.
