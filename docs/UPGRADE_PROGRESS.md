@@ -56,3 +56,11 @@ Light and dark screenshots have been visually reviewed at 1440/820/390px. Furthe
 - Privacy/account deletion tooling, audit retention/export policy and full security/accessibility certification need separate reviewed work.
 
 The core planning/recovery and reliability upgrade is a concrete review candidate. It is not a claim that all 32 sections or all production integrations are complete.
+
+## 12 October 2026 continuation — editor history privacy export
+
+PR #17 (`codex/weekwise-completion`) implements editor draft restore and bounded visible task lists. Its GitHub checks passed at commit `adcc3cb5bf75069c43814267a9056f1d550fc9b9`, but it is still a separate unmerged PR. Main already contains the core upgrade from PR #16; statements above about its not being deployed describe the earlier review stage.
+
+This continuation adds an explicit owner-scoped editor-history export under Settings → Data & privacy. Unlike the ordinary planner backup, this exports current and previously archived editor drafts, retaining even malformed bytes. Other accounts' archives are not included. No automatic deletion is performed. History is local-only, plaintext when downloaded, and the export is bounded to 10 MB / 2,000 records. Source checks and a built-client browser download regression must pass on this branch before it can be considered verified.
+
+**Still outstanding:** Optional account-deletion workflows need separate reviewed destructive-action design. Fixed IANA-timezone conversion, configurable week display start, bulk recurring-rule preview, real backend credential/device checks, manual accessibility and installed-PWA review are not completed by this feature. No production Supabase or main-branch changes are made in this continuation.
