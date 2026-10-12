@@ -34,7 +34,16 @@ with checks as (
       from pg_policies
       where schemaname = 'public'
         and tablename = 'weekwise_cloud_data'
-        and policyname in ('weekwise_cloud_select_own','weekwise_cloud_insert_own','weekwise_cloud_update_own')
+        and 'authenticated' = any(roles)
+        and (
+          (policyname = 'weekwise_cloud_select_own' and cmd = 'SELECT'
+            and coalesce(qual, '') ilike '%auth.uid%' and coalesce(qual, '') ilike '%user_id%')
+          or (policyname = 'weekwise_cloud_insert_own' and cmd = 'INSERT'
+            and coalesce(with_check, '') ilike '%auth.uid%' and coalesce(with_check, '') ilike '%user_id%')
+          or (policyname = 'weekwise_cloud_update_own' and cmd = 'UPDATE'
+            and coalesce(qual, '') ilike '%auth.uid%' and coalesce(qual, '') ilike '%user_id%'
+            and coalesce(with_check, '') ilike '%auth.uid%' and coalesce(with_check, '') ilike '%user_id%')
+        )
     ) then 'PASS' else 'FAIL' end,
     'Expected own-row SELECT, INSERT and UPDATE policies: ' ||
       (select count(*)::text from pg_policies
@@ -96,6 +105,53 @@ with checks as (
          when to_regprocedure('public.digest(text,text)') is not null then 'PRESENT IN ANOTHER SCHEMA'
          else 'NOT CONFIGURED' end,
     'The invite setup expects pgcrypto digest in the extensions schema'
+  union all
+  select
+    'background push subscriptions table',
+    case when to_regclass('public.weekwise_push_subscriptions') is not null then 'PASS' else 'NOT CONFIGURED' end,
+    case when to_regclass('public.weekwise_push_subscriptions') is not null
+      then 'Subscription table exists; use Supabase Edge Function for writes'
+      else 'Run supabase_push_setup.sql before enabling background reminders'
+    end
+  union all
+  select
+    'background push delivery log',
+    case when to_regclass('public.weekwise_push_delivery_log') is not null then 'PASS' else 'NOT CONFIGURED' end,
+    case when to_regclass('public.weekwise_push_delivery_log') is not null
+      then 'Delivery-deduplication table exists'
+      else 'Run supabase_push_setup.sql before enabling background reminders'
+    end
+  union all
+  select
+    'background push subscription isolation',
+    case when
+      coalesce((select c.relrowsecurity from pg_class c where c.oid = to_regclass('public.weekwise_push_subscriptions')), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'SELECT'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'SELECT'), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'INSERT'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'INSERT'), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'UPDATE'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'UPDATE'), false)
+      and not coalesce(has_table_privilege('anon', to_regclass('public.weekwise_push_subscriptions'), 'DELETE'), false)
+      and not coalesce(has_table_privilege('authenticated', to_regclass('public.weekwise_push_subscriptions'), 'DELETE'), false)
+      then 'PASS' else 'NOT CONFIGURED' end,
+    'RLS must be enabled and browser roles must not have direct SELECT access'
+  union all
+  select
+    'background push claim RPC',
+    case when
+      to_regprocedure('public.weekwise_claim_push_delivery(uuid,text,text)') is not null
+      and exists (
+        select 1 from pg_proc p
+        join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public'
+          and p.proname = 'weekwise_claim_push_delivery'
+          and has_function_privilege('service_role', p.oid, 'EXECUTE')
+          and not has_function_privilege('authenticated', p.oid, 'EXECUTE')
+          and not has_function_privilege('anon', p.oid, 'EXECUTE')
+      )
+      then 'PASS' else 'NOT CONFIGURED' end,
+    'Only the service role should execute the atomic push delivery claim'
 )
 select check_name, status, details
 from checks

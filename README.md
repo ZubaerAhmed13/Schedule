@@ -26,6 +26,13 @@ Weekwise uses Supabase Auth and a revision-aware save function to sync user data
 
 The app includes only the Supabase publishable client key. Never place a service-role key or database password in `index.html` or another public file. If database setup is missing, Weekwise can still keep changes in the current browser, but those changes will not sync to another device until the SQL setup succeeds.
 
+
+## Background task reminders (optional)
+
+The repository now includes a service-worker Web Push implementation, authenticated Edge Function, protected subscription/delivery tables, and an optional one-minute scheduler. **Background delivery is not active in the live app until the external Supabase setup is completed.** Follow [docs/BACKGROUND_PUSH_SETUP.md](docs/BACKGROUND_PUSH_SETUP.md), run `supabase_push_setup.sql`, deploy the Edge Function, configure server-only VAPID/dispatcher secrets, store the scheduler secret in Vault, and install `supabase_push_cron_setup.sql`.
+
+The browser notification option already in Weekwise works while the app is running; it is not a substitute for server-driven Web Push. Never commit a VAPID private key or service-role key.
+
 ## Data, privacy and backups
 
 Local browser storage keeps the planner responsive and supports offline use after the app shell has been cached. When signed in and configured, Supabase synchronizes the saved task store, reminders, focus history, habits, countdowns and saved filters. If a remote/local conflict is detected, Weekwise pauses sync and asks which copy to keep rather than silently overwriting either copy.

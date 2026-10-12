@@ -7,8 +7,8 @@ This document separates code that exists from services that must be configured i
 - The public app is hosted at https://zubaerahmed13.github.io/Schedule/.
 - The app uses Supabase Auth and calls `public.weekwise_save(jsonb,bigint)` for revision-aware cloud saves.
 - The app supports local/offline planning and JSON backup. Calendar transfer is through `.ics` import/export, not live two-way calendar sync.
-- Current task notifications are browser notifications while Weekwise is running. The service worker caches the app shell; it does **not** by itself implement Web Push.
-- Google/Microsoft calendar OAuth and server-delivered background push are not implemented merely by configuring Supabase Auth. Do not advertise either as available until an end-to-end test passes.
+- The current live configuration has browser notifications while Weekwise is running. The repository now contains a Web Push service worker, client control, protected subscription/delivery SQL, Edge Function and scheduler setup, but these are **not live until the optional backend setup and a closed-app delivery test succeed**.
+- Google/Microsoft calendar OAuth is still not implemented; enabling a Supabase sign-in provider would not provide Calendar/Graph access or a secure calendar sync flow. Do not advertise calendar integration until a provider round-trip is proven.
 
 ## 1. Verify Supabase schema safely
 
@@ -56,19 +56,13 @@ A complete calendar integration requires:
 
 Do not mark calendar OAuth as complete until a test event can be created and then observed in both systems, and edits/deletes are correctly synchronized according to the product's documented directionality.
 
-## 4. Background push status and requirements
+## 4. Background push: code ready, external activation required
 
-The current reminder loop runs in the page. Browser notifications may appear while the app is running, but this is not reliable background delivery when the tab/browser is closed.
+The repository includes the service-worker `push` and notification-click handlers, opt-in browser control, authenticated `weekwise-push` Edge Function, server-only subscription and delivery tables, an atomic deduplication claim, timezone conversion, stale-subscription cleanup, and an optional one-minute Cron setup. The UI does not report background reminders enabled until the current device subscription is registered with the signed-in account.
 
-Real Web Push requires:
-1. A service worker `push` event handler and notification-click handler.
-2. User permission plus subscription creation via `PushManager.subscribe()`.
-3. VAPID public/private keys; the private key must be stored only in backend secrets.
-4. A secure subscription registry associated with the authenticated user, with RLS and a delete/unsubscribe path.
-5. A scheduled backend job/Edge Function to find due reminders and send Web Push messages, including expired-subscription cleanup and retries.
-6. End-to-end tests on supported desktop and mobile browsers with the app closed, permission denied, subscription revoked, and time-zone/DST boundaries.
+It is **not yet verified as live** because the production Supabase database has not been migrated, VAPID/private dispatcher secrets are not configured from this environment, and the Cron job has not been installed. Follow [docs/BACKGROUND_PUSH_SETUP.md](BACKGROUND_PUSH_SETUP.md), then test a future reminder with the app closed. The service worker caching the app shell alone never proved push delivery.
 
-A service-worker fetch/cache handler is not proof of push support. Do not store VAPID private keys or service-role credentials in the static app.
+The dispatcher only reads the latest synced cloud snapshot, skips reminders more than 24 hours late, rejects untrusted push endpoint hostnames, and keeps subscription/delivery records unavailable to browser roles. This still needs real delivery tests with the app closed and with revoked/expired subscriptions and timezone changes.
 
 ## 5. Release checklist
 

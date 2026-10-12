@@ -1389,6 +1389,7 @@ body[data-theme="dark"] .task-extra-reminders{background:#191f2b;border-color:#3
     <div class="inside">
       <div class="reminders-intro"><div class="reminders-intro-icon">✎</div><div><strong>A place for things on your mind</strong><p>Sticky notes live here without time blocks. Scheduled task alerts are configured on the task itself.</p></div></div>
       <section class="task-notification-settings" aria-label="Browser notification settings"><div><strong>Scheduled task alerts</strong><p id="taskNotificationStatus">Task alerts can appear while Weekwise is open. Browser notifications require permission.</p></div><button type="button" class="btn" id="enableTaskNotificationsBtn">Enable browser alerts</button></section>
+      <section class="task-notification-settings" aria-label="Background task notification settings"><div><strong>Background task reminders</strong><p id="backgroundPushStatus">Receive task reminders while Weekwise is closed. Requires one-time backend setup and browser permission.</p></div><button type="button" class="btn" id="toggleBackgroundPushBtn">Enable background reminders</button></section>
       <form id="reminderForm" class="reminder-editor">
         <input type="hidden" id="reminderId" />
         <div class="field"><label for="reminderTitle">What do you need to remember?</label><input id="reminderTitle" maxlength="100" required placeholder="e.g. Ask the landlord about heating" /></div>
@@ -1469,6 +1470,7 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_jwdzJMi4VxXUHEOVasrcOg_ax0A5scL';
 const $=id=>document.getElementById(id);
 let cloudClient=null,cloudUser=null,cloudRevision=0,cloudReady=false,cloudApplyingRemote=false,cloudBusy=false,cloudSyncTimer=null,cloudConflict=null,cloudInitializationUser=null,cloudInitPromise=null;
 try{if(window.supabase&&typeof window.supabase.createClient==='function')cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}catch(e){console.error('Weekwise cloud client could not start',e);}
+window.weekwiseCloudClient=cloudClient;
 let now=new Date();
 function nextQuarterHour(){const minutes=now.getHours()*60+now.getMinutes();return Math.min(23*60+45,Math.ceil(minutes/15)*15);}
 function dateOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
@@ -3994,5 +3996,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 </script>
+<script src="./weekwise-push.js"></script>
 </body>
 </html>

@@ -122,7 +122,7 @@ const integrationGuidePath = path.join(root, "docs", "INTEGRATION_READINESS.md")
 if (fs.existsSync(integrationGuidePath)) {
   const integrationGuide = fs.readFileSync(integrationGuidePath, "utf8");
   if (/OAuth status and requirements/i.test(integrationGuide) &&
-      /Background push status and requirements/i.test(integrationGuide) &&
+      /Background push(?::| status and requirements)/i.test(integrationGuide) &&
       /Data safety/i.test(integrationGuide) &&
       /not implemented/i.test(integrationGuide)) {
     pass("integration guide distinguishes implemented features from external setup requirements");
@@ -208,6 +208,61 @@ if (fs.existsSync(liveDiagnosticsPath)) {
     }
   } else fail("Supabase diagnostic workflow contains all three shell blocks");
 } else fail("live Supabase diagnostic workflow exists");
+
+
+// Background push must be explicit, service-only in the database, and safely registered in the PWA.
+const pushEdgePath = path.join(root, "supabase", "functions", "weekwise-push", "index.ts");
+const pushSqlPath = path.join(root, "supabase_push_setup.sql");
+const pushCronPath = path.join(root, "supabase_push_cron_setup.sql");
+const pushClientPath = path.join(root, "weekwise-push.js");
+if (fs.existsSync(pushEdgePath) && fs.existsSync(pushSqlPath) && fs.existsSync(pushCronPath) && fs.existsSync(pushClientPath)) {
+  const pushEdge = fs.readFileSync(pushEdgePath, "utf8");
+  const pushSql = fs.readFileSync(pushSqlPath, "utf8");
+  const pushCron = fs.readFileSync(pushCronPath, "utf8");
+  const pushClient = fs.readFileSync(pushClientPath, "utf8");
+  if (/auth\.getUser\(\)/.test(pushEdge) &&
+      /x-weekwise-cron-secret/.test(pushEdge) &&
+      /constantTimeEqual\(receivedSecret, expectedSecret\)/.test(pushEdge) &&
+      /weekwise_claim_push_delivery/.test(pushEdge) &&
+      /fromZonedTime\(text, timeZone\)/.test(pushEdge) &&
+      /isTrustedPushEndpoint\(endpoint\)/.test(pushEdge)) {
+    pass("background push verifies user sessions, cron secret, time zones and push endpoint hosts");
+  } else fail("background push verifies user sessions, cron secret, time zones and push endpoint hosts");
+
+  if (/alter table public\.weekwise_push_subscriptions enable row level security/i.test(pushSql) &&
+      /revoke all on table public\.weekwise_push_subscriptions from public, anon, authenticated/i.test(pushSql) &&
+      /revoke all on table public\.weekwise_push_delivery_log from public, anon, authenticated/i.test(pushSql) &&
+      /auth\.role\(\)[\s\S]*?service_role/i.test(pushSql)) {
+    pass("push subscription and delivery records are server-role only");
+  } else fail("push subscription and delivery records are server-role only");
+
+  if (/vault\.decrypted_secrets/.test(pushCron) &&
+      /weekwise_push_cron_secret/.test(pushCron) &&
+      /weekwise-push-dispatch/.test(pushCron) &&
+      !/x-weekwise-cron-secret['"]\s*,\s*['"][0-9a-f]{32,}/i.test(pushCron)) {
+    pass("background-push schedule keeps its shared secret in Vault");
+  } else fail("background-push schedule keeps its shared secret in Vault");
+
+  if (/functions\.invoke\("weekwise-push"/.test(pushClient) &&
+      /pushManager\.subscribe\(/.test(pushClient) &&
+      /Notification\.requestPermission\(\)/.test(pushClient) &&
+      !/SUPABASE_SERVICE_ROLE_KEY|VAPID_PRIVATE_KEY|WEEKWISE_PUSH_CRON_SECRET/i.test(pushClient)) {
+    pass("browser push client uses the Edge Function without embedded server secrets");
+  } else fail("browser push client uses the Edge Function without embedded server secrets");
+
+  try {
+    new vm.Script(pushClient, { filename: "weekwise-push.js" });
+    pass("weekwise-push.js parses");
+  } catch (error) {
+    fail(`weekwise-push.js parses: ${error.message}`);
+  }
+} else fail("background push server, SQL, scheduler and client files exist");
+
+if (/addEventListener\(['"]push['"]/.test(fs.readFileSync(sw, "utf8")) &&
+    /addEventListener\(['"]notificationclick['"]/.test(fs.readFileSync(sw, "utf8")) &&
+    /weekwise-push\.js/.test(fs.readFileSync(sw, "utf8"))) {
+  pass("service worker handles Web Push and caches the push client");
+} else fail("service worker handles Web Push and caches the push client");
 
 if (failures.length) {
   console.error(`\\n${failures.length} release sanity check(s) failed.`);
