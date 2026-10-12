@@ -80,3 +80,7 @@ The dispatcher only reads the latest synced cloud snapshot, skips reminders more
 ## Data safety
 
 Before testing account switching, restore, or conflict resolution, export a JSON backup. Keep the planner empty by default: do not seed sample tasks or overwrite an existing local/cloud store during verification.
+
+## Weekwise 2.0 review boundary
+
+Draft PR #16 changes the browser client and build, not the production Supabase project. Its browser suite uses isolated mock identities/rows; real RLS and OAuth/push behavior still need controlled test accounts and configured services. `weekwise_rpc_hardening.sql` is an optional staged migration to remove direct authenticated INSERT/UPDATE/DELETE privileges and require revision-checked RPC writes. `supabase_verify_rpc_hardening.sql` reports privileges without selecting personal planner rows. Do not run either setup/migration against production without authorization; review the original setup script's grants before re-running it after hardening.

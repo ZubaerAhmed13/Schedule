@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import '../js/weekwise-habits.js';
+test('scheduled streak ignores weekends and explicitly skipped days',()=>{const h={scheduledDays:[1,2,3,4,5],skippedDates:['2026-10-09'],checkIns:['2026-10-08','2026-10-12']};assert.equal(WeekwiseHabits.streak(h,'2026-10-12'),2);assert.equal(WeekwiseHabits.due(h,'2026-10-10'),false);assert.deepEqual(WeekwiseHabits.consistency(h,'2026-10-08','2026-10-12'),{expected:2,done:2});});
+test('paused habits keep history and make no current completion demand',()=>{const h={paused:true,checkIns:['2026-10-12']};assert.equal(WeekwiseHabits.due(h,'2026-10-12'),false);assert.equal(WeekwiseHabits.streak(h,'2026-10-12'),0);assert.equal(h.checkIns.length,1);});

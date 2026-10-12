@@ -1,9 +1,9 @@
-const CACHE_NAME = 'weekwise-static-v75';
-const APP_SHELL = ['./', './index.html', './weekwise-push.js', './weekwise-calendar.js', './manifest.webmanifest', './icons/icon.svg'];
+const CACHE_NAME = 'weekwise-static-v77';
+const APP_SHELL = ['./', './index.html', './css/weekwise-legacy.css', './js/weekwise-app.js', './js/weekwise-focus.js', './js/weekwise-habits.js', './js/weekwise-pwa.js', './js/weekwise-cloud-transport.js', './js/weekwise-data.js', './js/weekwise-planning.js', './js/weekwise-plan-ui.js', './css/weekwise-plan.css', './css/weekwise.css', './js/weekwise-experience.js', './js/weekwise-accessibility.js', './weekwise-push.js', './weekwise-calendar.js', './manifest.webmanifest', './icons/icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
 });
+self.addEventListener('message', event => {if(event.data?.type==='WEEKWISE_ACTIVATE_UPDATE')self.skipWaiting();});
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('weekwise-static-') && key !== CACHE_NAME).map(key => caches.delete(key)))));
   self.clients.claim();
@@ -69,14 +69,12 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
-      return response;
-    }).catch(() => caches.match('./index.html')));
+    event.respondWith(fetch(request).catch(() => caches.open(CACHE_NAME).then(cache => cache.match('./index.html'))));
     return;
   }
-  event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
+  const shell = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
+  if (!shell.has(request.url)) return; // Never cache API responses or account data.
+  event.respondWith(caches.open(CACHE_NAME).then(cache => cache.match(request)).then(cached => cached || fetch(request).then(response => {
     if (response && response.ok) {
       const copy = response.clone();
       caches.open(CACHE_NAME).then(cache => cache.put(request, copy));

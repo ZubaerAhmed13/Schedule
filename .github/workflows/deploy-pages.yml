@@ -30,10 +30,12 @@ jobs:
       - name: Embed deployment identity
         run: |
           printf '{"commit":"%s","run_id":"%s"}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > build-info.json
+      - name: Build versioned client assets
+        run: node scripts/build-weekwise.mjs
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: "dist"
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
