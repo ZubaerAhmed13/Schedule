@@ -8,7 +8,7 @@ This document separates code that exists from services that must be configured i
 - The app uses Supabase Auth and calls `public.weekwise_save(jsonb,bigint)` for revision-aware cloud saves.
 - The app supports local/offline planning and JSON backup. The repository now contains Google Calendar/Microsoft Outlook OAuth and conflict-aware event-sync code, but live calendar connection is not activated until the migration, provider credentials, encryption secret and Edge Function are deployed.
 - The current live configuration has browser notifications while Weekwise is running. The repository now contains a Web Push service worker, client control, protected subscription/delivery SQL, Edge Function and scheduler setup, but these are **not live until the optional backend setup and a closed-app delivery test succeed**.
-- Google/Microsoft calendar OAuth is still not implemented; enabling a Supabase sign-in provider would not provide Calendar/Graph access or a secure calendar sync flow. Do not advertise calendar integration until a provider round-trip is proven.
+- Enabling Google/Microsoft/Azure in Supabase Auth would only affect social sign-in; it does not itself grant Calendar/Graph access. Calendar OAuth code is now present in the repository but remains inactive until provider app registrations, server secrets, migration and real round-trip tests are complete.
 
 ## 1. Verify Supabase schema safely
 
