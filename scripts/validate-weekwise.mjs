@@ -91,10 +91,10 @@ if (/let savedPayload=null;[\s\S]*?finally\{\s*cloudBusy=false;[\s\S]*?if\(saved
   fail("cloud save re-queues edits made while a request is in flight");
 }
 
-if (/function\\s+taskModalFingerprint\\(\\)/.test(appSource) &&
-    /This activity is no longer available/.test(appSource) &&
-    /Discard your unsaved changes/.test(appSource) &&
-    /closeTaskModal\\(true\\)/.test(appSource)) {
+if (appSource.includes("function taskModalFingerprint()") &&
+    appSource.includes("This activity is no longer available") &&
+    appSource.includes("Discard your unsaved changes") &&
+    appSource.includes("closeTaskModal(true)")) {
   pass("activity editor guards stale records and protects unsaved changes");
 } else {
   fail("activity editor guards stale records and protects unsaved changes");
