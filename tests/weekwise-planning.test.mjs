@@ -56,3 +56,17 @@ test('failed validation or changed task rejects an entire plan without partial m
  const value=store([task('one'),task('two')]);const plan=engine.build({store:value,weekStart:week});value.weeks[week].tasks[1].fixed=true;const before=JSON.stringify(value);
  assert.throws(()=>engine.apply(value,plan,[week+'::one',week+'::two']));assert.equal(JSON.stringify(value),before);
 });
+
+test('multiple windows, daily cap and weekly buffer reserve only user availability',()=>{
+ const p=build([task('a')],{buffer:0,breakMinutes:0,windows:[{days:[1],start:540,end:660},{days:[1],start:840,end:960}],maxDailyMinutes:180,weeklyBuffer:30});assert.equal(p.available,240);assert.equal(p.capacity,150);assert.equal(p.dailyLimitReserved,60);assert.equal(p.weeklyBufferReserved,30);assert.equal(p.proposals[0].start,540);
+});
+test('preferred focus placement and requested slots remain inside free windows',()=>{
+ const tasks=[task('a')],prefs={buffer:0,breakMinutes:0,focusStart:840,focusEnd:960};assert.equal(build(tasks,prefs).proposals[0].start,840);const p=engine.build({store:store(tasks),weekStart:week,prefs,overrides:{[week+'::a']:{date:'2026-10-12',start:300}}});assert.equal(p.proposals.length,0);assert.match(p.unscheduled[0].reason,/requested time/);
+});
+test('recovery excludes fixed, completed and attendance-only events and preserves original occurrence',()=>{
+ const tasks=[task('missed',{start:600,duration:60,unscheduled:false,seriesId:'r',occurrenceDate:'2026-10-12',note:'Keep'}),task('fixed',{start:600,unscheduled:false,fixed:true}),task('attendance',{start:600,unscheduled:false,requiresCompletion:false}),task('done',{start:600,unscheduled:false,done:true})],value=store(tasks);const p=engine.build({store:value,weekStart:week,prefs:{days:[1],buffer:0,breakMinutes:0},notBefore:{date:'2026-10-12',minute:720},mode:'recover'});assert.deepEqual(p.proposals.map(x=>x.id),['missed']);const n=engine.apply(value,p,[week+'::missed']),m=n.weeks[week].tasks[0];assert.equal(m.id,'missed');assert.equal(m.occurrenceDate,'2026-10-12');assert.equal(m.note,'Keep');assert.equal(m.reschedulingHistory.length,1);assert.equal(m.recurrenceOverride,true);assert.equal(value.weeks[week].tasks[0].start,600);
+});
+test('split keeps parent ID/history and creates linked unscheduled parts with explicit estimates',()=>{
+ const value=store([task('large',{note:'Keep',subtasks:[{id:'old',title:'Existing',done:true}]})]);let id=0;const n=engine.splitTask(value,{week,id:'large'},[{title:'First',minutes:30},{title:'Second',minutes:45}],()=> 'child'+ ++id);const [parent,first,second]=n.weeks[week].tasks;assert.equal(parent.id,'large');assert.equal(parent.subtasks[0].id,'old');assert.equal(parent.planningChildren.length,2);assert.equal(first.parentTaskId,'large');assert.equal(second.estimatedDurationMinutes,45);assert.equal(first.start,null);assert.equal(first.reminderAt,null);assert.equal(value.weeks[week].tasks.length,1);assert.equal(engine.build({store:n,weekStart:week}).proposals.length,2);
+});
+test('acceptance rejects a tampered placement outside availability before mutating data',()=>{const value=store([task('a')]),p=build(value.weeks[week].tasks);p.proposals[0].start=300;const before=JSON.stringify(value);assert.throws(()=>engine.apply(value,p,[week+'::a']),/no longer feasible/);assert.equal(JSON.stringify(value),before);});

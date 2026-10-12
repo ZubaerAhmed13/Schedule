@@ -6,7 +6,7 @@ const read = (path) => fs.readFileSync(new URL(path, import.meta.url), "utf8");
 const edge = read("../supabase/functions/weekwise-calendar/index.ts");
 const sql = read("../supabase_calendar_setup.sql");
 const client = read("../weekwise-calendar.js");
-const html = read("../index.html");
+const html = read("../index.html") + "\n" + read("../js/weekwise-app.js");
 const worker = read("../sw.js");
 const config = read("../supabase/config.toml");
 
@@ -68,7 +68,7 @@ test("calendar UI is exposed through the app bridge and never stores provider se
 });
 
 test("the service worker caches calendar controls and callback JWT verification is handled in code", () => {
-  assert.match(worker, /weekwise-static-v76/);
+  assert.match(worker, /weekwise-static-v77/);
   assert.match(worker, /weekwise-calendar\.js/);
   assert.match(config, /\[functions\.weekwise-calendar\]\s+verify_jwt = false/);
   assert.match(edge, /auth\.getUser\(\)/);

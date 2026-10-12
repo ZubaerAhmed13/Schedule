@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import '../js/weekwise-data.js';
 const data = globalThis.WeekwiseData;
-const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8') + "\n" + fs.readFileSync(new URL("../js/weekwise-app.js", import.meta.url), "utf8");
 const task = { id:'legacy', title:'German practice', day:1, start:600, duration:30, custom:false, fixed:true, done:true, completionAt:'2026-10-01', reminderTimes:['2026-10-12T09:00'], subtasks:[{id:'s',title:'Practice',done:true}], futureField:{preserve:true} };
 const fixture = () => ({ settings:{theme:'dark'}, weeks:{'2026-10-11':{notes:'Keep week metadata',tasks:[structuredClone(task)]}}, recurringTemplates:[], futureField:{keep:true} });
 function functionSource(start, end) { return html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start))); }
@@ -52,6 +52,7 @@ test('recurrence reload preserves existing occurrence edits and history',()=>{
   const existing={...task,id:'rec_1',seriesId:'series',occurrenceDate:'2026-10-12',note:'An occurrence exception',start:900};
   const store={weeks:{},recurringTemplates:[{id:'series',title:'Template',duration:60,start:600}]};
   const c={store,currentWeek:'2026-10-11',tasks:[existing],Date,Array,Number,dateKey:d=>d.toISOString().slice(0,10),sundayOf:d=>{const x=new Date(d);x.setUTCDate(x.getUTCDate()-x.getUTCDay());return x;},recurrenceDateMatches:()=>true};
+  c.workspaceRecords=()=>Object.values(c.store.weeks).flatMap(w=>w.tasks||[]).concat(c.tasks).map(task=>({task}));
   vm.runInNewContext(functionSource('function materializeRecurringRange(','function materializeCurrentAndUpcoming()'),c);
   const before=JSON.stringify(existing);c.materializeRecurringRange(new Date('2026-10-12T00:00:00Z'),new Date('2026-10-12T00:00:00Z'));
   assert.equal(JSON.stringify(existing),before);assert.equal(c.tasks.length,1);

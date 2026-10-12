@@ -1,5 +1,5 @@
-const CACHE_NAME = 'weekwise-static-v76';
-const APP_SHELL = ['./', './index.html', './js/weekwise-data.js', './js/weekwise-planning.js', './js/weekwise-plan-ui.js', './css/weekwise-plan.css', './weekwise-push.js', './weekwise-calendar.js', './manifest.webmanifest', './icons/icon.svg'];
+const CACHE_NAME = 'weekwise-static-v77';
+const APP_SHELL = ['./', './index.html', './css/weekwise-legacy.css', './js/weekwise-app.js', './js/weekwise-focus.js', './js/weekwise-cloud-transport.js', './js/weekwise-data.js', './js/weekwise-planning.js', './js/weekwise-plan-ui.js', './css/weekwise-plan.css', './css/weekwise.css', './js/weekwise-experience.js', './js/weekwise-accessibility.js', './weekwise-push.js', './weekwise-calendar.js', './manifest.webmanifest', './icons/icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
   self.skipWaiting();

@@ -7,7 +7,7 @@ const edge = read("../supabase/functions/weekwise-push/index.ts");
 const sql = read("../supabase_push_setup.sql");
 const cron = read("../supabase_push_cron_setup.sql");
 const worker = read("../sw.js");
-const html = read("../index.html");
+const html = read("../index.html") + "\n" + read("../js/weekwise-app.js");
 const clientScript = read("../weekwise-push.js");
 
 test("background push records cannot be queried or mutated by browser roles", () => {
@@ -56,7 +56,7 @@ test("service worker displays pushed reminders and safely opens only Weekwise UR
   assert.match(worker, /addEventListener\('notificationclick'/);
   assert.match(worker, /candidate\.origin === scope\.origin/);
   assert.match(worker, /candidate\.pathname\.startsWith\(scope\.pathname\)/);
-  assert.match(worker, /weekwise-static-v76/);
+  assert.match(worker, /weekwise-static-v77/);
   assert.match(worker, /weekwise-push\.js/);
 });
 

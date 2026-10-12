@@ -45,82 +45,129 @@
     return result.filter(([a,b]) => b > a);
   }
   function preferences(value = {}) {
-    const p = { days:[1,2,3,4,5], start:540, end:1020, buffer:60, breakMinutes:10, ...value };
+    const p = { days:[1,2,3,4,5], start:540, end:1020, buffer:60, breakMinutes:10, weeklyBuffer:0, maxDailyMinutes:1440, focusStart:null, focusEnd:null, windows:[], ...value };
     if (!Array.isArray(p.days) || p.days.some(d => !Number.isInteger(d) || d<0 || d>6)) throw new Error('Choose valid planning weekdays.');
-    for (const key of ['start','end','buffer','breakMinutes']) if (!Number.isInteger(p[key])) throw new Error('Planning times must be whole minutes.');
-    if (p.start<0 || p.end>DAY || p.end<=p.start || p.buffer<0 || p.buffer>DAY || p.breakMinutes<0 || p.breakMinutes>120) throw new Error('Review your planning hours, buffer and breaks.');
-    return {...p,days:[...new Set(p.days)].sort((a,b)=>a-b)};
+    for (const key of ['start','end','buffer','breakMinutes','weeklyBuffer','maxDailyMinutes']) if (!Number.isInteger(p[key])) throw new Error('Planning times must be whole minutes.');
+    if (p.start<0 || p.end>DAY || p.end<=p.start || p.buffer<0 || p.buffer>DAY || p.breakMinutes<0 || p.breakMinutes>120 || p.weeklyBuffer<0 || p.weeklyBuffer>7*DAY || p.maxDailyMinutes<0 || p.maxDailyMinutes>DAY) throw new Error('Review your planning hours, buffer, daily limit and breaks.');
+    if ((p.focusStart!==null||p.focusEnd!==null)&&(!Number.isInteger(p.focusStart)||!Number.isInteger(p.focusEnd)||p.focusStart<0||p.focusEnd>DAY||p.focusEnd<=p.focusStart))throw new Error('Choose both ends of a valid preferred focus period.');
+    if(!Array.isArray(p.windows)||p.windows.length>28)throw new Error('Use up to 28 availability windows.');
+    for(const window of p.windows)if(!window||!Array.isArray(window.days)||window.days.some(d=>!Number.isInteger(d)||d<0||d>6)||!Number.isInteger(window.start)||!Number.isInteger(window.end)||window.start<0||window.end>DAY||window.end<=window.start)throw new Error('Each availability window needs a weekday and valid start/end.');
+    return {...p,days:[...new Set(p.days)].sort((a,b)=>a-b),windows:p.windows.map(w=>({...w,days:[...new Set(w.days)]}))};
   }
+  function isFixed(task){return !!(task.fixed||task.workday||task.type==='fixed'||task.schedulingMode==='fixed'||task.allDay||task.requiresCompletion===false||task.planningChildren?.length);}
   function isProtected(task) {
-    return !!(task.fixed || task.workday || task.type==='fixed' || task.schedulingMode==='fixed' || task.allDay || task.seriesId || (task.recurrence && task.recurrence!=='none'));
+    return !!(isFixed(task)||task.seriesId||(task.recurrence&&task.recurrence!=='none'));
   }
   function records(store) {
     return Object.entries(store.weeks).flatMap(([week,value]) => value.tasks.map(task => ({week,task})));
   }
-  function build({ store, weekStart, prefs, notBefore }) {
+  function build({ store, weekStart, prefs, notBefore, mode='build', overrides={} }) {
     root.WeekwiseData.validateStore(store);
     const p = preferences(prefs), base = ordinal(weekStart), all = records(store);
     const earliest = notBefore ? (ordinal(notBefore.date)-base)*DAY+notBefore.minute : 0;
     if (!Number.isFinite(earliest)) throw new Error('Invalid planning start.');
-    const busy = [], breaks = [], protectedRecords = [];
+    const busy = [], breaks = [], protectedRecords = [], timedRecords=[];
     for (const record of all) {
       const t = record.task, offset=(ordinal(record.week)-base)+t.day;
       if (t.allDay) {busy.push([offset*DAY,(offset+1)*DAY]);protectedRecords.push(record);}
       else if (t.start!=null && !t.unscheduled && t.duration>0) {
-        const a=offset*DAY+t.start, b=a+t.duration;busy.push([a,b]);breaks.push([b,b+p.breakMinutes]);protectedRecords.push(record);
+        const a=offset*DAY+t.start, b=a+t.duration;busy.push([a,b]);breaks.push([b,b+p.breakMinutes]);protectedRecords.push(record);timedRecords.push({...record,a,b,ref:record.week+'::'+t.id});
       }
     }
+    const conflicts=new Set();
+    const sortedRecords=timedRecords.slice().sort((a,b)=>a.a-b.a);let active=[];
+    for(const entry of sortedRecords){active=active.filter(item=>item.b>entry.a);for(const item of active){conflicts.add(item.ref);conflicts.add(entry.ref);}active.push(entry);}
     const days = []; let windows = [], free = [];
     for (const day of p.days) {
-      const a=Math.max(day*DAY+p.start,earliest), b=day*DAY+p.end;
-      if (a>=b) continue;
-      const window=[[a,b]], afterBusy=subtract(window,busy), afterBreaks=subtract(afterBusy,breaks), usable=reserveTail(afterBreaks,p.buffer);
-      windows.push(...window); free.push(...usable);
-      days.push({day,date:dateAt(weekStart,day),available:sum(window),committed:sum(window)-sum(afterBusy),breaks:sum(afterBusy)-sum(afterBreaks),buffer:sum(afterBreaks)-sum(usable),capacity:sum(usable)});
+      const custom=p.windows.filter(window=>window.days.includes(day));
+      const candidates=custom.length?custom:[{start:p.start,end:p.end}];
+      const window=merge(candidates.map(w=>[Math.max(day*DAY+w.start,earliest),day*DAY+w.end]));
+      if(!window.length)continue;
+      const afterBusy=subtract(window,busy),afterBreaks=subtract(afterBusy,breaks),afterBuffer=reserveTail(afterBreaks,p.buffer),committed=sum(window)-sum(afterBusy);
+      const usable=reserveTail(afterBuffer,Math.max(0,sum(afterBuffer)-Math.max(0,p.maxDailyMinutes-committed)));
+      windows.push(...window);free.push(...usable);
+      days.push({day,date:dateAt(weekStart,day),available:sum(window),committed,breaks:sum(afterBusy)-sum(afterBreaks),buffer:sum(afterBreaks)-sum(afterBuffer),dailyLimitReserved:sum(afterBuffer)-sum(usable),capacity:sum(usable)});
     }
-    const candidates=all.filter(({week,task:t}) => !t.done && t.status!=='done' && !isProtected(t) && (t.start==null || t.unscheduled) && ordinal(week)+t.day<=base+6);
+    const beforeWeeklyBuffer=sum(free);free=reserveTail(free,p.weeklyBuffer);const weeklyBufferReserved=beforeWeeklyBuffer-sum(free);
+    for(const day of days)day.capacity=sum(free.filter(([a])=>Math.floor(a/DAY)===day.day));
+    const candidates=all.filter(({week,task:t}) => {
+      if(t.done||t.status==='done'||t.status==='skipped'||isFixed(t)||ordinal(week)+t.day>base+6)return false;
+      if(mode==='recover'){
+        if(t.start==null||t.unscheduled)return false;
+        const end=(ordinal(week)-base+t.day)*DAY+t.start+(t.duration||0);
+        return end<=earliest||conflicts.has(week+'::'+t.id);
+      }
+      return !isProtected(t)&&(t.start==null||t.unscheduled);
+    });
     const priority = t => ({high:3,medium:2,low:1})[t.priority]||0;
     candidates.sort((a,b) => (a.task.dueDate||'9999-12-31').localeCompare(b.task.dueDate||'9999-12-31') || priority(b.task)-priority(a.task) || Number(a.task.schedulingMode==='optional')-Number(b.task.schedulingMode==='optional') || a.week.localeCompare(b.week) || a.task.id.localeCompare(b.task.id));
     const proposals=[],unscheduled=[]; let requested=0, unknown=0, consumedBreaks=0;
     const initialCapacity=sum(free);
     for (const record of candidates) {
-      const t=record.task, duration=t.focusEstimateMinutes;
-      const fail=reason=>unscheduled.push({week:record.week,id:t.id,title:t.title,reason});
-      if (!Number.isInteger(duration) || duration<=0 || duration>DAY) {unknown++;fail('Duration unknown. Set Estimated focus in the task editor.');continue;}
+      const t=record.task, duration=t.estimatedDurationMinutes??(mode==='recover'?t.duration:t.focusEstimateMinutes);
+      const fail=reason=>unscheduled.push({week:record.week,id:t.id,title:t.title,estimate:duration,reason});
+      if (!Number.isInteger(duration) || duration<=0 || duration>DAY) {unknown++;fail('Duration unknown. Set Estimated duration (or your existing focus estimate) in the task editor.');continue;}
       requested+=duration;
       if (t.dueDate && !root.WeekwiseData.validDate(t.dueDate)) {fail('Deadline needs a valid date.');continue;}
       const deadline=t.dueDate?(ordinal(t.dueDate)-base+1)*DAY:7*DAY;
-      let slot=null;
+      let slot=null;const ref=record.week+'::'+t.id,override=overrides[ref],options=[];
       for (const [a,b] of free) {
-        const start=Math.ceil(a/15)*15;
-        if (start+duration<=Math.min(b,deadline) && start+duration+p.breakMinutes<=b) {slot=start;break;}
+        const day=Math.floor(a/DAY),earliestStart=Math.ceil(a/15)*15;
+        options.push({start:earliestStart,preferred:false,end:b});
+        if(p.focusStart!==null){const start=Math.ceil(Math.max(a,day*DAY+p.focusStart)/15)*15;if(start+duration<=day*DAY+p.focusEnd)options.push({start,preferred:true,end:b});}
       }
-      if (slot===null) {fail(deadline<=earliest?'Deadline has passed. Review the deadline before planning.':'No continuous slot fits before the deadline with your breaks and buffer.');continue;}
+      options.sort((a,b)=>Number(b.preferred)-Number(a.preferred)||a.start-b.start);
+      if(override){
+        if(root.WeekwiseData.validDate(override.date)&&Number.isInteger(override.start)){
+          const requestedSlot=(ordinal(override.date)-base)*DAY+override.start;
+          if(requestedSlot>=earliest&&requestedSlot>=0&&requestedSlot+duration<=deadline&&free.some(([a,b])=>requestedSlot>=a&&requestedSlot+duration+p.breakMinutes<=b))slot=requestedSlot;
+        }
+      }else for(const option of options)if(option.start+duration<=Math.min(option.end,deadline)&&option.start+duration+p.breakMinutes<=option.end){slot=option.start;break;}
+      if (slot===null) {fail(override?'Your requested time is outside availability, overlaps another block, or misses the deadline. Clear it and try another slot.':deadline<=earliest?'Deadline has passed. Review the deadline before planning.':'No continuous slot fits before the deadline with your breaks and buffer.');continue;}
       const day=Math.floor(slot/DAY),start=slot%DAY;
-      proposals.push({week:record.week,id:t.id,title:t.title,day,start,duration,date:dateAt(weekStart,day),reason:(t.dueDate?'Before the '+t.dueDate+' deadline. ':'')+'Earliest free slot; existing commitments, breaks and buffer are protected.'});
+      proposals.push({week:record.week,id:t.id,title:t.title,day,start,duration,date:dateAt(weekStart,day),recovery:mode==='recover',from:{day:t.day,start:t.start,duration:t.duration,unscheduled:!!t.unscheduled},reason:(mode==='recover'?'Move unfinished or conflicting work. ':'')+(override?'Your chosen slot. ':'')+(t.dueDate?'Before the '+t.dueDate+' deadline. ':'')+'Earliest free slot; existing commitments, breaks and buffer are protected.'});
       free=subtract(free,[[slot,slot+duration+p.breakMinutes]]);consumedBreaks+=p.breakMinutes;
     }
     const overlaps=[];
     const sorted=busy.slice().sort((a,b)=>a[0]-b[0]);let priorEnd=-Infinity;
     for (const [a,b] of sorted) {if(a<priorEnd && b>0 && a<7*DAY)overlaps.push([Math.max(a,0),Math.min(b,priorEnd,7*DAY)]);priorEnd=Math.max(priorEnd,b);}
-    return {weekStart,preferences:p,days,proposals,unscheduled,unknown,requested,available:sum(windows),committed:days.reduce((n,d)=>n+d.committed,0),reservedBuffer:days.reduce((n,d)=>n+d.buffer,0),existingBreaks:days.reduce((n,d)=>n+d.breaks,0),capacity:initialCapacity,remaining:sum(free),proposalBreaks:consumedBreaks,overcommitted:Math.max(0,requested+consumedBreaks-initialCapacity),overlaps:merge(overlaps),protectedCount:protectedRecords.filter(({week,task})=>{const day=ordinal(week)-base+task.day;return day>=0&&day<7;}).length};
+    return {weekStart,mode,notBefore:notBefore?clone(notBefore):null,overrides:clone(overrides),preferences:p,days,weeklyBufferReserved,dailyLimitReserved:days.reduce((n,d)=>n+d.dailyLimitReserved,0),proposals,unscheduled,unknown,requested,available:sum(windows),committed:days.reduce((n,d)=>n+d.committed,0),reservedBuffer:weeklyBufferReserved+days.reduce((n,d)=>n+d.buffer,0),existingBreaks:days.reduce((n,d)=>n+d.breaks,0),capacity:initialCapacity,remaining:sum(free),proposalBreaks:consumedBreaks,overcommitted:Math.max(0,requested+consumedBreaks-initialCapacity),overlaps:merge(overlaps),protectedCount:protectedRecords.filter(({week,task})=>{const day=ordinal(week)-base+task.day;return day>=0&&day<7;}).length};
   }
   function apply(store, plan, selectedIds) {
     root.WeekwiseData.validateStore(store);
     const next=clone(store), chosen=plan.proposals.filter(p=>selectedIds.includes(p.week+'::'+p.id));
     if (!chosen.length) throw new Error('Select at least one suggested task.');
+    const verified=build({store,weekStart:plan.weekStart,prefs:plan.preferences,notBefore:plan.notBefore,mode:plan.mode,overrides:plan.overrides||{}});
+    for(const p of chosen){const expected=verified.proposals.find(x=>x.week===p.week&&x.id===p.id);if(!expected||['date','day','start','duration','recovery'].some(key=>expected[key]!==p[key]))throw new Error('A proposed placement is no longer feasible. Build a fresh preview.');}
     for (const p of chosen) {
       const source=next.weeks[p.week], task=source?.tasks.find(t=>t.id===p.id);
-      if (!task || task.done || task.status==='done' || isProtected(task) || (task.start!=null && !task.unscheduled)) throw new Error('A task changed. Build a fresh preview.');
+      if (!task || task.done || task.status==='done' || isFixed(task) || (!p.recovery&&(isProtected(task)||(task.start!=null&&!task.unscheduled))) || (p.from&&(p.from.day!==task.day||p.from.start!==task.start||p.from.duration!==task.duration))) throw new Error('A task changed. Build a fresh preview.');
       if (p.week!==plan.weekStart && next.weeks[plan.weekStart]?.tasks.some(t=>t.id===p.id)) throw new Error('Task ID already exists in the destination week. Nothing was changed.');
       if (p.week!==plan.weekStart) {
         source.tasks=source.tasks.filter(t=>t.id!==p.id);
         if (!next.weeks[plan.weekStart]) next.weeks[plan.weekStart]={tasks:[]};
         next.weeks[plan.weekStart].tasks.push(task);
       }
+      if(p.recovery){
+        task.reschedulingHistory=[...(task.reschedulingHistory||[]),{fromWeek:p.week,fromDay:task.day,fromStart:task.start,fromDuration:task.duration,toWeek:plan.weekStart,toDay:p.day,toStart:p.start,changedAt:new Date().toISOString(),reason:'User-approved recovery'}];
+        if(task.seriesId)task.recurrenceOverride=true;
+      }
       Object.assign(task,{day:p.day,start:p.start,duration:p.duration,unscheduled:false});
     }
     return root.WeekwiseData.validateStore(next);
   }
-  root.WeekwisePlanning=Object.freeze({merge,subtract,preferences,ordinal,dateAt,build,apply,isProtected});
+  function splitTask(store,ref,parts,idFactory){
+    root.WeekwiseData.validateStore(store);const next=clone(store),task=next.weeks[ref.week]?.tasks.find(t=>t.id===ref.id);
+    if(!task||task.done||isProtected(task)||task.planningChildren?.length)throw new Error('Only an unfinished flexible, non-recurring task can be split.');
+    if(!Array.isArray(parts)||parts.length<2||parts.length>12||parts.some(p=>!p.title?.trim()||!Number.isInteger(p.minutes)||p.minutes<5||p.minutes>DAY))throw new Error('Use 2–12 named parts, each with a duration of 5–1440 minutes.');
+    const ids=new Set(records(next).map(r=>r.task.id));task.planningChildren=[];
+    for(const part of parts){const id=idFactory();if(ids.has(id))throw new Error('Could not create unique task IDs. Nothing was changed.');ids.add(id);
+      const child={...clone(task),id,title:part.title.trim(),start:null,unscheduled:true,done:false,status:'todo',duration:part.minutes,estimatedDurationMinutes:part.minutes,focusEstimateMinutes:null,parentTaskId:task.id,parentWeek:ref.week,planningChildren:[],subtasks:[],reminderAt:null,reminderTimes:[],reminderNotifiedTimes:[],recurrence:'none',seriesId:null,custom:true};
+      next.weeks[ref.week].tasks.push(child);task.planningChildren.push(id);
+      task.subtasks=[...(task.subtasks||[]),{id:id+'_link',title:child.title,done:false,taskId:id}];
+    }
+    task.planningOriginalEstimate=task.estimatedDurationMinutes??task.focusEstimateMinutes??null;task.estimatedDurationMinutes=parts.reduce((n,p)=>n+p.minutes,0);
+    return root.WeekwiseData.validateStore(next);
+  }
+  root.WeekwisePlanning=Object.freeze({merge,subtract,preferences,ordinal,dateAt,build,apply,isProtected,isFixed,splitTask});
 })(typeof window !== 'undefined' ? window : globalThis);

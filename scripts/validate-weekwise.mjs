@@ -14,6 +14,7 @@ const failures = [];
 const pass = (message) => console.log("PASS " + message);
 const fail = (message) => { failures.push(message); console.error("FAIL " + message); };
 
+const applicationText = fs.readFileSync(path.join(root, "js/weekwise-app.js"), "utf8");
 const indexPath = path.join(root, "index.html");
 if (!fs.existsSync(indexPath)) {
   fail("index.html exists");
@@ -63,7 +64,7 @@ if (!fs.existsSync(indexPath)) {
 }
 
 // Parse all independent local scripts, including the additive data/planning modules.
-for (const filename of ["js/weekwise-data.js", "js/weekwise-planning.js", "js/weekwise-plan-ui.js"]) {
+for (const filename of ["js/weekwise-data.js", "js/weekwise-planning.js", "js/weekwise-plan-ui.js", "js/weekwise-app.js", "js/weekwise-focus.js", "js/weekwise-cloud-transport.js", "js/weekwise-experience.js", "js/weekwise-accessibility.js"]) {
   try { new vm.Script(fs.readFileSync(path.join(root, filename), "utf8"), { filename }); pass(filename + " parses"); }
   catch (error) { fail(filename + " parses: " + error.message); }
 }
@@ -90,7 +91,7 @@ if (fs.existsSync(sw)) {
 
 
 // Focused regression checks for the cloud-save race and invite-trigger hardening.
-const appSource = fs.readFileSync(indexPath, "utf8");
+const appSource = fs.readFileSync(indexPath, "utf8") + "\n" + applicationText;
 if (/let savedPayload=null;[\s\S]*?finally\{\s*cloudBusy=false;[\s\S]*?if\(savedPayload&&cloudUser&&cloudReady&&!cloudConflict&&cloudFingerprint\(buildCloudPayload\(\)\)!==cloudFingerprint\(savedPayload\)\)queueCloudSave\(\);/.test(appSource)) {
   pass("cloud save re-queues edits made while a request is in flight");
 } else {

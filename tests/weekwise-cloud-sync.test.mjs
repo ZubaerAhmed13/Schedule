@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 
-const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8") + "\n" + fs.readFileSync(new URL("../js/weekwise-app.js", import.meta.url), "utf8");
 const match = html.match(/async function saveCloudSnapshot\(\)\{[\s\S]*?\n\}\nasync function startCloudForUser\(/);
 assert.ok(match, "saveCloudSnapshot function is present");
 const functionSource = match[0].replace(/\nasync function startCloudForUser\($/, "");
@@ -17,6 +17,7 @@ function makeContext() {
   let queueCalls = 0;
   const context = {
     plannerStorageBlocked: false,
+    WeekwiseData: {blockedKeys:()=>[]},
     cloudClient: { rpc: () => new Promise((resolve, reject) => { resolveRpc = resolve; rejectRpc = reject; }) },
     cloudUser: { id: "test-user" },
     cloudReady: true,
@@ -24,7 +25,9 @@ function makeContext() {
     cloudConflict: null,
     showCloudConflict: (row) => { conflictRow = row; context.cloudConflict = row; },
     cloudBusy: false,
+    cloudSessionEpoch: 1,
     cloudRevision: 4,
+    requestCloudSave: (data,revision) => context.cloudClient.rpc('weekwise_save',{p_data:data,p_expected_revision:revision}),
     buildCloudPayload: () => payload,
     cloudFingerprint: (value) => JSON.stringify(value),
     writeCloudMeta: () => {},
@@ -34,7 +37,7 @@ function makeContext() {
       assert.equal(context.cloudBusy, false, "retry must be scheduled after releasing the save lock");
       queueCalls += 1;
     },
-    console: { error: () => {} },
+    console: { error: () => {}, warn:()=>{} },
     Date,
     Number,
     Array,
@@ -105,4 +108,8 @@ test("network errors release the lock and report failure without discarding loca
   assert.equal(fixture.getQueueCalls(), 0);
   assert.ok(fixture.getStatuses().some((message) => message.includes("Cloud save failed")));
   assert.deepEqual(fixture.context.buildCloudPayload(), { version: 1, tasks: ["before"] });
+});
+
+test('an old account response cannot mark a new account synced or change its revision',async()=>{
+ const f=makeContext(),saving=f.context.saveCloudSnapshot();await Promise.resolve();f.context.cloudSessionEpoch++;f.context.cloudUser={id:'new-user'};f.context.cloudRevision=20;f.getResolveRpc()({data:[{saved:true,revision:5}],error:null});await saving;assert.equal(f.context.cloudRevision,20);assert.ok(!f.getStatuses().some(m=>m.startsWith('All changes synced')));
 });

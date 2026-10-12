@@ -72,6 +72,22 @@
       throw new Error(rollbackFailed ? 'Saving failed and automatic rollback was incomplete. Keep the pre-restore checkpoint and export your data.' : 'Saving failed. Previous local data was restored.');
     }
   }
+  const blocked = new Map();
+  function readJSON(storage,key,validator,fallback) {
+    try { const raw=storage.getItem(key); if(raw===null)return fallback;return validator(JSON.parse(raw)); }
+    catch(error) { blocked.set(key,error.message||'Stored data cannot be read.');return fallback; }
+  }
+  function validateCollection(value) {
+    if(!Array.isArray(value)||value.some(item=>!plain(item)))throw new Error('Saved collection must contain records.');
+    assertSafeObject(value);return value;
+  }
+  function readCollection(storage,key) {return readJSON(storage,key,validateCollection,[]);}
+  function writeCollection(storage,key,value) {
+    if(blocked.has(key))throw new Error('This saved collection needs recovery before it can be changed.');
+    validateCollection(value);storage.setItem(key,JSON.stringify(value));return true;
+  }
+  function clearBlocked(keys) {for(const key of keys)blocked.delete(key);}
+  function blockedKeys() {return [...blocked.keys()];}
   function syncLabel(message, signedIn, conflict) {
     if (conflict) return 'Needs review';
     if (!signedIn) return 'Local';
@@ -80,5 +96,5 @@
     if (/^All changes synced|^Account created and cloud sync is ready/i.test(message)) return 'Synced';
     return 'Saved locally';
   }
-  root.WeekwiseData = Object.freeze({ MAX_BACKUP_BYTES, validDate, validateStore, parseStore, parseBackup, storeFromBackup, commitStorage, syncLabel });
+  root.WeekwiseData = Object.freeze({ MAX_BACKUP_BYTES, validDate, validateStore, parseStore, parseBackup, storeFromBackup, commitStorage, syncLabel, readJSON, validateCollection, readCollection, writeCollection, clearBlocked, blockedKeys });
 })(typeof window !== 'undefined' ? window : globalThis);

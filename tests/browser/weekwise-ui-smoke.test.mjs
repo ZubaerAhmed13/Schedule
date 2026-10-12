@@ -13,59 +13,15 @@ let origin;
 
 const supabaseStub = String.raw`
 (() => {
-  const user = { id: "weekwise-browser-test-user", email: "browser-test@example.invalid" };
-  const session = { access_token: "browser-test-access-token", refresh_token: "browser-test-refresh-token", user };
-  let cloudRow = null;
-  let revision = 0;
-  let authListener = null;
-
-  const client = {
-    auth: {
-      onAuthStateChange(callback) {
-        authListener = callback;
-        return { data: { subscription: { unsubscribe() {} } } };
-      },
-      async getSession() { return { data: { session }, error: null }; },
-      async getUser() { return { data: { user }, error: null }; },
-      async signOut() {
-        if (authListener) authListener("SIGNED_OUT", null);
-        return { error: null };
-      },
-      async signInWithPassword() { return { data: { session, user }, error: null }; },
-      async signUp() { return { data: { session, user }, error: null }; },
-      async resetPasswordForEmail() { return { data: {}, error: null }; }
-    },
-    from() {
-      return {
-        select() {
-          return {
-            eq() {
-              return {
-                async maybeSingle() { return { data: cloudRow, error: null }; }
-              };
-            }
-          };
-        }
-      };
-    },
-    async rpc(name, args) {
-      if (name !== "weekwise_save") return { data: null, error: { message: "Unexpected test RPC: " + name } };
-      revision += 1;
-      cloudRow = {
-        user_id: user.id,
-        data: args.p_data,
-        revision,
-        updated_at: new Date().toISOString()
-      };
-      return {
-        data: [{ saved: true, revision, data: args.p_data, updated_at: cloudRow.updated_at }],
-        error: null
-      };
-    }
-  };
-  window.supabase = { createClient() { return client; } };
+ let user={id:'weekwise-browser-test-user',email:'browser-test@example.invalid'},listener=null;
+ const session=()=>user?{access_token:'browser-test-access-token:'+user.id,user}:null;
+ const client={auth:{onAuthStateChange(fn){listener=fn;return {data:{subscription:{unsubscribe(){}}}};},async getSession(){return {data:{session:session()}};},async getUser(){return {data:{user}};},async signOut(){user=null;listener?.('SIGNED_OUT',null);return {};},async signInWithPassword(){return {data:{session:session(),user}};},async signUp(){return {data:{session:session(),user}};},async resetPasswordForEmail(){return {};}}
+ ,from(){return {select(){return {eq(key,id){return {async maybeSingle(){const response=await fetch('/__weekwise_test_cloud?user='+encodeURIComponent(id));return {data:await response.json(),error:null};}};}};}};}};
+ window.WeekwiseTestAuth={setUser(id){user=id?{id,email:id+'@example.invalid'}:null;listener?.(user?'SIGNED_IN':'SIGNED_OUT',session());}};
+ window.supabase={createClient(){return client;}};
 })();
 `;
+const mockRows=new Map();
 
 function serveStatic(req, res) {
   const pathname = decodeURIComponent(new URL(req.url || "/", origin || "http://127.0.0.1").pathname);
@@ -114,10 +70,10 @@ after(async () => {
   if (server) await new Promise(resolve => server.close(resolve));
 });
 
-async function openPlanner(viewport) {
+async function openPlanner(viewport, options={}) {
   const context = await browser.newContext({
     viewport,
-    serviceWorkers: "block",
+    serviceWorkers: options.serviceWorkers||"block",
     isMobile: viewport.width <= 430,
     hasTouch: viewport.width <= 430
   });
@@ -126,6 +82,9 @@ async function openPlanner(viewport) {
     contentType: "application/javascript; charset=utf-8",
     body: supabaseStub
   }));
+  const rows=options.rows||new Map(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST, OPTIONS'};
+  await context.route('**/__weekwise_test_cloud?*',route=>{const user=new URL(route.request().url()).searchParams.get('user');return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(rows.get(user)||null)});});
+  await context.route('**/rest/v1/rpc/weekwise_save',route=>{const request=route.request();if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});const user=request.headers().authorization?.split('browser-test-access-token:')[1];assert.ok(user,'cloud writes use the captured mock token');const args=request.postDataJSON(),row=rows.get(user),revision=row?.revision||0;if(args.p_expected_revision!==revision)return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:false,...row,revision}])});const next={user_id:user,data:args.p_data,revision:revision+1,updated_at:new Date().toISOString()};rows.set(user,next);return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:true,...next}])});});
   const page = await context.newPage();
   await page.goto(origin, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => {
@@ -155,19 +114,7 @@ async function createScheduledTask(page, title) {
   );
 }
 
-async function countStoredTasksNamed(page, title) {
-  return page.evaluate((target) => {
-    const count = value => {
-      if (!value || typeof value !== "object") return 0;
-      let total = value.title === target ? 1 : 0;
-      for (const child of Object.values(value)) total += count(child);
-      return total;
-    };
-    return Object.entries(localStorage).reduce((sum, [key, raw]) => {
-      try { return sum + count(JSON.parse(raw)); } catch (_) { return sum; }
-    }, 0);
-  }, title);
-}
+async function countStoredTasksNamed(page,title){return page.evaluate(target=>Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2')||'{}').weeks||{}).flatMap(w=>w.tasks||[]).filter(t=>t.title===target).length,title);}
 
 test("one scheduled activity stays connected across Day, Week, Month, Agenda and Year views", async () => {
   const { context, page } = await openPlanner({ width: 1440, height: 1000 });
@@ -488,5 +435,33 @@ test('invalid backup is rejected before replacing local records',async()=>{
   await page.locator('#importFile').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({settings:[],weeks:{}}))});
   await page.waitForFunction(()=>document.querySelector('#toast')?.textContent.includes('must be objects'));
   assert.deepEqual(await readPlannerStore(page),before);
+ }finally{await context.close();}
+});
+
+test('focus pause, reload and partial finish retain active seconds once',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});try{
+ await createFlexibleTask(page,'Focus record');await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();await page.locator('#focusTaskSelect').selectOption({label:await page.locator('#focusTaskSelect option').nth(1).textContent()});await page.locator('#focusStartBtn').click();
+ await page.evaluate(()=>{const key=Object.keys(localStorage).find(k=>k.startsWith('weekwise-focus-active-v1:'));const state=JSON.parse(localStorage.getItem(key));state.runningSince-=65000;localStorage.setItem(key,JSON.stringify(state));});await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();assert.equal(await page.locator('#focusStartBtn').innerText(),'Pause');await page.locator('#focusStartBtn').click();
+ const paused=await page.evaluate(()=>{const state=JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>k.startsWith('weekwise-focus-active-v1:'))));return state.activeMs;});assert.ok(paused>=65000);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();assert.equal(await page.locator('#focusStartBtn').innerText(),'Resume');await page.locator('#focusFinishBtn').click();const sessions=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-focus-sessions-v1')));assert.equal(sessions.length,1);assert.equal(sessions[0].taskTitle,'Focus record');assert.ok(sessions[0].seconds>=65&&sessions[0].seconds<80);assert.equal(sessions[0].completed,false);await page.locator('#focusFinishBtn').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-focus-sessions-v1')).length),1);
+ }finally{await context.close();}
+});
+
+test('account switches isolate tasks and returning to an account restores its records',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});try{await createFlexibleTask(page,'Account A private task');await page.evaluate(()=>WeekwiseTestAuth.setUser('account-b'));await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true&&JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')||'{}').userId==='account-b');assert.equal(await countStoredTasksNamed(page,'Account A private task'),0);await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();await createFlexibleTask(page,'Account B private task');await page.evaluate(()=>WeekwiseTestAuth.setUser('weekwise-browser-test-user'));await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true&&JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')||'{}').userId==='weekwise-browser-test-user');assert.equal(await countStoredTasksNamed(page,'Account A private task'),1);assert.equal(await countStoredTasksNamed(page,'Account B private task'),0);assert.ok(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:account-b')));
+ }finally{await context.close();}
+});
+
+test('unknown flexible work can be split into linked estimated parts and planned',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});try{await createFlexibleTask(page,'Large responsibility','');await openFuturePlan(page);await page.locator('[data-plan-split-id]').click();await page.locator('#planSplitDialog').waitFor({state:'visible'});const parts=page.locator('#planSplitParts .plan-window-row');await parts.nth(0).locator('input[type=text]').fill('First part');await parts.nth(0).locator('input[type=number]').fill('30');await parts.nth(1).locator('input[type=text]').fill('Second part');await parts.nth(1).locator('input[type=number]').fill('45');await page.locator('#planSplitForm button[type=submit]').click();await page.locator('#planSplitDialog').waitFor({state:'hidden'});assert.equal(await page.locator('[name=planProposal]').count(),2);const tasks=Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks),parent=tasks.find(t=>t.title==='Large responsibility');assert.equal(parent.planningChildren.length,2);assert.equal(tasks.filter(t=>t.parentTaskId===parent.id).length,2);await page.locator('#planApply').click();assert.match(await page.locator('#planStatus').innerText(),/2 tasks scheduled/);
+ }finally{await context.close();}
+});
+
+test('keyboard dialog traps focus and restores the opener; Insights reviews persist',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});try{await page.locator('#globalCaptureBtn').click();await page.locator('#deleteTaskTemplateBtn').focus();for(let i=0;i<35;i++){await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.querySelector('#taskModal').contains(document.activeElement)),true);}await page.keyboard.press('Escape');await page.locator('#taskModal').waitFor({state:'hidden'});await page.locator('#workspaceSidebar [data-workspace-view="insights"]').click();await page.locator('#reviewworked').fill('Kept enough buffer');await page.locator('#weeklyReviewForm button[type=submit]').click();assert.match(await page.locator('#reviewStatus').innerText(),/saved/);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#workspaceSidebar [data-workspace-view="insights"]').click();assert.equal(await page.locator('#reviewworked').inputValue(),'Kept enough buffer');await page.screenshot({path:path.join(root,'test-results','insights-desktop.png'),fullPage:true});
+ }finally{await context.close();}
+});
+
+test('device-only planner works offline after its service worker has cached the app',async()=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});await context.route('https://**/*',route=>route.abort());const page=await context.newPage();try{await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#workspaceCaptureInput').fill('Offline responsibility');await page.locator('#workspaceCaptureForm button[type=submit]').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await countStoredTasksNamed(page,'Offline responsibility'),1);await page.locator('#workspaceCaptureInput').fill('Created without network');await page.locator('#workspaceCaptureForm button[type=submit]').click();assert.equal(await countStoredTasksNamed(page,'Created without network'),1);assert.equal(await page.locator('#cloudMenuBadge').innerText(),'Local');await page.screenshot({path:path.join(root,'test-results','today-offline-mobile.png'),fullPage:true});
  }finally{await context.close();}
 });
