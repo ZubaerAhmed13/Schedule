@@ -697,22 +697,47 @@ function remoteEventFor(provider: Provider, event: Record<string, unknown>, time
   const endText = String(end.dateTime ?? "");
   if (!startText || !endText) return null;
   const allDay = event.isAllDay === true;
-  const startAt = fromZonedTime(startText.replace(/Z$/i, ""), timezone);
-  const endAt = fromZonedTime(endText.replace(/Z$/i, ""), timezone);
-  if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) return null;
   const props = Array.isArray(event.singleValueExtendedProperties)
     ? event.singleValueExtendedProperties as Array<{ id?: string; value?: string }>
     : [];
   const taskId = props.find(item => item.id === GRAPH_EXT_ID)?.value ?? null;
+
+  // Microsoft Graph returns all-day start/end as local midnight in the requested Windows
+  // time zone. Preserve calendar dates directly; no timezone conversion is needed for them.
+  if (allDay) {
+    const startDate = startText.slice(0, 10);
+    const endDate = endText.slice(0, 10);
+    if (!validCalendarDate(startDate) || !validCalendarDate(endDate)) return null;
+    return {
+      id,
+      taskId: taskId ? String(taskId) : null,
+      title,
+      description,
+      allDay: true,
+      startDate,
+      startAt: null,
+      endAt: null,
+      updatedAt: String(event.lastModifiedDateTime ?? "") || null,
+      cancelled: false,
+    };
+  }
+
+  // Graph can serialize fractional seconds with seven digits; native Date parsing and
+  // date-fns timezone conversion should not depend on precision beyond milliseconds.
+  const normalizeGraphDateTime = (value: string) =>
+    value.replace(/(\\.\\d{3})\\d+(?=$|Z|[+-]\\d{2}:\\d{2})/, "$1").replace(/Z$/i, "");
+  const startAt = fromZonedTime(normalizeGraphDateTime(startText), timezone);
+  const endAt = fromZonedTime(normalizeGraphDateTime(endText), timezone);
+  if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) return null;
   return {
     id,
     taskId: taskId ? String(taskId) : null,
     title,
     description,
-    allDay,
-    startDate: allDay ? startText.slice(0, 10) : dateKeyInZone(startAt, timezone),
-    startAt: allDay ? null : startAt,
-    endAt: allDay ? null : endAt,
+    allDay: false,
+    startDate: dateKeyInZone(startAt, timezone),
+    startAt,
+    endAt,
     updatedAt: String(event.lastModifiedDateTime ?? "") || null,
     cancelled: false,
   };
