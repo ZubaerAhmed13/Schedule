@@ -66,7 +66,7 @@
     const before = entries.map(([key]) => [key, storage.getItem(key)]);
     if (checkpointKey) storage.setItem(checkpointKey, JSON.stringify({ version: 1, createdAt: new Date().toISOString(), entries: before }));
     try {
-      for (const [key, raw] of entries) storage.setItem(key, raw);
+      for (const [key, raw] of entries) {if(raw===null)storage.removeItem(key);else storage.setItem(key, raw);}
       for(const [key,raw] of entries)remember(storage,key,raw);
     } catch (error) {
       let rollbackFailed = false;
