@@ -284,28 +284,31 @@ test("activity editor saves edits, reopens fresh values, isolates records, and p
     assert.equal(await page.locator("#modalTime").inputValue(), "19:00", "edited start time is persisted");
     assert.equal(await page.locator("#modalEndTime").inputValue(), "19:45", "edited end time is persisted");
 
-    const cancelPrompt = page.waitForEvent("dialog");
     await page.locator("#modalNote").fill("Cancel should ask before discarding");
-    await page.locator("#closeModal").click();
+    const cancelPrompt = page.waitForEvent("dialog");
+    const cancelClick = page.locator("#closeModal").click();
     const cancelDialog = await cancelPrompt;
     assert.match(cancelDialog.message(), /discard your unsaved changes/i);
     await cancelDialog.dismiss();
+    await cancelClick;
     assert.equal(await page.locator("#taskModal").isVisible(), true, "declining Cancel keeps the editor open");
     assert.equal(await page.locator("#modalNote").inputValue(), "Cancel should ask before discarding");
 
-    const dismissedPrompt = page.waitForEvent("dialog");
     await page.locator("#modalNote").fill("This change must be discarded");
-    await page.keyboard.press("Escape");
+    const dismissedPrompt = page.waitForEvent("dialog");
+    const firstEscape = page.keyboard.press("Escape");
     const dismissDialog = await dismissedPrompt;
     assert.match(dismissDialog.message(), /discard your unsaved changes/i);
     await dismissDialog.dismiss();
+    await firstEscape;
     assert.equal(await page.locator("#taskModal").isVisible(), true, "declining discard keeps the editor open");
 
     const acceptedPrompt = page.waitForEvent("dialog");
-    await page.keyboard.press("Escape");
+    const secondEscape = page.keyboard.press("Escape");
     const acceptDialog = await acceptedPrompt;
     assert.match(acceptDialog.message(), /discard your unsaved changes/i);
     await acceptDialog.accept();
+    await secondEscape;
     await page.locator("#taskModal").waitFor({ state: "hidden" });
 
     await page.locator("#daysGrid [data-edit]").filter({ hasText: editedTitle }).first().click();
