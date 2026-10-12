@@ -125,24 +125,29 @@
         return;
       }
       const subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        setButton("Enable background reminders");
-        setStatus("Receive task reminders while Weekwise is closed. This needs the one-time Supabase push setup.");
-        return;
-      }
-
+      // Probe the authenticated backend even when no local subscription exists, so the
+      // UI does not imply setup is ready when the Edge Function is still undeployed.
+      let state;
       try {
-        const state = await invoke("status", { endpoint: subscription.endpoint });
-        if (state.enabled === true) {
-          setButton("Disable background reminders");
-          setStatus("Background reminders are enabled for this device (" + (state.timezone || currentTimeZone()) + ").");
-        } else {
-          setButton("Enable background reminders");
-          setStatus("A browser subscription exists but is not linked to this Weekwise account yet. Enable it to link this device.");
-        }
+        state = await invoke("status", { endpoint: subscription?.endpoint || "" });
       } catch (error) {
         setButton("Configure background reminders");
         setStatus(error.message || "Background push setup is not complete yet.", true);
+        return;
+      }
+
+      if (!subscription) {
+        setButton("Enable background reminders");
+        setStatus("The push service is reachable. Enable this device to receive task reminders while Weekwise is closed.");
+        return;
+      }
+
+      if (state.enabled === true) {
+        setButton("Disable background reminders");
+        setStatus("Background reminders are enabled for this device (" + (state.timezone || currentTimeZone()) + ").");
+      } else {
+        setButton("Enable background reminders");
+        setStatus("A browser subscription exists but is not linked to this Weekwise account yet. Enable it to link this device.");
       }
     } catch (error) {
       setButton("Configure background reminders");
@@ -227,6 +232,16 @@
     }
     window.addEventListener("focus", refreshState);
     refreshState();
+
+    // The main application registers its service worker on the window "load" event.
+    // Re-check after the registration becomes active; the earlier DOM-ready probe may
+    // run before that registration exists and would otherwise leave the button disabled.
+    const refreshAfterServiceWorkerReady = () => {
+      if (!("serviceWorker" in navigator)) return;
+      navigator.serviceWorker.ready.then(() => refreshState()).catch(() => {});
+    };
+    if (document.readyState === "complete") refreshAfterServiceWorkerReady();
+    else window.addEventListener("load", refreshAfterServiceWorkerReady, { once: true });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
