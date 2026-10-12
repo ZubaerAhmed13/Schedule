@@ -30,7 +30,7 @@ The actual existing app has been upgraded; features/data have not been replaced 
 
 ## Validation
 
-Run `node scripts/validate-weekwise.mjs`, `node --test tests/*.test.mjs`, `node scripts/build-weekwise.mjs` and the remote browser workflow. Current local suite has 55 tests. Browser suite has 22 regressions against the built `dist/` client, isolated Supabase fixtures and a real service worker for offline testing. CI artifacts contain desktop/tablet/phone light/dark screenshots. Both existing Supabase Edge Functions are type-checked separately.
+Run `node scripts/validate-weekwise.mjs`, `node --test tests/*.test.mjs`, `node scripts/build-weekwise.mjs` and the remote browser workflow. Current local suite has 56 tests. Browser suite has 22 regressions against the built `dist/` client, isolated Supabase fixtures and a real service worker for offline testing. CI artifacts contain desktop/tablet/phone light/dark screenshots. Both existing Supabase Edge Functions are type-checked separately.
 
 At `92b2d14373c9081bf0fbc4a5ea2b488ee2e6c779`, all 55 Node tests, all 22 browser regressions, release checks and both Supabase Edge Function type checks passed. Browser run: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38302083912. The final UI follow-up normalizes the task editor's field layout and adds desktop/mobile editor screenshots; inspect the PR's latest checks for its own result.
 

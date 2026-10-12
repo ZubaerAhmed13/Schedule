@@ -53,7 +53,7 @@
     if (value.version !== undefined && (!Number.isInteger(value.version) || value.version < 1 || value.version > 6)) throw new Error('This backup version is not supported.');
     validateStore(value);
     for (const key of ['reminders', 'focusSessions', 'habits', 'countdowns', 'savedTaskFilters', 'taskTemplates']) {
-      if (value[key] !== undefined && (!Array.isArray(value[key]) || value[key].some(item => !plain(item)))) throw new Error('Invalid ' + key + ' collection.');
+      if (value[key] !== undefined)validateCollection(value[key],key);
     }
     return value;
   }
@@ -82,15 +82,27 @@
     try { const raw=storage.getItem(key);remember(storage,key,raw); if(raw===null)return fallback;return validator(JSON.parse(raw)); }
     catch(error) { blocked.set(key,error.message||'Stored data cannot be read.');return fallback; }
   }
-  function validateCollection(value) {
+  function validateCollection(value,kind='') {
     if(!Array.isArray(value)||value.some(item=>!plain(item)))throw new Error('Saved collection must contain records.');
-    assertSafeObject(value);return value;
+    assertSafeObject(value);
+    for(const item of value){
+      for(const field of ['id','title','name'])if(item[field]!==undefined&&typeof item[field]!=='string')throw new Error('Invalid '+field+' in saved '+kind+' records.');
+      if(/habit/.test(kind)){
+        for(const field of ['checkIns','skippedDates'])if(item[field]!==undefined&&(!Array.isArray(item[field])||item[field].some(day=>!validDate(day))))throw new Error('Invalid habit '+field+' history.');
+        if(item.scheduledDays!==undefined&&(!Array.isArray(item.scheduledDays)||item.scheduledDays.some(day=>!Number.isInteger(day)||day<0||day>6)))throw new Error('Invalid scheduled habit days.');
+      }
+      if(/focus/.test(kind)){
+        for(const field of ['minutes','seconds'])if(item[field]!==undefined&&(!Number.isFinite(item[field])||item[field]<0))throw new Error('Invalid recorded focus time.');
+        if(item.endedAt!==undefined&&(typeof item.endedAt!=='string'||!Number.isFinite(new Date(item.endedAt).getTime())))throw new Error('Invalid focus timestamp.');
+      }
+    }
+    return value;
   }
-  function readCollection(storage,key) {return readJSON(storage,key,validateCollection,[]);}
+  function readCollection(storage,key) {return readJSON(storage,key,value=>validateCollection(value,key),[]);}
   function writeCollection(storage,key,value) {
     if(blocked.has(key))throw new Error('This saved collection needs recovery before it can be changed.');
     if(!unchanged(storage,key))throw new Error('Another tab changed this collection. Reload it before saving.');
-    validateCollection(value);const raw=JSON.stringify(value);storage.setItem(key,raw);remember(storage,key,raw);return true;
+    validateCollection(value,key);const raw=JSON.stringify(value);storage.setItem(key,raw);remember(storage,key,raw);return true;
   }
   function clearBlocked(keys) {for(const key of keys)blocked.delete(key);}
   function blockedKeys() {return [...blocked.keys()];}

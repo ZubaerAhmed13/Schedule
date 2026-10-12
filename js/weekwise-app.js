@@ -783,7 +783,7 @@ function renderCloudPanel(){
 }
 function validateCloudPayload(payload){
  if(!payload||!payload.store)throw new Error('The cloud planner snapshot is incomplete.');WeekwiseData.validateStore(payload.store);
- for(const name of ['reminders','focusSessions','habits','countdowns','savedTaskFilters','taskTemplates'])if(payload[name]!==undefined)WeekwiseData.validateCollection(payload[name]);
+ for(const name of ['reminders','focusSessions','habits','countdowns','savedTaskFilters','taskTemplates'])if(payload[name]!==undefined)WeekwiseData.validateCollection(payload[name],name);
  return payload;
 }
 function saveCloudLocalPayload(payload){
