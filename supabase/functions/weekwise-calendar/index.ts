@@ -725,7 +725,7 @@ function remoteEventFor(provider: Provider, event: Record<string, unknown>, time
   // Graph can serialize fractional seconds with seven digits; native Date parsing and
   // date-fns timezone conversion should not depend on precision beyond milliseconds.
   const normalizeGraphDateTime = (value: string) =>
-    value.replace(/(\\.\\d{3})\\d+(?=$|Z|[+-]\\d{2}:\\d{2})/, "$1").replace(/Z$/i, "");
+    value.replace(/(\.\d{3})\d+(?=$|Z|[+-]\d{2}:\d{2})/, "$1").replace(/Z$/i, "");
   const startAt = fromZonedTime(normalizeGraphDateTime(startText), timezone);
   const endAt = fromZonedTime(normalizeGraphDateTime(endText), timezone);
   if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) return null;
