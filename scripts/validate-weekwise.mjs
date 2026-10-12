@@ -232,6 +232,7 @@ if (fs.existsSync(pushEdgePath) && fs.existsSync(pushSqlPath) && fs.existsSync(p
   if (/alter table public\.weekwise_push_subscriptions enable row level security/i.test(pushSql) &&
       /revoke all on table public\.weekwise_push_subscriptions from public, anon, authenticated/i.test(pushSql) &&
       /revoke all on table public\.weekwise_push_delivery_log from public, anon, authenticated/i.test(pushSql) &&
+      /security definer[\s\S]{0,100}set search_path = pg_catalog, auth/i.test(pushSql) &&
       /auth\.role\(\)[\s\S]*?service_role/i.test(pushSql)) {
     pass("push subscription and delivery records are server-role only");
   } else fail("push subscription and delivery records are server-role only");
