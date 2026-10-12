@@ -75,8 +75,8 @@
       }
     }
     const conflicts=new Set();
-    const sortedRecords=timedRecords.slice().sort((a,b)=>a.a-b.a);let active=[];
-    for(const entry of sortedRecords){active=active.filter(item=>item.b>entry.a);for(const item of active){conflicts.add(item.ref);conflicts.add(entry.ref);}active.push(entry);}
+    const sortedRecords=timedRecords.slice().sort((a,b)=>a.a-b.a);let latestEnd=-Infinity,latestRef=null;
+    for(const entry of sortedRecords){if(entry.a<latestEnd){conflicts.add(entry.ref);conflicts.add(latestRef);}if(entry.b>latestEnd){latestEnd=entry.b;latestRef=entry.ref;}}
     const days = []; let windows = [], free = [];
     for (const day of p.days) {
       const custom=p.windows.filter(window=>window.days.includes(day));
@@ -166,6 +166,7 @@
       next.weeks[ref.week].tasks.push(child);task.planningChildren.push(id);
       task.subtasks=[...(task.subtasks||[]),{id:id+'_link',title:child.title,done:false,taskId:id}];
     }
+    task.planningOriginalSchedule={day:task.day,start:task.start,duration:task.duration,unscheduled:!!task.unscheduled};task.start=null;task.unscheduled=true;
     task.planningOriginalEstimate=task.estimatedDurationMinutes??task.focusEstimateMinutes??null;task.estimatedDurationMinutes=parts.reduce((n,p)=>n+p.minutes,0);
     return root.WeekwiseData.validateStore(next);
   }

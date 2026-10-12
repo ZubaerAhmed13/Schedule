@@ -1,7 +1,7 @@
 /* The Plan screen consumes canonical records through a narrow app bridge. */
 (function (root) {
   'use strict';
-  let app, preview=null, undo=null, overrides={}, mode="build", splitRef=null;
+  let app, preview=null, undo=null, overrides={}, mode="build", splitRef=null,lastAccount=null,splitSnapshot=null,placementDirty=false;
   const $=id=>document.getElementById(id);
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const duration=n=>{const h=Math.floor(n/60),m=n%60;return h?(h+'h'+(m?' '+m+'m':'')):m+'m';};
@@ -21,7 +21,7 @@
       renderPreview();announce(plan.proposals.length+' tasks suggested. Review and select the changes you want to apply.');
     }catch(error){announce(error.message,true);}
   }
-  function renderPreview(){
+  function renderPreview(){placementDirty=false;
     const p=preview.plan;$('planPreviewTitle').textContent=p.mode==='recover'?'Review recovery adjustments':'Suggested placements';$('planRecoveryNote').textContent=p.mode==='recover'?'What changed: unfinished past activities or overlapping commitments. Only flexible activities appear here. Original slots stay reserved until you approve a move; some work may need a different week or revised deadline.':'';
     $('planResults').hidden=false;
     $('planSummary').innerHTML=[['Planning time',p.available],['Already committed',p.committed],['Reserved buffer',p.reservedBuffer],['Flexible capacity',p.capacity],['Remaining after preview',p.remaining]].map(([label,value])=>'<div class="plan-metric"><span>'+label+'</span><strong>'+duration(value)+'</strong></div>').join('');
@@ -41,7 +41,7 @@
   }
   function applySelected(){
     try{
-      if(!preview)throw new Error('Build a preview first.');
+      if(!preview)throw new Error('Build a preview first.');if(placementDirty)throw new Error('Check your edited placement before applying the preview.');
       if(preview.fingerprint!==fingerprint() || preview.account!==app.account())throw new Error('Your planner or account changed. Build a fresh preview before applying.');
       if(Date.now()-preview.createdAt>5*60*1000)throw new Error('This preview is more than five minutes old. Build a fresh preview.');
       const selected=[...document.querySelectorAll('[name="planProposal"]:checked')].map(el=>preview.plan.proposals[Number(el.value)]);
@@ -68,12 +68,12 @@
       undo=null;$('planUndo').hidden=true;announce('Planning changes undone and saved locally.');
     }catch(error){announce(error.message,true);}
   }
-  function render(){if(!app)return;const p=app.snapshot().store.settings.planning;
+  function render(){if(!app)return;if(lastAccount!==app.account()){lastAccount=app.account();preview=null;undo=null;overrides={};$('planResults').hidden=true;$('planApply').disabled=true;$('planUndo').hidden=true;$('planWeek').value='';$('planStart').value='09:00';$('planEnd').value='17:00';$('planBuffer').value=60;$('planBreak').value=10;$('planWeeklyBuffer').value=0;$('planDailyLimit').value=480;$('planFocusStart').value='';$('planFocusEnd').value='';$('planWindows').replaceChildren();document.querySelectorAll('[name=planDay]').forEach(el=>el.checked=[1,2,3,4,5].includes(Number(el.value)));announce('Choose planning hours for this planner.');}const p=app.snapshot().store.settings.planning;
     if(!$('planWeek').value){$('planWeek').value=app.currentWeek();if(p){try{const pref=root.WeekwisePlanning.preferences(p);$('planStart').value=time(pref.start);$('planEnd').value=time(pref.end);$('planBuffer').value=pref.buffer;$('planBreak').value=pref.breakMinutes;$('planWeeklyBuffer').value=pref.weeklyBuffer;$('planDailyLimit').value=pref.maxDailyMinutes;$('planFocusStart').value=pref.focusStart===null?'':time(pref.focusStart);$('planFocusEnd').value=pref.focusEnd===null?'':time(pref.focusEnd);$('planWindows').replaceChildren();pref.windows.forEach(w=>w.days.forEach(day=>addWindow({...w,days:[day]})));document.querySelectorAll('[name="planDay"]').forEach(el=>el.checked=pref.days.includes(Number(el.value)));}catch(_){announce('Saved planning preferences need review.',true);}}}
     if(preview&&preview.fingerprint!==fingerprint()){announce('Your planner changed. Build a fresh preview before applying.',true);$('planApply').disabled=true;}
   }
   function addPart(title='',minutes=''){if($('planSplitParts').children.length>=12)return;const row=document.createElement('div');row.className='plan-window-row';row.innerHTML='<label>Part name<input type="text" maxlength="100" required></label><label>Minutes<input type="number" min="5" max="1440" step="5" required></label><button class="btn" type="button">Remove</button>';row.querySelector('input[type="text"]').value=title;row.querySelector('input[type="number"]').value=minutes;row.querySelector('button').onclick=()=>row.remove();$('planSplitParts').append(row);}
-  function openSplit(ref){const task=app.snapshot().store.weeks[ref.week]?.tasks.find(t=>t.id===ref.id);if(!task||root.WeekwisePlanning.isProtected(task)){announce('Fixed and recurring commitments cannot be split here.',true);return;}splitRef=ref;$('planSplitDescription').textContent=task.title;$('planSplitParts').replaceChildren();$('planSplitStatus').textContent='';addPart();addPart();$('planSplitDialog').showModal();}
+  function openSplit(ref){const task=app.snapshot().store.weeks[ref.week]?.tasks.find(t=>t.id===ref.id);if(!task||root.WeekwisePlanning.isProtected(task)){announce('Fixed and recurring commitments cannot be split here.',true);return;}splitRef=ref;splitSnapshot={account:app.account(),fingerprint:fingerprint()};$('planSplitDescription').textContent=task.title;$('planSplitParts').replaceChildren();$('planSplitStatus').textContent='';addPart();addPart();$('planSplitDialog').showModal();}
   function init(bridge){
     app=bridge;
     $('planPreferences').addEventListener('submit',e=>{e.preventDefault();mode='build';overrides={};buildPreview();});
@@ -81,9 +81,10 @@
     $('planApply').addEventListener('click',applySelected);$('planUndo').addEventListener('click',undoPlan);
     $('planSavePreferences').addEventListener('click',()=>{try{const snapshot=app.snapshot(),next=JSON.parse(JSON.stringify(snapshot.store));next.settings.planning=readPreferences();app.commit(JSON.stringify(snapshot),app.account(),next);clearPreview();announce('Planning preferences saved locally.');}catch(error){announce(error.message,true);}});
     $('planUnscheduled').addEventListener('click',e=>{const button=e.target.closest('[data-plan-edit-id]');if(button)app.edit(button.dataset.planEditId,button.dataset.planEditWeek);const split=e.target.closest('[data-plan-split-id]');if(split)openSplit({id:split.dataset.planSplitId,week:split.dataset.planSplitWeek});});
-    $('planProposals').addEventListener('change',()=>{$('planApply').disabled=!document.querySelector('[name="planProposal"]:checked');});
+    $('planProposals').addEventListener('input',e=>{if(e.target.matches('[data-placement-date],[data-placement-start]')){placementDirty=true;$('planApply').disabled=true;announce('Check your edited placement to validate it before applying.');}});
+    $('planProposals').addEventListener('change',()=>{$('planApply').disabled=placementDirty||!document.querySelector('[name="planProposal"]:checked');});
     $('planProposals').addEventListener('click',e=>{const button=e.target.closest('[data-placement-apply]');if(!button||!preview)return;try{const i=Number(button.dataset.placementApply),item=preview.plan.proposals[i];overrides[item.week+'::'+item.id]={date:$('planProposals').querySelector('[data-placement-date="'+i+'"]').value,start:parseTime($('planProposals').querySelector('[data-placement-start="'+i+'"]').value)};buildPreview();}catch(error){announce(error.message,true);}});
-    $('planCancelSplit').onclick=()=>$('planSplitDialog').close();$('planAddPart').onclick=()=>addPart();$('planSplitForm').onsubmit=e=>{e.preventDefault();try{const snapshot=app.snapshot(),parts=[...$('planSplitParts').children].map(row=>({title:row.querySelector('input[type="text"]').value,minutes:Number(row.querySelector('input[type="number"]').value)}));const next=root.WeekwisePlanning.splitTask(snapshot.store,splitRef,parts,()=>root.crypto.randomUUID());app.commit(JSON.stringify(snapshot),app.account(),next,'weekwise-pre-split-v1');$('planSplitDialog').close();overrides={};buildPreview();announce('Linked parts saved. Review their placements before applying.');}catch(error){$('planSplitStatus').textContent=error.message;}};
+    $('planCancelSplit').onclick=()=>$('planSplitDialog').close();$('planAddPart').onclick=()=>addPart();$('planSplitForm').onsubmit=e=>{e.preventDefault();try{if(splitSnapshot.account!==app.account()||splitSnapshot.fingerprint!==fingerprint())throw new Error('Your planner changed. Close this dialog and start splitting again.');const snapshot=app.snapshot(),parts=[...$('planSplitParts').children].map(row=>({title:row.querySelector('input[type="text"]').value,minutes:Number(row.querySelector('input[type="number"]').value)}));const next=root.WeekwisePlanning.splitTask(snapshot.store,splitRef,parts,()=>root.crypto.randomUUID());app.commit(JSON.stringify(snapshot),app.account(),next,'weekwise-pre-split-v1');$('planSplitDialog').close();overrides={};buildPreview();announce('Linked parts saved. Review their placements before applying.');}catch(error){$('planSplitStatus').textContent=error.message;}};
     render();
   }
   root.WeekwisePlanUI=Object.freeze({init,render});

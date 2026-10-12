@@ -80,7 +80,7 @@ function updateDurationFromEnd(){
 function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function escapeHtml(str){return String(str??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function defaultClassTemplate(){return {title:'Master’s coursework self-study',days:[1,3,5,0],duration:75,start:'13:00'};}
-function defaultSettings(){return {travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,theme:'system',shifts:DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:defaultClassTemplate()};}
+function defaultSettings(){return {timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,theme:'system',shifts:DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:defaultClassTemplate()};}
 let plannerStorageBlocked=false,plannerStorageError="";
 function loadStore(){
   try{
@@ -131,7 +131,7 @@ window.addEventListener('error',event=>{if(event.error?.name==='WeekwiseStorageE
 function checkedCollectionSave(key,value,restore){try{WeekwiseData.writeCollection(localStorage,key,value);}catch(error){const raw=localStorage.getItem(key);if(raw!==null){try{restore(WeekwiseData.validateCollection(JSON.parse(raw)));}catch(_){}}else restore([]);throw storageSaveError('Could not save this change. Previous records remain on this device.');}if(!cloudApplyingRemote)queueCloudSave();}
 function saveStore(){
  if(plannerStorageBlocked||WeekwiseData.blockedKeys().length)return false;
- try{const raw=JSON.stringify(store);localStorage.setItem(STORE_KEY,raw);lastSavedStore=raw;}
+ try{if(!store.settings.timeZone)store.settings.timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;const raw=JSON.stringify(store);localStorage.setItem(STORE_KEY,raw);lastSavedStore=raw;}
  catch(error){store=JSON.parse(lastSavedStore);tasks=JSON.parse(JSON.stringify(store.weeks[currentWeek]?.tasks||[]));throw storageSaveError('Could not save this change. Your previous planner remains on this device.');}
  if(!cloudApplyingRemote)queueCloudSave();return true;
 }
@@ -324,7 +324,7 @@ function renderStats(){
   const scheduled=tasks.filter(t=>t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0);
   const planned=scheduled.reduce((sum,t)=>sum+Number(t.duration||0),0);
   const logged=scheduled.filter(t=>t.done).reduce((sum,t)=>sum+Number(t.duration||0),0);
-  const overdue=scheduled.filter(t=>!t.done&&taskEndDate(t)<=now).reduce((sum,t)=>sum+Number(t.duration||0),0);
+  const overdue=scheduled.filter(t=>!t.done&&t.requiresCompletion!==false&&taskEndDate(t)<=now).reduce((sum,t)=>sum+Number(t.duration||0),0);
   const upcoming=scheduled.filter(t=>!t.done&&taskEndDate(t)>now).reduce((sum,t)=>sum+Number(t.duration||0),0);
   const elapsed=scheduled.filter(t=>taskEndDate(t)<=now);
   const elapsedPlan=elapsed.reduce((sum,t)=>sum+Number(t.duration||0),0);
@@ -402,7 +402,7 @@ function saveTemplateEditor(e){if(!dataCanWrite()){arguments[0]?.preventDefault?
 function updateCalendarVisibility(){
  ['calendarToolbar','mobileDayPicker','mobileHelp','daysGrid','unscheduledBox'].forEach(id=>{const el=$(id);if(el)el.hidden=workspaceView!=='calendar'||(['mobileDayPicker','mobileHelp'].includes(id)&&!['day','week'].includes(calendarView));});
 }
-function renderAll(){renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();renderPriorityMatrix();renderHabitTracker();renderKanbanBoard();renderSavedFilters();updateCalendarPeriodLabel();updateCalendarVisibility();renderExperience();}
+function renderAll(){if(workspaceView==='calendar')renderDays();renderStats();renderUnscheduled();renderHabitSummaries();renderWorkspaceTasks();updateWorkspaceCounts();if(workspaceView==='matrix')renderPriorityMatrix();if(activeUtilityPanel===$('routineDetails'))renderHabitTracker();if(workspaceView==='board')renderKanbanBoard();if(workspaceView==='filters')renderSavedFilters();updateCalendarPeriodLabel();updateCalendarVisibility();renderExperience();}
 function moveTask(id,newDay,preferredTime=null){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
   const t=tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
@@ -1386,8 +1386,8 @@ function renderWorkspaceTaskGroups(items){
  }).map(([section,records])=>'<section class="workspace-section-group"><header><span>§ '+escapeHtml(section)+'</span><span>'+records.length+'</span></header>'+records.map(workspaceTaskRow).join('')+'</section>').join('');
 }
 
-function experienceData(){return {active:workspaceView==='insights',week:dateKey(sundayOf(now)),today:dateKey(now),minute:now.getHours()*60+now.getMinutes(),store,records:workspaceRecords().map(r=>({...r,dateKey:dateKey(r.date)})),focusSessions,habits,signedIn:!!cloudUser,syncLabel:$('cloudMenuBadge').textContent};}
-function renderExperience(){if(!window.WeekwiseExperience)return;const data=experienceData();WeekwiseExperience.renderInsights(data);WeekwiseExperience.renderSettings(data);}
+function experienceData(){return {active:workspaceView==='insights',owner:currentDataOwner,week:dateKey(sundayOf(now)),today:dateKey(now),minute:now.getHours()*60+now.getMinutes(),store,records:workspaceRecords().map(r=>({...r,dateKey:dateKey(r.date)})),focusSessions,habits,signedIn:!!cloudUser,syncLabel:$('cloudMenuBadge').textContent};}
+function renderExperience(){renderZoneNotice();if(!window.WeekwiseExperience)return;const data=experienceData();WeekwiseExperience.renderInsights(data);WeekwiseExperience.renderSettings(data);}
 function renderTodayOverview(){const panel=$('todayOverview');panel.hidden=workspaceView!=='today';if(!panel.hidden)WeekwiseExperience.renderToday({...experienceData(),active:true});}
 
 function renderWorkspaceTasks(){
@@ -1525,7 +1525,9 @@ $('habitTrackerList').addEventListener('click',e=>{
 const FOCUS_SESSIONS_KEY='weekwise-focus-sessions-v1';
 let focusSessions=WeekwiseData.readCollection(localStorage,FOCUS_SESSIONS_KEY);
 let focusState=null,focusInterval=null;
-function dataCanWrite(){if(cloudUser&&currentDataOwner!==cloudUser.id){showToast('Your account is changing. Wait until its planner is ready.');return false;}if(plannerStorageBlocked||WeekwiseData.blockedKeys().length){showToast('Editing is paused to protect stored data. Restore a valid backup using the recovery notice.');return false;}return true;}
+function zoneNeedsReview(){return !!store.settings.timeZone&&store.settings.timeZone!==Intl.DateTimeFormat().resolvedOptions().timeZone;}
+function renderZoneNotice(){let notice=$('timeZoneNotice');if(!zoneNeedsReview()){notice?.remove();return;}if(!notice){notice=document.createElement('aside');notice.id='timeZoneNotice';notice.className='zone-notice';notice.setAttribute('role','status');notice.innerHTML='<span></span><button class="btn" type="button">Use this device’s time zone</button>';document.querySelector('.topbar').after(notice);notice.querySelector('button').onclick=()=>{if(!confirm('Use '+Intl.DateTimeFormat().resolvedOptions().timeZone+' for this planner? Saved calendar times stay at the same clock time (09:00 stays 09:00). They are not converted between zones. Review reminder timestamps after changing.'))return;store.settings.timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;saveStore();renderAll();};}notice.querySelector('span').textContent='This planner was saved in '+store.settings.timeZone+'. This device uses '+Intl.DateTimeFormat().resolvedOptions().timeZone+'. Editing and reminder checks are paused until you review the time zone.';}
+function dataCanWrite(){if(zoneNeedsReview()){renderZoneNotice();showToast('Review the time zone notice before changing your planner.');return false;}if(cloudUser&&currentDataOwner!==cloudUser.id){showToast('Your account is changing. Wait until its planner is ready.');return false;}if(plannerStorageBlocked||WeekwiseData.blockedKeys().length){showToast('Editing is paused to protect stored data. Restore a valid backup using the recovery notice.');return false;}return true;}
 function focusOwner(){return currentDataOwner;}
 function focusStateKey(){return 'weekwise-focus-active-v1:'+focusOwner();}
 function freshFocus(mode='focus',seconds=1500,task=null){return WeekwiseFocus.create({id:uid(),owner:focusOwner(),mode,seconds,task});}
@@ -1935,7 +1937,7 @@ function openReminderTask(record){
  loadWeek(currentWeek);
  const t=tasks.find(x=>x.id===record.task.id);if(t)openTaskModal(t.id,t.day,t.start);
 }
-function checkTaskReminders(){
+function checkTaskReminders(){if(zoneNeedsReview())return;
  const currentTime=Date.now(),due=[];
  workspaceRecords().forEach(record=>{
   const task=record.task;if(!task||task.done)return;
@@ -2563,8 +2565,9 @@ async function copyTaskPlanningPrompt(){
 
 
 window.weekwiseCalendarBridge = {
-  isReady() { return !!(cloudClient && cloudUser && cloudReady && !cloudConflict); },
+  isReady() { return !!(cloudClient && cloudUser && cloudReady && !cloudConflict && !plannerStorageBlocked && !WeekwiseData.blockedKeys().length && !zoneNeedsReview()); },
   async prepareSync() {
+    const owner=cloudUser?.id,epoch=cloudSessionEpoch;if(!dataCanWrite())throw new Error("Planner changes are paused; resolve recovery or time-zone review first.");
     if (!cloudClient || !cloudUser) throw new Error("Sign in to Weekwise before synchronizing a calendar.");
     if (cloudConflict) throw new Error("Resolve the Weekwise cloud conflict before calendar synchronization.");
     if (!cloudReady) throw new Error("Wait for Weekwise cloud sync to finish before synchronizing a calendar.");
@@ -2573,6 +2576,7 @@ window.weekwiseCalendarBridge = {
     const current = cloudFingerprint(buildCloudPayload());
     const meta = readCloudMeta();
     if (meta?.userId !== cloudUser.id || meta?.fingerprint !== current) await saveCloudSnapshot();
+    if(epoch!==cloudSessionEpoch||cloudUser?.id!==owner)throw new Error("Your account changed during calendar preparation. Try again after its planner loads.");
     const fresh = cloudFingerprint(buildCloudPayload());
     const after = readCloudMeta();
     if (cloudConflict) throw new Error("Resolve the Weekwise cloud conflict before calendar synchronization.");
@@ -2607,7 +2611,8 @@ window.WeekwisePlanUI.init({
  todayKey(){return dateKey(new Date());},
  edit(id,week){openWorkspaceRecord(id,week);},
  commit(expected,account,next,checkpointKey){
-  if(plannerStorageBlocked)throw new Error('Stored planner data needs recovery before planning changes can be saved.');
+  if(plannerStorageBlocked||WeekwiseData.blockedKeys().length)throw new Error('Stored planner data needs recovery before planning changes can be saved.');
+  if(zoneNeedsReview())throw new Error('Review the time zone notice before applying a plan.');
   if(cloudConflict)throw new Error('Resolve the cloud conflict before applying a plan.');
   if(account!==(cloudUser?.id||'local'))throw new Error('Your account changed. Build a fresh preview.');
   const snapshot=JSON.parse(JSON.stringify(store));snapshot.weeks[currentWeek]={...snapshot.weeks[currentWeek],tasks:JSON.parse(JSON.stringify(tasks))};
