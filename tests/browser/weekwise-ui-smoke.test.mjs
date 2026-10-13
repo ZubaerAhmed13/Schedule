@@ -1025,6 +1025,7 @@ test('account erasure rejects a mismatched server identity, then cleans only the
   // Clear the synthetic malformed draft so normal account isolation can be checked.
   await page.evaluate(()=>localStorage.removeItem('weekwise-editor-draft-v1:weekwise-browser-test-user'));wrong=false;await fillAccountErasure(page);page.once('dialog',d=>d.accept());await page.locator('#accountEraseSubmit').click();await page.waitForFunction(()=>document.querySelector('#accountEraseStatus').textContent.includes('were deleted'));
   assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:weekwise-browser-test-user')),null);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:other-owner')),'other-original');assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')).userId),'');
+  await page.locator('#accountEraseClose').focus();await page.keyboard.press('Tab');assert.equal(await page.locator('#accountErasePassword').evaluate(el=>el===document.activeElement),true,'native erasure dialog retains keyboard focus above the signed-out landing gate');
   assert.equal(posts.length,2);assert.deepEqual(Object.keys(posts[1].body).sort(),['backedUp','confirmation','password']);assert.equal(posts[1].authorization,'Bearer browser-test-access-token:weekwise-browser-test-user');
   assert.equal(await page.evaluate(()=>Object.values(localStorage).some(value=>String(value).includes('fixture-password'))),false);
  }finally{await context.close();}

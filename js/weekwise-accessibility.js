@@ -14,7 +14,7 @@
   refocusing=true;try{target.focus({preventScroll:true});}finally{refocusing=false;}
  }
  function update(){
-  const next=ids.map(id=>document.getElementById(id)).filter(visible).pop()||null;
+  const next=document.querySelector('dialog[open]')||ids.map(id=>document.getElementById(id)).filter(visible).pop()||null;
   if(next===active)return;
   const prior=active,launcher=document.activeElement;
   // Save the opener BEFORE applying inert; otherwise browsers may move focus to body.
@@ -42,6 +42,6 @@
   if(event.shiftKey&&(current===firstItem||!active.contains(current))){event.preventDefault();lastItem.focus();}
   else if(!event.shiftKey&&(current===lastItem||!active.contains(current))){event.preventDefault();firstItem.focus();}
  });
- function init(){new MutationObserver(update).observe(document.body,{subtree:true,attributes:true,attributeFilter:['hidden','class']});update();}
+ function init(){new MutationObserver(update).observe(document.body,{subtree:true,attributes:true,attributeFilter:['hidden','class','open']});update();}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
