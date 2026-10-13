@@ -29,3 +29,15 @@ body[data-theme=dark] .workspace-sidebar,body[data-theme=dark] .task-workspace,b
 .today-onboarding-steps .btn{max-width:100%;white-space:normal;text-align:center;min-height:42px}
 @media(max-width:850px){.today-onboarding-steps{grid-template-columns:1fr}.today-onboarding-steps p{min-height:0}.today-onboarding-steps article{padding:14px}}
 @media(prefers-reduced-motion:reduce){.today-onboarding *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+
+/* Read-only workload visualization: numbers remain visible without color. */
+#insightsWorkload{display:grid;gap:10px;margin:16px 0}
+.insights-load-row{display:grid;grid-template-columns:minmax(90px,125px) minmax(0,1fr) minmax(72px,92px);gap:12px;align-items:center;font-size:13px}
+.insights-load-row>span{white-space:nowrap;color:var(--muted,#68766e)}
+.insights-load-row strong{font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.insights-load-track{height:12px;overflow:hidden;border-radius:12px;background:var(--line,#dce6de)}
+.insights-load-track span{display:block;height:100%;border-radius:12px;background:var(--accent,#377b56)}
+#insightsScheduleStability{border-top:1px solid var(--line,#dce6de);padding-top:12px}
+#insightsScheduleStability p{margin:7px 0;line-height:1.5;font-size:13px}
+@media(max-width:540px){.insights-load-row{grid-template-columns:70px minmax(0,1fr) 68px;gap:8px;font-size:12px}.insights-load-row strong{font-size:12px}}
