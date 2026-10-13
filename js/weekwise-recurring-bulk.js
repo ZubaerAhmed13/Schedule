@@ -32,7 +32,7 @@
    edits[key]=normalize(key,value);
   }
   if(!Object.keys(edits).length)throw new Error('Select at least one metadata field.');
-  const changes=[],skipped={completed:0,customized:0,other:0},unrelated=0;
+  const changes=[],skipped={completed:0,customized:0,other:0};let unrelated=0;
   for(const [week,group]of Object.entries(store.weeks)){
    for(const task of group.tasks){
     if(task.seriesId!==seriesId||!task.occurrenceDate||task.occurrenceDate<fromDate||task.id===excludeId){unrelated++;continue;}
