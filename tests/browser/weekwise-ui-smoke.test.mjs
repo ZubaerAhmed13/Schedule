@@ -686,3 +686,21 @@ test('task and settings dialogs trap keyboard focus and restore their actual lau
   await page.waitForFunction(()=>document.activeElement?.getAttribute('data-settings-panel')==='settingsPanel');
  }finally{await context.close();}
 });
+
+
+test('Insights shows seven daily workload values and distinguishes planned from recorded time',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:900});
+ try{
+  await createScheduledTask(page,'Scheduled workload test');
+  await page.locator('#workspaceSidebar [data-workspace-view="insights"]').click();
+  await page.locator('#insightsWorkload').waitFor({state:'visible'});
+  assert.equal(await page.locator('#insightsWorkload .insights-load-row').count(),7);
+  assert.match(await page.locator('#insightsSummary').innerText(),/Scheduled time/);
+  assert.match(await page.locator('#insightsWorkload').innerText(),/30 min/);
+  assert.match(await page.locator('#insightsScheduleStability').innerText(),/No recorded focus sessions linked/);
+  assert.match(await page.locator('#insightsScheduleStability').innerText(),/not a complete record of actual work/);
+  await page.setViewportSize({width:390,height:844});
+  const measured=await page.locator('#insightsWorkload').evaluate(el=>({inner:el.clientWidth,scroll:el.scrollWidth}));
+  assert.ok(measured.scroll<=measured.inner+2,'workload bars fit narrow screen without horizontal clipping');
+ }finally{await context.close();}
+});
