@@ -94,3 +94,10 @@ The latest merged feature set is at `ea6573c08433ec6995feb6740968b7944ea4cb21`, 
 - [ ] Run pinned `axe-core` WCAG 2.0/2.1/2.2 A and AA checks on the built Chromium Today, Settings, Plan and task editor, plus dark-mode Today/Settings and 320px Today; block serious and critical findings, and check 320px horizontal reflow.
 - [ ] Save the full violation and inconclusive-check summary as a CI artifact; manually triage moderate and needs-review items.
 - [ ] Confirm keyboard focus restoration, text scaling/reflow and actual phone screen readers independently. Automated axe results are not proof of full WCAG 2.2 AA conformance.
+
+## Weekly-flexible habit rhythm
+
+- [ ] Node checks 1–7/week target, completed versus in-progress week, weekly streak, skip/pause semantics, and legacy scheduled-day behavior.
+- [ ] Browser can create an any-day weekly target, check in, edit, and save without losing historical check-ins.
+- [ ] Switching frequency mode preserves original selected weekday checkboxes, and no fake missed days or reminder obligations follow meeting a weekly target.
+- [ ] Local/cloud collection validation and offline synchronization still pass.
