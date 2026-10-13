@@ -36,7 +36,7 @@ The PostgreSQL 17 CI workflow runs disposable synthetic fixtures for both output
 
 ### Concrete next production proposal
 
-After PostgreSQL CI and staging/legacy-client review, apply only the compatible `weekwise_rpc_hardening.sql` to the correct project. Before applying, recheck the live function fingerprint `c59799a0d4ca95cbb628b12c78e6bd46`, output contract, owner/cascade and grants; stop for fresh review if they changed. Preserve the inspected prior definition as rollback source. This proposal changes the save-function validation/implementation and retains the existing restricted grants; it does not deploy optional integrations, enable erasure, create invitations or delete any data.
+After PostgreSQL CI and staging/legacy-client review, apply only the compatible `weekwise_rpc_hardening.sql` to the correct project. Before applying, recheck the live function fingerprint `c59799a0d4ca95cbb628b12c78e6bd46`, output contract, owner/cascade and grants; stop for fresh review if they changed. The exact inspected prior definition is preserved at `supabase/rollback/weekwise-save-20261013.sql`; CI restores it and checks that fixture rows/revisions survive before reapplying. Review intervening changes before rollback. This proposal changes the save-function validation/implementation and retains the existing restricted grants; it does not deploy optional integrations, enable erasure, create invitations or delete any data.
 
 The user's master-plan rule 14 requires explicit authorization before altering production databases. Connecting the account allowed this inspection; the prepared production operation remains a separate decision.
 
