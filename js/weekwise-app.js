@@ -1552,6 +1552,9 @@ $('priorityMatrix').addEventListener('click',e=>{const b=e.target.closest('[data
 $('matrixAddTaskBtn').addEventListener('click',()=>openTaskModal(null,mobileDay,nextQuarterHour()));
 $('focusPreset').addEventListener('change',()=>{const state=ensureFocusState();if(state.runningSince===null&&state.activeMs===0){focusState=freshFocus('focus',Number($('focusPreset').value)*60);persistActiveFocus();renderFocusPanel();}});
 $('focusTaskSelect').addEventListener('change',renderFocusPanel);
+$('focusTaskSearch').addEventListener('input',()=>{clearTimeout(focusPickerTimer);const owner=currentDataOwner;focusPickerTimer=setTimeout(()=>{if(owner!==currentDataOwner)return;focusPickerIndex=0;renderFocusPanel();},150);});
+$('focusTaskPrevious').addEventListener('click',()=>{focusPickerIndex--;renderFocusPanel();});
+$('focusTaskNext').addEventListener('click',()=>{focusPickerIndex++;renderFocusPanel();});
 $('focusStartBtn').addEventListener('click',focusStartPause);
 $('focusResetBtn').addEventListener('click',focusReset);
 $('focusBreakBtn').addEventListener('click',()=>focusTakeBreak(false));
@@ -1605,17 +1608,21 @@ function renderPriorityMatrix(){
  $('matrixUnclassifiedCount').textContent=String(lists.unclassified.length);
 }
 function taskLoggedFocusMinutes(taskId){return Math.round(focusSessions.filter(s=>s.taskId===taskId).reduce((total,s)=>total+Number(s.minutes||0),0));}
+let focusPickerOwner=null,focusPickerIndex=0,focusPickerPage=null,focusPickerTimer=null;
 function renderFocusPanel(){
  const select=$('focusTaskSelect');if(!select)return;
+ if(focusPickerOwner!==currentDataOwner){clearTimeout(focusPickerTimer);focusPickerOwner=currentDataOwner;focusPickerIndex=0;$('focusTaskSearch').value='';select.value='';}
  const state=ensureFocusState();
- const prior=state.task?(state.task.week+'::'+state.task.id):select.value,records=workspaceRecords().filter(r=>!r.task.done).sort((a,b)=>a.date-b.date);
- select.innerHTML='<option value="">No linked task</option>'+records.map(r=>'<option value="'+escapeHtml(r.week+'::'+r.task.id)+'">'+escapeHtml(r.task.title+' · '+fmtDate(r.date,{day:'numeric',month:'short'})+(r.task.focusEstimateMinutes?' · target '+r.task.focusEstimateMinutes+'m':''))+'</option>').join('');
- if([...select.options].some(o=>o.value===prior))select.value=prior;select.disabled=state.runningSince!==null||state.activeMs>0;
- const selected=select.value,split=selected.indexOf('::'),selectedWeek=split>=0?selected.slice(0,split):'',selectedId=split>=0?selected.slice(split+2):'';
- const selectedRecord=workspaceRecords().find(r=>r.week===selectedWeek&&r.task.id===selectedId);
+ const prior=state.task?(state.task.week+'::'+state.task.id):select.value,records=workspaceRecords().sort((a,b)=>a.date-b.date);
+ focusPickerPage=WeekwiseFocusPicker.page(records,{query:$('focusTaskSearch').value,index:focusPickerIndex,selectedRef:prior,sessionTask:state.task});focusPickerIndex=focusPickerPage.index;
+ const option=(record,pinned=false)=>'<option value="'+escapeHtml(WeekwiseFocusPicker.ref(record))+'">'+escapeHtml((pinned?'Selected · ':'')+record.task.title+(record.date?' · '+fmtDate(record.date,{day:'numeric',month:'short'}):' · saved session task')+(record.task.done?' · completed':'')+(record.task.focusEstimateMinutes?' · target '+record.task.focusEstimateMinutes+'m':''))+'</option>';
+ select.innerHTML='<option value="">No linked task</option>'+(focusPickerPage.pinned?option(focusPickerPage.pinned,true):'')+focusPickerPage.items.map(record=>option(record)).join('');
+ if([...select.options].some(o=>o.value===prior))select.value=prior;
+ $('focusTaskCount').textContent=(focusPickerPage.total?'Tasks '+focusPickerPage.start+'–'+focusPickerPage.end+' of '+focusPickerPage.total:'No matching unfinished tasks')+(focusPickerPage.pinned?' · selected task kept visible':'');
+ const selectedRecord=records.find(record=>WeekwiseFocusPicker.ref(record)===select.value);
  const targetHelp=$('focusTaskEstimateHelp');
  if(targetHelp){
-  if(!selectedRecord)targetHelp.textContent='Choose a task to attach this focus session to.';
+  if(!selectedRecord)targetHelp.textContent=state.task?'Your session keeps its original task link, even when that task is no longer in the planner.':'Choose a task to attach this focus session to.';
   else{
    const target=Number(selectedRecord.task.focusEstimateMinutes)||0,logged=taskLoggedFocusMinutes(selectedRecord.task.id);
    targetHelp.textContent=target?logged+' of '+target+' estimated focus minutes logged'+(logged>=target?' · estimate reached':''):'No focus estimate set. Edit the task to add one.';
@@ -1635,7 +1642,11 @@ function updateFocusDisplay(){
  $('focusProgressBar').style.width=(seconds/state.totalSeconds*100)+'%';
  $('focusStartBtn').textContent=state.runningSince!==null?'Pause':state.activeMs>0?'Resume':'Start '+(state.mode==='focus'?'focus':'break');
  $('focusTimerMessage').textContent=state.runningSince!==null?'Your timer continues across reloads. Paused time is excluded.':'Choose one task. Your timer is saved on this device.';
- $('focusTaskSelect').disabled=state.runningSince!==null||state.activeMs>0;
+ const selectionLocked=state.runningSince!==null||state.activeMs>0;
+ $('focusTaskSelect').disabled=selectionLocked;$('focusTaskSearch').disabled=selectionLocked;$('focusPreset').disabled=selectionLocked;
+ if(state.mode==='focus'&&[25,50,90].includes(state.totalSeconds/60))$('focusPreset').value=String(state.totalSeconds/60);
+ $('focusTaskPrevious').disabled=selectionLocked||!focusPickerPage?.hasPrevious;
+ $('focusTaskNext').disabled=selectionLocked||!focusPickerPage?.hasNext;
 }
 function focusComplete(){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
  const state=ensureFocusState();if(state.logged)return;

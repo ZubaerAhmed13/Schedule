@@ -1,5 +1,7 @@
 # Weekwise 2.0 — master-plan verification matrix
-Reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and code on `main` at `dd372f38d8c0aed858cdf161ef783bd72801e108` (2026-10-13).
+Reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and code on `main` at `b173a18551b3b5c45d0be456632afaedb1a3eea9` (2026-10-13).
+
+Current release/tests and the prioritized backlog are in [CURRENT_STATUS.md](CURRENT_STATUS.md). PRs #16–#28 are merged; the baseline passes 83 Node and 35 built-client browser tests.
 
 **Status vocabulary:** VERIFIED = scope asserted by automated tests; PARTIAL = exists but lacks specified functionality or independent verification; EXTERNAL = credentials/private environment/real device is required; POLICY = instructions, not a software feature. Historical source descriptions in other docs may predate merges.
 
@@ -9,18 +11,18 @@ Reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and 
 | 2 | Reality-aware product vision | PARTIAL | Validate real end-user outcomes/usability |
 | 3 | Comprehensive repository audit | VERIFIED baseline | Refresh audit for each release |
 | 4 | Data protection | PARTIAL | Private historic backup migrations, account-deletion policy |
-| 5 | Premium UI, responsive design, accessibility | PARTIAL | Human WCAG 2.2 AA, real phone keyboard/text zoom |
+| 5 | Premium UI, responsive design, accessibility | PARTIAL | Automated axe and modal keyboard gates delivered; human WCAG 2.2 AA, real phone keyboard/text zoom remain |
 | 6 | Five-destination navigation | VERIFIED for core views | Comprehensive deep-link/PWA shortcuts QA |
 | 7 | Today | VERIFIED for core task/capacity widgets | Usability study and all edge-state coverage |
 | 8 | Smart Week Builder | VERIFIED for deterministic core | Arbitrary time-zone planning and observed usage |
 | 9 | Recover My Week | VERIFIED for core | Complex recurring/multi-device production cases |
 | 10 | Calendar, DST, midnight, overlapping events | PARTIAL | Full IANA-zone planner view and cross-midnight recurrence validation |
 | 11 | Task management and NLP capture | PARTIAL | Complete undo/archive/deletion UX |
-| 12 | Useful Insights | PARTIAL | Verified full schedule-stability/plan-vs-actual trends for historical data |
-| 13 | Habits | PARTIAL | Frequency targets beyond weekdays and manual real-user QA |
+| 12 | Useful Insights | PARTIAL | Daily unioned workload, recorded recovery and task-linked focus/estimate comparison delivered; broader historic actual-work trends and usability remain |
+| 13 | Habits | PARTIAL | Flexible 1–7/week targets and legacy-preserving UI delivered; manual real-user QA remains |
 | 14 | Focus | VERIFIED for measured focus, pause and reload | Installed-PWA foreground/background platform QA |
 | 15 | Optional AI | EXTERNAL | No provider configured; do not generate fake responses or transmit data |
-| 16 | Optional onboarding | PARTIAL | Progressive, accessible first-run steps and real-device testing |
+| 16 | Optional onboarding | PARTIAL | Optional account-isolated guide and replay delivered; real-device usability remains |
 | 17 | Settings | PARTIAL | Full general locale/zone/account/privacy controls |
 | 18 | Incremental architecture | PARTIAL | Main app IIFE remains large; module API and maintainability work |
 | 19 | Cloud/offline | VERIFIED for synthetic fixtures | Real two-device reconnect, RLS, invite and expired-token tests |
@@ -33,7 +35,7 @@ Reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and 
 | 26 | Professional quality | PARTIAL | Human end-to-end product and security review |
 | 27 | Six-phase roadmap | PARTIAL | Phases 0–4 substantially implemented, Phase 5/6 gated by external QA |
 | 28 | Strict development rules | POLICY | Preserve data, refuse unverified claims, use review branches |
-| 29 | Documentation | PARTIAL | Existing documents; keep evidence current and remove stale candidate text |
+| 29 | Documentation | PARTIAL | Current-status audit refreshed; historical candidate text explicitly labelled; continue recording exact-head release evidence |
 | 30 | Progress reporting | POLICY | Report implementation, changed files, tests, blockers, limitations |
 | 31 | Final acceptance criteria | PARTIAL | Real RLS, installed PWA, accessibility, integrations, historical migration |
 | 32 | Instructions to implement | PARTIAL | Continue verified improvements, never claim full completion prematurely |

@@ -1,5 +1,7 @@
 # Weekwise 2.0 upgrade progress
 
+> Current review: [CURRENT_STATUS.md](CURRENT_STATUS.md). The dated sections below are retained as historical release evidence; their earlier candidate labels, counts and pending checkboxes are not the current status.
+
 ## Review candidate
 
 Development branch: `codex/weekwise-2-foundation`.

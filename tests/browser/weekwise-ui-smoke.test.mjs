@@ -748,6 +748,9 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('settings');
   await page.locator('#workspaceSidebar [data-workspace-view="plan"]').click();
   await audit('plan');
+  await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
+  await audit('focus dialog');
+  await page.locator('#closeUtility').click();
   await page.locator('#globalCaptureBtn').click();
   await page.locator('#taskModal').waitFor({state:'visible'});
   await audit('task editor');
@@ -759,6 +762,9 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('today dark');
   await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
   await audit('settings dark');
+  await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
+  await audit('focus dialog dark');
+  await page.locator('#closeUtility').click();
   await page.evaluate(()=>document.body.setAttribute('data-theme','light'));
   await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
   await page.setViewportSize({width:320,height:780});
@@ -800,6 +806,62 @@ test('flexible weekly habit goal keeps actual check-ins and restores its editor 
   const afterEdit=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1')));
   assert.equal(afterEdit[0].checkIns.length,1,'editing frequency does not discard past check-ins');
   assert.equal(afterEdit[0].goal,'One small practice session');
+ }finally{await context.close();}
+});
+
+test('large Focus picker searches every task, bounds options and preserves a completed session link',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  await page.evaluate(()=>{const store=JSON.parse(localStorage.getItem('weekwise-planner-v2')),week=Object.keys(store.weeks)[0];store.weeks[week].tasks=Array.from({length:10000},(_,i)=>({id:'focus-large-'+i,title:'Focus responsibility '+String(i).padStart(5,'0'),note:i===9999?'Practise German vocabulary':'',tags:i===9999?['language-goal']:[],day:i%7,start:null,duration:30,unscheduled:true,done:false,listId:'inbox',type:'other'}));localStorage.setItem('weekwise-planner-v2',JSON.stringify(store));});
+  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  if(!await page.locator('#workspaceSidebar [data-workspace-action="focus"]').isVisible())await page.locator('#mobileNavigationToggle').click();
+  await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
+  assert.equal(await page.locator('#focusTaskSelect option').count(),101);
+  assert.match(await page.locator('#focusTaskCount').innerText(),/of 10000/);
+  await page.locator('#focusTaskNext').click();assert.match(await page.locator('#focusTaskCount').innerText(),/101–200/);
+  await page.locator('#focusTaskPrevious').click();assert.match(await page.locator('#focusTaskCount').innerText(),/1–100/);
+  await page.locator('#focusTaskSearch').fill('GERMAN vocabulary');
+  await page.waitForFunction(()=>document.querySelector('#focusTaskSelect')?.options.length===2);
+  const ref=await page.locator('#focusTaskSelect option').nth(1).getAttribute('value');
+  await page.locator('#focusTaskSelect').selectOption(ref);
+  await page.locator('#focusTaskSearch').fill('no matching responsibility');
+  await page.waitForFunction(()=>document.querySelector('#focusTaskCount')?.textContent.includes('No matching'));
+  assert.equal(await page.locator('#focusTaskSelect').inputValue(),ref,'filter changes retain the chosen task');
+  assert.match(await page.locator('#focusTaskSelect option:checked').innerText(),/09999/);
+  await page.locator('#focusPreset').selectOption('50');
+  await page.locator('#focusStartBtn').click();assert.equal(await page.locator('#focusTaskSearch').isDisabled(),true);assert.equal(await page.locator('#focusPreset').isDisabled(),true);
+  assert.equal(await page.locator('#focusTaskNext').isDisabled(),true);
+  await page.evaluate(()=>{const key=Object.keys(localStorage).find(k=>k.startsWith('weekwise-focus-active-v1:'));const state=JSON.parse(localStorage.getItem(key));state.activeMs=65000;state.runningSince=null;localStorage.setItem(key,JSON.stringify(state));const store=JSON.parse(localStorage.getItem('weekwise-planner-v2'));Object.values(store.weeks).flatMap(w=>w.tasks).find(t=>t.id==='focus-large-9999').done=true;localStorage.setItem('weekwise-planner-v2',JSON.stringify(store));});
+  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  if(!await page.locator('#workspaceSidebar [data-workspace-action="focus"]').isVisible())await page.locator('#mobileNavigationToggle').click();
+  await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
+  assert.equal(await page.locator('#focusTaskSelect').inputValue(),ref);
+  assert.match(await page.locator('#focusTaskSelect option:checked').innerText(),/completed/);
+  assert.equal(await page.locator('#focusTaskSelect option').count(),102,'one pinned task plus one bounded page and no-link choice');
+  assert.equal(await page.locator('#focusTaskSearch').isDisabled(),true,'a paused session keeps its identity');
+  assert.equal(await page.locator('#focusPreset').inputValue(),'50','persisted session length remains visible after reload');
+  const bounds=await page.locator('#focusPanel').evaluate(panel=>{const rect=panel.getBoundingClientRect();return [...panel.querySelectorAll('input,select,button')].every(el=>{const r=el.getBoundingClientRect();return r.left>=rect.left-1&&r.right<=rect.right+1;});});assert.equal(bounds,true,'picker controls fit narrow screen');
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','focus-large-mobile.png')});
+  await page.locator('#focusFinishBtn').click();
+  const sessions=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-focus-sessions-v1')));
+  assert.equal(sessions.length,1);assert.equal(sessions[0].taskId,'focus-large-9999');assert.equal(sessions[0].taskTitle,'Focus responsibility 09999');assert.equal(sessions[0].seconds,65);
+  assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).length,10000);
+ }finally{await context.close();}
+});
+
+test('Focus search and selection do not carry into another account',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await createFlexibleTask(page,'Owner A focus responsibility');
+  await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
+  await page.locator('#focusTaskSearch').fill('Owner A');
+  await page.waitForFunction(()=>document.querySelector('#focusTaskSelect')?.options.length===2);
+  await page.locator('#focusTaskSelect').selectOption(await page.locator('#focusTaskSelect option').nth(1).getAttribute('value'));
+  await page.locator('#closeUtility').click();await page.evaluate(()=>WeekwiseTestAuth.setUser('focus-owner-b'));
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')||'{}').userId==='focus-owner-b');
+  await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
+  assert.equal(await page.locator('#focusTaskSearch').inputValue(),'');assert.equal(await page.locator('#focusTaskSelect').inputValue(),'');assert.equal(await page.locator('#focusTaskSelect option').count(),1);
+  assert.ok(!(await page.locator('#focusPanel').innerText()).includes('Owner A focus responsibility'));
  }finally{await context.close();}
 });
 
