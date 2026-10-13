@@ -26,7 +26,7 @@ const supabaseStub = String.raw`
 const mockRows=new Map();
 const responseOverrides=new Map();
 
-test('closed Weekwise tabs still leave a worker that handles controlled push and confines notification links',async()=>{
+test('closed Weekwise tabs still handle a DevTools push through the native notification API with confined links',async()=>{
  const context=await browser.newContext({serviceWorkers:'allow'});
  await context.grantPermissions(['notifications'],{origin:new URL(origin).origin});
  await context.route('https://**/*',route=>route.abort());
@@ -36,15 +36,17 @@ test('closed Weekwise tabs still leave a worker that handles controlled push and
  try{
   await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await page.evaluate(()=>navigator.serviceWorker.ready);const worker=context.serviceWorkers().find(item=>item.url().startsWith(origin));assert.ok(worker);
+  // Linux headless notification enumeration can be empty even when the native
+  // promise succeeds. Observe the real call/promise; do not fake an OS display.
+  await worker.evaluate(()=>{self.notificationCalls=[];const native=self.registration.showNotification.bind(self.registration);self.registration.showNotification=async(title,options)=>{const record={title,tag:options.tag,url:options.data.url,settled:false};self.notificationCalls.push(record);await native(title,options);record.settled=true;};});
   for(let attempt=0;attempt<50&&!registrationId;attempt++)await control.waitForTimeout(100);
   assert.ok(registrationId,'DevTools observes the actual registration');await page.close();
   assert.equal(context.pages().filter(item=>item.url().startsWith(origin)).length,0,'all Weekwise application tabs are closed');
   const payload={title:'Synthetic background check',body:'Controlled browser protocol transport',tag:'weekwise-closed-tab-check',url:'https://example.com/forbidden',taskId:'synthetic',reminderAt:'2099-01-01T00:00:00Z'};
   await cdp.send('ServiceWorker.deliverPushMessage',{origin:new URL(origin).origin,registrationId,data:JSON.stringify(payload)});
-  const read=()=>worker.evaluate(async()=>({clients:(await self.clients.matchAll({type:'window'})).filter(client=>client.url.startsWith(self.registration.scope)).length,notifications:(await self.registration.getNotifications()).map(item=>({title:item.title,tag:item.tag,url:item.data.url}))}));
-  let outcome;for(let attempt=0;attempt<50;attempt++){outcome=await read();if(outcome.notifications.some(item=>item.tag===payload.tag))break;await control.waitForTimeout(100);}
-  assert.equal(outcome.clients,0);assert.deepEqual(outcome.notifications,[{title:payload.title,tag:payload.tag,url:origin}]);
-  await cdp.send('ServiceWorker.deliverPushMessage',{origin:new URL(origin).origin,registrationId,data:JSON.stringify(payload)});await control.waitForTimeout(200);assert.equal((await read()).notifications.length,1,'same reminder tag replaces rather than duplicates');
+  const read=()=>worker.evaluate(async()=>({clients:(await self.clients.matchAll({type:'window'})).filter(client=>client.url.startsWith(self.registration.scope)).length,notifications:self.notificationCalls}));
+  let outcome;for(let attempt=0;attempt<50;attempt++){outcome=await read();if(outcome.notifications.some(item=>item.tag===payload.tag&&item.settled))break;await control.waitForTimeout(100);}
+  assert.equal(outcome.clients,0);assert.deepEqual(outcome.notifications,[{title:payload.title,tag:payload.tag,url:origin,settled:true}]);
   await worker.evaluate(async()=>{for(const notification of await self.registration.getNotifications())notification.close();});
  }finally{await cdp.detach();await context.close();}
 });
@@ -68,7 +70,7 @@ test('timezone review at 200 percent text size remains keyboard reachable and qu
 
 test('an interrupted worker update retains the old offline shell and a successful retry waits for an unfinished editor',async()=>{
  const {context,page}=await openPlanner({width:1440,height:1000},{serviceWorkers:'allow'});
- const workerSource=fs.readFileSync(path.join(siteRoot,'sw.js'),'utf8'),firstAsset=workerSource.match(/'\.\/js\/[^']+'/)?.[0]?.slice(2,-1);
+ const workerSource=fs.readFileSync(path.join(siteRoot,'sw.js'),'utf8'),assetReference=workerSource.match(/'\.\/js\/[^']+'/)?.[0]?.slice(1,-1),firstAsset=assetReference?new URL(assetReference,origin).pathname:null;
  assert.ok(firstAsset);const updated=workerSource.replace(/const CACHE_NAME\s*=\s*'[^']+'/,"const CACHE_NAME = 'weekwise-static-interrupted-check'");
  try{
   await createScheduledTask(page,'Retain through worker update');await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
