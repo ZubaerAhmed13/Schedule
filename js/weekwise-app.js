@@ -1377,14 +1377,14 @@ function workspaceRecordMatches(record,view,todayKey){
  if(view.startsWith('list-'))return record.listId===view.slice(5);
  if(view.startsWith('folder:'))return (record.task.folderName||defaultFolderName(record.listId))===view.slice(7);
  if(view.startsWith('tag:'))return Array.isArray(record.task.tags)&&record.task.tags.some(tag=>String(tag).replace(/^#/,'').toLowerCase()===view.slice(4).toLowerCase());
- todayKey=todayKey||WeekwiseToday.clock(store,now.getTime()).date;const t=record.task,day=parseKey(todayKey),end=parseKey(WeekwisePlanning.dateAt(todayKey,7));
- const recordDate=dateOnly(record.date),recordKey=dateKey(recordDate),listId=record.listId;
+ todayKey=todayKey||WeekwiseToday.clock(store,now.getTime()).date;const t=record.task,endKey=WeekwisePlanning.dateAt(todayKey,7);
+ const recordKey=dateKey(record.date),listId=record.listId;
  if(view==='today')return ((listId!=='inbox'||!!t.allDay||(!t.unscheduled&&t.start!==null&&t.start!==undefined))&&WeekwiseToday.occursOn(record,todayKey))||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
- const tomorrowKey=dateKey(addDaysForView(day,1));
+ const tomorrowKey=WeekwisePlanning.dateAt(todayKey,1);
  if(view==='tomorrow')return (WeekwiseToday.occursOn(record,tomorrowKey)&&(!!t.allDay||(!t.unscheduled&&t.start!=null)))||(!t.done&&t.dueDate===tomorrowKey);
  if(view==='upcoming'){
-  const scheduledSoon=recordDate>=day&&recordDate<end&&(!!t.allDay||(!t.unscheduled&&t.start!=null));
-  const dueSoon=!!t.dueDate&&t.dueDate>todayKey&&t.dueDate<dateKey(end);
+  const scheduledSoon=((recordKey>=todayKey&&recordKey<endKey)||WeekwiseToday.occursOn(record,todayKey))&&(!!t.allDay||(!t.unscheduled&&t.start!=null));
+  const dueSoon=!!t.dueDate&&t.dueDate>todayKey&&t.dueDate<endKey;
   return !t.done&&(scheduledSoon||dueSoon);
  }
  return false;
