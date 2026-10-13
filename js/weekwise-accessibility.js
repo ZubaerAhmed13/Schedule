@@ -27,7 +27,13 @@
    dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');
    focusWithin();
   }else{
-   const target=returnTo;returnTo=null;
+   let target=returnTo;returnTo=null;
+   // Phone tool launchers live in a menu that closes when a tool is selected.
+   // Restore a visible control instead of leaving keyboard focus on the page body.
+   if(target?.isConnected&&!target.getClientRects().length){
+    const menu=document.getElementById('mobileNavigationToggle');
+    target=menu?.getClientRects().length?menu:target.closest('details')?.querySelector('summary');
+   }
    if(target?.isConnected&&!target.closest('[hidden],[inert]'))target.focus({preventScroll:true});
   }
  }

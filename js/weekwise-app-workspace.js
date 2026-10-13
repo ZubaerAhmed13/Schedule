@@ -184,6 +184,7 @@ function renderWorkspaceTasks(){
 }
 
 function renderWorkspaceView(){
+ WeekwiseInterface.navigation(weekwiseRuntime.workspaceView);
  const isInsights=weekwiseRuntime.workspaceView==='insights',isSettings=weekwiseRuntime.workspaceView==='settings',isPlan=weekwiseRuntime.workspaceView==='plan',isCalendar=weekwiseRuntime.workspaceView==='calendar',isMatrix=weekwiseRuntime.workspaceView==='matrix',isBoard=weekwiseRuntime.workspaceView==='board',isFilters=weekwiseRuntime.workspaceView==='filters';
  const taskWorkspace=weekwiseRuntime.$('taskWorkspace'),matrix=weekwiseRuntime.$('priorityMatrix'),board=weekwiseRuntime.$('kanbanBoard'),filters=weekwiseRuntime.$('filtersWorkspace');
  if(taskWorkspace)taskWorkspace.hidden=isInsights||isSettings||isPlan||isCalendar||isMatrix||isBoard||isFilters;
