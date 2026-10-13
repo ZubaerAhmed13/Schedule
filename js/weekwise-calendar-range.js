@@ -6,7 +6,7 @@
  function wall(date,minutes,zone){const d=new Date((ordinal(date)+Math.floor(minutes/1440))*86400000),m=((minutes%1440)+1440)%1440;return root.WeekwiseTimeZones.wallTimeInZone({year:d.getUTCFullYear(),month:d.getUTCMonth()+1,day:d.getUTCDate(),hour:Math.floor(m/60),minute:Math.floor(m%60),second:Math.round((m%1)*60)},zone).getTime();}
  function parts(epoch,zone){const p=root.WeekwiseTimeZones.zonedParts(epoch,zone);return {date:String(p[0]).padStart(4,'0')+'-'+String(p[1]).padStart(2,'0')+'-'+String(p[2]).padStart(2,'0'),minute:p[3]*60+p[4]+p[5]/60};}
  function instant(record,sourceZone){const task=record.task,date=key(ordinal(record.week)+task.day),saved=task.scheduleInstant;
-  if(saved&&Number.isFinite(saved.start)&&Number.isFinite(saved.end)&&saved.end>saved.start&&JSON.stringify(saved.anchor)===JSON.stringify({week:record.week,day:task.day,start:task.start,duration:task.duration,zone:sourceZone}))return {start:saved.start,end:saved.end};
+  if(saved&&Number.isFinite(saved.start)&&Number.isFinite(saved.end)&&saved.end>saved.start&&saved.anchor&&saved.anchor.week===record.week&&saved.anchor.day===task.day&&saved.anchor.start===task.start&&saved.anchor.duration===task.duration&&saved.anchor.zone===sourceZone)return {start:saved.start,end:saved.end};
   return {start:wall(date,task.start,sourceZone),end:wall(date,task.start+(task.duration||0),sourceZone)};
  }
  function project(store,zone){root.WeekwiseData.validateStore(store);new Intl.DateTimeFormat('en-GB',{timeZone:zone});const sourceZone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -59,5 +59,5 @@
   if(!a?.instant||!b?.instant||a.allDay||b.allDay)throw new Error('Choose two timed activities with reviewed clock times.');
   return moveRecords(store,[{ref:first,date:b.date,start:b.start},{ref:second,date:a.date,start:a.start}],zone,'User-approved calendar swap');
  }
- root.WeekwiseCalendarRange=Object.freeze({range,wall,parts,project,slot,move,swap,ordinal,key});
+ root.WeekwiseCalendarRange=Object.freeze({range,wall,parts,instant,project,slot,move,swap,ordinal,key});
 })(typeof window!=='undefined'?window:globalThis);

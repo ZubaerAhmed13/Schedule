@@ -319,7 +319,13 @@ function closeUtilityPanel(restoreFocus=true){
 function openDashboard(){openUtilityPanel('dashboard','Weekly effort dashboard');}
 function durationText(minutes){minutes=Math.max(0,Math.round(minutes||0));const h=Math.floor(minutes/60),m=minutes%60;if(h&&m)return `${h}h ${m}m`;if(h)return `${h}h`;return `${m}m`;}
 function analyticsGroup(t){if(t.workday||/^Picnic work shift$/i.test(t.title||''))return 'workday';if(t.cityday||(t.fixed&&Number(t.duration)===540))return 'hobby';if(['job','study','language','life','hobby','other'].includes(t.type))return t.type;return 'other';}
-function taskEndDate(t){const d=dayDate(currentWeek,Number(t.day)||0);return new Date(d.getFullYear(),d.getMonth(),d.getDate(),0,Number(t.start)+Number(t.duration||0));}
+const taskEndCache=new WeakMap();
+function taskEndDate(t){
+ const zone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone,saved=t.scheduleInstant,anchor=saved?.anchor,signature=JSON.stringify([currentWeek,t.day,t.start,t.duration,zone,saved?.start,saved?.end,anchor?.week,anchor?.day,anchor?.start,anchor?.duration,anchor?.zone]),prior=taskEndCache.get(t);
+ if(prior?.signature===signature)return new Date(prior.end);
+ let end=NaN;try{end=WeekwiseCalendarRange.instant({week:currentWeek,task:t},zone).end;}catch(_){}
+ taskEndCache.set(t,{signature,end});return new Date(end);
+}
 function renderStats(){
   const scheduled=tasks.filter(t=>t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0);
   const planned=scheduled.reduce((sum,t)=>sum+Number(t.duration||0),0);
@@ -353,8 +359,8 @@ function renderStats(){
   }).join('');
   const daily=DAY_NAMES.map((label,day)=>{const items=scheduled.filter(t=>t.day===day),total=items.reduce((n,t)=>n+Number(t.duration||0),0),done=items.filter(t=>t.done).reduce((n,t)=>n+Number(t.duration||0),0);return {label:DAY_SHORT[day],total,done};});
   $('dailyBreakdown').innerHTML=daily.map(x=>`<div class="daily-row"><span class="daily-name">${x.label}</span><div class="daily-track" title="${durationText(x.done)} completed of ${durationText(x.total)} planned"><div class="daily-fill" style="width:${Math.min(100,x.total?x.done/x.total*100:0)}%"></div></div><span class="daily-hours">${durationText(x.done)} / ${durationText(x.total)}</span></div>`).join('');
-  const unscheduled=tasks.filter(t=>!t.allDay&&(t.start===null||t.start===undefined||t.unscheduled)).length;
-  $('dashboardNote').innerHTML=`Totals use scheduled durations and completion checkmarks. <strong>Unchecked past plans</strong> need review; they do not measure wasted time or actual work. Recorded Focus sessions are shown separately in Insights.${unscheduled?` ${unscheduled} activity${unscheduled===1?' needs':'ies need'} a time and is not included in the hour totals.`:''}`;
+  const unscheduled=tasks.filter(t=>!t.allDay&&(t.start===null||t.start===undefined||t.unscheduled)).length,clockReviews=scheduled.filter(t=>!Number.isFinite(taskEndDate(t).getTime())).length;
+  $('dashboardNote').innerHTML=`Totals use scheduled durations and completion checkmarks. <strong>Unchecked past plans</strong> need review; they do not measure wasted time or actual work. Recorded Focus sessions are shown separately in Insights.${clockReviews?` ${clockReviews} saved time${clockReviews===1?' needs':'s need'} clock review and is excluded from past/future classification.`:''}${unscheduled?` ${unscheduled} activity${unscheduled===1?' needs':'ies need'} a time and is not included in the hour totals.`:''}`;
   const shiftDays=(store.settings.shifts||[]).filter(s=>s&&s.enabled).length;
   const workHabit=$('workHabitSummary');if(workHabit)workHabit.textContent=shiftDays?`${shiftDays} work day${shiftDays===1?'':'s'} / week · protected calendar block${shiftDays===1?'':'s'}`:'Set your work days in settings';
   const dest=$('tripDestination');if(dest)dest.value=store.settings.destination||'';
