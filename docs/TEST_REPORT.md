@@ -46,3 +46,7 @@ Real private test-account RLS/invite/token-expiry/reconnect behavior; staging ex
 - Release/Node checks: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307144930. Supabase function type checks: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307144917.
 
 These checks validate isolated local fixtures and code. They do not verify production database privileges, external OAuth, closed-app push, installed PWA updates, manual accessibility, historical private data or real-device performance.
+
+## 13 October 2026 — repeatable lab performance capture
+
+The browser workflow now captures desktop (1440 × 900 CSS px) and narrow phone-size (390 × 844 CSS px) headless Chromium performance observations in `test-results/lab-performance.json` as a CI artifact. Fields include navigation-to-DOM-ready, first contentful paint (if recorded), largest contentful paint **sample** (if supported), a cumulative-layout-shift sample and resource counts. There is no field INP in this fixture. Recorded values are diagnostic **lab samples**, **not** Core Web Vitals rankings, statistically meaningful p75, or results from actual phones/production networks. The existing 10,000-item synthetic list test remains separate.
