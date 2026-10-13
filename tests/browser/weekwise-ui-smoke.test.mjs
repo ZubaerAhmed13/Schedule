@@ -755,12 +755,14 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await page.locator('#taskModal').waitFor({state:'hidden'});
   await page.evaluate(()=>document.body.setAttribute('data-theme','dark'));
   await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
+  await page.waitForTimeout(300); // avoid auditing temporary CSS color transitions after theme switches
   await audit('today dark');
   await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
   await audit('settings dark');
   await page.evaluate(()=>document.body.setAttribute('data-theme','light'));
   await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
   await page.setViewportSize({width:320,height:780});
+  await page.waitForTimeout(300); // ensure responsive transition styles have settled
   await audit('today 320px');
   const widths=await page.evaluate(()=>({viewport:window.innerWidth,document:document.documentElement.scrollWidth,body:document.body.scrollWidth}));
   assert.ok(widths.document<=widths.viewport+2&&widths.body<=widths.viewport+2,'Today must reflow at 320 CSS px without horizontal page scrolling: '+JSON.stringify(widths));
