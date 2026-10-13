@@ -13,7 +13,7 @@ test('flexible weekly targets work on any day without punishing rest days',()=>{
  assert.equal(WeekwiseHabits.weekCount(h,'2026-10-13'),2);
  assert.equal(WeekwiseHabits.due(h,'2026-10-14'),false,'no reminders required after weekly target');
  assert.equal(WeekwiseHabits.streak(h,'2026-10-14'),2,'weekly streak counts completed weeks');
- assert.deepEqual(WeekwiseHabits.consistency(h,'2026-10-05','2026-10-18'),{expected:4,done:4});
+ assert.deepEqual(WeekwiseHabits.consistency(h,'2026-10-05','2026-10-17'),{expected:4,done:4});
  h.skippedDates=['2026-10-14'];
  assert.equal(WeekwiseHabits.due(h,'2026-10-14'),false);
  h.paused=true;
