@@ -466,7 +466,7 @@
   </section>
 </div>
 <dialog id="captureConfirmDialog" class="weekwise-dialog" aria-labelledby="captureConfirmTitle"><h2 id="captureConfirmTitle">Review your capture</h2><p id="captureInterpretation"></p><p id="captureOriginal"></p><div class="plan-actions"><button class="btn primary" id="captureConfirmApply">Use these details</button><button class="btn" id="captureKeepRaw">Keep original text</button><button class="btn" id="captureCancel">Cancel</button></div></dialog>
-<dialog id="accountEraseDialog" class="weekwise-dialog" aria-labelledby="accountEraseTitle"><h2 id="accountEraseTitle">Delete your Weekwise account</h2><p>This permanently deletes your cloud planner, task history and Weekwise's stored push and calendar-connection records. It requires your current password. Download a backup first if you need a copy.</p><p>Your independent device-only planner and other accounts remain. Exported backups, shared recovery checkpoints, provider consent and copies on other devices must be managed separately.</p><form id="accountEraseForm"><div class="field"><label for="accountErasePassword">Current account password</label><input id="accountErasePassword" type="password" autocomplete="current-password" required maxlength="2048"></div><div class="field"><label for="accountErasePhrase">Type DELETE MY WEEKWISE ACCOUNT</label><input id="accountErasePhrase" autocomplete="off" spellcheck="false" required maxlength="64"></div><label class="plan-checkbox"><input id="accountEraseBackup" type="checkbox" required> I have exported the backups I need and understand deletion is permanent.</label><p id="accountEraseStatus" role="status" aria-live="polite"></p><div class="plan-actions"><button id="accountEraseSubmit" class="btn danger" type="submit" disabled>Permanently delete account</button><button id="accountEraseClose" class="btn" type="button">Close</button></div></form></dialog>
+<dialog id="accountEraseDialog" class="weekwise-dialog" aria-labelledby="accountEraseTitle"><h2 id="accountEraseTitle">Delete your Weekwise account</h2><p>Account: <strong id="accountEraseOwner"></strong></p><p>This permanently deletes your cloud planner, task history and Weekwise's stored push and calendar-connection records. It requires your current password. Download a backup first if you need a copy.</p><p>Your independent device-only planner and other accounts remain. Exported backups, shared recovery checkpoints, provider consent and copies on other devices must be managed separately.</p><form id="accountEraseForm"><div class="field"><label for="accountErasePassword">Current account password</label><input id="accountErasePassword" type="password" autocomplete="current-password" required maxlength="2048"></div><div class="field"><label for="accountErasePhrase">Type DELETE MY WEEKWISE ACCOUNT</label><input id="accountErasePhrase" autocomplete="off" spellcheck="false" required maxlength="64"></div><label class="plan-checkbox"><input id="accountEraseBackup" type="checkbox" required> I have exported the backups I need and understand deletion is permanent.</label><p id="accountEraseStatus" role="status" aria-live="polite"></p><div class="plan-actions"><button id="accountEraseSubmit" class="btn danger" type="submit" disabled>Permanently delete account</button><button id="accountEraseClose" class="btn" type="button">Close</button></div></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="./js/weekwise-data.js"></script>
 <script src="./js/weekwise-timezones.js"></script>
@@ -479,6 +479,7 @@
 <script src="./js/weekwise-task-history-ui.js"></script>
 <script src="./js/weekwise-calendar-layout.js"></script>
 <script src="./js/weekwise-calendar-range.js"></script>
+<script src="./js/weekwise-recurring-placement.js"></script>
 <script src="./js/weekwise-task-schedule.js"></script>
 <script src="./js/weekwise-calendar-range-ui.js"></script>
 <script src="./js/weekwise-list-window.js"></script>
@@ -489,7 +490,7 @@
 <script src="./js/weekwise-focus-picker.js"></script>
 <script src="./js/weekwise-planning.js"></script>
 <script src="./js/weekwise-plan-ui.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js"></script>
 <script>
 const SUPABASE_URL='https://iajkzlsurghfvsmqkmut.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_jwdzJMi4VxXUHEOVasrcOg_ax0A5scL';

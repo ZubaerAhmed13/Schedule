@@ -1,7 +1,7 @@
 # Weekwise 2.0 — master-plan verification matrix
 Original baseline reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and code on `main` at `b173a18551b3b5c45d0be456632afaedb1a3eea9` (2026-10-13).
 
-Current release/tests and the prioritized backlog are in [CURRENT_STATUS.md](CURRENT_STATUS.md). PRs #16–#28 are merged; the baseline passes 83 Node and 35 built-client browser tests.
+Current release/tests and remaining acceptance gates are in [CURRENT_STATUS.md](CURRENT_STATUS.md). The current status page supersedes this historical baseline. PRs #16–#36 are merged; recurrence/clock-preservation follow-up is in PR #37.
 
 **Status vocabulary:** VERIFIED = scope asserted by automated tests; PARTIAL = exists but lacks specified functionality or independent verification; EXTERNAL = credentials/private environment/real device is required; POLICY = instructions, not a software feature. Historical source descriptions in other docs may predate merges.
 
@@ -74,3 +74,7 @@ PRs #29–#33 deliver lab performance metrics, full Focus search/paging, reversi
 PR #34 supplies gated account-erasure source and controls; it is disabled in production pending staging/project access. PR #35's final head `368c38356ca8f00e08ff8541971becb0b5c4d595` passed 129 Node/50 built-client browser tests and all release/Edge gates, adding overnight editing, reviewed swaps, stale-pointer/focus guards and cached-account offline/reconnect fixtures. Phone screenshots were reviewed.
 
 Saved planning-clock review adds source-zone date/instant checks, conservative DST review intervals, carried all-day planning capacity and clear planned-completion labels. Further cross-zone historical migration, private-backend tests, optional providers, field measurements and human accessibility/PWA certification remain external or separate design work; the 32-section plan is still partially complete.
+
+## Generated recurring-clock and preservation review
+
+PR #37 indexes actual source-zone occupancy, preserves generated overnight hours, reserves future all-day commitments and leaves DST gap/fold occurrences unscheduled for review. Retained materialized records are not rewritten. Exact-instant anchors survive reordered object keys; dashboard past/future classification uses captured/source-zone time. The first code head passed 140 Node/53 browser tests and release/Edge checks; final follow-up adds two Node regressions and requires fresh remote checks. SDK imports are pinned to the verified current bundle, with no backend deployment.

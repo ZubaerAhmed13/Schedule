@@ -1,46 +1,47 @@
 # Weekwise current status — 13 October 2026
 
-This review checks the actual latest repository and public build, rather than inheriting earlier chat claims. At the start of this review, `main` and the live `build-info.json` both identified **b173a18551b3b5c45d0be456632afaedb1a3eea9**, asset version `a741e3ce38e5372b`. PRs #16–#28 are merged. The older checkout and its uncommitted edits are preserved separately; no obsolete patches have been replayed over the newer app.
+The live checked release is `0a16c73b24a7f521b2225459cece182168a2547c` (PRs #16–#36 merged), Pages run `38379816494`, asset version `36f52b6163e81873`. The marker was fetched independently after deployment. PR #37 is the current recurrence/clock preservation review; no production backend was deployed or activated.
 
-## Verified released baseline
+## Current verification
 
-| Check | Result | Evidence |
-|---|---|---|
-| Dependency-free Node suite | 83 passed locally; release CI successful | https://github.com/ZubaerAhmed13/Schedule/actions/runs/38361101971 |
-| Built-client Chromium suite | 35 passed, zero failed | https://github.com/ZubaerAhmed13/Schedule/actions/runs/38361102002 |
-| Pages deployment and exact-build smoke test | Successful; public marker independently matched | https://github.com/ZubaerAhmed13/Schedule/actions/runs/38361101950 |
-| Both Supabase Edge Function type checks | Successful | https://github.com/ZubaerAhmed13/Schedule/actions/runs/38361101982 |
-| Public Auth health/provider diagnostic | Successful, limited to public endpoints | https://github.com/ZubaerAhmed13/Schedule/actions/runs/38361101968 |
-| Private Weekwise project access | Not available through the connected Supabase account | Its project inventory does not contain the configured Weekwise project `iajkzlsurghfvsmqkmut`; no unrelated project queried or changed |
-
-Automated browser tests use isolated synthetic records/mock cloud accounts. The public Auth probe does not establish private RLS or provider round-trip behavior.
-
-## Work already delivered
-
-- Core data-preserving planning, recovery previews, guarded application and Undo; measured focus and habit history; Today/Inbox/Plan/Calendar/Insights; responsive light/dark UI.
-- Owner-scoped editor draft recovery and editor-history export; paged list/board/matrix/filter rendering while keeping full search, counts and exports.
-- Sunday/Monday **Month/Year grid** preference. Weekly planning/storage still uses Sunday boundaries.
-- Reviewed atomic iCalendar import with IANA TZID conversion and explicit DST ambiguity/gap rejection.
-- Opt-in descriptive recurring-series propagation with customized/completed occurrences protected. This does not bulk-change saved occurrence schedules or cadence.
-- Optional account-isolated onboarding, modal keyboard containment and launcher focus return.
-- Unioned daily scheduled workload, recorded recovery history and task-linked focus-versus-estimate Insights.
-- Waiting-PWA update protection for unfinished editors, capture and weekly reviews.
-- Automated pinned axe WCAG A/AA checks for serious/critical findings; reports retain inconclusive results for review.
-- Flexible 1–7 check-ins/week habit targets with preserved legacy weekday schedules and check-ins.
-
-## Remaining work, in priority order (updated after PR #33)
-
-| Work | Concrete missing behavior or evidence |
+| Check | Verified result |
 |---|---|
-| Calendar and planning zones | Date-aware IANA Calendar projection and Monday-first planning are delivered in PR #33. Planner availability/editor fields still use the saved source zone; arbitrary planner-zone conversion remains; explicit overnight editing is included in the follow-on reliability review. |
-| Account lifecycle | Task archive/remove/recovery and recurring schedule preview/Undo are delivered in PRs #31/#32. Account-erasure source/UI is now implemented, disabled until correct-project staging and cascade verification. No automatic retention purge. |
-| Calendar and offline reliability | Calendar movement focus/stale-pointer handling, swaps and saved-account offline opening are implemented in the follow-on review; final remote checks remain. |
-| Architecture and performance | Narrow pure/UI modules and bounded timezone derivations delivered; the app IIFE remains large. PR #29 lab metrics merged. Real-use field CWV and further profiling remain. |
-| Private cloud/security acceptance | Access to the correct Weekwise staging project/test identities; own-row/cross-user RLS, invitation enforcement, token expiry and real-device offline reconnect. Optional RPC hardening requires reviewed database authorization. |
-| Optional integrations | Real OAuth/provider consent, calendar create/update/delete/conflict/refresh, VAPID/scheduler and closed-app push acceptance; optional AI needs an explicitly configured provider and privacy decisions. |
-| Human/release certification | Real phone keyboard/rotation, 200% zoom, screen readers, installed-PWA updates/interrupted installation and representative historic private backups in isolated profiles. |
+| Last released client | 134 Node tests and 51 built-client browser tests; release and all three Edge Function type checks passed |
+| Recurrence review code | First head `0130c6e35de220fe4e4fa273cadaf856c2de6ffd` passed 140 Node/53 browser tests and all release/Edge checks; anchor/dashboard safeguards passed 142 Node/53 browser tests at the follow-up; the final reordered-cloud/midnight-scroll scenario adds one browser test and requires final remote checks |
+| Pages | Exact commit/run/hash independently matched; frontend-only build |
+| Privacy and integrations | Account-erasure controls/source are present but the server operation is disabled pending correct-project staging; no real account deleted |
+| Correct Supabase project | `iajkzlsurghfvsmqkmut` is inaccessible through the current connection; its direct project lookup returned a permission denial. No unrelated project was queried or changed |
 
-No production Supabase migration, real user-data deletion or provider activation was performed. Account erasure remains disabled by default and requires the gates in [ACCOUNT_ERASURE_SETUP.md](ACCOUNT_ERASURE_SETUP.md). Existing GitHub release authorization permits checked frontend releases. The 32-section master plan remains **partially complete**, with the exact limitations above.
+Tests use synthetic records and mock accounts/provider transport. Offline tests use the real service worker; this does not certify private production RLS, actual OAuth/push delivery or installed-device behavior.
+
+## Delivered source and client behavior
+
+- Today/Inbox/Plan/Calendar/Insights navigation, responsive light/dark interface, optional onboarding, measured Focus sessions, daily unioned workload and flexible weekly habits.
+- Checked backup/restore, damaged-data preservation, account-isolated editor drafts/history export, large-list and Focus search/paging.
+- Archive, Recently removed, exact/scoped restore and guarded Undo; linked task groups and recurrence exclusions retain history.
+- Reviewed recurring date/time/duration/cadence changes, completed/customized occurrence protection and Undo.
+- Monday-first weekly Calendar/planning/review over unchanged Sunday-canonical storage; IANA Calendar projection with original editing references, multi-day/overnight carry, atomic reviewed swaps and keyboard/stale-pointer safeguards.
+- Explicit overnight editor hours, adjacent-week conflicts, saved-account offline opening/reload/reconnect without pretending to authenticate.
+- Saved-zone planning dates/instants, DST review intervals excluded from capacity/suggestions, carried all-day commitments and exact accepted timestamps.
+- Lab performance reporting, bounded Intl/projection caches, versioned offline shell and dirty-editor/review update protection.
+- Gated password-reauthenticated account-erasure endpoint, typed confirmation, backup acknowledgement, same-owner response validation and scoped local cleanup. Activation guide: [ACCOUNT_ERASURE_SETUP.md](ACCOUNT_ERASURE_SETUP.md).
+
+## Remaining acceptance and design limits
+
+| Area | What remains |
+|---|---|
+| Private backend | Correct Weekwise project/test identities; real own-row/cross-user RLS, invitation enforcement, refresh/expiry, revision/RPC privileges, account cascades and staging erasure. Prepared SQL was not executed |
+| Optional services | Google/Outlook credentials/consent and create/update/delete/conflict/refresh acceptance; VAPID/cron and app-closed push acceptance. No optional AI provider configured |
+| Device/human acceptance | Real phone keyboards/rotation, screen readers and 200% zoom; installed-PWA upgrade/interrupted-install, actual two-device reconnect and representative private historical backups |
+| Historical planner zones | Calendar projection and source-zone planning are delivered. Full historical source-zone migration and an independent planning-zone transformation remain separate design work. The device-zone review gate remains; no historical zone is silently migrated |
+| Architecture/performance | Core/presentation modules and narrow checked bridges are extracted, but the legacy app IIFE remains large. Further maintainability/profiling and real-use field Core Web Vitals require additional work/evidence |
+| Scope limits | Recurring bulk scheduling reviews at most 200 saved moves per preview; use a smaller scope for more. No automatic archive purge, exported-backup deletion or external-provider consent erasure |
+
+The 32-section master plan remains partially complete. Existing authorization permits checked GitHub Pages client releases; it does not establish private backend/device certification. No real user data was used as a test fixture.
+
+## Historical implementation notes
+
+The following sections describe how individual changes were implemented. Any pending-check wording is dated candidate history; the current verification table above supersedes it.
 
 ## Focus selector implementation
 
@@ -93,3 +94,17 @@ The older effort dashboard now calls completion totals marked-complete planned t
 Five additional Node tests cover date boundaries, exact IANA instants, changed-zone rejection, DST refusal, excluded clock-change capacity and carried commitments. A deterministic browser fixture freezes Sunday UTC/Monday Tokyo and verifies Monday's already-past availability produces no proposals. Final combined CI remains required.
 
 Phone Calendar screenshot review also removed the redundant legacy day strip and pinned the time axis during horizontal week scrolling. The browser scenario checks both behaviors.
+
+## Generated recurring-clock continuation
+
+An indexed read-only occupancy model now generates future occurrences using exact zone-aware slots. Overnight templates retain their expected start and duration; adjacent-day/next-week and future all-day commitments block collisions. Gap/fold/discontinuous template times remain unscheduled with a review reason, instead of being guessed or silently shifted. Existing materialized occurrences, including completed/customized/reminder history, are skipped unchanged. New generated records carry exact instants.
+
+Six pure tests cover midnight, DST, incremental occupancy, future all-day reservations, precise minutes and a 10,000-record canonical fixture. Two built-client scenarios cover daily overnight repetition/reload and a Berlin spring gap followed by a valid next day. The first recurrence head passed 140 Node/53 built-client browser tests and all release/Edge checks. Follow-up anchor/dashboard safeguards pass 142 Node tests locally; final remote checks remain required. The public browser and existing push/calendar source imports are now pinned to the same verified Supabase JS 2.117.3 used by account erasure, avoiding floating minor-version changes. No backend is deployed by this source change.
+
+## Clock preservation follow-up
+
+Captured-instant anchors are matched by field values rather than JSON property order, preserving exact DST instants after reordered cloud/backup objects and retaining unknown anchor fields. The dashboard classifies past/future plans with saved source-zone instants, caches by scheduling coordinates and leaves ambiguous legacy clocks unclassified for review. Two additional Node regressions cover reordered fold anchors, source-zone classification, cache invalidation and unchanged ambiguous records.
+
+The final browser scenario loads a synthetic cloud row with reordered, extended DST-fold anchors, verifies its exact UTC card time and retained anchor on completion, and keeps a deliberate midnight scroll position. New Calendar view initialization uses its display-zone clock; updates in the same view preserve zero scroll. Zero-duration legacy markers remain stored but do not occupy generated recurrence slots.
+
+Pending recurrence-clock review retains its expected date/zone/time in the editor and survives metadata-only edits until a user resolves the schedule. Account erasure names the captured signed-in account and disables credential fields until the operation is confirmed configured, including after deletion. These final UI guards are covered by the existing browser scenarios.

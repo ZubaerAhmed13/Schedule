@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import '../js/weekwise-data.js';
+import '../js/weekwise-timezones.js';
+import '../js/weekwise-calendar-range.js';
+import '../js/weekwise-recurring-placement.js';
 const data = globalThis.WeekwiseData;
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8') + "\n" + fs.readFileSync(new URL("../js/weekwise-app.js", import.meta.url), "utf8");
 const task = { id:'legacy', title:'German practice', day:1, start:600, duration:30, custom:false, fixed:true, done:true, completionAt:'2026-10-01', reminderTimes:['2026-10-12T09:00'], subtasks:[{id:'s',title:'Practice',done:true}], futureField:{preserve:true} };
@@ -50,8 +53,9 @@ test('corrupt local JSON blocks saving without overwriting its original bytes',(
 });
 test('recurrence reload preserves existing occurrence edits and history',()=>{
   const existing={...task,id:'rec_1',seriesId:'series',occurrenceDate:'2026-10-12',note:'An occurrence exception',start:900};
-  const store={weeks:{},recurringTemplates:[{id:'series',title:'Template',duration:60,start:600}]};
+  const store={settings:{timeZone:'UTC'},weeks:{},recurringTemplates:[{id:'series',title:'Template',duration:60,start:600,startDate:'2026-10-12',frequency:'weekly'}]};
   const c={store,currentWeek:'2026-10-11',tasks:[existing],Date,Array,Number,dateKey:d=>d.toISOString().slice(0,10),sundayOf:d=>{const x=new Date(d);x.setUTCDate(x.getUTCDate()-x.getUTCDay());return x;},recurrenceDateMatches:()=>true};
+  c.WeekwiseRecurringPlacement=globalThis.WeekwiseRecurringPlacement;c.plannerSnapshot=()=>({store:{...c.store,weeks:{...c.store.weeks,[c.currentWeek]:{tasks:c.tasks}}},currentWeek:c.currentWeek});
   c.workspaceRecords=()=>Object.values(c.store.weeks).flatMap(w=>w.tasks||[]).concat(c.tasks).map(task=>({task}));
   vm.runInNewContext(functionSource('function materializeRecurringRange(','function materializeCurrentAndUpcoming()'),c);
   const before=JSON.stringify(existing);c.materializeRecurringRange(new Date('2026-10-12T00:00:00Z'),new Date('2026-10-12T00:00:00Z'));

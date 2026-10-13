@@ -319,7 +319,13 @@ function closeUtilityPanel(restoreFocus=true){
 function openDashboard(){openUtilityPanel('dashboard','Weekly effort dashboard');}
 function durationText(minutes){minutes=Math.max(0,Math.round(minutes||0));const h=Math.floor(minutes/60),m=minutes%60;if(h&&m)return `${h}h ${m}m`;if(h)return `${h}h`;return `${m}m`;}
 function analyticsGroup(t){if(t.workday||/^Picnic work shift$/i.test(t.title||''))return 'workday';if(t.cityday||(t.fixed&&Number(t.duration)===540))return 'hobby';if(['job','study','language','life','hobby','other'].includes(t.type))return t.type;return 'other';}
-function taskEndDate(t){const d=dayDate(currentWeek,Number(t.day)||0);return new Date(d.getFullYear(),d.getMonth(),d.getDate(),0,Number(t.start)+Number(t.duration||0));}
+const taskEndCache=new WeakMap();
+function taskEndDate(t){
+ const zone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone,saved=t.scheduleInstant,anchor=saved?.anchor,signature=JSON.stringify([currentWeek,t.day,t.start,t.duration,zone,saved?.start,saved?.end,anchor?.week,anchor?.day,anchor?.start,anchor?.duration,anchor?.zone]),prior=taskEndCache.get(t);
+ if(prior?.signature===signature)return new Date(prior.end);
+ let end=NaN;try{end=WeekwiseCalendarRange.instant({week:currentWeek,task:t},zone).end;}catch(_){}
+ taskEndCache.set(t,{signature,end});return new Date(end);
+}
 function renderStats(){
   const scheduled=tasks.filter(t=>t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0);
   const planned=scheduled.reduce((sum,t)=>sum+Number(t.duration||0),0);
@@ -353,8 +359,8 @@ function renderStats(){
   }).join('');
   const daily=DAY_NAMES.map((label,day)=>{const items=scheduled.filter(t=>t.day===day),total=items.reduce((n,t)=>n+Number(t.duration||0),0),done=items.filter(t=>t.done).reduce((n,t)=>n+Number(t.duration||0),0);return {label:DAY_SHORT[day],total,done};});
   $('dailyBreakdown').innerHTML=daily.map(x=>`<div class="daily-row"><span class="daily-name">${x.label}</span><div class="daily-track" title="${durationText(x.done)} completed of ${durationText(x.total)} planned"><div class="daily-fill" style="width:${Math.min(100,x.total?x.done/x.total*100:0)}%"></div></div><span class="daily-hours">${durationText(x.done)} / ${durationText(x.total)}</span></div>`).join('');
-  const unscheduled=tasks.filter(t=>!t.allDay&&(t.start===null||t.start===undefined||t.unscheduled)).length;
-  $('dashboardNote').innerHTML=`Totals use scheduled durations and completion checkmarks. <strong>Unchecked past plans</strong> need review; they do not measure wasted time or actual work. Recorded Focus sessions are shown separately in Insights.${unscheduled?` ${unscheduled} activity${unscheduled===1?' needs':'ies need'} a time and is not included in the hour totals.`:''}`;
+  const unscheduled=tasks.filter(t=>!t.allDay&&(t.start===null||t.start===undefined||t.unscheduled)).length,clockReviews=scheduled.filter(t=>!Number.isFinite(taskEndDate(t).getTime())).length;
+  $('dashboardNote').innerHTML=`Totals use scheduled durations and completion checkmarks. <strong>Unchecked past plans</strong> need review; they do not measure wasted time or actual work. Recorded Focus sessions are shown separately in Insights.${clockReviews?` ${clockReviews} saved time${clockReviews===1?' needs':'s need'} clock review and is excluded from past/future classification.`:''}${unscheduled?` ${unscheduled} activity${unscheduled===1?' needs':'ies need'} a time and is not included in the hour totals.`:''}`;
   const shiftDays=(store.settings.shifts||[]).filter(s=>s&&s.enabled).length;
   const workHabit=$('workHabitSummary');if(workHabit)workHabit.textContent=shiftDays?`${shiftDays} work day${shiftDays===1?'':'s'} / week · protected calendar block${shiftDays===1?'':'s'}`:'Set your work days in settings';
   const dest=$('tripDestination');if(dest)dest.value=store.settings.destination||'';
@@ -627,7 +633,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   renderTaskTemplateOptions();$('taskTemplateSelect').value='';$('deleteTaskTemplateBtn').disabled=true;
   $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit task':'Add a task';
   $('modalDescription').textContent=t?'To move this activity, choose a new day and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the day, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
-  $('modalDescription').textContent+=' Clock fields use '+(store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'.';
+  $('modalDescription').textContent+=' Clock fields use '+(store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'.';if(t?.recurrenceScheduleReview){const review=t.recurrenceScheduleReview;$('modalDescription').textContent+=' Recurring time needs review: '+(Number.isFinite(review.preferred)?minsTime(review.preferred)+' on '+review.date+' in '+review.zone+'. ':'')+(review.reason||'Choose reviewed hours.');}
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   const folderView=workspaceView.startsWith('folder:'),selectedFolder=folderView?workspaceView.slice(7):'';
   const folderExisting=folderView?workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===selectedFolder):null;
@@ -649,7 +655,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('modalNoSchedule').checked=!!(t&&(t.unscheduled||t.start==null)&&!t.allDay)||(!t&&defaultListId==='inbox');
   const durationSelect=$('modalDuration'),duration=String(t?.duration||30);
   if(!Array.from(durationSelect.options).some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=durationLabel(Number(duration));durationSelect.add(option);}
-  durationSelect.value=duration;const chosenStart=t?.start??(startAt===null||startAt===undefined?nextQuarterHour():startAt);$('modalTime').value=minsTime(chosenStart);updateEndTimeFromDuration();$('modalNote').value=t?.note||'';
+  durationSelect.value=duration;const chosenStart=t?.start??(Number.isFinite(t?.recurrenceScheduleReview?.preferred)?t.recurrenceScheduleReview.preferred:(startAt===null||startAt===undefined?nextQuarterHour():startAt));$('modalTime').value=minsTime(chosenStart);updateEndTimeFromDuration();$('modalNote').value=t?.note||'';
   $('saveTaskBtn').textContent=t?'Save changes':'Add task';$('deleteTaskBtn').style.display=t&&!t.fixed?'inline-flex':'none';$('archiveTaskBtn').hidden=!t||!!t.fixed;$('seriesScheduleOpen').hidden=!t?.seriesId||!!t.fixed;
   updateModalScheduleVisibility();
   taskModalInitialFingerprint=taskModalFingerprint();
@@ -741,7 +747,7 @@ function saveModalTask(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();r
       t.title=title;t.day=day;t.type=type;t.schedulingMode=schedulingMode;t.duration=duration;t.note=note;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.focusEstimateMinutes=focusEstimateMinutes;t.estimatedDurationMinutes=estimatedDurationMinutes;t.requiresCompletion=requiresCompletion;t.todayPriority=todayPriority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedTimes=(Array.isArray(t.reminderNotifiedTimes)?t.reminderNotifiedTimes:[]).filter(value=>reminderTimes.includes(value));if(t.reminderNotifiedAt&&reminderTimes.includes(t.reminderNotifiedAt)&&!t.reminderNotifiedTimes.includes(t.reminderNotifiedAt))t.reminderNotifiedTimes.push(t.reminderNotifiedAt);t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;t.attachments=attachments;t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...old,...s,id:old.id||s.id,done:!!old.done}:{...s};});
-      t.start=noSchedule||allDay?null:editorSlot.start;t.scheduleInstant=editorSlot?.scheduleInstant;t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
+      t.start=noSchedule||allDay?null:editorSlot.start;t.scheduleInstant=editorSlot?.scheduleInstant;if(editorSlot?.start!=null||allDay||recurrence==='none')delete t.recurrenceScheduleReview;t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
       if(recurrence==='none'){
         if(oldSeriesId){if($('modalRecurrenceScope').value==='occurrence'){const rule=store.recurringTemplates.find(r=>r.id===oldSeriesId);if(rule)rule.excludedDates=[...new Set([...(rule.excludedDates||[]),t.occurrenceDate||occurrenceDate])];t.seriesId=null;t.recurrence='none';t.occurrenceDate=null;}else stopRecurringSeries(t,occurrenceDate,$('modalRecurrenceScope').value);}
         else{t.recurrence='none';t.seriesId=null;t.occurrenceDate=null;}
@@ -1759,6 +1765,16 @@ function materializeRecurringRange(rangeStart,rangeEnd){
  if(!templates.length||!rangeStart||!rangeEnd)return;
  const start=new Date(rangeStart),end=new Date(rangeEnd);
  const occurrences=new Map();for(const record of workspaceRecords()){const t=record.task;if(t.seriesId&&t.occurrenceDate)occurrences.set(t.seriesId+'::'+t.occurrenceDate,t);}
+ const placements=WeekwiseRecurringPlacement.create(plannerSnapshot().store);let pendingBlock=0;
+ // Reserve upcoming all-day rules before timed generation, including the day
+ // after this range for overnight endings. Retained/moved exceptions win.
+ const protectedEnd=new Date(end);protectedEnd.setDate(protectedEnd.getDate()+1);
+ for(let date=new Date(start);date<=protectedEnd;date.setDate(date.getDate()+1)){
+  const key=dateKey(date);for(const template of templates){if(!template?.allDay||!recurrenceDateMatches(template,date)||(template.excludedDates||[]).includes(key)||occurrences.has(template.id+'::'+key))continue;
+   placements.add({week:dateKey(sundayOf(date)),task:{id:'pending-all-day-'+pendingBlock++,title:'Upcoming all-day commitment',day:date.getDay(),start:null,allDay:true,allDayDate:key,duration:Math.max(10,Number(template.duration)||30)}});
+  }
+ }
+
  for(let date=new Date(start);date<=end;date.setDate(date.getDate()+1)){
   const occurrenceDate=dateKey(date),day=date.getDay(),weekKey=dateKey(sundayOf(date));
   for(const template of templates){
@@ -1773,20 +1789,16 @@ function materializeRecurringRange(rangeStart,rangeEnd){
    // Saved occurrences include edits, completion history and reminder exceptions.
    if(existing)continue;
    const duration=Math.max(10,Number(template.duration)||30),preferred=template.start===null||template.start===undefined?null:Number(template.start);
-   let startTime=null;
-   if(preferred!==null){
-    const blockers=rows.filter(item=>item!==existing&&Number(item.day)===day&&item.start!==null&&item.start!==undefined&&!item.unscheduled&&Number(item.duration)>0);
-    startTime=findSlot(day,duration,preferred,0,1440,blockers);
-   }
+   const placement=template.allDay?{start:null}:placements.place(occurrenceDate,preferred,duration),startTime=placement.start;
    const dueDate=template.dueOffsetDays===null||template.dueOffsetDays===undefined?null:addDaysToKey(occurrenceDate,Number(template.dueOffsetDays)||0);
    const reminderRules=Array.isArray(template.reminderRules)?template.reminderRules:(template.reminderTime?[{offsetDays:template.reminderOffsetDays||0,time:template.reminderTime}]:[]);
    const reminderTimes=reminderRules.map(rule=>addDaysToKey(occurrenceDate,Number(rule.offsetDays)||0)+'T'+rule.time).filter(Boolean);
    const reminderAt=reminderTimes[0]||null;
    const priorNotified=[...(Array.isArray(existing?.reminderNotifiedTimes)?existing.reminderNotifiedTimes:[])];if(existing?.reminderNotifiedAt)priorNotified.push(existing.reminderNotifiedAt);
    const reminderNotifiedTimes=[...new Set(priorNotified.filter(value=>reminderTimes.includes(value)))];
-   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),focusEstimateMinutes:template.focusEstimateMinutes??null,estimatedDurationMinutes:template.estimatedDurationMinutes??null,requiresCompletion:template.requiresCompletion!==false,custom:true,fixed:false,schedulingMode:template.schedulingMode||'flexible',note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],attachments:[...(template.attachments||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,scheduleInstant:placement.scheduleInstant,recurrenceScheduleReview:placement.review,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),focusEstimateMinutes:template.focusEstimateMinutes??null,estimatedDurationMinutes:template.estimatedDurationMinutes??null,requiresCompletion:template.requiresCompletion!==false,custom:true,fixed:false,schedulingMode:template.schedulingMode||'flexible',note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],attachments:[...(template.attachments||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
    if(existing)Object.assign(existing,values);
-   else {const created={id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values};rows.push(created);occurrences.set(template.id+'::'+occurrenceDate,created);}
+   else {const created={id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values};rows.push(created);placements.add({week:weekKey,task:created});occurrences.set(template.id+'::'+occurrenceDate,created);}
   }
  }
 }
@@ -2709,7 +2721,7 @@ const plannerBridge={
  }
 };
 WeekwiseAccountUI.init({
- owner(){return currentDataOwner;},url:SUPABASE_URL+'/functions/v1/weekwise-account',key:SUPABASE_PUBLISHABLE_KEY,announce:showToast,
+ owner(){return currentDataOwner;},signedIn(owner){return cloudUser?.id===owner&&currentDataOwner===owner;},label(){return cloudUser?.email||'No signed-in account';},url:SUPABASE_URL+'/functions/v1/weekwise-account',key:SUPABASE_PUBLISHABLE_KEY,announce:showToast,
  async session(owner){
   if(!cloudClient||cloudUser?.id!==owner||currentDataOwner!==owner)throw new Error('Sign in to this account before erasure.');
   const verified=await cloudClient.auth.getUser(),session=await cloudClient.auth.getSession();
