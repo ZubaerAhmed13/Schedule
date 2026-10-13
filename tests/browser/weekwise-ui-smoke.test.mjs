@@ -711,6 +711,7 @@ test('PWA reload guard respects unfinished task, quick capture and weekly review
  try{
   const guard=()=>page.evaluate(()=>window.WeekwiseUpdateSafety.reason(document,window.WeekwiseExperience.hasPendingReview()));
   assert.equal(await guard(),'');
+  await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
   await page.locator('#workspaceCaptureInput').fill('Draft that is not yet added');
   assert.match(await guard(),/quick-capture/);
   await page.locator('#workspaceCaptureInput').fill('');
