@@ -55,3 +55,10 @@ Reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and 
 5. Never put private API keys into GitHub commits or a public browser bundle. The only currently authorized production writes in this thread have been GitHub merges/Pages deployments, not Supabase migrations or user-data deletions.
 
 This checklist prevents claims of master-plan completion until the corresponding evidence is actually available.
+
+## Verified additions and evidence at 13 October 2026
+
+- **Calendar import** (section 10): PR #20 implements strict named IANA TZID/UTC/floating event handling with DST fold/gap refusal, review and one checked storage transaction. This is limited to `.ics` import, not a general planner time-zone migration.
+- **Recurring metadata** (sections 10–11): PR #21 offers an unchecked-by-default bulk choice with preview. Only eligible, unmodified future occurrences receive descriptive metadata updates. It explicitly does **not** reschedule tasks, change rule cadence/alarms, or replace completion history.
+- **Testing/release** (sections 23, 25 and 31): Node 74/74, built Chromium 29/29, Edge checks and exact Pages deployment passed at `ea6573c0`. Synthetic browser list navigation-to-paint at 1,000/5,000/10,000 items is measured but is not a real-world Core Web Vitals percentile.
+- **Remaining work**: [issue #22](https://github.com/ZubaerAhmed13/Schedule/issues/22) tracks the external, human, infrastructure and high-risk migration work needed before the entire 32-section plan can be certified.
