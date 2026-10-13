@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import axe from "axe-core";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const siteRoot=path.resolve(root,process.env.WEEKWISE_TEST_SITE_ROOT||".");
@@ -727,5 +728,47 @@ test('PWA reload guard respects unfinished task, quick capture and weekly review
   assert.match(await guard(),/weekly review/);
   await page.locator('#weeklyReviewForm button[type="submit"]').click();
   assert.equal(await guard(),'');
+ }finally{await context.close();}
+});
+
+
+test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and editor',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:900});
+ const snapshots=[];
+ try{
+  await page.addScriptTag({content:axe.source});
+  const audit=async label=>{
+   const result=await page.evaluate(async()=>window.axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));
+   const problems=result.violations.map(v=>({id:v.id,impact:v.impact,description:v.help,targets:v.nodes.slice(0,8).map(n=>n.target.join(' ')),totalNodes:v.nodes.length}));
+   snapshots.push({view:label,violations:problems,incomplete:result.incomplete.map(v=>({id:v.id,targets:v.nodes.length}))});
+  };
+  await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
+  await audit('today');
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
+  await audit('settings');
+  await page.locator('#workspaceSidebar [data-workspace-view="plan"]').click();
+  await audit('plan');
+  await page.locator('#globalCaptureBtn').click();
+  await page.locator('#taskModal').waitFor({state:'visible'});
+  await audit('task editor');
+  await page.locator('#closeModal').click();
+  await page.locator('#taskModal').waitFor({state:'hidden'});
+  await page.evaluate(()=>document.body.setAttribute('data-theme','dark'));
+  await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
+  await page.waitForTimeout(300); // avoid auditing temporary CSS color transitions after theme switches
+  await audit('today dark');
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
+  await audit('settings dark');
+  await page.evaluate(()=>document.body.setAttribute('data-theme','light'));
+  await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
+  await page.setViewportSize({width:320,height:780});
+  await page.waitForTimeout(300); // ensure responsive transition styles have settled
+  await audit('today 320px');
+  const widths=await page.evaluate(()=>({viewport:window.innerWidth,document:document.documentElement.scrollWidth,body:document.body.scrollWidth}));
+  assert.ok(widths.document<=widths.viewport+2&&widths.body<=widths.viewport+2,'Today must reflow at 320 CSS px without horizontal page scrolling: '+JSON.stringify(widths));
+  fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
+  fs.writeFileSync(path.join(root,'test-results','axe-wcag-audit.json'),JSON.stringify(snapshots,null,2));
+  const significant=snapshots.flatMap(view=>view.violations.filter(v=>['critical','serious'].includes(v.impact)).map(v=>view.view+': '+v.id+' ('+v.impact+') ×'+v.totalNodes+': '+v.targets.join(', ')));
+  assert.deepEqual(significant,[],'Serious/critical WCAG A/AA violations:\n'+significant.join('\n'));
  }finally{await context.close();}
 });
