@@ -39,4 +39,5 @@ jobs:
           path: |
             test-results/*.png
             test-results/axe-*.json
+            test-results/lab-*.json
           if-no-files-found: ignore
