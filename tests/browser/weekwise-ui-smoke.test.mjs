@@ -772,3 +772,33 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   assert.deepEqual(significant,[],'Serious/critical WCAG A/AA violations:\n'+significant.join('\n'));
  }finally{await context.close();}
 });
+
+
+test('flexible weekly habit goal keeps actual check-ins and restores its editor preference',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:900});
+ try{
+  await page.locator('#workspaceSidebar [data-workspace-action="habits"]').click();
+  await page.locator('#utilityModal').waitFor({state:'visible'});
+  await page.locator('#habitFrequencyMode').selectOption('weekly-flexible');
+  assert.equal(await page.locator('#habitScheduleFieldset').isVisible(),false);
+  await page.locator('#habitName').fill('Practise when time allows');
+  await page.locator('#habitTargetPerWeek').selectOption('2');
+  await page.locator('#saveHabitBtn').click();
+  const first=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1')));
+  assert.equal(first.length,1);
+  assert.equal(first[0].frequencyMode,'weekly-flexible');
+  assert.equal(first[0].targetPerWeek,2);
+  assert.match(await page.locator('#habitTrackerList').innerText(),/Any 2 days this week/);
+  await page.locator('[data-habit-check]').last().click();
+  const afterCheck=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1')));
+  assert.equal(afterCheck[0].checkIns.length,1);
+  await page.locator('[data-habit-edit]').first().click();
+  assert.equal(await page.locator('#habitFrequencyMode').inputValue(),'weekly-flexible');
+  assert.equal(await page.locator('#habitScheduleFieldset').isVisible(),false);
+  await page.locator('#habitGoal').fill('One small practice session');
+  await page.locator('#saveHabitBtn').click();
+  const afterEdit=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1')));
+  assert.equal(afterEdit[0].checkIns.length,1,'editing frequency does not discard past check-ins');
+  assert.equal(afterEdit[0].goal,'One small practice session');
+ }finally{await context.close();}
+});
