@@ -127,3 +127,7 @@ Insights now visualizes the seven-day workload using booked local wall-clock min
 ### Updating the installed app without losing an open edit
 
 If a newer version is waiting in the service worker, Weekwise offers a **Reload to update** action. It stays disabled when the task editor, other configuration dialogs, an unsaved weekly review or unfinished quick-capture text could be disrupted. Finish or dismiss that work first. The update does not clear saved planner records. This safeguards the in-app update handoff; testing an installed phone PWA is a separate release requirement.
+
+### Flexible habit goals
+
+In Habits & routines, choose **On selected weekdays** (the unchanged default) or **Any days — reach weekly target**. Any-day habits can reach a user-set 1–7 check-ins/week without punishing rest days. A completed weekly target ends routine nudges for that week, and a weekly streak counts consecutive successful weeks. Existing habit history and schedules are preserved when changing modes.
