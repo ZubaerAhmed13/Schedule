@@ -789,7 +789,7 @@ test('flexible weekly habit goal keeps actual check-ins and restores its editor 
   assert.equal(first[0].frequencyMode,'weekly-flexible');
   assert.equal(first[0].targetPerWeek,2);
   assert.match(await page.locator('#habitTrackerList').innerText(),/Any 2 days this week/);
-  await page.locator('[data-habit-check]').last().click();
+  await page.locator('[data-habit-check]:not([disabled])').last().click();
   const afterCheck=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1')));
   assert.equal(afterCheck[0].checkIns.length,1);
   await page.locator('[data-habit-edit]').first().click();
