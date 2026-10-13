@@ -123,3 +123,7 @@ The task and utility dialogs trap keyboard focus, make the rest of the interface
 ### Recorded workload and schedule stability
 
 Insights now visualizes the seven-day workload using booked local wall-clock minutes. Overlapping appointments are counted only once, and cross-midnight bookings carry onto the following day. This is **not** proof of actual time worked. The section separately reports any saved user-approved recovery moves and, when the data exists, linked timer-recorded focus time compared with user-entered estimates. Untracked/manual activity is never described as recorded work.
+
+### Updating the installed app without losing an open edit
+
+If a newer version is waiting in the service worker, Weekwise offers a **Reload to update** action. It stays disabled when the task editor, other configuration dialogs, an unsaved weekly review or unfinished quick-capture text could be disrupted. Finish or dismiss that work first. The update does not clear saved planner records. This safeguards the in-app update handoff; testing an installed phone PWA is a separate release requirement.
