@@ -1,13 +1,13 @@
 # Weekwise current status — 13 October 2026
 
-The user's current scope is to finish Weekwise while **deferring Google and Outlook**. PR #44 is released at `163c75b604bfdb4c549d480be376af809c6d9429`, Pages run `38440755667`, assets `7a12f650c28ece2e`. PR #45 completes the non-calendar backend, browser recovery and privacy follow-up. Releases require a reviewed head, fresh CI checks and an independently matched Pages marker. [Live build identity](https://zubaerahmed13.github.io/Schedule/build-info.json) always identifies the deployed client.
+The user's current scope is to finish Weekwise while **deferring Google and Outlook**. PR #44 is released at `163c75b604bfdb4c549d480be376af809c6d9429`, Pages run `38440755667`, assets `7a12f650c28ece2e`. PR #45 completed the non-calendar backend, browser recovery and privacy follow-up. PR #46 released the modern interface. The productivity follow-up adds guarded inline/bulk task actions, pinned lists, remembered navigation, direct Today highlights and secondary-tool polish; its PR records the exact checked head and release workflows. Releases require a reviewed head, fresh CI checks and an independently matched Pages marker. [Live build identity](https://zubaerahmed13.github.io/Schedule/build-info.json) always identifies the deployed client.
 
 ## Verified implementation and backend
 
 - Today, Inbox, Plan, Calendar and Insights share stable canonical task IDs; projects/folders, Kanban, filters, priority matrix, countdowns, voice capture where supported, subtasks and calendar files remain available.
 - Deterministic Smart Week Builder, capacity/buffers, fixed/flexible tasks, reviewed placement/splitting, Recover My Week, guarded Undo, task archive/trash, recurring schedule review and exact saved-clock Today/Focus/Insights are delivered.
 - Historical IANA-zone conversion now previews exact-instant or local-clock policies, includes completed/archived records, preserves reminder identifiers, downloads an original planner/full review, records a SHA-256 checksum and creates an owner-scoped checkpoint. DST gaps/folds and duplicate destination IDs block conversion. Missing historical zones need an explicit original-zone choice; ordinary saves do not silently assign a new zone. Future original-zone rules retain their clock semantics.
-- The 2,740-line controller is replaced by a 607-line startup/orchestrator and 17 injected controller factories with explicit live state accessors. Domain/model modules stay dependency-free. The exact versioned offline shell includes every controller and the public privacy page.
+- The 2,740-line controller is replaced by a 609-line startup/orchestrator and 17 injected controller factories with explicit live state accessors. Domain/model modules stay dependency-free. The exact versioned offline shell includes every controller and the public privacy page.
 - Correct backend: Supabase WeekWise connection, project `iajkzlsurghfvsmqkmut`. Six Weekwise tables have RLS and validated owner cascades. Cloud writes use the compatible owner-checked revision RPC; direct authenticated writes and anonymous access are denied.
 - Invitation validation is active on new Auth accounts: private hashes, atomic expiry/revocation/use limits, retained original private-code hash and a separate owner code generated only inside Vault. Follow-up Auth metadata writes cannot reintroduce newly submitted invite values. Existing account metadata is not rewritten. The owner can find the additional invitation under Vault name `weekwise_owner_invite_code` without putting it into source or a public response.
 - Account erasure is active after password reauthentication and session revocation. A successful live disposable-account check verifies isolation, cascades and post-deletion cloud-write refusal. Other accounts/device-only local entries are preserved.
@@ -18,8 +18,8 @@ The user's current scope is to finish Weekwise while **deferring Google and Outl
 
 | Check | Result |
 |---|---|
-| Node | 167 tests pass locally and in the latest checked candidate |
-| Built Chromium | 61 tests pass; final reviewed head `ed518d016220377725f407ebf69c6c23ff202e49` passed [browser run 38446999553](https://github.com/ZubaerAhmed13/Schedule/actions/runs/38446999553) |
+| Node | 179 tests pass locally, including 12 atomic task-action contracts. Fresh CI evidence is recorded in the productivity PR. |
+| Built Chromium | Modern-interface release: 63 tests passed on head `40030133370b0e0e900db3d3a4aec41fa3486bcd`, [browser run 38456056588](https://github.com/ZubaerAhmed13/Schedule/actions/runs/38456056588). The productivity follow-up adds four browser cases; its PR owns the fresh results. |
 | Database / functions / release | Isolated PostgreSQL, all five Deno handlers and release/build checks passed on that same head |
 | Live backend | 48 bounded boolean checks passed: invitations and minimized stored/sign-in metadata, own/cross/anonymous reads, direct-write denial, first/competing/stale saves, fresh-client reload, push isolation/opt-out/deduplication, refresh revocation, recovery/password/token replay and erasure |
 | Cleanup | Zero fresh test identities or invitation groups remain; one-use flag is false; backend checker retired to version 5 / HTTP 410 |

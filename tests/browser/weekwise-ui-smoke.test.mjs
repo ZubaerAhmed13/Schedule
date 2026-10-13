@@ -26,6 +26,64 @@ const supabaseStub = String.raw`
 const mockRows=new Map();
 const responseOverrides=new Map();
 
+function productivityRows(){
+ const tasks=['a','b','c','d'].map((id,i)=>({id:'action-'+id,title:'Action '+id.toUpperCase(),day:2,start:null,unscheduled:true,duration:30,done:false,status:'todo',listId:'inbox',type:'life',custom:true,note:'Keep note '+id,tags:['original'],attachments:['https://example.com/'+id],customMetadata:{ordinal:i},estimatedDurationMinutes:null}));
+ tasks[0].start=600;tasks[0].unscheduled=false;
+ const store={settings:{timeZone:'UTC'},weeks:{'2030-01-06':{tasks,notes:'Retain source notes'}},recurringTemplates:[],customLists:[]};
+ return new Map([['weekwise-browser-test-user',{user_id:'weekwise-browser-test-user',revision:1,updated_at:'2030-01-01T00:00:00Z',data:{version:1,store,reminders:[],focusSessions:[],habits:[],countdowns:[],savedTaskFilters:[],taskTemplates:[]}}]]);
+}
+const productivityOptions=()=>({now:Date.parse('2030-01-08T12:00:00Z'),rows:productivityRows()});
+
+test('quick list editing moves a stable task across weeks, retains metadata and supports exact Undo on a phone',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844},productivityOptions());
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();const before=await readPlannerStore(page);
+  await page.locator('#workspaceTaskList [data-task-quick="action-a"]').click();assert.equal(await page.locator('#taskModal').isVisible(),false);
+  await page.locator('#taskQuickPriority').selectOption('high');await page.locator('#taskQuickDue').fill('2030-01-15');await page.locator('#taskQuickEstimate').fill('45');await page.locator('#taskQuickDate').fill('2030-01-14');await page.locator('#taskQuickTime').fill('15:00');await page.locator('#taskQuickDuration').fill('45');
+  assert.deepEqual(await readPlannerStore(page),before,'typing only changes the private draft');
+  await page.screenshot({path:path.join(root,'test-results','productivity-quick-edit-phone.png'),animations:'disabled'});
+  await page.locator('#taskQuickSave').click();await page.locator('#taskQuickEdit').waitFor({state:'hidden'});
+  const next=await readPlannerStore(page),task=next.weeks['2030-01-13'].tasks.find(t=>t.id==='action-a');assert.equal(task.start,900);assert.equal(task.day,1);assert.equal(task.duration,45);assert.equal(task.priority,'high');assert.equal(task.dueDate,'2030-01-15');assert.equal(task.estimatedDurationMinutes,45);assert.equal(task.note,'Keep note a');assert.deepEqual(task.customMetadata,{ordinal:0});assert.deepEqual(task.tags,['original']);assert.equal(next.weeks['2030-01-06'].notes,'Retain source notes');
+  await page.locator('#taskActionUndo').click();assert.deepEqual(await readPlannerStore(page),before);
+ }finally{await context.close();}
+});
+
+test('bulk review changes only selected tasks, preserves metadata, supports Undo and refuses stale-tab writes',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000},productivityOptions());
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();const before=await readPlannerStore(page);
+  await page.locator('#taskSelectMode').click();await page.locator('[data-task-select="action-a"]').check();await page.locator('[data-task-select="action-b"]').check();await page.locator('#taskBulkReview').click();
+  await page.locator('#taskBulkAction').selectOption('list');await page.locator('#taskBulkList').selectOption('study');assert.deepEqual(await readPlannerStore(page),before);
+  await page.screenshot({path:path.join(root,'test-results','productivity-bulk-review-desktop.png'),animations:'disabled'});await page.locator('#taskBulkForm button[type=submit]').click();await page.locator('#taskBulkDialog').waitFor({state:'hidden'});
+  const after=await readPlannerStore(page);for(const id of ['action-a','action-b'])assert.deepEqual(after.weeks['2030-01-06'].tasks.find(t=>t.id===id),{...before.weeks['2030-01-06'].tasks.find(t=>t.id===id),listId:'study'});assert.deepEqual(after.weeks['2030-01-06'].tasks.find(t=>t.id==='action-c'),before.weeks['2030-01-06'].tasks.find(t=>t.id==='action-c'));
+  await page.locator('#taskActionUndo').click();assert.deepEqual(await readPlannerStore(page),before);
+  await page.locator('[data-task-select="action-a"]').check();await page.locator('#taskBulkReview').click();const newer=await page.evaluate(()=>{const store=JSON.parse(localStorage.getItem('weekwise-planner-v2'));store.weeks['2030-01-06'].tasks.find(t=>t.id==='action-d').note='A newer tab edit';const raw=JSON.stringify(store);localStorage.setItem('weekwise-planner-v2',raw);return raw;});await page.locator('#taskBulkForm button[type=submit]').click();assert.match(await page.locator('#taskBulkStatus').innerText(),/Another tab/);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),newer);assert.equal(await page.locator('#taskBulkDialog').isVisible(),true);
+ }finally{await context.close();}
+});
+
+test('Today highlights cap at three, pinned lists sync and navigation groups remain scoped to their owner',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000},productivityOptions());
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();await page.locator('[data-choose-highlights]').click();
+  for(const id of ['action-a','action-b','action-c'])await page.locator('#todayHighlightList [data-task-highlight="'+id+'"]').click();await page.locator('#todayHighlightList [data-task-highlight="action-d"]').click();assert.match(await page.locator('#todayHighlightStatus').innerText(),/Three highlights/);assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).filter(t=>t.todayPriority).length,3);
+  await page.locator('#todayHighlightList [data-task-highlight="action-b"]').click();await page.locator('#todayHighlightList [data-task-highlight="action-d"]').click();await page.locator('#todayHighlightClose').click();assert.equal(await page.locator('.today-priorities article').count(),3);
+  await page.locator('#workspaceLists [data-pin-list="study"]').click();assert.equal(await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').isVisible(),true);await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
+  await page.locator('#workspaceLists > summary').click();assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),false);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),false);assert.equal(await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').isVisible(),true);
+  await page.screenshot({path:path.join(root,'test-results','productivity-today-pins-desktop.png'),animations:'disabled',fullPage:true});
+  await page.evaluate(()=>window.WeekwiseTestAuth.setUser('another-productivity-owner'));await page.waitForFunction(()=>document.querySelector('#cloudUserEmail')?.textContent==='another-productivity-owner@example.invalid');await page.waitForFunction(()=>!document.querySelector('#workspacePinnedListsNav [data-workspace-view="list-study"]'));assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),true);assert.equal(await page.locator('.today-priorities article').count(),0);
+ }finally{await context.close();}
+});
+
+test('quick-edit drafts restore after reload, are owner scoped and keep unfinished fields safe from an app update',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844},productivityOptions());
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();const before=await readPlannerStore(page);await page.locator('[data-task-quick="action-b"]').click();await page.locator('#taskQuickPriority').selectOption('high');await page.locator('#taskQuickDue').fill('2030-01-20');assert.deepEqual(await readPlannerStore(page),before);assert.match(await page.evaluate(()=>WeekwiseUpdateSafety.reason(document)),/editor|dialog/);
+  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#taskQuickRestoreDraft').click();assert.equal(await page.locator('#taskQuickPriority').inputValue(),'high');assert.equal(await page.locator('#taskQuickDue').inputValue(),'2030-01-20');assert.deepEqual(await readPlannerStore(page),before);
+  await page.evaluate(()=>window.WeekwiseTestAuth.setUser('quick-draft-owner-b'));await page.waitForFunction(()=>document.querySelector('#cloudUserEmail')?.textContent==='quick-draft-owner-b@example.invalid');assert.equal(await page.locator('#taskQuickEdit').isVisible(),false);assert.equal(await page.locator('#taskQuickDraftNotice').isVisible(),false);assert.ok(await page.evaluate(()=>localStorage.getItem('weekwise-quick-edit-v1:weekwise-browser-test-user')));
+  await page.evaluate(()=>window.WeekwiseTestAuth.setUser('weekwise-browser-test-user'));await page.waitForFunction(()=>document.querySelector('#cloudUserEmail')?.textContent==='weekwise-browser-test-user@example.invalid');await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('#taskQuickRestoreDraft').click();await page.locator('#taskQuickSave').click();await page.locator('#taskQuickEdit').waitFor({state:'hidden'});assert.equal((await readPlannerStore(page)).weeks['2030-01-06'].tasks.find(t=>t.id==='action-b').priority,'high');assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-quick-edit-v1:weekwise-browser-test-user')),null);
+ }finally{await context.close();}
+});
+
 test('modern navigation and editor disclose advanced options through labelled controls and retain saved metadata',async()=>{
  const {context,page}=await openPlanner({width:390,height:844});
  try{
@@ -944,11 +1002,11 @@ test('flexible weekly habit goal keeps actual check-ins and restores its editor 
  try{
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="habits"]')).click();
   await page.locator('#utilityModal').waitFor({state:'visible'});
-  await page.locator('#habitFrequencyMode').selectOption('weekly-flexible');
+  await (await visibleControl(page,'#habitFrequencyMode')).selectOption('weekly-flexible');
   assert.equal(await page.locator('#habitScheduleFieldset').isVisible(),false);
-  await page.locator('#habitName').fill('Practise when time allows');
-  await page.locator('#habitTargetPerWeek').selectOption('2');
-  await page.locator('#saveHabitBtn').click();
+  await (await visibleControl(page,'#habitName')).fill('Practise when time allows');
+  await (await visibleControl(page,'#habitTargetPerWeek')).selectOption('2');
+  await (await visibleControl(page,'#saveHabitBtn')).click();
   const first=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1')));
   assert.equal(first.length,1);
   assert.equal(first[0].frequencyMode,'weekly-flexible');
@@ -960,8 +1018,8 @@ test('flexible weekly habit goal keeps actual check-ins and restores its editor 
   await page.locator('[data-habit-edit]').first().click();
   assert.equal(await page.locator('#habitFrequencyMode').inputValue(),'weekly-flexible');
   assert.equal(await page.locator('#habitScheduleFieldset').isVisible(),false);
-  await page.locator('#habitGoal').fill('One small practice session');
-  await page.locator('#saveHabitBtn').click();
+  await (await visibleControl(page,'#habitGoal')).fill('One small practice session');
+  await (await visibleControl(page,'#saveHabitBtn')).click();
   const afterEdit=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1')));
   assert.equal(afterEdit[0].checkIns.length,1,'editing frequency does not discard past check-ins');
   assert.equal(afterEdit[0].goal,'One small practice session');
