@@ -106,3 +106,7 @@ The helper is pure and tested for overlapping events, overnight boundaries, excl
 The waiting service-worker update prompt now checks for open editors/dialogs, unsaved quick-capture input and a changed but unsaved weekly review. It disables the reload control and says exactly what the user must save or close; no automatic localStorage clearing or implicit discard is introduced. If a service worker takes control while text becomes unfinished, the app waits for a safe explicit reload rather than immediately losing that input. The existing update process remains opt-in.
 
 A dependency-free update-safety helper and Node/built-client browser tests cover these guard conditions. These tests **do not certify a real installed Android/iOS PWA update or closed-app push delivery**. Those remain manual/external release gates in issue #22.
+
+## Accessibility regression expansion
+
+The Chromium workflow now installs a pinned `axe-core` audit engine solely for tests, scanning Today, Settings, Plan and the task editor for WCAG A/AA rules including text contrast, names, labels and ARIA correctness. Serious and critical results block the PR; a JSON report preserves findings and inconclusive checks for explicit triage. No accessibility SDK ships to the user browser and no planner data model is modified. Real zoom, keyboard, screen reader and device testing remain required.
