@@ -22,12 +22,12 @@ Primary planner and auxiliary collection parse failures retain their original by
 
 ## Accounts and checkpoints
 
-Account caches use owner-specific keys. A transition preserves the previous payload, isolates the next account and retains device-only work separately. Adoption of existing device-only work into a signed-in account requires a choice. Unsaved task editor fields are checkpointed by owner during a transition; a draft-restoration UI remains pending. Checkpoints may contain private data, are not encrypted and are not synced automatically.
+Account caches use owner-specific keys. A transition preserves the previous payload, isolates the next account and retains device-only work separately. Adoption of existing device-only work into a signed-in account requires a choice. Unsaved task editor fields are checkpointed by owner during a transition; draft restoration/download/discard and owner-specific history export are now implemented with confirmation and browser tests. Checkpoints may contain private data, are not encrypted and are not synced automatically.
 
 `weekwise-pre-plan-v1` and `weekwise-pre-split-v1` retain prior raw planners. Undo is in-memory and refuses to overwrite newer edits. A checkpoint can be turned into a version-6 backup in an isolated profile, validated with `WeekwiseData.parseStore`, then restored through the normal confirmed flow. Never clear storage or overwrite a live account while diagnosing.
 
 ## Code rollback
 
-The review branch is `codex/weekwise-2-foundation`, draft PR #16. Main stays unchanged until release authorization. Revert using a normal new commit. Export data before downgrade; the old baseline has deletion heuristics and must not be reintroduced into a real profile without isolated compatibility checks.
+PRs #16–#21 have been reviewed, merged and deployed. The live build after PR #21 is `ea6573c08433ec6995feb6740968b7944ea4cb21`. To roll back code, create a normal revert commit rather than force pushing. Export all data before downgrading; the old baseline had deletion heuristics and must not be reintroduced into a real profile without isolated compatibility checks.
 
 Browser coverage includes legacy and recurring history, damaged primary/habit bytes, invalid restore, valid confirmed restore, quota failure, account separation and actual offline reload. Real historical backups and private test-account/backend verification remain release gates.
