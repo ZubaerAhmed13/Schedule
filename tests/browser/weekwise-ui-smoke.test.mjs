@@ -992,6 +992,7 @@ test('an IANA Calendar zone projects one record through every view and edits the
 });
 
 async function openAccountErasure(page){
+ if(!await page.locator('#workspaceSidebar [data-workspace-view="settings"]').isVisible())await page.locator('#mobileNavigationToggle').click();
  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-account-erase]').click();await page.locator('#accountEraseDialog').waitFor({state:'visible'});
 }
 async function fillAccountErasure(page){

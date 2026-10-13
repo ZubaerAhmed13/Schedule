@@ -2709,7 +2709,7 @@ WeekwiseAccountUI.init({
   cloudSessionEpoch++;cloudReady=false;clearTimeout(cloudSyncTimer);cloudSyncTimer=null;
   try{isolatePlannerOwner('local');}catch(error){throw new Error('The cloud account was deleted, but device isolation failed: '+error.message+'. Export your device data before clearing anything.');}
   cloudUser=null;cloudRevision=0;cloudConflict=null;renderCloudPanel();renderAll();
-  try{await cloudClient.auth.signOut({scope:'local'});}catch(_){}
+  try{const result=await cloudClient.auth.signOut({scope:'local'});if(result?.error)throw result.error;}catch(_){throw new Error('Device sign-out could not finish. Account caches are retained until sign-out is resolved.');}
  }
 });
 WeekwisePlanUI.init(plannerBridge);
