@@ -37,6 +37,7 @@ Deno.serve(async(request:Request)=>{
   const users=[];
   for(let index=0;index<2;index++){
    const created=await create(codes.valid);required(!created.error&&!!created.data.user,'valid_invite_created');
+   required(!Object.hasOwn(created.data.user!.user_metadata,'weekwise_referral_code')&&created.data.user!.user_metadata.weekwise_disposable_backend_check===true,'new_invite_metadata_minimized');
    const auth=createClient(url,anon,options),login=await auth.auth.signInWithPassword({email:created.email,password:created.password});
    required(!login.error&&!!login.data.session&&login.data.user?.id===created.data.user!.id,'password_signin_verified');
    users.push({id:created.data.user!.id,email:created.email,password:created.password,auth,session:login.data.session!});
