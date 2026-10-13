@@ -1,5 +1,6 @@
 # Weekwise 2.0 upgrade progress
 
+> Current verified state and remaining limits: [CURRENT_STATUS.md](CURRENT_STATUS.md) and [LIVE_BACKEND_ACCEPTANCE.md](LIVE_BACKEND_ACCEPTANCE.md). Earlier phase wording below is historical; erasure/invitations/push scheduling are active, Google/Outlook are deferred.
 > Current review: [CURRENT_STATUS.md](CURRENT_STATUS.md). The dated sections below are retained as historical release evidence; their earlier candidate labels, counts and pending checkboxes are not the current status.
 
 ## Review candidate

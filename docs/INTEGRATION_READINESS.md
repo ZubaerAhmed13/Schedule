@@ -1,5 +1,6 @@
 # Weekwise integration readiness and production verification
 
+> Current verified state and remaining limits: [CURRENT_STATUS.md](CURRENT_STATUS.md) and [LIVE_BACKEND_ACCEPTANCE.md](LIVE_BACKEND_ACCEPTANCE.md). Earlier phase wording below is historical; erasure/invitations/push scheduling are active, Google/Outlook are deferred.
 Current actual backend deployment and approval gates are recorded in [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md). This document separates implementation from remaining external acceptance. Passing the repository's Node tests does **not** prove a production Supabase project, OAuth provider, or push delivery is working.
 
 ## Current verified scope

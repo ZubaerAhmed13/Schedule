@@ -24,9 +24,84 @@ const supabaseStub = String.raw`
 })();
 `;
 const mockRows=new Map();
+const responseOverrides=new Map();
+
+test('the linked data and privacy page reflows, has accessible structure and reloads offline',async()=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});await context.route('https://**/*',route=>route.abort());const page=await context.newPage();
+ try{
+  await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await page.locator('#mobileNavigationToggle').click();await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('#settingsWorkspace a[href="./privacy.html"]').click();assert.equal(await page.locator('h1').innerText(),'Data and privacy');
+  await page.addScriptTag({content:axe.source});const audit=await page.evaluate(async()=>{const result=await window.axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return result.violations.map(v=>({id:v.id,impact:v.impact}));});assert.deepEqual(audit.filter(v=>['critical','serious'].includes(v.impact)),[]);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2),true);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});assert.equal(await page.locator('h1').innerText(),'Data and privacy');await page.screenshot({animations:'disabled',fullPage:true,path:path.join(root,'test-results','privacy-phone.png')});
+ }finally{await context.close();}
+});
+
+test('closed Weekwise tabs dispatch a controlled push to the notification API with confined links',async()=>{
+ const context=await browser.newContext({serviceWorkers:'allow'});
+ await context.grantPermissions(['notifications'],{origin:new URL(origin).origin});
+ await context.route('https://**/*',route=>route.abort());
+ const control=await context.newPage(),cdp=await context.newCDPSession(control);let registrationId;
+ cdp.on('ServiceWorker.workerRegistrationUpdated',event=>{for(const registration of event.registrations)if(registration.scopeURL===origin&&!registration.isDeleted)registrationId=registration.registrationId;});
+ await cdp.send('ServiceWorker.enable');const page=await context.newPage();
+ try{
+  await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await page.evaluate(()=>navigator.serviceWorker.ready);const worker=context.serviceWorkers().find(item=>item.url().startsWith(origin));assert.ok(worker);
+  // Observe the real API invocation. CI has no native notification platform;
+  // promise settlement/OS delivery remain recorded external acceptance limits.
+  await worker.evaluate(()=>{self.notificationCalls=[];const native=self.registration.showNotification.bind(self.registration);self.registration.showNotification=async(title,options)=>{const record={title,tag:options.tag,url:options.data.url,settled:false};self.notificationCalls.push(record);try{await native(title,options);record.settled=true;}catch(error){record.nativeError=error.name;throw error;}};});
+  for(let attempt=0;attempt<50&&!registrationId;attempt++)await control.waitForTimeout(100);
+  assert.ok(registrationId,'DevTools observes the actual registration');await page.close();
+  assert.equal(context.pages().filter(item=>item.url().startsWith(origin)).length,0,'all Weekwise application tabs are closed');
+  const payload={title:'Synthetic background check',body:'Controlled browser protocol transport',tag:'weekwise-closed-tab-check',url:'https://example.com/forbidden',taskId:'synthetic',reminderAt:'2099-01-01T00:00:00Z'};
+  await cdp.send('ServiceWorker.deliverPushMessage',{origin:new URL(origin).origin,registrationId,data:JSON.stringify(payload)});
+  const read=()=>worker.evaluate(async()=>({clients:(await self.clients.matchAll({type:'window'})).filter(client=>client.url.startsWith(self.registration.scope)).length,notifications:self.notificationCalls}));
+  let outcome;for(let attempt=0;attempt<50;attempt++){outcome=await read();if(outcome.notifications.some(item=>item.tag===payload.tag))break;await control.waitForTimeout(100);}
+  assert.equal(outcome.clients,0);assert.deepEqual(outcome.notifications.map(({title,tag,url})=>({title,tag,url})),[{title:payload.title,tag:payload.tag,url:origin}]);
+  fs.mkdirSync(path.join(root,'test-results'),{recursive:true});fs.writeFileSync(path.join(root,'test-results','lab-closed-tab-push.json'),JSON.stringify({kind:'controlled DevTools push, headless notification API observation; not physical OS/provider delivery',...outcome},null,2));
+  await worker.evaluate(async()=>{for(const notification of await self.registration.getNotifications())notification.close();});
+ }finally{await cdp.detach();await context.close();}
+});
+
+test('timezone review at 200 percent text size remains keyboard reachable and quota failure preserves original data',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  if(!await page.locator('#workspaceSidebar [data-workspace-view="settings"]').isVisible())await page.locator('#mobileNavigationToggle').click();
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('#settingsWorkspace [data-zone-conversion]').click();
+  await page.locator('#zoneConversionTarget').fill('Europe/Berlin');await page.locator('#zoneConversionForm button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('#zoneConversionPreview').textContent.includes('SHA-256'));
+  const original=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
+  await page.addStyleTag({content:'html{font-size:200%} #zoneConversionPanel,#zoneConversionPanel input,#zoneConversionPanel select,#zoneConversionPanel button{font-size:1rem}'});
+  const fits=await page.locator('#utilityModal .utility-dialog').evaluate(dialog=>{const bounds=dialog.getBoundingClientRect();return [...dialog.querySelectorAll('input,select,button')].filter(el=>el.getClientRects().length).every(el=>{const rect=el.getBoundingClientRect();return rect.left>=bounds.left-2&&rect.right<=bounds.right+2;});});assert.equal(fits,true,'controls reflow with doubled text');
+  await page.locator('#zoneConversionReviewed').focus();assert.equal(await page.locator('#zoneConversionReviewed').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Space');assert.equal(await page.locator('#zoneConversionReviewed').isChecked(),true);
+  await page.keyboard.press('Tab');assert.equal(await page.locator('#zoneConversionDownload').evaluate(el=>el===document.activeElement),true);
+  await page.evaluate(()=>{const original=Storage.prototype.setItem;window.restoreZoneStorage=()=>{Storage.prototype.setItem=original;};Storage.prototype.setItem=function(key,value){if(key==='weekwise-zone-backup-v1:weekwise-browser-test-user')throw new DOMException('Synthetic quota','QuotaExceededError');return original.call(this,key,value);};});
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#zoneConversionApply').click();assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),original);assert.match(await page.locator('#zoneConversionStatus').innerText(),/quota|save|storage|write/i);
+  await page.evaluate(()=>window.restoreZoneStorage());await page.screenshot({animations:'disabled',path:path.join(root,'test-results','zone-review-text-200.png')});
+ }finally{await context.close();}
+});
+
+test('an interrupted worker update retains the old offline shell and a successful retry waits for an unfinished editor',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000},{serviceWorkers:'allow'});
+ const workerSource=fs.readFileSync(path.join(siteRoot,'sw.js'),'utf8'),assetReference=workerSource.match(/'\.\/js\/[^']+'/)?.[0]?.slice(1,-1),firstAsset=assetReference?new URL(assetReference,origin).pathname:null;
+ assert.ok(firstAsset);const updated=workerSource.replace(/const CACHE_NAME\s*=\s*'[^']+'/,"const CACHE_NAME = 'weekwise-static-interrupted-check'");
+ try{
+  await createScheduledTask(page,'Retain through worker update');await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  const before=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),cacheBefore=await page.evaluate(()=>caches.keys());
+  responseOverrides.set('/sw.js',{status:200,body:updated});responseOverrides.set(firstAsset,{status:503,body:'Synthetic interrupted asset'});
+  const failed=await page.evaluate(async()=>{const reg=await navigator.serviceWorker.ready;await reg.update();const worker=reg.installing;if(!worker)return {waiting:!!reg.waiting};await new Promise(resolve=>{if(worker.state==='redundant')return resolve();worker.addEventListener('statechange',()=>{if(['redundant','installed'].includes(worker.state))resolve();});});return {state:worker.state,waiting:!!reg.waiting};});
+  assert.equal(failed.waiting,false);assert.equal(failed.state,'redundant');assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);assert.ok((await page.evaluate(()=>caches.keys())).some(key=>cacheBefore.includes(key)),'old cache remains');
+  responseOverrides.delete(firstAsset);await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill('Unfinished update draft');
+  await page.evaluate(async()=>{const registration=await navigator.serviceWorker.ready;await registration.update();});await page.waitForFunction(()=>document.querySelector('#updateNotice button')?.disabled===true);
+  assert.equal(await page.locator('#modalTitleInput').inputValue(),'Unfinished update draft');assert.match(await page.locator('#updateNotice').innerText(),/editor|dialog/i);
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#closeModal').click();await page.locator('#taskModal').waitFor({state:'hidden'});await page.waitForFunction(()=>document.querySelector('#updateNotice button')?.disabled===false);
+  await page.locator('#updateNotice button').click();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.waitForFunction(()=>!document.querySelector('#updateNotice'));
+  assert.equal(await countStoredTasksNamed(page,'Retain through worker update'),1);assert.equal(await countStoredTasksNamed(page,'Unfinished update draft'),0);
+  await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await countStoredTasksNamed(page,'Retain through worker update'),1);
+ }finally{responseOverrides.delete('/sw.js');responseOverrides.delete(firstAsset);await context.close();}
+});
 
 function serveStatic(req, res) {
   const pathname = decodeURIComponent(new URL(req.url || "/", origin || "http://127.0.0.1").pathname);
+  if(responseOverrides.has(pathname)){const override=responseOverrides.get(pathname);res.writeHead(override.status,{"Content-Type":override.type||"text/javascript; charset=utf-8","Cache-Control":"no-store"});res.end(override.body);return;}
   let target = path.resolve(siteRoot, "." + pathname);
   if (target !== siteRoot && !target.startsWith(siteRoot + path.sep)) {
     res.writeHead(403);
@@ -773,6 +848,10 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('plan');
   await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
   await audit('focus dialog');
+  await page.locator('#closeUtility').click();
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
+  await page.locator('#settingsWorkspace [data-zone-conversion]').click();
+  await audit('timezone review dialog');
   await page.locator('#closeUtility').click();
   await page.locator('#globalCaptureBtn').click();
   await page.locator('#taskModal').waitFor({state:'visible'});

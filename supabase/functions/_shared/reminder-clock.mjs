@@ -6,7 +6,8 @@ export function reminderTime(value,zone,anchor=null){
  if(typeof anchor==='number'&&Number.isFinite(anchor)&&Math.abs(anchor)<=8640000000000000)return new Date(anchor);
  const local=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(text);
  if(local){try{return globalThis.WeekwiseTimeZones.wallTimeInZone({year:Number(local[1]),month:Number(local[2]),day:Number(local[3]),hour:Number(local[4]),minute:Number(local[5]),second:Number(local[6]||0)},zone);}catch(_){return null;}}
- if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(text))return null;
+ const explicit=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.exec(text);if(!explicit)return null;
+ try{globalThis.WeekwiseTimeZones.checkedComponents(...explicit.slice(1,7).map(part=>Number(part||0)));}catch(_){return null;}
  const parsed=new Date(text);return Number.isFinite(parsed.getTime())?parsed:null;
 }
 export function taskReminderTime(task,value,zone){

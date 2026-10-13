@@ -1,5 +1,6 @@
 # Weekwise background reminders (Web Push)
 
+> Current verified state and remaining limits: [CURRENT_STATUS.md](CURRENT_STATUS.md) and [LIVE_BACKEND_ACCEPTANCE.md](LIVE_BACKEND_ACCEPTANCE.md). Earlier phase wording below is historical; erasure/invitations/push scheduling are active, Google/Outlook are deferred.
 The server, stable VAPID keys, server-only tables and one-minute scheduler are active in Weekwise. Two scheduled calls returned HTTP 200 with successful dispatch and no failures. No devices are subscribed yet; actual notification delivery with the app closed still needs a device test. Dispatch is authorized by a server-only Vault secret.
 
 ## What it adds

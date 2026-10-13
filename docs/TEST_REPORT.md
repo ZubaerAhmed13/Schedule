@@ -1,5 +1,6 @@
 # Weekwise 2.0 validation report — 12 October 2026
 
+> Current verified state and remaining limits: [CURRENT_STATUS.md](CURRENT_STATUS.md) and [LIVE_BACKEND_ACCEPTANCE.md](LIVE_BACKEND_ACCEPTANCE.md). Earlier phase wording below is historical; erasure/invitations/push scheduling are active, Google/Outlook are deferred.
 > Current review: [CURRENT_STATUS.md](CURRENT_STATUS.md). The dated sections below are retained as historical release evidence; their earlier candidate labels, counts and pending checkboxes are not the current status.
 
 Verified implementation commit: `92b2d14373c9081bf0fbc4a5ea2b488ee2e6c779`.

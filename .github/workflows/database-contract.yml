@@ -35,3 +35,5 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/weekwise-rpc-hardening.sql
       - name: Test server-only runtime configuration and optional integration schemas
         run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/weekwise-integration-config.sql
+      - name: Test private invitation enforcement and unchanged existing accounts
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/weekwise-invitation.sql

@@ -138,13 +138,13 @@
 
       if (!subscription) {
         setButton("Enable background reminders");
-        setStatus("The push service is reachable. Enable this device to receive task reminders while Weekwise is closed.");
+        setStatus("The push service is reachable. Enable this device to request reminders while Weekwise is closed. Delivery on this device is unverified.");
         return;
       }
 
       if (state.enabled === true) {
         setButton("Disable background reminders");
-        setStatus("Background reminders are enabled for this device (" + (state.timezone || currentTimeZone()) + ").");
+        setStatus("Background reminder subscription is enabled for this device (" + (state.timezone || currentTimeZone()) + "). Delivery with Weekwise closed is unverified on this device.");
       } else {
         setButton("Enable background reminders");
         setStatus("A browser subscription exists but is not linked to this Weekwise account yet. Enable it to link this device.");
@@ -182,7 +182,7 @@
         // A browser profile may still hold a subscription from a different Weekwise account.
         // Re-registering moves the endpoint to the currently authenticated account.
         await invoke("subscribe", { subscription: existing.toJSON(), timezone: currentTimeZone() });
-        setStatus("Background reminders are enabled for this device (" + currentTimeZone() + ").");
+        setStatus("Background reminder subscription is enabled for this device (" + currentTimeZone() + "). Delivery with Weekwise closed is unverified on this device.");
         return;
       }
 
@@ -211,7 +211,7 @@
         try { await subscription.unsubscribe(); } catch (_) {}
         throw error;
       }
-      setStatus("Background reminders are enabled for this device (" + currentTimeZone() + ").");
+      setStatus("Background reminder subscription is enabled for this device (" + currentTimeZone() + "). Delivery with Weekwise closed is unverified on this device.");
     } catch (error) {
       setStatus(error.message || "Could not enable background reminders.", true);
     } finally {
