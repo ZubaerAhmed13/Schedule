@@ -42,9 +42,10 @@ test('quick list editing moves a stable task across weeks, retains metadata and 
   await page.locator('#taskQuickPriority').selectOption('high');await page.locator('#taskQuickDue').fill('2030-01-15');await page.locator('#taskQuickEstimate').fill('45');await page.locator('#taskQuickDate').fill('2030-01-14');await page.locator('#taskQuickTime').fill('15:00');await page.locator('#taskQuickDuration').fill('45');
   assert.deepEqual(await readPlannerStore(page),before,'typing only changes the private draft');
   await page.screenshot({path:path.join(root,'test-results','productivity-quick-edit-phone.png'),animations:'disabled'});
+  await page.locator('#workspaceTaskList [data-workspace-done="action-b"]').check();const beforeSave=await readPlannerStore(page);
   await page.locator('#taskQuickSave').click();await page.locator('#taskQuickEdit').waitFor({state:'hidden'});
   const next=await readPlannerStore(page),task=next.weeks['2030-01-13'].tasks.find(t=>t.id==='action-a');assert.equal(task.start,900);assert.equal(task.day,1);assert.equal(task.duration,45);assert.equal(task.priority,'high');assert.equal(task.dueDate,'2030-01-15');assert.equal(task.estimatedDurationMinutes,45);assert.equal(task.note,'Keep note a');assert.deepEqual(task.customMetadata,{ordinal:0});assert.deepEqual(task.tags,['original']);assert.equal(next.weeks['2030-01-06'].notes,'Retain source notes');
-  await page.locator('#taskActionUndo').click();assert.deepEqual(await readPlannerStore(page),before);
+  assert.equal(next.weeks['2030-01-06'].tasks.find(t=>t.id==='action-b').done,true,'a newer edit to another task is preserved');await page.locator('#taskActionUndo').click();assert.deepEqual(await readPlannerStore(page),beforeSave);
  }finally{await context.close();}
 });
 

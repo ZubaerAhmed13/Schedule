@@ -6,10 +6,11 @@
  const controls=['taskQuickPriority','taskQuickDue','taskQuickEstimate','taskQuickUnscheduled','taskQuickDate','taskQuickTime','taskQuickDuration'];
  const values=()=>Object.fromEntries(controls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]));
  const dirty=()=>!!editing&&JSON.stringify(values())!==editing.initial;
+ function syncTiming(){if(!editing)return;const protectedTiming=!!(editing.task.seriesId||editing.task.recurrence&&editing.task.recurrence!=='none'||editing.task.planningChildren?.length),allDay=!!editing.task.allDay;for(const id of ['taskQuickDate','taskQuickTime','taskQuickDuration'])$(id).disabled=protectedTiming||$('taskQuickUnscheduled').checked||allDay&&id!=='taskQuickDate';}
  const announce=message=>{$('taskActionsStatus').textContent=message;if($('todayHighlightDialog').open)$('todayHighlightStatus').textContent=message;app.announce(message);};
  const draftKey=account=>'weekwise-quick-edit-v1:'+encodeURIComponent(account);
  function readDraft(account){const raw=localStorage.getItem(draftKey(account));if(!raw)return null;const draft=JSON.parse(raw);if(draft.version!==1||draft.account!==account||!draft.ref||!draft.fields||typeof draft.base!=='string'||typeof draft.sessionId!=='string')throw new Error('The saved quick edit needs review; download it before discarding.');return {raw,draft};}
- function saveDraft(){if(!dirty())return;try{const stored=localStorage.getItem(draftKey(editing.account));if(stored!==editing.draftRaw)throw new Error('Another tab changed this quick-edit draft. Your fields remain open.');const raw=JSON.stringify({version:1,account:editing.account,sessionId:editing.sessionId,ref:editing.ref,base:JSON.stringify(editing.task),fields:values(),savedAt:new Date().toISOString()});localStorage.setItem(draftKey(editing.account),raw);editing.draftRaw=raw;}catch(error){announce('Quick edit remains open, but its draft could not be saved: '+error.message);}}
+ function saveDraft(){if(!dirty())return;try{const stored=localStorage.getItem(draftKey(editing.account));if(stored!==editing.draftRaw)throw new Error('Another tab changed this quick-edit draft. Your fields remain open.');if(stored&&JSON.stringify(JSON.parse(stored).fields)===JSON.stringify(values()))return;const raw=JSON.stringify({version:1,account:editing.account,sessionId:editing.sessionId,ref:editing.ref,base:JSON.stringify(editing.task),fields:values(),savedAt:new Date().toISOString()});localStorage.setItem(draftKey(editing.account),raw);editing.draftRaw=raw;}catch(error){announce('Quick edit remains open, but its draft could not be saved: '+error.message);}}
  function removeDraft(session){const stored=localStorage.getItem(draftKey(session.account));if(stored&&stored!==session.draftRaw)throw new Error('Another tab saved a newer quick-edit draft; it was retained.');if(stored)localStorage.removeItem(draftKey(session.account));}
  function clearEditor(){editing=null;$('taskQuickEdit').hidden=true;$('taskQuickForm').reset();$('taskQuickTitle').textContent='Quick edit';$('taskQuickError').textContent='';}
  function commit(snapshot,account,next,message){
@@ -36,7 +37,7 @@
   const protectedTiming=!!(task.seriesId||task.recurrence&&task.recurrence!=='none'||task.planningChildren?.length);
   for(const id of ['taskQuickUnscheduled','taskQuickDate','taskQuickTime','taskQuickDuration'])$(id).disabled=protectedTiming||!!task.allDay&&id!=='taskQuickDate';
   $('taskQuickTimingNote').textContent=protectedTiming?'Recurring and linked timing uses the full reviewed editor. These changes apply to this task only.':'Times use '+(snapshot.store.settings.timeZone||'the planner zone')+'. Existing reminders keep their exact instants.';
-  $('taskQuickError').textContent='';$('taskQuickEdit').hidden=false;editing.initial=JSON.stringify(values());
+  syncTiming();$('taskQuickError').textContent='';$('taskQuickEdit').hidden=false;editing.initial=JSON.stringify(values());
   $('taskQuickPriority').focus({preventScroll:true});$('taskQuickEdit').scrollIntoView({block:'nearest'});
  }
  function saveEditor(event){event.preventDefault();if(!editing)return;
@@ -52,8 +53,11 @@
     patch.schedule={date:v.taskQuickDate,start:h*60+m,duration:Number(v.taskQuickDuration),unscheduled:v.taskQuickUnscheduled,allDay:!!editing.task.allDay};
    }
    if(!Object.keys(patch).length){removeDraft(editing);clearEditor();render();announce('No task details changed.');return;}
-   const session=editing,next=root.WeekwiseTaskActions.apply(session.snapshot.store,[session.ref],patch);
-   commit(session.snapshot,session.account,next,'Task updated.');try{removeDraft(session);}catch(error){announce(error.message);}clearEditor();render();
+   const session=editing,current=app.snapshot(),live=current.store.weeks[session.ref.week]?.tasks.find(task=>task.id===session.ref.id);
+   if(!live||JSON.stringify(live)!==JSON.stringify(session.task))throw new Error('This task changed while you were editing. Your draft is retained; reopen it for review.');
+   if(patch.schedule&&current.store.settings.timeZone!==session.snapshot.store.settings.timeZone)throw new Error('The planner time zone changed. Review the timing in a fresh quick edit.');
+   const next=root.WeekwiseTaskActions.apply(current.store,[session.ref],patch);
+   commit(current,session.account,next,'Task updated.');try{removeDraft(session);}catch(error){announce(error.message);}clearEditor();render();
   }catch(error){$('taskQuickError').textContent=error.message;announce(error.message);}
  }
  function highlight(ref){
@@ -108,8 +112,8 @@
   $('workspaceTaskList').addEventListener('change',event=>{const control=event.target.closest('[data-task-select]');if(!control)return;const ref={id:control.dataset.taskSelect,week:control.dataset.taskWeek};if(control.checked){if(selected.size>=500){control.checked=false;announce('Select up to 500 tasks at a time.');return;}selected.set(key(ref),ref);}else selected.delete(key(ref));render();});
   $('taskSelectShown').onclick=()=>{for(const control of document.querySelectorAll('#workspaceTaskList [data-task-select]:not(:disabled)')){if(selected.size>=500)break;const ref={id:control.dataset.taskSelect,week:control.dataset.taskWeek};selected.set(key(ref),ref);}render();};
   $('taskClearSelection').onclick=()=>{selected.clear();render();};$('taskBulkReview').onclick=openBulk;$('taskBulkAction').onchange=bulkFields;$('taskBulkForm').onsubmit=saveBulk;$('taskBulkCancel').onclick=()=>{$('taskBulkDialog').close();bulk=null;};
-  $('taskQuickForm').onsubmit=saveEditor;$('taskQuickForm').addEventListener('input',saveDraft);$('taskQuickCancel').onclick=()=>{if(dirty()&&!confirm('Discard your unsaved quick edit?'))return;try{if(editing)removeDraft(editing);clearEditor();render();}catch(error){announce(error.message);}};
-  $('taskQuickRestoreDraft').onclick=()=>{try{const entry=readDraft(app.account());if(!entry)return;const task=app.snapshot().store.weeks[entry.draft.ref.week]?.tasks.find(task=>task.id===entry.draft.ref.id);if(!task||JSON.stringify(task)!==entry.draft.base)throw new Error('The original task changed. Your draft is retained; download it and review the task in the full editor.');openEditor(entry.draft.ref,true);editing.sessionId=entry.draft.sessionId;for(const id of controls){const value=entry.draft.fields[id];if($(id).type==='checkbox')$(id).checked=!!value;else $(id).value=value??'';}render();}catch(error){announce(error.message);}};
+  $('taskQuickForm').onsubmit=saveEditor;$('taskQuickForm').addEventListener('input',()=>{syncTiming();saveDraft();});$('taskQuickCancel').onclick=()=>{if(dirty()&&!confirm('Discard your unsaved quick edit?'))return;try{if(editing)removeDraft(editing);clearEditor();render();}catch(error){announce(error.message);}};
+  $('taskQuickRestoreDraft').onclick=()=>{try{const entry=readDraft(app.account());if(!entry)return;const task=app.snapshot().store.weeks[entry.draft.ref.week]?.tasks.find(task=>task.id===entry.draft.ref.id);if(!task||JSON.stringify(task)!==entry.draft.base)throw new Error('The original task changed. Your draft is retained; download it and review the task in the full editor.');openEditor(entry.draft.ref,true);editing.sessionId=entry.draft.sessionId;for(const id of controls){const value=entry.draft.fields[id];if($(id).type==='checkbox')$(id).checked=!!value;else $(id).value=value??'';}syncTiming();render();}catch(error){announce(error.message);}};
   $('taskQuickDiscardDraft').onclick=()=>{if(!confirm('Discard this saved quick-edit draft?'))return;localStorage.removeItem(draftKey(app.account()));render();};
   $('taskQuickDownloadDraft').onclick=()=>{const raw=localStorage.getItem(draftKey(app.account()));if(!raw)return;const url=URL.createObjectURL(new Blob([raw],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='weekwise-quick-edit-draft.json';a.click();URL.revokeObjectURL(url);};
   $('taskQuickFullEditor').onclick=()=>{if(dirty()){announce('Save or cancel this quick edit first.');return;}const ref=editing?.ref;if(ref){clearEditor();app.edit(ref.id,ref.week);}};

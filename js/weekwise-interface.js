@@ -20,7 +20,7 @@
     app=bridge;navigation(app.view());renderPins();
     document.addEventListener('click',event=>{
       const summary=event.target.closest('#workspaceSidebar .nav-group > summary');
-      if(summary){const owner=app.account(),group=summary.parentElement;queueMicrotask(()=>{if(app.account()!==owner)return;try{const saved=readGroups(owner);saved[group.id]=group.open;localStorage.setItem(navKey(owner),JSON.stringify(saved));}catch(_){app.announce('Navigation opened, but its preference could not be saved.');}});}
+      if(summary){const owner=app.account(),group=summary.parentElement;setTimeout(()=>{if(app.account()!==owner)return;try{const saved=readGroups(owner);saved[group.id]=group.open;localStorage.setItem(navKey(owner),JSON.stringify(saved));}catch(_){app.announce('Navigation opened, but its preference could not be saved.');}},0);}
       const button=event.target.closest('[data-pin-list]');if(!button)return;
       try{
         if(root.WeekwiseProductivity?.hasPending())throw new Error('Save your quick edit before changing pinned lists.');
