@@ -101,3 +101,11 @@ Screenshots go to `test-results/` and a CI artifact. Existing Deno function chec
 ### Calendar display preference (review branch)
 
 Settings → Work day & weekly settings → **Month and year start day** offers Sunday or Monday as the first weekday column. It is a presentation preference only; it **never moves tasks** and Weekwise's underlying weekly planning records remain Sunday–Saturday. Time-zone conversion is not implemented by this setting, and saved wall times are still guarded when the device's zone changes.
+
+## Master-plan completion and exact scope
+
+The original 32-section master upgrade plan is audited in [docs/MASTER_PLAN_VERIFICATION.md](docs/MASTER_PLAN_VERIFICATION.md). Features described as needing live provider, staging backend or real-device verification must not be presented as production-ready until that evidence exists.
+
+### Safe iCalendar imports
+
+Importing an `.ics` file now previews the number of new, duplicate, and unsupported entries before any planner changes. Named IANA `TZID` values are converted to the importing device's time zone. A missing/nonexistent local time or ambiguous DST-fold occurrence is **skipped and reported** rather than assigned a potentially incorrect instant. A regular UTC `Z` timestamp stays absolute; a floating timestamp follows the device's local clock. Date-only events keep their calendar dates. Recurring rules from external files are intentionally not imported as one-off instances; use calendar integration when configured or add those manually. No records are changed if the confirmation is dismissed.

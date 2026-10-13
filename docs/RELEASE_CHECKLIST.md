@@ -44,3 +44,11 @@ Never expose OAuth/VAPID/service-role/AI secrets in browser code. Never run prod
 - [ ] Verify the new Month/Year Sunday-vs-Monday display order using Node and built-client browser tests on the final PR commit.
 - [ ] Verify task weeks and recurring occurrence IDs are unchanged when switching grid preference; weekly planning remains Sunday-canonical.
 - [ ] Keep arbitrary fixed IANA zone conversion and full Monday-canonical week migration blocked pending a separate, tested migration design.
+
+## 13 October 2026 — TZID and atomic import review branch
+
+- [ ] Node conversion tests: Europe/Berlin, America/New_York, Asia/Kolkata, DST fold/gap, leap years and invalid zone.
+- [ ] Built-client import test: preview cancellation keeps identical planner bytes, accepted import uses exact local clock, ambiguous DST event skipped, duplicate UID does not create another task.
+- [ ] Static build caches the new time-zone module and still passes offline browser regression.
+- [ ] Browser and CI checks pass at the exact reviewed head SHA.
+- [ ] Real provider OAuth, full app timezone selection and recurrence ICS ingestion remain separate release gates.

@@ -68,3 +68,9 @@ This continuation adds an explicit owner-scoped editor-history export under Sett
 ## Calendar grid preference (incremental delivery)
 
 A separately scoped `calendarGridStartDay` setting rotates Month and Year layouts to Sunday- or Monday-first without migrating Sunday-canonical week records, recurrence IDs, or existing task dates. The default is unchanged. The preference is explicitly labelled as a **Month/Year-only display choice**, not a changed planning-week boundary. A small pure date-layout module and Node/browser regressions cover calendar offsets, leap years, DST boundaries and settings persistence. Production IANA fixed-zone conversion and Monday-first Week/Smart Week Builder are still out of scope until a safe cross-week storage strategy is reviewed. Do not advertise them as finished.
+
+## 13 October 2026 — current status and master-plan continuation
+
+All three earlier PRs #17, #18 and #19 were merged to `main`. Final Pages deployment `dd372f38d8c0aed858cdf161ef783bd72801e108` passed its exact-commit smoke test, and 27/27 post-merge browser tests passed. Earlier sections above that call those changes unmerged or claim Main has not changed reflect their original audit/review dates.
+
+[MASTER_PLAN_VERIFICATION.md](MASTER_PLAN_VERIFICATION.md) now maps the user's **original 32-section master prompt** to tested implementation and the remaining external or human review requirements. This update is a new development branch implementing IANA TZID-aware and atomic iCalendar import. It does not change production Supabase, cloud accounts or local user data.
