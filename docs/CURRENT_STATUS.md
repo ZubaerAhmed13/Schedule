@@ -1,6 +1,6 @@
 # Weekwise current status — 13 October 2026
 
-The independently verified client assets `a0584ca6b702f192` were released through PR #38 at `746b4c90ba0af51490fc550f562dae97beea165e`, Pages run `38400926313`. All five post-merge workflows passed. Each deployment’s current identity is published in [build-info.json](https://zubaerahmed13.github.io/Schedule/build-info.json). The compatible cloud-save validation update is applied with explicit user approval; optional services remain unconfigured. See [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md) for the atomic preservation checks and actual live results.
+The independently verified client assets `a0584ca6b702f192` were released through PR #38 at `746b4c90ba0af51490fc550f562dae97beea165e`, Pages run `38400926313`. All five post-merge workflows passed. Each deployment’s current identity is published in [build-info.json](https://zubaerahmed13.github.io/Schedule/build-info.json). The compatible cloud-save validation update is applied with explicit user approval; optional integration tables, secure configuration and three services are now deployed. Scheduling and erasure activation are blocked by the pg_net approval; calendar providers need credentials. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md). See [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md) for the atomic preservation checks and actual live results.
 
 ## Current verification
 
@@ -10,8 +10,8 @@ The independently verified client assets `a0584ca6b702f192` were released throug
 | Recurrence release | Exact head `56884163ce997ac43b8ec48ee1b5cf8f4419f887` passed 142 Node/54 browser tests and release/all three Edge checks; the phone drag regression verifies its visible starting handle |
 | Today clock release | PR #38 final head `274054d21ebc9c2b61a156d8ed50d821007b445e` and post-merge client passed 146 Node/55 browser tests and all release/Edge gates |
 | Pages | Exact commit/run/hash independently matched; frontend-only build |
-| Privacy and integrations | Account-erasure controls/source are present but the server operation is disabled pending correct-project staging; no real account deleted |
-| Correct Supabase project | `iajkzlsurghfvsmqkmut` is now accessible through the WeekWise connection; read-only catalog/security/compatibility review is recorded in [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md). The approved cloud-save function migration `20261013132923` is applied; stored records were preserved and optional services are unchanged |
+| Privacy and integrations | Three services deployed, VAPID/encryption generated; erasure disabled pending disposable-identity verification; scheduler approval blocked; calendar credentials absent; no real account deleted |
+| Correct Supabase project | `iajkzlsurghfvsmqkmut` is now accessible through the WeekWise connection; read-only catalog/security/compatibility review is recorded in [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md). The approved cloud-save function migration `20261013132923` is applied; stored records were preserved; optional migration `20261013142457` is applied with six RLS tables |
 
 Tests use synthetic records and mock accounts/provider transport. Offline tests use the real service worker; this does not certify private production RLS, actual OAuth/push delivery or installed-device behavior.
 
@@ -31,8 +31,8 @@ Tests use synthetic records and mock accounts/provider transport. Offline tests 
 
 | Area | What remains |
 |---|---|
-| Private backend | Correct-project catalog review is delivered; dedicated real test identities/staging, own-row/cross-user RLS, invitation enforcement, refresh/expiry, revision/RPC privileges, account cascades and staging erasure. Only the specifically approved cloud-save validation migration was executed; provider/invitation/erasure SQL remains unapplied |
-| Optional services | Google/Outlook credentials/consent and create/update/delete/conflict/refresh acceptance; VAPID/cron and app-closed push acceptance. No optional AI provider configured |
+| Private backend | Correct-project catalog review is delivered; dedicated real test identities/staging, own-row/cross-user RLS, invitation enforcement, refresh/expiry, revision/RPC privileges, account cascades and staging erasure. Cloud-save and optional integration schemas/configuration are applied; real disposable-identity testing/erasure enablement awaits pg_net approval; invitation enforcement remains separate |
+| Optional services | Google/Outlook credentials/consent and create/update/delete/conflict/refresh acceptance; VAPID keys are provisioned; cron activation and app-closed push acceptance remain. No optional AI provider configured |
 | Device/human acceptance | Real phone keyboards/rotation, screen readers and 200% zoom; installed-PWA upgrade/interrupted-install, actual two-device reconnect and representative private historical backups |
 | Historical planner zones | Calendar projection and source-zone planning are delivered. Full historical source-zone migration and an independent planning-zone transformation remain separate design work. The device-zone review gate remains; no historical zone is silently migrated |
 | Architecture/performance | Core/presentation modules and narrow checked bridges are extracted, but the legacy app IIFE remains large. Further maintainability/profiling and real-use field Core Web Vitals require additional work/evidence |

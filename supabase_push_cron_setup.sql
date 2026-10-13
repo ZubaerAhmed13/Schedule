@@ -1,11 +1,9 @@
 -- Weekwise background push cron setup.
--- BEFORE running this script:
--- 1) Deploy supabase/functions/weekwise-push/index.ts.
--- 2) Set WEEKWISE_PUSH_CRON_SECRET in Edge Function secrets.
--- 3) In Supabase Dashboard -> Vault, create secrets named:
---      weekwise_project_url       value: https://<project-ref>.supabase.co
---      weekwise_push_cron_secret  value: the EXACT same random secret as the Edge Function secret.
--- Never replace these Vault lookups with literal secrets in this file or commit real secrets.
+-- Requires explicit pg_net/pg_cron activation approval. It is not installed yet.
+-- Deploy the push handler and private runtime migration first. Server bootstrap
+-- provisions stable VAPID keys, weekwise_project_url and weekwise_push_cron_secret.
+-- Keep net unexposed by the Data API; trusted direct database roles can read queued headers.
+-- Never replace Vault lookups with literal secrets or commit real secret values.
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
@@ -35,7 +33,8 @@ select cron.schedule(
         'Content-Type', 'application/json',
         'x-weekwise-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'weekwise_push_cron_secret')
       ),
-      body := jsonb_build_object('action', 'dispatch')
+      body := jsonb_build_object('action', 'dispatch'),
+      timeout_milliseconds := 10000
     );
   $job$
 );

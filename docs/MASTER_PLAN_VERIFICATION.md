@@ -26,8 +26,8 @@ Current release/tests and remaining acceptance gates are in [CURRENT_STATUS.md](
 | 17 | Settings | PARTIAL | Full general locale/zone/account/privacy controls |
 | 18 | Incremental architecture | PARTIAL | Main app IIFE remains large; module API and maintainability work |
 | 19 | Cloud/offline | VERIFIED for synthetic fixtures | Real two-device reconnect, RLS, invite and expired-token tests |
-| 20 | Google Calendar/Outlook | EXTERNAL | OAuth secrets/provider consent/Edge Function/staging round trips |
-| 21 | Push | EXTERNAL | VAPID/cron/backend delivery with app closed, opt-out/expiry |
+| 20 | Google Calendar/Outlook | EXTERNAL | Server/tables/encryption deployed; OAuth credentials/consent and real round trips remain |
+| 21 | Push | EXTERNAL | Server/tables/VAPID deployed; scheduler approval and closed-app delivery/opt-out/expiry remain |
 | 22 | Security and privacy | PARTIAL | Production RLS, optional RPC hardening, CSP threat model, legal review |
 | 23 | Performance | PARTIAL | Synthetic browser large-lists tested; field CWV, long recurrence profiling |
 | 24 | Errors and polish | PARTIAL | Broader interrupted/suspended/recovery tests |
@@ -86,3 +86,7 @@ The later `Pasted text(4).txt` master brief was read in full on 13 October 2026 
 ## Approved cloud-save production update
 
 After correct WeekWise connection, read-only catalog/RLS/grant/cascade inspection and isolated PostgreSQL contract/rollback CI, the user explicitly approved the scoped cloud-save validation update. Migration `20261013132923` was applied only to Weekwise `iajkzlsurghfvsmqkmut`; an atomic aggregate content/row-count assertion preserved every stored row/revision/timestamp. Live read-only checks confirmed malformed/oversized rejection and unrelated-identity read isolation; grants/output order remain compatible. [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md) records exact SQL/fingerprints and limits. Earlier statements that no production SQL had run describe their historical stage. Optional provider/invitation/erasure activation and real test-identity/device acceptance remain pending; this specific approval does not authorize every future production operation.
+
+## Authorized integration setup
+
+PR #41 and [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md) record migration `20261013142457`, actual three-service deployment, stable Vault keys and live health/RLS checks. Automatic approval rejected pg_net enablement; no cron or disposable Auth test ran and erasure remains disabled. Provider registrations/credentials/consent and actual device notifications remain external. Earlier no-production-operation/undeployed statements describe historical stages.
