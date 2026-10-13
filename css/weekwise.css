@@ -41,3 +41,11 @@ body[data-theme=dark] .workspace-sidebar,body[data-theme=dark] .task-workspace,b
 #insightsScheduleStability{border-top:1px solid var(--line,#dce6de);padding-top:12px}
 #insightsScheduleStability p{margin:7px 0;line-height:1.5;font-size:13px}
 @media(max-width:540px){.insights-load-row{grid-template-columns:70px minmax(0,1fr) 68px;gap:8px;font-size:12px}.insights-load-row strong{font-size:12px}}
+
+
+/* Waiting PWA update guidance must fit narrow standalone viewports. */
+.update-notice{flex-wrap:wrap;max-width:min(440px,calc(100vw - 28px))}
+.update-notice>span{flex:1 1 170px}
+.update-notice .update-safety-message{flex:1 1 100%;line-height:1.5;color:var(--ww-muted)}
+.update-notice .btn:disabled{opacity:.62;cursor:not-allowed}
+@media(max-width:760px){.update-notice{max-width:none}.update-notice>span{flex:1 1 100%}}
