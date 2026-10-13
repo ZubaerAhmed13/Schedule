@@ -1,7 +1,7 @@
 # Weekwise 2.0 — master-plan verification matrix
 Original baseline reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and code on `main` at `b173a18551b3b5c45d0be456632afaedb1a3eea9` (2026-10-13).
 
-Current release/tests and remaining acceptance gates are in [CURRENT_STATUS.md](CURRENT_STATUS.md). The current status page supersedes this historical baseline. PRs #16–#36 are merged; recurrence/clock-preservation follow-up is in PR #37.
+Current release/tests and remaining acceptance gates are in [CURRENT_STATUS.md](CURRENT_STATUS.md). The current status page supersedes this historical baseline. PRs #16–#37 are merged; saved-clock Today/Focus/Insights is the current follow-up.
 
 **Status vocabulary:** VERIFIED = scope asserted by automated tests; PARTIAL = exists but lacks specified functionality or independent verification; EXTERNAL = credentials/private environment/real device is required; POLICY = instructions, not a software feature. Historical source descriptions in other docs may predate merges.
 
@@ -78,3 +78,7 @@ Saved planning-clock review adds source-zone date/instant checks, conservative D
 ## Generated recurring-clock and preservation review
 
 PR #37 indexes actual source-zone occupancy, preserves generated overnight hours, reserves future all-day commitments and leaves DST gap/fold occurrences unscheduled for review. Retained materialized records are not rewritten. Exact-instant anchors survive reordered object keys; dashboard past/future classification uses captured/source-zone time. The first code head passed 140 Node/53 browser tests and release/Edge checks; final follow-up adds two Node regressions and requires fresh remote checks. SDK imports are pinned to the verified current bundle, with no backend deployment.
+
+## Latest master brief and daily-clock continuation
+
+The later `Pasted text(4).txt` master brief was read in full on 13 October 2026 and retains the same 32-section scope. PR #37 is released with 142 Node/54 browser checks and independently matched Pages marker. The daily-clock follow-up addresses sections 7, 12, 14, 17 and 18 by reusing saved-zone dates and exact instants in read views, extracting pure daily derivation and correcting recorded-history week grouping. Four new Node scenarios and one browser scenario are added; final remote checks remain the release gate. External/device/historical migration gates above still apply.
