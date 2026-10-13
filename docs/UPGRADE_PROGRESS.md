@@ -110,3 +110,9 @@ A dependency-free update-safety helper and Node/built-client browser tests cover
 ## Accessibility regression expansion
 
 The Chromium workflow now installs a pinned `axe-core` audit engine solely for tests, scanning Today, Settings, Plan and the task editor for WCAG A/AA rules including text contrast, names, labels and ARIA correctness. Serious and critical results block the PR; a JSON report preserves findings and inconclusive checks for explicit triage. No accessibility SDK ships to the user browser and no planner data model is modified. Real zoom, keyboard, screen reader and device testing remain required.
+
+## Flexible weekly habit goals
+
+Habit creation now supports a separate **Any days — reach weekly target** rhythm for 1–7 check-ins per week. The existing selected-weekdays mode remains the default and all previously saved habits retain their original schedule. The new rhythm is stored per habit as `frequencyMode: "weekly-flexible"`; existing check-in, skip, pause, and reminder history stays intact. In flexible mode, Weekwise only nudges when the weekly goal has not been reached, and consecutive streaks are measured in **completed weeks**, not false daily failures. Switching back to selected weekdays restores the preserved selected days.
+
+Unit and built-client tests cover weekly targets, partially completed current weeks, history preservation, skips, paused habits, UI editing, and old schedule behavior. This is not a notification guarantee when the app is closed.
