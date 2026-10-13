@@ -49,3 +49,11 @@ Guarded Undo reverses the last accepted plan only while the store/account is unc
 Tests cover capacity union, multiple windows, buffers/limits, focus preference, deadlines, unknown/impossible work, fixed protection, selected acceptance, tampered slots, immutable failure, split links, overnight boundaries, DST calendar ordinals, recovery history and recurring cross-week identity. Browser tests exercise actual preview/apply/reload/Undo, splitting and recurring recovery.
 
 Device-local scheduling, Sunday canonical buckets and date-only deadlines remain explicit limits. There is no arbitrary IANA-zone conversion, auto deadline adjustment, recurring-series rescheduler or automatic semantic AI task breakdown.
+
+## Opt-in bulk update to materialized recurring descriptions
+
+Editing a saved recurring activity normally changes the rule for newly generated occurrences; existing saved occurrences remain protected. The editor now offers a **separate, initially unchecked option** for `future` or `series` scope: update descriptive metadata on eligible existing future occurrences, after showing how many will change and how many are protected.
+
+The pure `WeekwiseRecurringBulk.preview` compares selected original fields to the previous rule, skips manually customized exceptions, previously rescheduled tasks, completed/in-progress/fixed activities and linked splits, and excludes the edited source. `apply` requires each unchanged original record fingerprint and preserves its ID, date, start, duration, reminder history, completion and rescheduling history. Only a whitelisted set of descriptive fields is copied. Any manual time or deadline migration requires a separate scheduling preview, not this shortcut.
+
+The confirmation is required before applying to a copy; the existing checked save transaction commits the resulting store. Declining keeps the editor open without saving. The default unchecked behavior stays exactly as before.
