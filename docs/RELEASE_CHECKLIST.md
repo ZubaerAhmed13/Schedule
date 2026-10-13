@@ -88,3 +88,9 @@ The latest merged feature set is at `ea6573c08433ec6995feb6740968b7944ea4cb21`, 
 - [ ] Once draft/review is saved or closed, update becomes eligible without clearing planner storage.
 - [ ] Existing device-only offline create/reload, account isolation, browser and Edge checks remain green.
 - [ ] Actual installed-PWA update, interrupted installation and mobile standalone lifecycle are still real-device certification gates.
+
+## Automated accessibility quality gate
+
+- [ ] Run pinned `axe-core` WCAG 2.0/2.1/2.2 A and AA checks on the built Chromium Today, Settings, Plan and task editor views; block serious and critical findings.
+- [ ] Save the full violation and inconclusive-check summary as a CI artifact; manually triage moderate and needs-review items.
+- [ ] Confirm keyboard focus restoration, text scaling/reflow and actual phone screen readers independently. Automated axe results are not proof of full WCAG 2.2 AA conformance.
