@@ -103,9 +103,13 @@ body[data-active-view=today] #workspaceAddTaskBtn {display:none}
 .modal h3 {font-size:25px;letter-spacing:-.8px;margin:0 0 22px}.modalgrid {gap:16px}
 .field input,.field select,.field textarea,.plan-field input,.plan-field textarea {border-radius:10px;min-height:44px;font-size:13px}
 .field label {font-size:12px;font-weight:600;color:var(--ww-muted)}
-.activity-name-wrap>input {font-size:17px;padding:13px}.task-scheduling-fields {gap:12px}
-.schedule-toggle-label {border:1px solid var(--ww-line);border-radius:12px;padding:10px 12px;min-height:44px!important;margin:0!important}
-.schedule-toggle-label strong {font-size:12px;font-weight:600}.schedule-toggle-label small {display:none}
+body .field label,body .modal .field label,body .template-form .field label,body .shift-title {color:var(--ww-muted)!important;font-weight:600}
+.hint {color:var(--ww-muted);font-size:11px;font-weight:400}
+.activity-name-wrap>input {font-size:17px;padding:13px}.task-scheduling-fields {display:grid;grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.modalgrid .task-scheduling-fields>.field,.modalgrid .task-option-grid>.field {grid-column:auto}
+.schedule-toggle-label {border:1px solid var(--ww-line);border-radius:12px;padding:10px 12px;min-height:44px!important;margin:0!important;background:var(--ww-surface)}
+.schedule-toggle-label:has(input:checked) {background:var(--ww-soft);border-color:var(--ww-brand)}
+.schedule-toggle-label strong {font-size:12px;font-weight:600;color:var(--ww-text)}.schedule-toggle-label small {display:none}
 .task-options {grid-column:1/-1;display:grid;gap:8px;margin-top:4px}
 .task-option {border:1px solid var(--ww-line);border-radius:13px;min-width:0}
 .task-option>summary {display:flex;align-items:center;gap:10px;list-style:none;padding:10px 14px;min-height:44px;font-size:12px;font-weight:650;color:var(--ww-text)}
@@ -113,6 +117,7 @@ body[data-active-view=today] #workspaceAddTaskBtn {display:none}
 .task-option-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px}
 .task-option-grid>.field {min-width:0}.task-template-tools {padding:12px 14px;margin:0;border:1px solid var(--ww-line);border-radius:13px;font-size:12px}
 .task-template-tool-row {flex-wrap:wrap}.task-template-select {min-width:0}.modalbuttons {gap:8px;padding-top:20px;margin-top:18px;border-top:1px solid var(--ww-line);background:var(--ww-surface)}
+.task-template-count {color:var(--ww-muted);background:var(--ww-soft)}
 .modalbuttons .btn {min-height:44px}.modal-delete {margin-right:0}.task-ai-helper {background:var(--ww-soft);border-color:var(--ww-line)}
 .signin-card {border-radius:28px;padding:36px}.signin-card h1 {letter-spacing:-1px}
 .today-onboarding {padding:22px;background:var(--ww-surface)}.today-onboarding-steps article:nth-child(2) {background:var(--ww-sky)}.today-onboarding-steps article:nth-child(3) {background:var(--ww-lavender)}
@@ -133,9 +138,9 @@ body[data-active-view=today] #workspaceAddTaskBtn {display:none}
   .plan-flow{gap:14px;font-size:11px}.plan-flow li{gap:5px}.plan-flow b{width:22px;height:22px}.plan-overview,.plan-preferences{padding:20px}.plan-overview-days{grid-template-columns:repeat(2,minmax(0,1fr))}.plan-overview-day:last-child{grid-column:1/-1}
   .plan-boundaries>summary>span{flex:1 1 100%;order:3;line-height:1.7}.plan-boundaries>summary::after{order:2}.plan-preference-grid{grid-template-columns:1fr 1fr}.plan-actions .btn{min-height:44px}
   .modalback{padding:8px}.modal{padding:22px 18px;width:100%;max-height:calc(100dvh - 16px);border-radius:22px}.modalgrid{grid-template-columns:1fr 1fr;gap:14px}.modalgrid .field input,.modalgrid .field select,.modalgrid .field textarea{font-size:16px}
-  .activity-name-wrap>input{font-size:17px!important}.task-option-grid{grid-template-columns:1fr;padding:14px}.task-scheduling-fields{grid-template-columns:1fr 1fr}.task-scheduling-fields>.duration-field{grid-column:1/-1}.modalbuttons{bottom:-22px;padding:14px 0;margin-top:14px}.modalbuttons .modal-spacer{display:none}.modalbuttons .btn{flex:1 1 auto;font-size:12px}.modal h3{margin-bottom:18px}
+  .activity-name-wrap>input{font-size:17px!important}.task-option-grid{grid-template-columns:1fr;padding:14px}.task-scheduling-fields{grid-template-columns:1fr 1fr}.modalgrid .task-scheduling-fields>.duration-field{grid-column:1/-1}.modalbuttons{bottom:-22px;padding:14px 0;margin-top:14px}.modalbuttons .modal-spacer{display:none}.modalbuttons .btn{flex:1 1 auto;font-size:12px}.modal h3{margin-bottom:18px}
   .utility-dialog{border-radius:22px}.more-trigger{min-height:42px}.top-actions{gap:5px;flex-wrap:nowrap}.list-actions-menu{right:0}.signin-card{padding:28px}
 }
-@media(max-width:380px) {.brand h1{font-size:18px}.plan-preference-grid{grid-template-columns:1fr}.topbar{padding:12px}.task-scheduling-fields{grid-template-columns:1fr}.task-scheduling-fields>.duration-field{grid-column:auto}}
+@media(max-width:380px) {.brand h1{font-size:18px}.plan-preference-grid{grid-template-columns:1fr}.topbar{padding:12px}.topbar .more-trigger{width:42px;padding:8px;text-align:center}#globalCaptureBtn{width:42px;padding:0}.task-scheduling-fields{grid-template-columns:1fr}.modalgrid .task-scheduling-fields>.duration-field{grid-column:auto}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media print {.plan-overview{break-inside:avoid}.topbar,.workspace-sidebar,.list-actions{display:none!important}.wrap{padding:0}.workspace-shell{display:block}}
