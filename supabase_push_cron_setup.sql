@@ -1,5 +1,7 @@
 -- Weekwise background push cron setup.
--- Requires explicit pg_net/pg_cron activation approval. It is not installed yet.
+-- Installed in Weekwise after explicit user approval on 13 October 2026.
+-- Applied migration: 20261013151217 / weekwise_push_scheduler_activation.
+-- Review existing jobs/configuration before re-running this setup.
 -- Deploy the push handler and private runtime migration first. Server bootstrap
 -- provisions stable VAPID keys, weekwise_project_url and weekwise_push_cron_secret.
 -- Keep net unexposed by the Data API; trusted direct database roles can read queued headers.

@@ -139,7 +139,9 @@ const integrationGuidePath = path.join(root, "docs", "INTEGRATION_READINESS.md")
 if (fs.existsSync(integrationGuidePath)) {
   const integrationGuide = fs.readFileSync(integrationGuidePath, "utf8");
   if (/Calendar OAuth: code ready, provider setup required/i.test(integrationGuide) &&
-      /Background push: code ready, external activation required/i.test(integrationGuide) &&
+      /Background push: scheduler active, device acceptance remains/i.test(integrationGuide) &&
+      /HTTP 200/i.test(integrationGuide) &&
+      /test a future reminder with the app closed/i.test(integrationGuide) &&
       /Data safety/i.test(integrationGuide) &&
       /not live until/i.test(integrationGuide)) {
     pass("integration guide distinguishes implemented features from external setup requirements");

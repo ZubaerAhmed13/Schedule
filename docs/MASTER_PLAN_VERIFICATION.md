@@ -27,7 +27,7 @@ Current release/tests and remaining acceptance gates are in [CURRENT_STATUS.md](
 | 18 | Incremental architecture | PARTIAL | Main app IIFE remains large; module API and maintainability work |
 | 19 | Cloud/offline | VERIFIED for synthetic fixtures | Real two-device reconnect, RLS, invite and expired-token tests |
 | 20 | Google Calendar/Outlook | EXTERNAL | Server/tables/encryption deployed; OAuth credentials/consent and real round trips remain |
-| 21 | Push | EXTERNAL | Server/tables/VAPID deployed; scheduler approval and closed-app delivery/opt-out/expiry remain |
+| 21 | Push | EXTERNAL | Server/tables/VAPID and minute scheduler deployed/verified; device delivery/opt-out/expiry remain |
 | 22 | Security and privacy | PARTIAL | Production RLS, optional RPC hardening, CSP threat model, legal review |
 | 23 | Performance | PARTIAL | Synthetic browser large-lists tested; field CWV, long recurrence profiling |
 | 24 | Errors and polish | PARTIAL | Broader interrupted/suspended/recovery tests |
@@ -94,3 +94,7 @@ PR #41 and [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md) record migrati
 ## Scoped signed account activation
 
 PR #42 provides an expiring one-use HMAC operator request that avoids pg_net. The actual disposable check passed wrong-password/target/token rejection, six owner cascades, other-account preservation, deleted-identity rejection, refresh revocation and the deployed endpoint. Both disposable accounts were cleaned, erasure is enabled and the harness is retired to HTTP 410. Scheduling remains blocked by its pg_net/pg_cron approval, and provider/device/human acceptance still applies.
+
+## Approved minute push scheduler
+
+The user explicitly approved pg_net/pg_cron after the exact role/queued-header risk was explained. Migration `20261013151217` installed exactly one active minute job. Two actual scheduled HTTP responses were 200/ok=true, without timeout/transport failure. Zero devices were subscribed, so this verifies the scheduler/backend boundary, not app-closed notification delivery. Account erasure remains enabled. Calendar credentials and consent, device subscription/permission and wider master-plan acceptance remain external.
