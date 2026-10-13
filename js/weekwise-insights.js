@@ -1,11 +1,12 @@
 /* Review metrics derived from recorded planner history — no guessed actual work time. */
 (function(root){'use strict';
  const dateAt=(start,index)=>root.WeekwisePlanning.dateAt(start,index);
- function localDay(iso){
+ function localDay(iso,zone){
   const t=new Date(iso);if(!Number.isFinite(t.getTime()))return null;
+  if(zone)return root.WeekwiseCalendarRange.parts(t.getTime(),zone).date;
   return [t.getFullYear(),String(t.getMonth()+1).padStart(2,'0'),String(t.getDate()).padStart(2,'0')].join('-');
  }
- function weekly(records,week,focusSessions=[]){
+ function weekly(records,week,focusSessions=[],zone){
   root.WeekwisePlanning.ordinal(week);
   if(!Array.isArray(records)||!Array.isArray(focusSessions))throw new Error('Invalid Weekwise Insights history.');
   const dates=Array.from({length:7},(_,i)=>dateAt(week,i));
@@ -25,7 +26,7 @@
    }
    if(typeof task.id!=='string')continue;
    for(const move of Array.isArray(task.reschedulingHistory)?task.reschedulingHistory:[]){
-    const movedOn=typeof move?.changedAt==='string'?localDay(move.changedAt):null;
+    const movedOn=typeof move?.changedAt==='string'?localDay(move.changedAt,zone):null;
     if(movedOn===null||movedOn<week||movedOn>=end)continue;
     // Count recorded accepted changes once, even if a record appears in multiple derived views.
     const id=task.id+'::'+move.changedAt+'::'+String(move.fromWeek||'')+'::'+String(move.fromStart??'')+'::'+String(move.toStart??'');
@@ -39,7 +40,7 @@
   const totalMinutes=days.reduce((sum,day)=>sum+day.minutes,0);
   const actualByTask=new Map();
   for(const session of focusSessions){
-   const taskId=session?.taskId,ended=typeof session?.endedAt==='string'?localDay(session.endedAt):null;
+   const taskId=session?.taskId,ended=typeof session?.endedAt==='string'?localDay(session.endedAt,zone):null;
    if(typeof taskId!=='string'||!recordedTasks.has(taskId)||!ended||ended<week||ended>=end)continue;
    const amount=Number(session.seconds!=null?Number(session.seconds)/60:session.minutes);
    if(!Number.isFinite(amount)||amount<=0||amount>1440)continue;

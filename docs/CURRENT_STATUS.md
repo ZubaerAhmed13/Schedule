@@ -1,13 +1,14 @@
 # Weekwise current status — 13 October 2026
 
-The live checked release is `0a16c73b24a7f521b2225459cece182168a2547c` (PRs #16–#36 merged), Pages run `38379816494`, asset version `36f52b6163e81873`. The marker was fetched independently after deployment. PR #37 is the current recurrence/clock preservation review; no production backend was deployed or activated.
+The live checked release is `9ac94cf2473d5932770d9c11a5be038f8b1afd81` (PRs #16–#37 merged), Pages run `38398725212`, asset version `1f7300d8d303209a`. The marker was fetched independently after deployment. Saved-clock Today/Focus/Insights is the current follow-up; no production backend was deployed or activated.
 
 ## Current verification
 
 | Check | Verified result |
 |---|---|
-| Last released client | 134 Node tests and 51 built-client browser tests; release and all three Edge Function type checks passed |
-| Recurrence review code | First head `0130c6e35de220fe4e4fa273cadaf856c2de6ffd` passed 140 Node/53 browser tests and all release/Edge checks; anchor/dashboard safeguards passed 142 Node/53 browser tests at the follow-up; the final reordered-cloud/midnight-scroll scenario adds one browser test and requires final remote checks |
+| Last released client | 142 Node tests and 54 built-client browser tests; release and all three Edge Function type checks passed |
+| Recurrence release | Exact head `56884163ce997ac43b8ec48ee1b5cf8f4419f887` passed 142 Node/54 browser tests and release/all three Edge checks; the phone drag regression verifies its visible starting handle |
+| Today clock follow-up | 146 Node tests and release/build checks pass locally; final 55-test browser suite is the release gate |
 | Pages | Exact commit/run/hash independently matched; frontend-only build |
 | Privacy and integrations | Account-erasure controls/source are present but the server operation is disabled pending correct-project staging; no real account deleted |
 | Correct Supabase project | `iajkzlsurghfvsmqkmut` is inaccessible through the current connection; its direct project lookup returned a permission denial. No unrelated project was queried or changed |
@@ -108,3 +109,7 @@ Captured-instant anchors are matched by field values rather than JSON property o
 The final browser scenario loads a synthetic cloud row with reordered, extended DST-fold anchors, verifies its exact UTC card time and retained anchor on completion, and keeps a deliberate midnight scroll position. New Calendar view initialization uses its display-zone clock; updates in the same view preserve zero scroll. Zero-duration legacy markers remain stored but do not occupy generated recurrence slots.
 
 Pending recurrence-clock review retains its expected date/zone/time in the editor and survives metadata-only edits until a user resolves the schedule. Account erasure names the captured signed-in account and disables credential fields until the operation is confirmed configured, including after deletion. These final UI guards are covered by the existing browser scenarios.
+
+## Saved-clock daily decisions continuation
+
+Today, Tomorrow and Upcoming list selection/counts, next commitment, carried overnight timeline and Focus summaries use the saved planner clock. Daily scheduled totals union elapsed scheduled instants clipped to the source date; this is planned elapsed time, not measured work. Crossed clock changes are labelled. Next commitment compares exact captured instants so retained DST folds remain distinguishable; ambiguous old times stay unchanged and are excluded for review. Focus history counts recorded sessions, including partial ones; it does not label every record a completed session. Recorded focus and rescheduling timestamps belong to their saved-zone week, and Settings labels the source clock separately from Calendar display. Daily derivation is extracted into `weekwise-today.js` and cached by the matching versioned offline shell. Four Node regressions and a narrow-screen synthetic cloud scenario cover the date boundary, carry, exact fold, completion and timestamp grouping. Final remote browser/release checks remain mandatory; no historical record migration or production backend operation occurs.

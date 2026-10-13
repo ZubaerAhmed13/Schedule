@@ -1371,29 +1371,29 @@ function renderWorkspaceTags(){
   return '<button type="button" class="workspace-nav-btn workspace-tag-btn '+(active?'active':'')+'" data-workspace-view="'+escapeHtml(view)+'" aria-current="'+(active?'page':'false')+'"><span class="workspace-tag-hash">#</span><span title="'+escapeHtml(item.name)+'">'+escapeHtml(item.name)+'</span><span class="workspace-nav-count">'+item.count+'</span></button>';
  }).join('');
 }
-function workspaceRecordMatches(record,view){
- const t=record.task,day=dateOnly(now),todayKey=dateKey(day),end=new Date(day);end.setDate(end.getDate()+7);
- const recordDate=dateOnly(record.date),recordKey=dateKey(recordDate),listId=record.listId;
+function workspaceRecordMatches(record,view,todayKey){
  if(view==='search')return true;
- if(view==='today')return ((listId!=='inbox'||!!t.allDay||(!t.unscheduled&&t.start!==null&&t.start!==undefined))&&recordKey===todayKey)||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
- const tomorrowKey=dateKey(addDaysForView(day,1));
- if(view==='tomorrow')return (recordKey===tomorrowKey&&(!!t.allDay||(!t.unscheduled&&t.start!=null)))||(!t.done&&t.dueDate===tomorrowKey);
- if(view==='inbox')return listId==='inbox';
+ if(view==='inbox')return record.listId==='inbox';
+ if(view.startsWith('list-'))return record.listId===view.slice(5);
+ if(view.startsWith('folder:'))return (record.task.folderName||defaultFolderName(record.listId))===view.slice(7);
+ if(view.startsWith('tag:'))return Array.isArray(record.task.tags)&&record.task.tags.some(tag=>String(tag).replace(/^#/,'').toLowerCase()===view.slice(4).toLowerCase());
+ todayKey=todayKey||WeekwiseToday.clock(store,now.getTime()).date;const t=record.task,endKey=WeekwisePlanning.dateAt(todayKey,7);
+ const recordKey=dateKey(record.date),listId=record.listId;
+ if(view==='today')return ((listId!=='inbox'||!!t.allDay||(!t.unscheduled&&t.start!==null&&t.start!==undefined))&&WeekwiseToday.occursOn(record,todayKey))||(!t.done&&!!t.dueDate&&t.dueDate<=todayKey);
+ const tomorrowKey=WeekwisePlanning.dateAt(todayKey,1);
+ if(view==='tomorrow')return (WeekwiseToday.occursOn(record,tomorrowKey)&&(!!t.allDay||(!t.unscheduled&&t.start!=null)))||(!t.done&&t.dueDate===tomorrowKey);
  if(view==='upcoming'){
-  const scheduledSoon=recordDate>=day&&recordDate<end&&(!!t.allDay||(!t.unscheduled&&t.start!=null));
-  const dueSoon=!!t.dueDate&&t.dueDate>todayKey&&t.dueDate<dateKey(end);
+  const scheduledSoon=((recordKey>=todayKey&&recordKey<endKey)||WeekwiseToday.occursOn(record,todayKey))&&(!!t.allDay||(!t.unscheduled&&t.start!=null));
+  const dueSoon=!!t.dueDate&&t.dueDate>todayKey&&t.dueDate<endKey;
   return !t.done&&(scheduledSoon||dueSoon);
  }
- if(view.startsWith('list-'))return listId===view.slice(5);
- if(view.startsWith('folder:'))return (record.task.folderName||defaultFolderName(record.listId))===view.slice(7);
- if(view.startsWith('tag:'))return Array.isArray(t.tags)&&t.tags.some(tag=>String(tag).replace(/^#/,'').toLowerCase()===view.slice(4).toLowerCase());
  return false;
 }
 function workspacePriorityValue(priority){return ({high:3,medium:2,low:1})[priority]||0;}
 function workspaceDateLabel(record){
  if(record.task.start==null||record.task.unscheduled)return 'Not scheduled';
- const todayKey=dateKey(now),tomorrow=new Date(dateOnly(now));tomorrow.setDate(tomorrow.getDate()+1);
- const dateLabel=dateKey(record.date)===todayKey?'Today':dateKey(record.date)===dateKey(tomorrow)?'Tomorrow':fmtDate(record.date,{weekday:'short',day:'numeric',month:'short'});
+ const todayKey=WeekwiseToday.clock(store,now.getTime()).date,tomorrow=WeekwisePlanning.dateAt(todayKey,1);
+ const dateLabel=dateKey(record.date)===todayKey?'Today':dateKey(record.date)===tomorrow?'Tomorrow':fmtDate(record.date,{weekday:'short',day:'numeric',month:'short'});
  return dateLabel+' · '+formatTime(record.task);
 }
 function workspaceTaskRow(record){
@@ -1421,21 +1421,12 @@ function workspaceTaskRow(record){
   '<div class="workspace-task-actions"><button type="button" title="Edit task" aria-label="Edit '+escapeHtml(t.title)+'" data-workspace-edit="'+escapeHtml(t.id)+'"'+attrs+'>✎</button><button type="button" title="Delete task" aria-label="Delete '+escapeHtml(t.title)+'" data-workspace-delete="'+escapeHtml(t.id)+'"'+attrs+'>×</button></div></article>';
 }
 function updateWorkspaceCounts(){
- const all=workspaceRecords(),todayKey=dateKey(now),nextWeek=new Date(dateOnly(now));nextWeek.setDate(nextWeek.getDate()+7);const endKey=dateKey(nextWeek);
+ const all=workspaceRecords(),todayKey=WeekwiseToday.clock(store,now.getTime()).date;
  const ids={Today:'navCountToday',Tomorrow:'navCountTomorrow',Inbox:'navCountInbox',Upcoming:'navCountUpcoming',Career:'navCountCareer',Study:'navCountStudy',Work:'navCountWork',Personal:'navCountPersonal',Languages:'navCountLanguage',Hobbies:'navCountHobbies',Other:'navCountOther'};
  const listIds={Career:'career',Study:'study',Work:'work',Personal:'personal',Languages:'language',Hobbies:'hobbies',Other:'other'};
  Object.entries(ids).forEach(([key,id])=>{
   const el=$(id);if(!el)return;
-  const tomorrowKey=dateKey(addDaysForView(now,1));
-  const count=key==='Today'
-   ?all.filter(r=>((r.listId!=='inbox'||!!r.task.allDay||(!r.task.unscheduled&&r.task.start!==null&&r.task.start!==undefined))&&dateKey(r.date)===todayKey)||(!r.task.done&&!!r.task.dueDate&&r.task.dueDate<=todayKey)).length
-   :key==='Tomorrow'
-    ?all.filter(r=>(dateKey(r.date)===tomorrowKey&&(r.task.allDay||(!r.task.unscheduled&&r.task.start!=null)))||(!r.task.done&&r.task.dueDate===tomorrowKey)).length
-   :key==='Inbox'
-    ?all.filter(r=>r.listId==='inbox').length
-    :key==='Upcoming'
-     ?all.filter(r=>!r.task.done&&(((!r.task.unscheduled&&r.task.start!=null||r.task.allDay)&&dateKey(r.date)>=todayKey&&dateKey(r.date)<endKey)||(r.task.dueDate&&r.task.dueDate>todayKey&&r.task.dueDate<endKey))).length
-     :all.filter(r=>r.listId===listIds[key]).length;
+  const view=({Today:'today',Tomorrow:'tomorrow',Inbox:'inbox',Upcoming:'upcoming'})[key]||'list-'+listIds[key];const count=all.filter(r=>workspaceRecordMatches(r,view,todayKey)).length;
   el.textContent=String(count);
  });
 }
@@ -1454,7 +1445,7 @@ function renderWorkspaceTaskGroups(items){
  }).map(([section,records])=>'<section class="workspace-section-group"><header><span>§ '+escapeHtml(section)+'</span><span>'+records.length+'</span></header>'+records.map(workspaceTaskRow).join('')+'</section>').join('');
 }
 
-function experienceData(){return {active:workspaceView==='insights',owner:currentDataOwner,week:WeekwiseCalendarRange.range(dateKey(now),store.settings.weekStartsOn===1?1:0)[0],today:dateKey(now),minute:now.getHours()*60+now.getMinutes(),store,records:workspaceRecords().map(r=>({...r,dateKey:dateKey(r.date)})),focusSessions,habits,signedIn:!!cloudUser,syncLabel:$('cloudMenuBadge').textContent};}
+function experienceData(){const clock=WeekwiseToday.clock(store,now.getTime());return {active:workspaceView==='insights',owner:currentDataOwner,week:WeekwiseCalendarRange.range(clock.date,store.settings.weekStartsOn===1?1:0)[0],today:clock.date,minute:clock.minute,epoch:clock.epoch,zone:clock.zone,store,records:workspaceRecords().map(r=>({...r,dateKey:dateKey(r.date)})),focusSessions,habits,signedIn:!!cloudUser,syncLabel:$('cloudMenuBadge').textContent};}
 function renderExperience(){renderDraftNotice();renderZoneNotice();if(!window.WeekwiseExperience)return;const data=experienceData();WeekwiseExperience.renderInsights(data);WeekwiseExperience.renderSettings(data);}
 function renderTodayOverview(){const panel=$('todayOverview');panel.hidden=workspaceView!=='today';if(!panel.hidden)WeekwiseExperience.renderToday({...experienceData(),active:true});}
 
@@ -1463,7 +1454,7 @@ function listPageFooter(page){return page.total>WeekwiseListWindow.SIZE?'<div cl
 function renderWorkspaceTasks(){
  const list=$('workspaceTaskList');if(!list)return;
  const search=String($('workspaceSearch')?.value||'').trim().toLowerCase(),sort=$('workspaceSort')?.value||'date';
- let items=workspaceRecords().filter(r=>workspaceRecordMatches(r,workspaceView));
+ const todayKey=WeekwiseToday.clock(store,now.getTime()).date;let items=workspaceRecords().filter(r=>workspaceRecordMatches(r,workspaceView,todayKey));
  if(search)items=items.filter(r=>[r.task.title,r.task.note,r.task.folderName,r.task.sectionName,r.task.dueDate,r.task.priority,r.task.status,r.task.listId,WORKSPACE_LISTS.find(list=>list.id===r.listId)?.label,...(Array.isArray(r.task.tags)?r.task.tags:[]),...(Array.isArray(r.task.attachments)?r.task.attachments:[])].join(' ').toLowerCase().includes(search));
  if(sort==='priority')items.sort((a,b)=>workspacePriorityValue(b.task.priority)-workspacePriorityValue(a.task.priority)||a.date-b.date||(Number(a.task.start??9999)-Number(b.task.start??9999)));
  else if(sort==='title')items.sort((a,b)=>String(a.task.title).localeCompare(String(b.task.title)));
@@ -1648,10 +1639,10 @@ function renderFocusPanel(){
    targetHelp.textContent=target?logged+' of '+target+' estimated focus minutes logged'+(logged>=target?' · estimate reached':''):'No focus estimate set. Edit the task to add one.';
   }
  }
- const totalFocus=focusSessions.reduce((n,s)=>n+Number(s.minutes||0),0),today=dateKey(now),todayFocus=focusSessions.filter(s=>dateKey(new Date(s.endedAt))===today).reduce((n,s)=>n+Number(s.minutes||0),0);
- const summary=$('focusSummary');if(summary)summary.innerHTML='<div class="focus-stat"><small>Focus time today</small><strong>'+durationText(todayFocus)+'</strong></div><div class="focus-stat"><small>Total focus time</small><strong>'+durationText(totalFocus)+'</strong></div><div class="focus-stat"><small>Completed sessions</small><strong>'+focusSessions.length+'</strong></div>';
+ const focusClock=WeekwiseToday.clock(store,now.getTime()),totalFocus=focusSessions.reduce((n,s)=>n+Number(s.seconds!=null?s.seconds/60:s.minutes||0),0),todayFocus=focusSessions.filter(s=>WeekwiseInsights.localDay(s.endedAt,focusClock.zone)===focusClock.date).reduce((n,s)=>n+Number(s.seconds!=null?s.seconds/60:s.minutes||0),0);
+ const summary=$('focusSummary');if(summary)summary.innerHTML='<div class="focus-stat"><small>Focus time today</small><strong>'+durationText(todayFocus)+'</strong></div><div class="focus-stat"><small>Total focus time</small><strong>'+durationText(totalFocus)+'</strong></div><div class="focus-stat"><small>Recorded sessions</small><strong>'+focusSessions.length+'</strong></div>';
  const history=$('focusHistory'),historyTotal=$('focusHistoryTotal');if(historyTotal)historyTotal.textContent=focusSessions.length+' session'+(focusSessions.length===1?'':'s');
- if(history)history.innerHTML=focusSessions.slice().reverse().slice(0,6).map(s=>'<div class="focus-history-row"><div><strong>'+escapeHtml(s.taskTitle||'Focus session')+'</strong><small>'+escapeHtml(new Date(s.endedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))+'</small></div><span>'+Math.round(Number(s.minutes)||0)+' min</span></div>').join('')||'<div class="matrix-empty">Your completed focus sessions will appear here.</div>';
+ if(history)history.innerHTML=focusSessions.slice().reverse().slice(0,6).map(s=>'<div class="focus-history-row"><div><strong>'+escapeHtml(s.taskTitle||'Focus session')+'</strong><small>'+escapeHtml(new Date(s.endedAt).toLocaleString('en-GB',{timeZone:focusClock.zone,day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))+'</small></div><span>'+Math.round(Number(s.minutes)||0)+' min</span></div>').join('')||'<div class="matrix-empty">Your completed focus sessions will appear here.</div>';
  updateFocusDisplay();
 }
 function persistFocusSessions(){checkedCollectionSave(FOCUS_SESSIONS_KEY,focusSessions,value=>focusSessions=value);}
@@ -2744,6 +2735,6 @@ WeekwiseCalendarRangeUI.init({...plannerBridge,announce:showToast,controls:updat
 
 showStorageRecoveryNotice();
 renderWorkspaceView();renderReminders();nudgeDueReminders();renderTaskNotificationSettings();checkTaskReminders();setInterval(()=>{checkTaskReminders();checkHabitReminders();},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkTaskReminders();});window.addEventListener('focus',checkTaskReminders);
-function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now);now=fresh;renderDays();renderStats();renderTodayOverview();renderExperience();if(dateChanged){renderReminders();nudgeDueReminders();}}
+function refreshClock(){const fresh=new Date();if(fresh.getMinutes()===now.getMinutes()&&dateKey(fresh)===dateKey(now))return;const dateChanged=dateKey(fresh)!==dateKey(now)||WeekwiseToday.clock(store,fresh.getTime()).date!==WeekwiseToday.clock(store,now.getTime()).date;now=fresh;renderDays();renderStats();renderTodayOverview();renderExperience();if(dateChanged){renderWorkspaceTasks();updateWorkspaceCounts();renderReminders();nudgeDueReminders();}}
 setInterval(refreshClock,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClock();});window.addEventListener('focus',refreshClock);
 })();
