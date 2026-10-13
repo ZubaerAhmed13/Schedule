@@ -119,3 +119,7 @@ When editing a recurring task, choose **Rule from this occurrence onward** or **
 New, empty planners can choose one of three lightweight starting points in Today: capture a task, set realistic planning time, or explore the calendar. The guide requires no account or sample data, and can be dismissed. Settings → **Getting started** reopens it, including for existing planners. That display preference stays on this device and is separated by planner owner. This guided flow does not automatically schedule or move anything.
 
 The task and utility dialogs trap keyboard focus, make the rest of the interface inert during modal interaction, and return focus to the control that opened the dialog. Keyboard accessibility is covered by targeted Chromium tests; a full real-device/WCAG accessibility review is still required.
+
+### Recorded workload and schedule stability
+
+Insights now visualizes the seven-day workload using booked local wall-clock minutes. Overlapping appointments are counted only once, and cross-midnight bookings carry onto the following day. This is **not** proof of actual time worked. The section separately reports any saved user-approved recovery moves and, when the data exists, linked timer-recorded focus time compared with user-entered estimates. Untracked/manual activity is never described as recorded work.
