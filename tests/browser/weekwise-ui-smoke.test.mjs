@@ -555,7 +555,7 @@ test('TZID iCalendar import previews and commits atomically without changing exi
  const ics=['BEGIN:VCALENDAR','VERSION:2.0',
   'BEGIN:VEVENT','UID:berlin-2026-07@example.invalid','DTSTART;TZID=Europe/Berlin:20260701T100000','DTEND;TZID=Europe/Berlin:20260701T110000','SUMMARY:Berlin lecture','END:VEVENT',
   'BEGIN:VEVENT','UID:ambiguous@example.invalid','DTSTART;TZID=Europe/Berlin:20261025T023000','DTEND;TZID=Europe/Berlin:20261025T033000','SUMMARY:Unsafe DST time','END:VEVENT',
-  'END:VCALENDAR'].join('\\r\\n');
+  'END:VCALENDAR'].join('\r\n');
  const file={name:'safe-tzid.ics',mimeType:'text/calendar',buffer:Buffer.from(ics)};
  try{
   const before=await readPlannerStore(page);
