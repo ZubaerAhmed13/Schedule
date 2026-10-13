@@ -269,15 +269,15 @@ Deno.serve(async (request) => {
         return jsonResponse({ error: "The browser returned an invalid push subscription." }, 400);
       }
       const timeZone = validTimeZone(body.timezone);
-      const { error } = await admin.from("weekwise_push_subscriptions").upsert({
-        endpoint,
-        user_id: auth.user.id,
-        subscription,
-        timezone: timeZone,
-        user_agent: (request.headers.get("User-Agent") ?? "").slice(0, 300),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "endpoint" });
+      const { data: registered, error } = await admin.rpc("weekwise_register_push_subscription", {
+        p_endpoint: endpoint,
+        p_owner: auth.user.id,
+        p_subscription: subscription,
+        p_timezone: timeZone,
+        p_user_agent: (request.headers.get("User-Agent") ?? "").slice(0, 300),
+      });
       if (error) throw new Error("Could not save this device's push subscription.");
+      if (registered !== true) return jsonResponse({ error: "This device subscription belongs to another account. Disable it there before reconnecting." }, 409);
       return jsonResponse({ ok: true, enabled: true, timezone: timeZone });
     }
 
