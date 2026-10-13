@@ -947,3 +947,20 @@ test('capture reproducible desktop and mobile lab render metrics without claimin
  fs.writeFileSync(path.join(root,'test-results','lab-performance.json'),JSON.stringify({kind:'synthetic-lab-performance',capturedAt:new Date().toISOString(),results},null,2));
  assert.equal(results.length,2);
 });
+
+test('recurring schedule preview changes cadence and saved slots only after approval, with guarded Undo',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await page.locator('#addTaskBtn').click();await page.locator('#modalTitleInput').fill('Reviewed recurring learning');await page.locator('#modalNoSchedule').check();await page.locator('#modalRecurrence').selectOption('weekly');await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const before=await readPlannerStore(page),records=Object.entries(before.weeks).flatMap(([week,value])=>value.tasks.map(task=>({week,task}))),source=records.find(r=>r.task.title==='Reviewed recurring learning');assert.ok(records.filter(r=>r.task.seriesId===source.task.seriesId).length>=2);
+  await page.locator('#daysGrid [data-edit="'+source.task.id+'"]').first().click();await page.locator('#seriesScheduleOpen').click();await page.locator('#seriesSchedulePanel').waitFor({state:'visible'});
+  const nextDate=await page.evaluate(()=>{const date=new Date();date.setDate(date.getDate()+2);return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');});
+  await page.locator('#seriesScheduleDate').fill(nextDate);await page.locator('#seriesScheduleFrequency').selectOption('daily');await page.locator('#seriesScheduleUnscheduled').uncheck();await page.locator('#seriesScheduleTime').fill('09:00');await page.locator('#seriesScheduleDuration').fill('45');await page.locator('#seriesScheduleBuild').click();
+  assert.equal(await page.locator('#seriesScheduleApply').isDisabled(),false);assert.match(await page.locator('#seriesSchedulePreview').innerText(),/saved occurrences reviewed/);
+  assert.deepEqual((await readPlannerStore(page)).weeks,before.weeks,'preview leaves original occurrence bytes unchanged');
+  await page.locator('#seriesScheduleApply').click();assert.match(await page.locator('#seriesScheduleStatus').innerText(),/Confirm that you reviewed/);assert.deepEqual((await readPlannerStore(page)).weeks,before.weeks);
+  await page.locator('#seriesScheduleReviewed').check();page.once('dialog',dialog=>dialog.accept());await page.locator('#seriesScheduleApply').click();assert.match(await page.locator('#seriesScheduleStatus').innerText(),/schedule saved/);
+  const after=await readPlannerStore(page),moved=Object.values(after.weeks).flatMap(w=>w.tasks).find(t=>t.id===source.task.id);assert.equal(moved.start,540);assert.equal(moved.duration,45);assert.equal(moved.occurrenceDate,nextDate);assert.equal(after.recurringTemplates.find(r=>r.id===source.task.seriesId).frequency,'daily');assert.equal(moved.reschedulingHistory.at(-1).reason,'User-approved recurring schedule');
+  await page.locator('#seriesScheduleUndo').click();assert.deepEqual((await readPlannerStore(page)).weeks,before.weeks);assert.deepEqual((await readPlannerStore(page)).recurringTemplates,before.recurringTemplates);
+ }finally{await context.close();}
+});
