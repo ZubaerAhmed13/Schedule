@@ -1,17 +1,17 @@
 # Weekwise current status — 13 October 2026
 
-The live checked release is `9ac94cf2473d5932770d9c11a5be038f8b1afd81` (PRs #16–#37 merged), Pages run `38398725212`, asset version `1f7300d8d303209a`. The marker was fetched independently after deployment. Saved-clock Today/Focus/Insights is the current follow-up; no production backend was deployed or activated.
+The independently verified client assets `a0584ca6b702f192` were released through PR #38 at `746b4c90ba0af51490fc550f562dae97beea165e`, Pages run `38400926313`. All five post-merge workflows passed. Each deployment’s current identity is published in [build-info.json](https://zubaerahmed13.github.io/Schedule/build-info.json). Backend compatibility/audit is the current review; no production backend was changed or activated.
 
 ## Current verification
 
 | Check | Verified result |
 |---|---|
-| Last released client | 142 Node tests and 54 built-client browser tests; release and all three Edge Function type checks passed |
+| Last released client | 146 Node tests and 55 built-client browser tests; release and all three Edge Function type checks passed |
 | Recurrence release | Exact head `56884163ce997ac43b8ec48ee1b5cf8f4419f887` passed 142 Node/54 browser tests and release/all three Edge checks; the phone drag regression verifies its visible starting handle |
-| Today clock follow-up | 146 Node tests and release/build checks pass locally; final 55-test browser suite is the release gate |
+| Today clock release | PR #38 final head `274054d21ebc9c2b61a156d8ed50d821007b445e` and post-merge client passed 146 Node/55 browser tests and all release/Edge gates |
 | Pages | Exact commit/run/hash independently matched; frontend-only build |
 | Privacy and integrations | Account-erasure controls/source are present but the server operation is disabled pending correct-project staging; no real account deleted |
-| Correct Supabase project | `iajkzlsurghfvsmqkmut` is inaccessible through the current connection; its direct project lookup returned a permission denial. No unrelated project was queried or changed |
+| Correct Supabase project | `iajkzlsurghfvsmqkmut` is now accessible through the WeekWise connection; read-only catalog/security/compatibility review is recorded in [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md). No production writes occurred |
 
 Tests use synthetic records and mock accounts/provider transport. Offline tests use the real service worker; this does not certify private production RLS, actual OAuth/push delivery or installed-device behavior.
 
@@ -31,7 +31,7 @@ Tests use synthetic records and mock accounts/provider transport. Offline tests 
 
 | Area | What remains |
 |---|---|
-| Private backend | Correct Weekwise project/test identities; real own-row/cross-user RLS, invitation enforcement, refresh/expiry, revision/RPC privileges, account cascades and staging erasure. Prepared SQL was not executed |
+| Private backend | Correct-project catalog review is delivered; dedicated real test identities/staging, own-row/cross-user RLS, invitation enforcement, refresh/expiry, revision/RPC privileges, account cascades and staging erasure. Prepared SQL was not executed |
 | Optional services | Google/Outlook credentials/consent and create/update/delete/conflict/refresh acceptance; VAPID/cron and app-closed push acceptance. No optional AI provider configured |
 | Device/human acceptance | Real phone keyboards/rotation, screen readers and 200% zoom; installed-PWA upgrade/interrupted-install, actual two-device reconnect and representative private historical backups |
 | Historical planner zones | Calendar projection and source-zone planning are delivered. Full historical source-zone migration and an independent planning-zone transformation remain separate design work. The device-zone review gate remains; no historical zone is silently migrated |
@@ -113,3 +113,7 @@ Pending recurrence-clock review retains its expected date/zone/time in the edito
 ## Saved-clock daily decisions continuation
 
 Today, Tomorrow and Upcoming list selection/counts, next commitment, carried overnight timeline and Focus summaries use the saved planner clock. Daily scheduled totals union elapsed scheduled instants clipped to the source date; this is planned elapsed time, not measured work. Crossed clock changes are labelled. Next commitment compares exact captured instants so retained DST folds remain distinguishable; ambiguous old times stay unchanged and are excluded for review. Focus history counts recorded sessions, including partial ones; it does not label every record a completed session. Recorded focus and rescheduling timestamps belong to their saved-zone week, and Settings labels the source clock separately from Calendar display. Daily derivation is extracted into `weekwise-today.js` and cached by the matching versioned offline shell. Four Node regressions and a narrow-screen synthetic cloud scenario cover the date boundary, carry, exact fold, completion and timestamp grouping. Final remote browser/release checks remain mandatory; no historical record migration or production backend operation occurs.
+
+## Connected backend review
+
+The correct WeekWise connection now works. Live RLS, grants, revision locking, output order and validated owner cascade were inspected without returning private planner records. Optional Edge Functions/calendar/push/invitation setup are absent. The old diagnostic produced a false failure for differently named RPC-only policies. The optional RPC script also assumed a revision-zero placeholder and a different output order; both are corrected in source and require isolated PostgreSQL CI. See [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md) for the exact proposed, unapplied production operation and acceptance gates.

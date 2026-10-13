@@ -12,10 +12,10 @@ This document separates code that exists from services that must be configured i
 
 ## 1. Verify Supabase schema safely
 
-1. Open the Supabase project configured in `index.html`.
-2. In **SQL Editor**, run `weekwise_supabase_setup.sql`.
+1. Open the Supabase project configured in `index.html`. The connected-project audit is in [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md).
+2. For a **new empty staging project only**, review `weekwise_supabase_setup.sql`. Do not rerun it on the live project: its output order and revision-zero initialization differ from the inspected backend. Use the compatible reviewed RPC proposal for an existing project.
 3. If account creation must be invite-only, run `supabase_invite_code_setup.sql` too.
-4. Run `supabase_verify_setup.sql` and inspect every row. Resolve each `FAIL`; investigate `NOT CONFIGURED` based on whether invite-only signup is intended.
+4. Run `supabase_verify_setup.sql` and inspect every row. Resolve each `FAIL`; inspect every `REVIEW` policy expression; investigate `NOT CONFIGURED` based on whether invite-only signup is intended.
 5. This diagnostic is read-only and does not prove credentials, redirects, email delivery, or client-side sync. It never selects planner rows or displays invite hashes.
 
 ### Important: invite trigger

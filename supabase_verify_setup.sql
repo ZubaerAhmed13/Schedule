@@ -29,28 +29,12 @@ with checks as (
   union all
   select
     'own-row RLS policies',
-    case when (
-      select count(*) = 3
-      from pg_policies
-      where schemaname = 'public'
-        and tablename = 'weekwise_cloud_data'
-        and 'authenticated' = any(roles)
-        and (
-          (policyname = 'weekwise_cloud_select_own' and cmd = 'SELECT'
-            and coalesce(qual, '') ilike '%auth.uid%' and coalesce(qual, '') ilike '%user_id%')
-          or (policyname = 'weekwise_cloud_insert_own' and cmd = 'INSERT'
-            and coalesce(with_check, '') ilike '%auth.uid%' and coalesce(with_check, '') ilike '%user_id%')
-          or (policyname = 'weekwise_cloud_update_own' and cmd = 'UPDATE'
-            and coalesce(qual, '') ilike '%auth.uid%' and coalesce(qual, '') ilike '%user_id%'
-            and coalesce(with_check, '') ilike '%auth.uid%' and coalesce(with_check, '') ilike '%user_id%')
-        )
-    ) then 'PASS' else 'FAIL' end,
-    'Expected own-row SELECT, INSERT and UPDATE policies: ' ||
-      (select count(*)::text from pg_policies
-       where schemaname = 'public'
-         and tablename = 'weekwise_cloud_data'
-         and policyname in ('weekwise_cloud_select_own','weekwise_cloud_insert_own','weekwise_cloud_update_own')) ||
-      ' of 3 found'
+    case when exists (
+      select 1 from pg_policies where schemaname='public' and tablename='weekwise_cloud_data'
+       and 'authenticated'=any(roles) and cmd in ('SELECT','ALL')
+       and coalesce(qual,'') ilike '%auth.uid%' and coalesce(qual,'') ilike '%user_id%'
+    ) then 'REVIEW' else 'FAIL' end,
+    'Inspect every SELECT/ALL policy, including PUBLIC policies, for actual owner predicates. Names and text matches alone cannot certify isolation; RPC-only writes need no INSERT/UPDATE policy.'
   union all
   select
     'authenticated RPC permission',
@@ -220,4 +204,9 @@ with checks as (
 )
 select check_name, status, details
 from checks
-order by case status when 'FAIL' then 0 when 'NOT CONFIGURED' then 1 when 'PRESENT IN ANOTHER SCHEMA' then 2 else 3 end, check_name;
+order by case status when 'FAIL' then 0 when 'REVIEW' then 0 when 'NOT CONFIGURED' then 1 when 'PRESENT IN ANOTHER SCHEMA' then 2 else 3 end, check_name;
+
+-- Full policy expressions, not user data. Review permissive OR combinations and all roles.
+select schemaname,tablename,policyname,roles,permissive,cmd,qual,with_check
+from pg_policies where schemaname='public' and tablename='weekwise_cloud_data'
+order by policyname;
