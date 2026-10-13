@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+import { pushConfiguration } from "../_shared/runtime-config.mjs";
 import webpush from "npm:web-push@3.6.7";
-import { fromZonedTime } from "npm:date-fns-tz@3.2.0";
+import { reminderTime, reminderZone } from "../_shared/reminder-clock.mjs";
 
 type Json = Record<string, unknown>;
 type BrowserPushSubscription = {
@@ -17,6 +18,7 @@ type PushSubscriptionRow = {
 };
 type CloudRow = { user_id: string; data: Json; revision: number };
 
+let runtime: Record<string,string> = {};
 const APP_URL = "https://zubaerahmed13.github.io/Schedule/";
 const ALLOWED_ORIGIN = Deno.env.get("WEEKWISE_ALLOWED_ORIGIN") ?? "https://zubaerahmed13.github.io";
 const MAX_REMINDER_AGE_MS = 24 * 60 * 60 * 1000;
@@ -38,7 +40,7 @@ function jsonResponse(body: Json, status = 200, extraHeaders: Record<string, str
 }
 
 function requiredEnv(name: string): string {
-  const value = Deno.env.get(name)?.trim();
+  const value = (Deno.env.get(name) || runtime[name])?.trim();
   if (!value) throw new Error("Server configuration is missing " + name + ".");
   return value;
 }
@@ -83,16 +85,6 @@ function validTimeZone(candidate: unknown): string {
   } catch {
     return "UTC";
   }
-}
-
-function parseReminderTime(value: string, timeZone: string): Date | null {
-  const text = value.trim();
-  if (!text || text.length > 40) return null;
-  // The app stores datetime-local wall-clock values without an offset. Interpret them
-  // using the time zone captured when background reminders were enabled.
-  const localDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(text);
-  const parsed = localDateTime ? fromZonedTime(text, timeZone) : new Date(text);
-  return Number.isFinite(parsed.getTime()) ? parsed : null;
 }
 
 function listTasksFromCloud(data: Json): Array<{ task: Json; reminderAt: string }> {
@@ -176,11 +168,12 @@ async function dispatchDueReminders(admin: ReturnType<typeof adminClient>) {
       const subscriptions = (subscriptionRows ?? []) as PushSubscriptionRow[];
       if (!subscriptions.length) continue;
       totals.usersChecked += 1;
-      const timeZone = validTimeZone(subscriptions[0].timezone);
+      const timeZone = reminderZone(cloud.data,subscriptions[0].timezone);
+      if(!timeZone){totals.skipped+=records.length;continue;}
 
       for (const record of records) {
-        const reminder = parseReminderTime(record.reminderAt, timeZone);
-        if (!reminder) continue;
+        const reminder = reminderTime(record.reminderAt, timeZone);
+        if (!reminder){totals.skipped+=1;continue;}
         const timestamp = reminder.getTime();
         if (timestamp > now.getTime() || timestamp < cutoff) continue;
         totals.dueReminders += 1;
@@ -246,6 +239,7 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return jsonResponse({ error: "Use POST for this endpoint." }, 405);
 
   try {
+    runtime = await pushConfiguration(adminClient(), (name:string)=>Deno.env.get(name), ()=>webpush.generateVAPIDKeys());
     const body = await request.json().catch(() => ({} as Json)) as Json;
     const action = String(body.action ?? "");
 

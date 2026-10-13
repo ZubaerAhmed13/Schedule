@@ -26,7 +26,7 @@ test("push dispatcher is authenticated, secret-gated and timezone-aware", () => 
   assert.match(edge, /auth\.getUser\(\)/);
   assert.match(edge, /x-weekwise-cron-secret/);
   assert.match(edge, /constantTimeEqual\(receivedSecret, expectedSecret\)/);
-  assert.match(edge, /fromZonedTime\(text, timeZone\)/);
+  assert.match(edge, /reminderTime\(record\.reminderAt, timeZone\)/);
   assert.match(edge, /MAX_REMINDER_AGE_MS = 24 \* 60 \* 60 \* 1000/);
   assert.match(edge, /weekwise_claim_push_delivery/);
   assert.match(edge, /statusCode === 404 \|\| statusCode === 410/);

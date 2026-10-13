@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.weekwise-account]
 verify_jwt = false
+
+[functions.weekwise-activation-check]
+verify_jwt = false

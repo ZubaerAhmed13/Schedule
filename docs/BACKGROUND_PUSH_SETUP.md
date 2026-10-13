@@ -7,7 +7,7 @@ This repository contains the service-worker Web Push implementation, separate fr
 - A signed-in user can register this browser's Push API subscription to their current Weekwise account.
 - Subscription records and delivery deduplication live in tables that browser clients cannot read or modify directly. Only the server-side Edge Function role has database access.
 - The scheduled dispatcher loads each user's existing Weekwise cloud snapshot, checks up to five reminder timestamps per task, and sends due reminders to active devices.
-- Naive datetime-local reminder timestamps are interpreted in the IANA time zone captured when the user enables background reminders. Re-enable on a device after changing time zones.
+- Naive datetime-local reminders use the saved planner IANA zone. Only legacy snapshots without a saved zone fall back to the subscription zone. Invalid zones/dates and ambiguous or nonexistent DST times are skipped; explicit-offset instants retain their meaning.
 - Reminders older than 24 hours are skipped to prevent a burst of very stale notifications.
 - HTTP 404/410 subscriptions are removed. A database claim function prevents concurrent cron runs from sending the same reminder twice.
 - The service worker handles push events and notification clicks. The OS notification tag matches the in-app reminder tag, so a duplicate surfaced after reopening should replace the existing tray item instead of stacking another.
@@ -15,30 +15,13 @@ This repository contains the service-worker Web Push implementation, separate fr
 
 This is reminder delivery only. It does not implement Google Calendar or Microsoft Outlook synchronization.
 
-## Deployment sequence
+## Current deployment and remaining setup
 
-1. Export a Weekwise JSON backup before testing. This setup does not seed, clear, or overwrite task data.
-2. In the target Supabase project's SQL Editor, run the repository file named supabase_push_setup.sql.
-3. From a trusted local terminal authenticated to the intended Supabase project, deploy the Edge Function:
+The correct Weekwise project has the push tables, version 1 handler and a server-generated stable VAPID pair in Vault. Public-key readiness returns HTTP 200. The cron secret and project URL are provisioned without copying secret values into source. The scheduler is not installed: automatic approval review rejected enabling pg_net because direct database roles can read queued HTTP headers. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md) for exact evidence and the reviewable next operation.
 
-   supabase functions deploy weekwise-push --project-ref YOUR_PROJECT_REF
+After explicit pg_net/pg_cron approval and the disposable-account cleanup check, run `supabase_push_cron_setup.sql` to install the minute scheduler using Vault lookups. Verify actual Cron history and the dispatch HTTP response before claiming scheduling works. Keep net outside Data API exposed schemas and trust all direct database LOGIN roles.
 
-4. Generate a fresh VAPID key pair locally:
-
-   npx web-push generate-vapid-keys
-
-   Keep the private key out of source control and out of this conversation.
-5. Configure Edge Function secrets in the correct Supabase project. Use a long random dispatcher secret generated locally (for example, openssl rand -hex 32):
-
-   supabase secrets set VAPID_PUBLIC_KEY="PUBLIC_KEY" VAPID_PRIVATE_KEY="PRIVATE_KEY" VAPID_SUBJECT="mailto:YOUR_MONITORED_CONTACT" WEEKWISE_PUSH_CRON_SECRET="LONG_RANDOM_SECRET" WEEKWISE_ALLOWED_ORIGIN="https://zubaerahmed13.github.io" --project-ref YOUR_PROJECT_REF
-
-   Supabase normally injects SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY into the Edge Function runtime. Confirm they exist in the runtime configuration. Never copy a service-role key into Weekwise HTML, JavaScript, or this repository.
-6. In Supabase Dashboard → Vault, create two secrets:
-   - Name weekwise_project_url, value the project's https://PROJECT_REF.supabase.co URL.
-   - Name weekwise_push_cron_secret, value exactly the same LONG_RANDOM_SECRET used for WEEKWISE_PUSH_CRON_SECRET in the Edge Function.
-7. In SQL Editor, run supabase_push_cron_setup.sql. The cron runs every minute and reads the dispatcher secret from Vault; the secret is not embedded literally in the scheduled SQL definition.
-8. Open the newly deployed Weekwise app, sign in, and navigate to Work day & weekly settings. Click Enable background reminders and allow notification permission.
-9. For an end-to-end test, create a test task with a reminder at least two minutes in the future, tap Sync now under Cloud sync, close the Weekwise tab/app, and wait for the notification. Also test disable/unsubscribe, permission denied, expired subscription cleanup, and two distinct test accounts. Use a test account, not a sensitive reminder.
+Then open Weekwise, sign in, choose Enable background reminders and allow notification permission. Create a test reminder at least two minutes ahead, Sync now, close the app and verify the notification. Also test disable/unsubscribe, permission refusal, expired subscription cleanup and separate test accounts. The server cannot grant device notification permission.
 
 ## Operational notes
 

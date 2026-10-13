@@ -241,7 +241,7 @@ if (fs.existsSync(pushEdgePath) && fs.existsSync(pushSqlPath) && fs.existsSync(p
       /x-weekwise-cron-secret/.test(pushEdge) &&
       /constantTimeEqual\(receivedSecret, expectedSecret\)/.test(pushEdge) &&
       /weekwise_claim_push_delivery/.test(pushEdge) &&
-      /fromZonedTime\(text, timeZone\)/.test(pushEdge) &&
+      /reminderTime\(record\.reminderAt, timeZone\)/.test(pushEdge) &&
       /isTrustedPushEndpoint\(endpoint\)/.test(pushEdge)) {
     pass("background push verifies user sessions, cron secret, time zones and push endpoint hosts");
   } else fail("background push verifies user sessions, cron secret, time zones and push endpoint hosts");

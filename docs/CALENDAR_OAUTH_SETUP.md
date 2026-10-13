@@ -1,12 +1,12 @@
 # Weekwise Google Calendar and Microsoft Outlook integration
 
-The repository contains a server-side OAuth flow and calendar synchronization handler. It is not active in production until the SQL migration, provider registrations, server-side secrets, and Edge Function deployment in this guide have been completed. The live Supabase Auth probe previously reported Google/Azure sign-in providers as disabled; these calendar connections use a separate OAuth flow and do not depend on Supabase social sign-in.
+The calendar handler and server-only tables are deployed in Weekwise. Its health check confirms encryption is configured, but Google and Microsoft credentials are absent, so provider connections remain unavailable. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md). The live Supabase Auth probe previously reported Google/Azure sign-in providers as disabled; these calendar connections use a separate OAuth flow and do not depend on Supabase social sign-in.
 
 ## What is implemented in the repository
 
 - OAuth authorization-code flow with PKCE (S256), random state stored only as a hash, ten-minute expiry, and one-time state consumption.
 - Google Calendar and Microsoft Graph calendar authorization handled by a Supabase Edge Function. Client secrets and refresh tokens never enter the static HTML or browser JavaScript.
-- Access and refresh tokens are encrypted with AES-256-GCM using a secret held in the Edge Function environment.
+- Access and refresh tokens are encrypted with AES-256-GCM using a server-only environment or Vault key.
 - Per-user connection records and event mapping tables are protected from browser roles by RLS and explicit privilege revocation.
 - Sync covers 30 days in the past through 90 days ahead on the provider's primary calendar.
 - New provider events can be imported into Weekwise, and Weekwise scheduled/all-day tasks can be created or updated in the connected provider calendar. Per-event mapping plus provider metadata helps avoid duplicates after retries.
@@ -52,19 +52,17 @@ The requested delegated scope is https://www.googleapis.com/auth/calendar.events
 
 Outlook's API represents time zones using Windows time-zone identifiers. The code maps common IANA time zones (including Europe/Berlin, Europe/London and major North American/Asian zones); it returns an explicit error for an unmapped Microsoft time zone rather than guessing dates.
 
-## 5. Generate the token-encryption key and set Edge Function secrets
+## 5. Enter provider credentials securely
 
-Generate a unique 32-byte AES key in a trusted terminal. Keep it in a password manager or secure secrets vault; do not paste it into this chat or commit it.
+The stable `WEEKWISE_CALENDAR_ENCRYPTION_KEY` is already generated inside Supabase Vault. Preserve it. In the [correct project's Vault](https://supabase.com/dashboard/project/iajkzlsurghfvsmqkmut/integrations/vault/overview), add secrets with these exact names and the values issued by the provider registrations above:
 
-Example for a base64url key on a Unix-like terminal:
+- `GOOGLE_CALENDAR_CLIENT_ID`
+- `GOOGLE_CALENDAR_CLIENT_SECRET`
+- `MICROSOFT_CALENDAR_CLIENT_ID`
+- `MICROSOFT_CALENDAR_CLIENT_SECRET`
+- `MICROSOFT_CALENDAR_TENANT` (optional; defaults to `common`)
 
-    openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
-
-From a terminal authenticated to the correct Supabase project, set the secrets (replace placeholders locally, not in this file):
-
-    supabase secrets set       GOOGLE_CALENDAR_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID"       GOOGLE_CALENDAR_CLIENT_SECRET="YOUR_GOOGLE_CLIENT_SECRET"       MICROSOFT_CALENDAR_CLIENT_ID="YOUR_MICROSOFT_CLIENT_ID"       MICROSOFT_CALENDAR_CLIENT_SECRET="YOUR_MICROSOFT_CLIENT_SECRET"       MICROSOFT_CALENDAR_TENANT="common"       WEEKWISE_CALENDAR_ENCRYPTION_KEY="YOUR_BASE64URL_32_BYTE_KEY"       WEEKWISE_ALLOWED_ORIGIN="https://zubaerahmed13.github.io"       --project-ref YOUR_PROJECT_REF
-
-Supabase provides its project URL and server API key to Edge Functions. Never copy any service-role/secret API key into public source. Keep a stable encryption key: replacing it without re-encrypting stored tokens makes existing connections unreadable, so users would need to reconnect.
+Configure either provider independently. Do not paste secret values into chat or commit them. The deployed server reads these through its service-only runtime configuration RPC; environment settings take precedence. Health returns only readiness booleans.
 
 ## 6. Deploy the Edge Function
 
@@ -93,4 +91,4 @@ The function callback is configured with verify_jwt = false because the provider
 - Two simultaneous edits are intentionally surfaced as conflicts. The user decides how to resolve them; there is no automatic field-level merge.
 - Disconnect removes Weekwise's stored encrypted credentials and event-link records. For full provider-consent revocation, remove Weekwise from the account's security/connected-app settings.
 - .ics import/export continues to work separately; it does not establish an OAuth connection.
-- This integration is not live until the external credentials, SQL migration and Edge Function deployment have been completed and the real round-trip tests above pass.
+- Provider synchronization is not verified until the external credentials/consent and real round-trip tests above pass. SQL and server deployment are complete.

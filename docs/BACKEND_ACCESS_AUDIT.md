@@ -1,3 +1,5 @@
+> Historical initial inspection and cloud-save activation below. Current optional-service deployment and remaining approval are recorded in [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md).
+
 # Weekwise connected-backend audit — 13 October 2026
 
 Project `iajkzlsurghfvsmqkmut`, name Weekwise, is now accessible through the WeekWise connection and reports ACTIVE_HEALTHY. PostgreSQL is 17.11. This audit used catalog queries and aggregate compatibility checks; no task titles, planner JSON, credentials or user identifiers were retrieved. At the initial audit no production changes were made. The user subsequently approved the scoped cloud-save update; its applied result is recorded below. Optional services and stored user records were not changed.

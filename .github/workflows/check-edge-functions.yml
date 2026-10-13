@@ -28,3 +28,5 @@ jobs:
         run: deno check --no-lock supabase/functions/weekwise-calendar/index.ts
       - name: Type-check disabled-by-default account erasure handler
         run: deno check --no-lock supabase/functions/weekwise-account/index.ts
+      - name: Type-check one-time disposable activation checker
+        run: deno check --no-lock supabase/functions/weekwise-activation-check/index.ts

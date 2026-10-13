@@ -33,3 +33,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test both deployed and legacy SQL contracts against isolated PostgreSQL
         run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/weekwise-rpc-hardening.sql
+      - name: Test server-only runtime configuration and optional integration schemas
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/weekwise-integration-config.sql
