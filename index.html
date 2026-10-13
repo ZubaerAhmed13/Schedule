@@ -114,7 +114,7 @@
             <label><input name="planDay" type="checkbox" value="0">Sun</label><label><input name="planDay" type="checkbox" value="1" checked>Mon</label><label><input name="planDay" type="checkbox" value="2" checked>Tue</label><label><input name="planDay" type="checkbox" value="3" checked>Wed</label><label><input name="planDay" type="checkbox" value="4" checked>Thu</label><label><input name="planDay" type="checkbox" value="5" checked>Fri</label><label><input name="planDay" type="checkbox" value="6">Sat</label>
           </div></fieldset>
           <details class="plan-window-settings"><summary>Multiple availability windows</summary><p>Custom windows replace the default hours on that weekday. Leave gaps for unavailable time.</p><div id="planWindows"></div><button class="btn" type="button" id="planAddWindow">Add a window</button></details><div class="plan-actions"><button class="btn primary" type="submit">Build My Week</button><button class="btn" type="button" id="planRecover">Recover My Week</button><button class="btn" type="button" id="planSavePreferences">Save preferences</button><button class="btn" type="button" id="planUndo" hidden>Undo last plan</button></div>
-          <p class="plan-disclosure">These are editable starting values. Nothing is scheduled until you apply a preview. Tasks need an explicit Estimated duration or Estimated focus in the editor. Build keeps scheduled tasks in place. Recover suggests moving unfinished past or conflicting flexible tasks; fixed commitments stay in place. Planning uses this device’s local time zone.</p>
+          <p class="plan-disclosure">These are editable starting values. Nothing is scheduled until you apply a preview. Tasks need an explicit Estimated duration or Estimated focus in the editor. Build keeps scheduled tasks in place. Recover suggests moving unfinished past or conflicting flexible tasks; fixed commitments stay in place. Planning uses the saved planner time zone. Calendar display-zone preferences do not change planning hours.</p>
         </form>
         <p class="plan-status" id="planStatus" role="status" aria-live="polite">Choose your planning hours, then build a preview.</p>
         <section id="planResults" hidden aria-label="Suggested weekly plan">
@@ -218,22 +218,22 @@
   <section class="calendar-scroll" id="daysGrid" aria-label="Weekly calendar"></section>
   <section class="effort-dashboard dashboard-source" id="dashboard" aria-labelledby="dashboardTitle">
     <div class="dashboard-head">
-      <div><div class="dashboard-eyebrow">YOUR WEEK AT A GLANCE</div><h2 id="dashboardTitle">Effort dashboard</h2><p>See your completed effort, unlogged past time, and where your planned hours went.</p></div>
+      <div><div class="dashboard-eyebrow">YOUR WEEK AT A GLANCE</div><h2 id="dashboardTitle">Effort dashboard</h2><p>Review scheduled durations, completion checkmarks and past plans that still need review.</p></div>
       <div class="dashboard-period-control"><label for="dashboardWeekPicker">Review week</label><input type="date" id="dashboardWeekPicker" aria-label="Choose a date in the week to review" /><div class="dashboard-period" id="dashboardPeriod">This week</div></div>
     </div>
     <div class="dashboard-kpis">
-      <article class="dash-kpi kpi-effort"><span class="kpi-icon">✓</span><div><small>Effort logged</small><strong id="effortLogged">0m</strong><p>Duration of completed activities</p></div></article>
+      <article class="dash-kpi kpi-effort"><span class="kpi-icon">✓</span><div><small>Completed planned time</small><strong id="effortLogged">0m</strong><p>Duration of completed activities</p></div></article>
       <article class="dash-kpi kpi-planned"><span class="kpi-icon">◷</span><div><small>Planned time</small><strong id="plannedTotal">0m</strong><p>All scheduled blocks this week</p></div></article>
-      <article class="dash-kpi kpi-overdue"><span class="kpi-icon">↘</span><div><small>Past time unlogged</small><strong id="overdueTotal">0m</strong><p>Could be missed, wasted, or unchecked</p></div></article>
+      <article class="dash-kpi kpi-overdue"><span class="kpi-icon">↘</span><div><small>Past plan unchecked</small><strong id="overdueTotal">0m</strong><p>Review whether the plan changed or needs a checkmark</p></div></article>
       <article class="dash-kpi kpi-upcoming"><span class="kpi-icon">→</span><div><small>Still ahead</small><strong id="upcomingTotal">0m</strong><p>Scheduled and not yet due</p></div></article>
       <article class="dash-kpi kpi-rate"><span class="kpi-icon">◉</span><div><small>Completion rate</small><strong id="completionRate">0%</strong><p>Completed time / elapsed planned time</p></div></article>
     </div>
     <div class="dashboard-charts">
-      <section class="analytics-card"><div class="analytics-title"><h3>Where your time went</h3><p>Logged effort compared with planned time in each category</p></div><div id="categoryBreakdown" class="category-breakdown"></div></section>
-      <section class="analytics-card"><div class="analytics-title"><h3>Daily effort</h3><p>Completed time as a share of each day's plan</p></div><div id="dailyBreakdown" class="daily-breakdown"></div></section>
+      <section class="analytics-card"><div class="analytics-title"><h3>Planned and completed by category</h3><p>Scheduled durations compared with marked-complete durations</p></div><div id="categoryBreakdown" class="category-breakdown"></div></section>
+      <section class="analytics-card"><div class="analytics-title"><h3>Daily planned completion</h3><p>Completed time as a share of each day's plan</p></div><div id="dailyBreakdown" class="daily-breakdown"></div></section>
     </div>
     <div class="dashboard-insight" id="dashboardInsight">Choose a week to see a simple summary of your effort.</div>
-    <div class="dashboard-foot" id="dashboardNote">Mark an activity complete to count its planned duration as effort logged. Past time not checked off may be wasted time, a missed plan, or simply unmarked; Weekwise does not track attention automatically.</div>
+    <div class="dashboard-foot" id="dashboardNote">Completion checkmarks count scheduled duration, not measured work. Unchecked past plans need review. Recorded Focus sessions are shown separately in Insights.</div>
   </section>
     </main>
   </div>

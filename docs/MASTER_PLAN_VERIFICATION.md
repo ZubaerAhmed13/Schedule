@@ -16,7 +16,7 @@ Current release/tests and the prioritized backlog are in [CURRENT_STATUS.md](CUR
 | 7 | Today | VERIFIED for core task/capacity widgets | Usability study and all edge-state coverage |
 | 8 | Smart Week Builder | VERIFIED for deterministic core | Arbitrary time-zone planning and observed usage |
 | 9 | Recover My Week | VERIFIED for core | Complex recurring/multi-device production cases |
-| 10 | Calendar, DST, midnight, overlapping events | PARTIAL | Date-aware Calendar display and Monday planning delivered; arbitrary planner-zone conversion and explicit overnight editor remain |
+| 10 | Calendar, DST, midnight, overlapping events | PARTIAL | Date-aware Calendar display and Monday planning delivered; arbitrary planner-zone conversion and arbitrary historical planner-zone migration remains; explicit overnight editing is delivered |
 | 11 | Task management and NLP capture | VERIFIED for representative fixtures | Archive, Recently removed, restore and guarded Undo delivered; historic/private-data acceptance remains |
 | 12 | Useful Insights | PARTIAL | Daily unioned workload, recorded recovery and task-linked focus/estimate comparison delivered; broader historic actual-work trends and usability remain |
 | 13 | Habits | PARTIAL | Flexible 1–7/week targets and legacy-preserving UI delivered; manual real-user QA remains |
@@ -68,3 +68,9 @@ This checklist prevents claims of master-plan completion until the corresponding
 ## Continuation through PR #33 and account-erasure source
 
 PRs #29–#33 deliver lab performance metrics, full Focus search/paging, reversible task lifecycle, reviewed recurring date/time/cadence changes and Monday-first Calendar/planning with IANA Calendar projection. See CURRENT_STATUS.md for exact-head evidence and limits. Account-erasure implementation is disabled by default pending correct-project access, cascade/RLS staging tests and deployment; see ACCOUNT_ERASURE_SETUP.md. None of these automated fixtures establishes production deletion, provider readiness or human accessibility certification.
+
+## Continuation through PR #35 and saved-clock review
+
+PR #34 supplies gated account-erasure source and controls; it is disabled in production pending staging/project access. PR #35's final head `368c38356ca8f00e08ff8541971becb0b5c4d595` passed 129 Node/50 built-client browser tests and all release/Edge gates, adding overnight editing, reviewed swaps, stale-pointer/focus guards and cached-account offline/reconnect fixtures. Phone screenshots were reviewed.
+
+Saved planning-clock review adds source-zone date/instant checks, conservative DST review intervals, carried all-day planning capacity and clear planned-completion labels. Further cross-zone historical migration, private-backend tests, optional providers, field measurements and human accessibility/PWA certification remain external or separate design work; the 32-section plan is still partially complete.
