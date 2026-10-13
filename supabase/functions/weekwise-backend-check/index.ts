@@ -37,9 +37,10 @@ Deno.serve(async(request:Request)=>{
   const users=[];
   for(let index=0;index<2;index++){
    const created=await create(codes.valid);required(!created.error&&!!created.data.user,'valid_invite_created');
-   required(!Object.hasOwn(created.data.user!.user_metadata,'weekwise_referral_code')&&created.data.user!.user_metadata.weekwise_disposable_backend_check===true,'new_invite_metadata_minimized');
+   const stored=await admin.auth.admin.getUserById(created.data.user!.id);required(!stored.error&&!!stored.data.user&&!Object.hasOwn(stored.data.user.user_metadata,'weekwise_referral_code')&&stored.data.user.user_metadata.weekwise_disposable_backend_check===true,'new_invite_metadata_minimized');
    const auth=createClient(url,anon,options),login=await auth.auth.signInWithPassword({email:created.email,password:created.password});
    required(!login.error&&!!login.data.session&&login.data.user?.id===created.data.user!.id,'password_signin_verified');
+   required(!Object.hasOwn(login.data.user!.user_metadata,'weekwise_referral_code'),'signedin_invite_metadata_minimized');
    users.push({id:created.data.user!.id,email:created.email,password:created.password,auth,session:login.data.session!});
   }
   const replay=await create(codes.valid);required(!!replay.error&&!replay.data.user,'invite_use_limit_rejected');
