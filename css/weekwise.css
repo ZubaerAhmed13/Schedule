@@ -66,3 +66,7 @@ body[data-theme=dark] .workspace-capture-hint kbd{background:var(--ww-soft);bord
 .today-onboarding-steps article{background:transparent;border-color:var(--ww-line)}
 .today-onboarding-head h3,.today-onboarding-steps h4{color:var(--ww-text)}
 .today-onboarding-head p,.today-onboarding-steps article>span,.today-onboarding-steps p{color:var(--ww-muted)}
+
+/* Legacy empty-state heading must follow dark surface foreground tokens. */
+.workspace-empty h3{color:var(--ww-text)}
+body[data-theme=dark] .workspace-empty h3{color:var(--ww-text)}
