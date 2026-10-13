@@ -52,3 +52,10 @@ Never expose OAuth/VAPID/service-role/AI secrets in browser code. Never run prod
 - [ ] Static build caches the new time-zone module and still passes offline browser regression.
 - [ ] Browser and CI checks pass at the exact reviewed head SHA.
 - [ ] Real provider OAuth, full app timezone selection and recurrence ICS ingestion remain separate release gates.
+
+## Safe bulk recurring edit review
+
+- [ ] Unit tests prove unchanged future metadata propagation, exceptions/completions protected, stale original rejection, immutable preview and unchanged reminder/time/history fields.
+- [ ] Browser confirms opt-in default off, preview dialogue, future saved propagation and unchanged stable identity/times/alerts.
+- [ ] Browser offline and cloud regression suites pass at the reviewed head.
+- [ ] Changes of dates, recurrence cadence, deadlines or scheduled times on previously materialized activities remain outside bulk metadata scope.
