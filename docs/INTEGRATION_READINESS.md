@@ -56,11 +56,11 @@ Follow docs/CALENDAR_OAUTH_SETUP.md. The remaining production steps are:
 
 The live Auth workflow previously found Google and Microsoft/Azure Supabase sign-in providers disabled. Those are separate from the calendar OAuth clients described here; toggling a Supabase sign-in provider alone does not grant Calendar/Graph access. Do not mark calendar sync live until the external setup and round-trip tests pass.
 
-## 4. Background push: code ready, external activation required
+## 4. Background push: scheduler active, device acceptance remains
 
 The repository includes the service-worker `push` and notification-click handlers, opt-in browser control, authenticated `weekwise-push` Edge Function, server-only subscription and delivery tables, an atomic deduplication claim, timezone conversion, stale-subscription cleanup, and an optional one-minute Cron setup. The UI does not report background reminders enabled until the current device subscription is registered with the signed-in account.
 
-Push tables, server, VAPID pair and Vault dispatcher/project settings are now deployed and verified. The scheduler is not installed: automatic approval review blocked pg_net enablement. Follow [BACKGROUND_PUSH_SETUP.md](BACKGROUND_PUSH_SETUP.md) after approval, then test a future reminder with the app closed. The service worker caching the shell alone never proves delivery.
+Push tables, server, VAPID pair and Vault dispatcher/project settings are now deployed and verified. The user-approved minute scheduler is installed; two actual calls passed with HTTP 200 and no failures. Follow [BACKGROUND_PUSH_SETUP.md](BACKGROUND_PUSH_SETUP.md) to subscribe your device and test a future reminder with the app closed. The service worker caching the shell alone never proves delivery.
 
 The dispatcher only reads the latest synced cloud snapshot, skips reminders more than 24 hours late, rejects untrusted push endpoint hostnames, and keeps subscription/delivery records unavailable to browser roles. This still needs real delivery tests with the app closed and with revoked/expired subscriptions and timezone changes.
 

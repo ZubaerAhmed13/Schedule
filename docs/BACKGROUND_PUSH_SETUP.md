@@ -1,6 +1,6 @@
 # Weekwise background reminders (Web Push)
 
-This repository contains the service-worker Web Push implementation, separate from the existing reminder loop that runs only while the app is open. It is **not verified as live until you confirm the SQL migration, Edge Function secrets, and scheduler are configured in the target Supabase project and a closed-app delivery test succeeds**. The dispatcher is guarded by an application-level cron secret; only server-side secrets authorize dispatch.
+The server, stable VAPID keys, server-only tables and one-minute scheduler are active in Weekwise. Two scheduled calls returned HTTP 200 with successful dispatch and no failures. No devices are subscribed yet; actual notification delivery with the app closed still needs a device test. Dispatch is authorized by a server-only Vault secret.
 
 ## What it adds
 
@@ -17,9 +17,9 @@ This is reminder delivery only. It does not implement Google Calendar or Microso
 
 ## Current deployment and remaining setup
 
-The correct Weekwise project has the push tables, version 1 handler and a server-generated stable VAPID pair in Vault. Public-key readiness returns HTTP 200. The cron secret and project URL are provisioned without copying secret values into source. The scheduler is not installed: automatic approval review rejected enabling pg_net because direct database roles can read queued HTTP headers. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md) for exact evidence and the reviewable next operation.
+The correct Weekwise project has the push tables, version 1 handler and a server-generated stable VAPID pair in Vault. Public-key readiness returns HTTP 200. The cron secret and project URL are provisioned without copying secret values into source. The user explicitly approved pg_net/pg_cron and migration `20261013151217` installed one active minute job. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md) for exact evidence and the reviewable next operation.
 
-After explicit pg_net/pg_cron approval and the disposable-account cleanup check, run `supabase_push_cron_setup.sql` to install the minute scheduler using Vault lookups. Verify actual Cron history and the dispatch HTTP response before claiming scheduling works. Keep net outside Data API exposed schemas and trust all direct database LOGIN roles.
+The first two actual scheduled dispatch responses passed. Do not re-run `supabase_push_cron_setup.sql` casually; it replaces only the named job, but existing configuration should be reviewed first. Keep net outside Data API exposed schemas and trust all direct database LOGIN roles; they can read queued headers. The queue is not isolated from those trusted roles.
 
 Then open Weekwise, sign in, choose Enable background reminders and allow notification permission. Create a test reminder at least two minutes ahead, Sync now, close the app and verify the notification. Also test disable/unsubscribe, permission refusal, expired subscription cleanup and separate test accounts. The server cannot grant device notification permission.
 
