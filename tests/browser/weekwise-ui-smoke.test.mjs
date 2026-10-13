@@ -864,3 +864,49 @@ test('Focus search and selection do not carry into another account',async()=>{
   assert.ok(!(await page.locator('#focusPanel').innerText()).includes('Owner A focus responsibility'));
  }finally{await context.close();}
 });
+
+
+test('capture reproducible desktop and mobile lab render metrics without claiming field Core Web Vitals',async()=>{
+ const results=[];
+ for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
+  const {context,page}=await openPlanner(viewport);
+  try{
+   const metrics=await page.evaluate(async()=>{
+    let lcp=null,cls=0;const observers=[];
+    if(PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')){
+     const observer=new PerformanceObserver(list=>{for(const item of list.getEntries())lcp=item.startTime;});
+     observer.observe({type:'largest-contentful-paint',buffered:true});observers.push(observer);
+    }
+    if(PerformanceObserver.supportedEntryTypes.includes('layout-shift')){
+     const observer=new PerformanceObserver(list=>{for(const item of list.getEntries())if(!item.hadRecentInput)cls+=item.value;});
+     observer.observe({type:'layout-shift',buffered:true});observers.push(observer);
+    }
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    observers.forEach(observer=>observer.disconnect());
+    const nav=performance.getEntriesByType('navigation')[0],
+     fcp=performance.getEntriesByName('first-contentful-paint')[0],
+     resources=performance.getEntriesByType('resource');
+    return {
+     navigationDomReadyMs:nav?.domContentLoadedEventEnd??null,
+     firstContentfulPaintMs:fcp?.startTime??null,
+     largestContentfulPaintSampleMs:lcp,
+     cumulativeLayoutShiftSample:cls,
+     networkResourceCount:resources.length,
+     resourceBytesFromTiming:resources.reduce((sum,item)=>sum+(item.encodedBodySize||0),0),
+     interactionToNextPaintSampleMs:null,
+     fieldInp:null,
+     deviceNotes:'Synthetic headless Chromium load only; no real-device network, real-world traffic or field INP.'
+    };
+   });
+   for(const field of ['navigationDomReadyMs','cumulativeLayoutShiftSample','networkResourceCount','resourceBytesFromTiming']){
+    assert.ok(Number.isFinite(metrics[field])&&metrics[field]>=0,field+' must be a recorded nonnegative lab value');
+   }
+   if(metrics.firstContentfulPaintMs!==null)assert.ok(Number.isFinite(metrics.firstContentfulPaintMs));
+   if(metrics.largestContentfulPaintSampleMs!==null)assert.ok(Number.isFinite(metrics.largestContentfulPaintSampleMs));
+   results.push({viewport,commit:process.env.GITHUB_SHA||'local',metrics});
+  }finally{await context.close();}
+ }
+ fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
+ fs.writeFileSync(path.join(root,'test-results','lab-performance.json'),JSON.stringify({kind:'synthetic-lab-performance',capturedAt:new Date().toISOString(),results},null,2));
+ assert.equal(results.length,2);
+});

@@ -133,3 +133,7 @@ If a newer version is waiting in the service worker, Weekwise offers a **Reload 
 ### Flexible habit goals
 
 In Habits & routines, choose **On selected weekdays** (the unchanged default) or **Any days — reach weekly target**. Any-day habits can reach a user-set 1–7 check-ins/week without punishing rest days. A completed weekly target ends routine nudges for that week, and a weekly streak counts consecutive successful weeks. Existing habit history and schedules are preserved when changing modes.
+
+### Performance evidence
+
+The Chromium regression workflow archives **synthetic desktop/mobile laboratory** render metrics alongside the existing 1k/5k/10k task-list navigation measurements and accessibility audit. These help detect regressions but are not actual-user Core Web Vitals or proof of phone performance. Browser RUM collection, real networking conditions and INP percentile verification remain separate work.
