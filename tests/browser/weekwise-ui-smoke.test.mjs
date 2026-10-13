@@ -964,3 +964,29 @@ test('recurring schedule preview changes cadence and saved slots only after appr
   await page.locator('#seriesScheduleUndo').click();assert.deepEqual((await readPlannerStore(page)).weeks,before.weeks);assert.deepEqual((await readPlannerStore(page)).recurringTemplates,before.recurringTemplates);
  }finally{await context.close();}
 });
+
+test('Monday Calendar crosses canonical week boundaries and Sunday planning saves to the correct week',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  const dates=await page.evaluate(()=>{const date=new Date();date.setDate(date.getDate()+7+(1-date.getDay()+7)%7);const monday=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'),range=WeekwiseCalendarRange.range(monday,1),weekA=WeekwiseCalendarRange.range(monday,0)[0],weekB=range[6],store=JSON.parse(localStorage.getItem('weekwise-planner-v2'));store.weeks[weekA]={notes:'Preserve A',tasks:[{id:'mon-boundary',title:'Monday boundary record',day:1,start:600,duration:30},{id:'sun-flex',title:'Sunday flexible plan',day:1,start:null,unscheduled:true,estimatedDurationMinutes:30}]};store.weeks[weekB]={notes:'Preserve B',tasks:[{id:'sun-boundary',title:'Sunday boundary record',day:0,start:600,duration:30}]};localStorage.setItem('weekwise-planner-v2',JSON.stringify(store));return {monday,range,weekA,weekB};});
+  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);const before=await readPlannerStore(page);
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-settings-panel="settingsPanel"]').click();await page.locator('#planningWeekStart').selectOption('1');await page.locator('#weekStart').fill(dates.monday);await page.locator('#applySettings').click();
+  assert.deepEqual((await readPlannerStore(page)).weeks[dates.weekA].tasks,before.weeks[dates.weekA].tasks);assert.deepEqual((await readPlannerStore(page)).weeks[dates.weekB].tasks,before.weeks[dates.weekB].tasks);
+  await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();await page.locator('#weekViewBtn').click();
+  const headings=await page.locator('#daysGrid .calendar-day-header [data-range-date]').evaluateAll(elements=>elements.map(el=>el.dataset.rangeDate));assert.deepEqual(headings,dates.range);assert.match(await page.locator('#daysGrid').innerText(),/Monday boundary record/);assert.match(await page.locator('#daysGrid').innerText(),/Sunday boundary record/);
+  await page.locator('#workspaceSidebar [data-workspace-view="plan"]').click();await page.locator('#planWeek').fill(dates.monday);for(const checkbox of await page.locator('[name="planDay"]').all())await checkbox.uncheck();await page.locator('[name="planDay"][value="0"]').check();await page.locator('#planBuffer').fill('0');await page.locator('#planBreak').fill('0');await page.locator('#planPreferences button[type="submit"]').click();assert.match(await page.locator('#planProposals').innerText(),new RegExp(dates.weekB));await page.locator('#planApply').click();
+  const after=await readPlannerStore(page);assert.equal(after.weeks[dates.weekA].tasks.some(t=>t.id==='sun-flex'),false);assert.equal(after.weeks[dates.weekB].tasks.find(t=>t.id==='sun-flex').day,0);assert.equal(after.weeks[dates.weekB].notes,'Preserve B');await page.locator('#planUndo').click();assert.deepEqual((await readPlannerStore(page)).weeks[dates.weekA].tasks,before.weeks[dates.weekA].tasks);
+ }finally{await context.close();}
+});
+
+test('an IANA Calendar zone projects one record through every view and edits the original clock',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await createScheduledTask(page,'Projected exact responsibility');const before=await readPlannerStore(page),source=Object.entries(before.weeks).flatMap(([week,value])=>value.tasks.map(task=>({week,task}))).find(r=>r.task.title==='Projected exact responsibility');
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-settings-panel="settingsPanel"]').click();await page.locator('#calendarTimeZone').fill('Asia/Kolkata');await page.locator('#applySettings').click();assert.deepEqual((await readPlannerStore(page)).weeks,before.weeks);
+  await page.locator('#workspaceSidebar [data-workspace-view="calendar"]').click();for(const view of ['week','month','agenda','year','day']){await page.locator('#'+view+'ViewBtn').click();assert.match(await page.locator('#daysGrid').innerText(),/Projected exact responsibility/);assert.ok(await page.locator('#daysGrid [data-range-id="'+source.task.id+'"]').count()>0);}
+  const expected=await page.evaluate(({week,task})=>{const row=WeekwiseCalendarRange.project({settings:{timeZone:'UTC'},weeks:{[week]:{tasks:[task]}}},'Asia/Kolkata')[0];return String(Math.floor(row.start/60)).padStart(2,'0')+':'+String(row.start%60).padStart(2,'0');},source);assert.match(await page.locator('#daysGrid').innerText(),new RegExp(expected));
+  await page.locator('#daysGrid [data-range-edit][data-range-id="'+source.task.id+'"]').first().click();assert.equal(await page.locator('#modalTitleInput').inputValue(),source.task.title);assert.equal(await page.locator('#modalTime').inputValue(),'17:30');assert.match(await page.locator('#modalDescription').innerText(),/Clock fields use UTC/);await page.locator('#closeModal').click();assert.equal(await countStoredTasksNamed(page,source.task.title),1);
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','calendar-zone-desktop.png')});
+ }finally{await context.close();}
+});

@@ -78,15 +78,16 @@
     const sortedRecords=timedRecords.slice().sort((a,b)=>a.a-b.a);let latestEnd=-Infinity,latestRef=null;
     for(const entry of sortedRecords){if(entry.a<latestEnd){conflicts.add(entry.ref);conflicts.add(latestRef);}if(entry.b>latestEnd){latestEnd=entry.b;latestRef=entry.ref;}}
     const days = []; let windows = [], free = [];
-    for (const day of p.days) {
-      const custom=p.windows.filter(window=>window.days.includes(day));
+    for (let day=0;day<7;day++) {
+      const weekday=new Date((base+day)*86400000).getUTCDay();if(!p.days.includes(weekday))continue;
+      const custom=p.windows.filter(window=>window.days.includes(weekday));
       const candidates=custom.length?custom:[{start:p.start,end:p.end}];
       const window=merge(candidates.map(w=>[Math.max(day*DAY+w.start,earliest),day*DAY+w.end]));
       if(!window.length)continue;
       const afterBusy=subtract(window,busy),afterBreaks=subtract(afterBusy,breaks),afterBuffer=reserveTail(afterBreaks,p.buffer),committed=sum(window)-sum(afterBusy);
       const usable=reserveTail(afterBuffer,Math.max(0,sum(afterBuffer)-Math.max(0,p.maxDailyMinutes-committed)));
       windows.push(...window);free.push(...usable);
-      days.push({day,date:dateAt(weekStart,day),available:sum(window),committed,breaks:sum(afterBusy)-sum(afterBreaks),buffer:sum(afterBreaks)-sum(afterBuffer),dailyLimitReserved:sum(afterBuffer)-sum(usable),capacity:sum(usable)});
+      days.push({day,weekday,date:dateAt(weekStart,day),available:sum(window),committed,breaks:sum(afterBusy)-sum(afterBreaks),buffer:sum(afterBreaks)-sum(afterBuffer),dailyLimitReserved:sum(afterBuffer)-sum(usable),capacity:sum(usable)});
     }
     const beforeWeeklyBuffer=sum(free);free=reserveTail(free,p.weeklyBuffer);const weeklyBufferReserved=beforeWeeklyBuffer-sum(free);
     for(const day of days)day.capacity=sum(free.filter(([a])=>Math.floor(a/DAY)===day.day));
@@ -125,7 +126,7 @@
       }else for(const option of options)if(option.start+duration<=Math.min(option.end,deadline)&&option.start+duration+p.breakMinutes<=option.end){slot=option.start;break;}
       if (slot===null) {fail(override?'Your requested time is outside availability, overlaps another block, or misses the deadline. Clear it and try another slot.':deadline<=earliest?'Deadline has passed. Review the deadline before planning.':'No continuous slot fits before the deadline with your breaks and buffer.');continue;}
       const day=Math.floor(slot/DAY),start=slot%DAY;
-      proposals.push({week:record.week,id:t.id,title:t.title,day,start,duration,date:dateAt(weekStart,day),recovery:mode==='recover',from:{day:t.day,start:t.start,duration:t.duration,unscheduled:!!t.unscheduled},reason:(mode==='recover'?'Move unfinished or conflicting work. ':'')+(override?'Your chosen slot. ':'')+(t.dueDate?'Before the '+t.dueDate+' deadline. ':'')+'Earliest free slot; existing commitments, breaks and buffer are protected.'});
+      proposals.push({week:record.week,id:t.id,title:t.title,day:new Date((base+day)*86400000).getUTCDay(),start,duration,date:dateAt(weekStart,day),recovery:mode==='recover',from:{day:t.day,start:t.start,duration:t.duration,unscheduled:!!t.unscheduled},reason:(mode==='recover'?'Move unfinished or conflicting work. ':'')+(override?'Your chosen slot. ':'')+(t.dueDate?'Before the '+t.dueDate+' deadline. ':'')+'Earliest free slot; existing commitments, breaks and buffer are protected.'});
       free=subtract(free,[[slot,slot+duration+p.breakMinutes]]);consumedBreaks+=p.breakMinutes;
     }
     const overlaps=[];
@@ -142,14 +143,15 @@
     for (const p of chosen) {
       const source=next.weeks[p.week], task=source?.tasks.find(t=>t.id===p.id);
       if (!task || task.done || task.status==='done' || isFixed(task) || (!p.recovery&&(isProtected(task)||(task.start!=null&&!task.unscheduled))) || (p.from&&(p.from.day!==task.day||p.from.start!==task.start||p.from.duration!==task.duration))) throw new Error('A task changed. Build a fresh preview.');
-      if (p.week!==plan.weekStart && next.weeks[plan.weekStart]?.tasks.some(t=>t.id===p.id)) throw new Error('Task ID already exists in the destination week. Nothing was changed.');
-      if (p.week!==plan.weekStart) {
+      const targetWeek=dateAt(p.date,-new Date(p.date+'T12:00:00Z').getUTCDay());
+      if (p.week!==targetWeek && next.weeks[targetWeek]?.tasks.some(t=>t.id===p.id)) throw new Error('Task ID already exists in the destination week. Nothing was changed.');
+      if (p.week!==targetWeek) {
         source.tasks=source.tasks.filter(t=>t.id!==p.id);
-        if (!next.weeks[plan.weekStart]) next.weeks[plan.weekStart]={tasks:[]};
-        next.weeks[plan.weekStart].tasks.push(task);
+        if (!next.weeks[targetWeek]) next.weeks[targetWeek]={tasks:[]};
+        next.weeks[targetWeek].tasks.push(task);
       }
       if(p.recovery){
-        task.reschedulingHistory=[...(task.reschedulingHistory||[]),{fromWeek:p.week,fromDay:task.day,fromStart:task.start,fromDuration:task.duration,toWeek:plan.weekStart,toDay:p.day,toStart:p.start,changedAt:new Date().toISOString(),reason:'User-approved recovery'}];
+        task.reschedulingHistory=[...(task.reschedulingHistory||[]),{fromWeek:p.week,fromDay:task.day,fromStart:task.start,fromDuration:task.duration,toWeek:targetWeek,toDay:p.day,toStart:p.start,changedAt:new Date().toISOString(),reason:'User-approved recovery'}];
         if(task.seriesId)task.recurrenceOverride=true;
       }
       Object.assign(task,{day:p.day,start:p.start,duration:p.duration,unscheduled:false});

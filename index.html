@@ -277,7 +277,7 @@
         <div class="field"><label for="tripDay">City exploration day</label><select id="tripDay"></select><div class="hint">Protected as a 9-hour block.</div></div>
         <div class="field"><label for="tripStart">City day start time</label><input id="tripStart" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="09:00" value="09:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /><div class="hint">24-hour time: 09:00–18:00.</div></div>
         <div class="field"><label for="cookDay">First cooking day this week</label><select id="cookDay"></select><div class="hint">Then every second day.</div></div>
-        <div class="field"><label for="calendarGridStartDay">Month and year start day</label><select id="calendarGridStartDay"><option value="0">Sunday</option><option value="1">Monday</option></select><div class="hint">Changes the Month and Year grid display only. Weekly planning and saved task IDs remain Sunday–Saturday; no tasks are moved.</div></div>
+        <div class="field"><label for="planningWeekStart">Planning week begins</label><select id="planningWeekStart"><option value="0">Sunday</option><option value="1">Monday</option></select><div class="hint">Applies to Calendar Week, Smart Week Builder and weekly review. Saved dates and IDs stay intact.</div></div><div class="field"><label for="calendarTimeZone">Calendar time zone</label><input id="calendarTimeZone" list="calendarZones" maxlength="128" placeholder="Saved planner zone"><datalist id="calendarZones"><option value="Europe/Berlin"><option value="UTC"><option value="America/New_York"><option value="Asia/Kolkata"><option value="Asia/Tokyo"><option value="Australia/Sydney"></datalist><div class="hint">Display dated activities in an IANA zone. Blank uses the saved planner zone. Task-editor clock fields keep that saved zone.</div></div><div class="field"><label for="calendarGridStartDay">Month and year start day</label><select id="calendarGridStartDay"><option value="0">Sunday</option><option value="1">Monday</option></select><div class="hint">Changes the Month and Year grid display only. Weekly planning and saved task IDs remain Sunday–Saturday; no tasks are moved.</div></div>
         <div class="field"><label for="themeMode">Appearance</label><select id="themeMode"><option value="system">System default</option><option value="light">Light</option><option value="dark">Dark</option></select><div class="hint">Choose a calm light or dark workspace, or follow this device.</div></div>
       </div>
       <div class="setting-toggle-row"><div><strong>Show breaks between activities</strong><small>Display the free gap between consecutive events when there are at least 15 minutes. This never adds events to your calendar.</small></div><label class="switch-control"><input id="showBreaks" type="checkbox" checked /><span class="switch-track" aria-hidden="true"></span><span class="switch-text">Show breaks</span></label></div>
@@ -474,6 +474,8 @@
 <script src="./js/weekwise-task-history.js"></script>
 <script src="./js/weekwise-task-history-ui.js"></script>
 <script src="./js/weekwise-calendar-layout.js"></script>
+<script src="./js/weekwise-calendar-range.js"></script>
+<script src="./js/weekwise-calendar-range-ui.js"></script>
 <script src="./js/weekwise-list-window.js"></script>
 <script src="./js/weekwise-drafts.js"></script>
 <script src="./js/weekwise-cloud-transport.js"></script>

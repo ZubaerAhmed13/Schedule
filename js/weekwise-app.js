@@ -119,7 +119,7 @@ let dashboardWeekKey=currentWeek;
 let calendarView='week';
 try{const savedView=localStorage.getItem('weekwise-calendar-view-v1');calendarView=(savedView==='day'||savedView==='week'||savedView==='month'||savedView==='agenda'||savedView==='year')?savedView:(window.matchMedia('(max-width: 650px)').matches?'day':'week');}catch(_){calendarView=window.matchMedia('(max-width: 650px)').matches?'day':'week';}
 let lastRenderedCalendarView=null;
-let tasks=[];
+let tasks=[],pendingCalendarSlot=null;
 let workspaceView='today';
 try{const savedWorkspace=localStorage.getItem('weekwise-workspace-view-v1');if(['today','tomorrow','inbox','upcoming','board','filters','plan','insights','settings','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(savedWorkspace)||(savedWorkspace&&(savedWorkspace.startsWith('folder:')||savedWorkspace.startsWith('tag:'))))workspaceView=savedWorkspace;}catch(_){}
 try{const shortcutView=new URLSearchParams(window.location.search).get('view');if(['today','tomorrow','inbox','plan','calendar'].includes(shortcutView))workspaceView=shortcutView;}catch(_){}
@@ -157,8 +157,8 @@ function setupSystemThemeListener(){
   if(media.addEventListener)media.addEventListener('change',changed);else if(media.addListener)media.addListener(changed);
  }catch(_){}
 }
-function syncSettingsForm(){ $('weekStart').value=currentWeek;const calendarGridStartDay=$('calendarGridStartDay');if(calendarGridStartDay)calendarGridStartDay.value=String(WeekwiseCalendarLayout.firstDay(store.settings.calendarGridStartDay)); $('tripDay').value=store.settings.travelDay; $('tripStart').value=store.settings.travelStart||'09:00'; $('cookDay').value=store.settings.cookStartDay; $('tripDestination').value=store.settings.destination||'';const breakToggle=$('showBreaks');if(breakToggle)breakToggle.checked=store.settings.showBreaks!==false;const themeSelect=$('themeMode');if(themeSelect){themeSelect.value=store.settings.theme||'system';applyThemePreference(themeSelect.value);}renderShiftFields();}
-function settingsFromForm(){const shifts=DAY_NAMES.map((_,i)=>({enabled:!!document.querySelector(`[data-shift-enabled="${i}"]`)?.checked,start:document.querySelector(`[data-shift-start="${i}"]`)?.value||'09:00',end:document.querySelector(`[data-shift-end="${i}"]`)?.value||'17:00'}));return {...store.settings,travelDay:Number($('tripDay').value),travelStart:$('tripStart').value||'09:00',destination:$('tripDestination').value.trim(),cookStartDay:Number($('cookDay').value),showBreaks:!!$('showBreaks')?.checked,calendarGridStartDay:WeekwiseCalendarLayout.firstDay($('calendarGridStartDay')?.value),theme:$('themeMode')?.value||store.settings.theme||'system',shifts,classTemplate:store.settings.classTemplate||defaultClassTemplate()};}
+function syncSettingsForm(){ $('weekStart').value=currentWeek;$('planningWeekStart').value=store.settings.weekStartsOn===1?'1':'0';$('calendarTimeZone').value=store.settings.calendarTimeZone||'';const calendarGridStartDay=$('calendarGridStartDay');if(calendarGridStartDay)calendarGridStartDay.value=String(WeekwiseCalendarLayout.firstDay(store.settings.calendarGridStartDay)); $('tripDay').value=store.settings.travelDay; $('tripStart').value=store.settings.travelStart||'09:00'; $('cookDay').value=store.settings.cookStartDay; $('tripDestination').value=store.settings.destination||'';const breakToggle=$('showBreaks');if(breakToggle)breakToggle.checked=store.settings.showBreaks!==false;const themeSelect=$('themeMode');if(themeSelect){themeSelect.value=store.settings.theme||'system';applyThemePreference(themeSelect.value);}renderShiftFields();}
+function settingsFromForm(){const shifts=DAY_NAMES.map((_,i)=>({enabled:!!document.querySelector(`[data-shift-enabled="${i}"]`)?.checked,start:document.querySelector(`[data-shift-start="${i}"]`)?.value||'09:00',end:document.querySelector(`[data-shift-end="${i}"]`)?.value||'17:00'}));return {...store.settings,weekStartsOn:Number($('planningWeekStart').value),calendarTimeZone:$('calendarTimeZone').value.trim()||undefined,travelDay:Number($('tripDay').value),travelStart:$('tripStart').value||'09:00',destination:$('tripDestination').value.trim(),cookStartDay:Number($('cookDay').value),showBreaks:!!$('showBreaks')?.checked,calendarGridStartDay:WeekwiseCalendarLayout.firstDay($('calendarGridStartDay')?.value),theme:$('themeMode')?.value||store.settings.theme||'system',shifts,classTemplate:store.settings.classTemplate||defaultClassTemplate()};}
 function overlap(a,b){return a.start < b.start+b.duration && b.start < a.start+a.duration;}
 function canPlace(dayTasks,start,duration){const candidate={start,duration};return !dayTasks.some(t=>t.start!=null && overlap(candidate,t));}
 function findSlot(dayIndex,duration,preferred=600,min=420,max=1320,dayTasks=null){const occupied=dayTasks||tasks.filter(t=>t.day===dayIndex);const candidates=[];for(let start=min;start+duration<=max;start+=15)candidates.push(start);candidates.sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred));return candidates.find(start=>canPlace(occupied,start,duration))??null;}
@@ -454,6 +454,7 @@ function setupDragDrop(){
     return {day:Number(column.dataset.dayIndex),start,targetEvent:targetEvent&&targetEvent.dataset.taskId!==drag?.id?targetEvent:null,column};
   };
   grid.addEventListener('pointerdown',e=>{
+    if(grid.dataset.rangeActive==='true')return;
     const handle=e.target.closest('[data-drag-handle]');
     const card=e.target.closest('.cal-event');
     const id=handle?.dataset.dragHandle||card?.dataset.taskId;
@@ -619,12 +620,14 @@ function renderDraftNotice(){const result=WeekwiseDrafts.read(localStorage,curre
 function retireEditorDraft(){const result=WeekwiseDrafts.read(localStorage,currentDataOwner);if(result?.draft&&result.draft.sessionId===editorSession?.sessionId){WeekwiseDrafts.discard(localStorage,currentDataOwner,result.raw);renderDraftNotice();}}
 function restoreEditorDraft(){try{const result=WeekwiseDrafts.read(localStorage,currentDataOwner);if(!result||result.error)throw new Error(result?.error||'No saved editor draft.');if($('taskModal').classList.contains('show')&&taskModalFingerprint()!==taskModalInitialFingerprint){showToast('Save or close your current editor before restoring a draft.');return;}const draft=result.draft,id=draft.fields.editTaskId||'',record=id?workspaceRecords().find(r=>r.task.id===id&&r.week===draft.week):null,same=record&&draft.base===JSON.stringify(record.task);if(same){openWorkspaceRecord(id,draft.week);}else openTaskModal(null,Number(draft.fields.modalDay)||now.getDay(),null,'inbox');const fields={...draft.fields};if(!same){fields.editTaskId='';fields.modalNoSchedule=true;fields.modalAllDay=false;fields.modalRecurrence='none';fields.modalRecurrenceScope='occurrence';}for(const [name,value]of Object.entries(fields)){const el=$(name);if(!el||!$('taskForm').contains(el))continue;if(el.type==='checkbox')el.checked=!!value;else if(el.tagName==='SELECT'){if(![...el.options].some(o=>o.value===value)){if(name!=='modalDuration'||!/^\d+$/.test(value)||Number(value)>1440)continue;const option=document.createElement('option');option.value=value;option.textContent=durationLabel(Number(value));el.add(option);}el.value=value;}else el.value=value;}editorSession={owner:currentDataOwner,sessionId:draft.sessionId,week:currentWeek,base:same?draft.base:null};updateModalScheduleVisibility();updateRecurringBulkVisibility();hideActivitySuggestions();showToast(same?'Draft restored to its original activity. Save when ready.':id?'The original activity changed. Recovered as a new unscheduled draft; review before saving.':'Draft restored. Review and save when ready.');$('modalTitleInput').focus({preventScroll:true});}catch(error){showToast(error.message);}}
 function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
+  pendingCalendarSlot=null;
   const modal=$('taskModal');const t=id?tasks.find(t=>t.id===id):null;
   editorSession={owner:currentDataOwner,sessionId:uid(),week:currentWeek,base:t?JSON.stringify(t):null};
   if(id&&!t){showToast('This activity is no longer available. It may have been moved or deleted. Refresh the list and try again.');return;}
   renderTaskTemplateOptions();$('taskTemplateSelect').value='';$('deleteTaskTemplateBtn').disabled=true;
   $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit task':'Add a task';
   $('modalDescription').textContent=t?'To move this activity, choose a new day and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the day, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
+  $('modalDescription').textContent+=' Clock fields use '+(store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'.';
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   const folderView=workspaceView.startsWith('folder:'),selectedFolder=folderView?workspaceView.slice(7):'';
   const folderExisting=folderView?workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===selectedFolder):null;
@@ -749,6 +752,7 @@ function saveModalTask(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();r
   }else{
     createTask(day,title,type,duration,noSchedule||allDay?null:preferred,{min:0,max:1440,custom:true,note});
     const t=tasks[tasks.length-1];t.schedulingMode=schedulingMode;t.unscheduled=noSchedule||(!allDay&&t.start===null);t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.focusEstimateMinutes=focusEstimateMinutes;t.estimatedDurationMinutes=estimatedDurationMinutes;t.requiresCompletion=requiresCompletion;t.todayPriority=todayPriority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.reminderNotifiedTimes=[];t.tags=tags;t.attachments=attachments;t.subtasks=subtasks;actualStart=t.start;
+    if(pendingCalendarSlot&&pendingCalendarSlot.week===currentWeek&&pendingCalendarSlot.day===day&&pendingCalendarSlot.start===t.start&&pendingCalendarSlot.duration===t.duration&&!noSchedule&&!allDay)t.scheduleInstant=pendingCalendarSlot.scheduleInstant;
     if(recurrence!=='none'){
       seriesId=uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
       upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
@@ -764,7 +768,7 @@ function saveModalTask(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();r
   else if(actualStart!==preferred)showToast(`That time was busy; scheduled at ${minsTime(actualStart)} instead.`);
   else showToast(id?`Task updated · ${DAY_SHORT[day]} ${minsTime(actualStart)}`:`Task added · ${DAY_SHORT[day]} ${minsTime(actualStart)}`);
 }
-function applySettings(){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}const timeIds=['tripStart'];for(let i=0;i<7;i++){if(document.querySelector(`[data-shift-enabled="${i}"]`)?.checked)timeIds.push(`shiftstart${i}`,`shiftend${i}`);}if(!validateTimeFields(timeIds))return;const newWeek=$('weekStart').value?dateKey(sundayOf(parseKey($('weekStart').value))):currentWeek;saveCurrent();store.settings=settingsFromForm();applyThemePreference(store.settings.theme);saveStore();loadWeek(newWeek);closeUtilityPanel();showToast('Settings saved. Add activities whenever you are ready.');}
+function applySettings(){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}try{const zone=$('calendarTimeZone').value.trim();if(zone)new Intl.DateTimeFormat('en-GB',{timeZone:zone});}catch(_){showToast('Enter a supported IANA time zone, such as Europe/Berlin.');return;}const timeIds=['tripStart'];for(let i=0;i<7;i++){if(document.querySelector(`[data-shift-enabled="${i}"]`)?.checked)timeIds.push(`shiftstart${i}`,`shiftend${i}`);}if(!validateTimeFields(timeIds))return;const newWeek=$('weekStart').value?dateKey(sundayOf(parseKey($('weekStart').value))):currentWeek;saveCurrent();store.settings=settingsFromForm();applyThemePreference(store.settings.theme);saveStore();loadWeek(newWeek);closeUtilityPanel();showToast('Settings saved. Add activities whenever you are ready.');}
 function saveTripDestination(){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}store.settings.destination=$('tripDestination').value.trim();saveStore();const trip=tasks.find(t=>t.fixed&&t.duration===540&&t.day===store.settings.travelDay);if(trip)trip.title=store.settings.destination?`Explore ${store.settings.destination}`:'Explore another city';if(trip)trip.note='9-hour city day · travel, explore, eat, and enjoy';saveCurrent();renderAll();showToast('City day updated');}
 
 function reminderTodayKey(){return dateKey(new Date());}
@@ -1212,6 +1216,7 @@ function weekwiseRenderBreaks(){
 renderDays=function(){
  const grid=$('daysGrid');
  grid.classList.remove('month-mode','agenda-mode','year-mode');grid.onclick=null;grid.onkeydown=null;grid.onchange=null;
+ if(WeekwiseCalendarRangeUI.render({store:plannerSnapshot().store,view:calendarView,anchor:dateKey(dayDate(currentWeek,mobileDay)),year:monthAnchor.getFullYear(),month:monthAnchor.getMonth(),calendarYear,agenda:dateKey(agendaAnchor)})){updateCalendarPeriodLabel();return;}
  if(calendarView==='month'){grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';weekwiseRenderMonth();updateCalendarPeriodLabel();return;}
  if(calendarView==='agenda'){grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';weekwiseRenderAgenda();updateCalendarPeriodLabel();return;}
  if(calendarView==='year'){grid.style.height='auto';grid.style.minHeight='0';grid.style.maxHeight='none';weekwiseRenderYear();updateCalendarPeriodLabel();return;}
@@ -1431,7 +1436,7 @@ function renderWorkspaceTaskGroups(items){
  }).map(([section,records])=>'<section class="workspace-section-group"><header><span>§ '+escapeHtml(section)+'</span><span>'+records.length+'</span></header>'+records.map(workspaceTaskRow).join('')+'</section>').join('');
 }
 
-function experienceData(){return {active:workspaceView==='insights',owner:currentDataOwner,week:dateKey(sundayOf(now)),today:dateKey(now),minute:now.getHours()*60+now.getMinutes(),store,records:workspaceRecords().map(r=>({...r,dateKey:dateKey(r.date)})),focusSessions,habits,signedIn:!!cloudUser,syncLabel:$('cloudMenuBadge').textContent};}
+function experienceData(){return {active:workspaceView==='insights',owner:currentDataOwner,week:WeekwiseCalendarRange.range(dateKey(now),store.settings.weekStartsOn===1?1:0)[0],today:dateKey(now),minute:now.getHours()*60+now.getMinutes(),store,records:workspaceRecords().map(r=>({...r,dateKey:dateKey(r.date)})),focusSessions,habits,signedIn:!!cloudUser,syncLabel:$('cloudMenuBadge').textContent};}
 function renderExperience(){renderDraftNotice();renderZoneNotice();if(!window.WeekwiseExperience)return;const data=experienceData();WeekwiseExperience.renderInsights(data);WeekwiseExperience.renderSettings(data);}
 function renderTodayOverview(){const panel=$('todayOverview');panel.hidden=workspaceView!=='today';if(!panel.hidden)WeekwiseExperience.renderToday({...experienceData(),active:true});}
 
@@ -1780,7 +1785,7 @@ function materializeCurrentAndUpcoming(){
 
 
 function updateCalendarPeriodLabel(){
- const label=$('weekLabel');if(!label)return;
+ const label=$('weekLabel');if(!label)return;const rangeLabel=WeekwiseCalendarRangeUI.label();if(rangeLabel){label.textContent=rangeLabel;return;}
  if(calendarView==='year')label.textContent=String(calendarYear);
  else if(calendarView==='agenda'){const end=new Date(agendaAnchor);end.setDate(end.getDate()+29);label.textContent='Agenda · '+fmtDate(agendaAnchor,{day:'numeric',month:'short'})+' – '+fmtDate(end,{day:'numeric',month:'short'});}
  else if(calendarView==='month')label.textContent=monthAnchor.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
@@ -2669,10 +2674,11 @@ $('workspaceSidebar').addEventListener('click',e=>{if(e.target.closest('[data-wo
 $('signinLocalContinue').onclick=()=>{try{isolatePlannerOwner('local');cloudUser=null;cloudReady=false;localStorage.setItem('weekwise-local-mode-v1','true');finishSignInLanding();setCloudStatus('Device-only planning. Your changes are saved locally.');}catch(error){setCloudStatus('Could not open the device planner: '+error.message);}};
 setup();
 
+function plannerSnapshot(){const snapshot=JSON.parse(JSON.stringify(store));snapshot.weeks[currentWeek]={...snapshot.weeks[currentWeek],tasks:JSON.parse(JSON.stringify(tasks))};return {store:snapshot,currentWeek};}
 const plannerBridge={
  snapshot(){const snapshot=JSON.parse(JSON.stringify(store));snapshot.weeks[currentWeek]={...snapshot.weeks[currentWeek],tasks:JSON.parse(JSON.stringify(tasks))};return {store:snapshot,currentWeek};},
  account(){return currentDataOwner;},
- currentWeek(){return currentWeek;},
+ currentWeek(){return WeekwiseCalendarRange.range(dateKey(dayDate(currentWeek,mobileDay)),store.settings.weekStartsOn===1?1:0)[0];},
  todayKey(){return dateKey(new Date());},
  edit(id,week){openWorkspaceRecord(id,week);},
  commit(expected,account,next,checkpointKey){
@@ -2692,6 +2698,7 @@ const plannerBridge={
 WeekwisePlanUI.init(plannerBridge);
 WeekwiseTaskHistoryUI.init({...plannerBridge,panel:openUtilityPanel,announce:showToast});
 WeekwiseSeriesScheduleUI.init({...plannerBridge,panel:openUtilityPanel,announce:showToast});
+WeekwiseCalendarRangeUI.init({...plannerBridge,announce:showToast,controls:updateViewControls,render:renderAll,toggle(id,week){updateWorkspaceRecord(id,week,'toggle');},day(key){const date=parseKey(key);saveCurrent();mobileDay=date.getDay();loadWeek(dateKey(sundayOf(date)));calendarView='day';localStorage.setItem('weekwise-calendar-view-v1','day');renderAll();},add(date,start,zone){try{const slot=WeekwiseCalendarRange.slot(date,start,30,zone,store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone);saveCurrent();mobileDay=slot.day;loadWeek(slot.week);openTaskModal(null,slot.day,slot.start);if(![...$('modalDuration').options].some(o=>Number(o.value)===slot.duration)){const option=document.createElement('option');option.value=slot.duration;option.textContent=durationLabel(slot.duration);$('modalDuration').add(option);}$('modalDuration').value=String(slot.duration);updateEndTimeFromDuration();pendingCalendarSlot=slot;}catch(error){showToast(error.message);}}});
 
 showStorageRecoveryNotice();
 renderWorkspaceView();renderReminders();nudgeDueReminders();renderTaskNotificationSettings();checkTaskReminders();setInterval(()=>{checkTaskReminders();checkHabitReminders();},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkTaskReminders();});window.addEventListener('focus',checkTaskReminders);
