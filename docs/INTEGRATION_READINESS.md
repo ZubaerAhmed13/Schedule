@@ -1,12 +1,12 @@
 # Weekwise integration readiness and production verification
 
-This document separates code that exists from services that must be configured in external dashboards. Passing the repository's Node tests does **not** prove a production Supabase project, OAuth provider, or push delivery is working.
+Current actual backend deployment and approval gates are recorded in [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md). This document separates implementation from remaining external acceptance. Passing the repository's Node tests does **not** prove a production Supabase project, OAuth provider, or push delivery is working.
 
 ## Current verified scope
 
 - The public app is hosted at https://zubaerahmed13.github.io/Schedule/.
 - The app uses Supabase Auth and calls `public.weekwise_save(jsonb,bigint)` for revision-aware cloud saves.
-- The app supports local/offline planning and JSON backup. The repository now contains Google Calendar/Microsoft Outlook OAuth and conflict-aware event-sync code, but live calendar connection is not activated until the migration, provider credentials, encryption secret and Edge Function are deployed.
+- The app supports local/offline planning and JSON backup. The repository now contains Google Calendar/Microsoft Outlook OAuth and conflict-aware event-sync code, with deployed schema/server/encryption. Provider credentials and real consent remain required for live connections.
 - The current live configuration has browser notifications while Weekwise is running. The repository now contains a Web Push service worker, client control, protected subscription/delivery SQL, Edge Function and scheduler setup, but these are **not live until the optional backend setup and a closed-app delivery test succeed**.
 - Enabling Google/Microsoft/Azure in Supabase Auth would only affect social sign-in; it does not itself grant Calendar/Graph access. Calendar OAuth code is now present in the repository but remains inactive until provider app registrations, server secrets, migration and real round-trip tests are complete.
 
@@ -44,14 +44,14 @@ Choose the email-confirmation policy deliberately. Then perform a real registrat
 
 ## 3. Calendar OAuth: code ready, provider setup required
 
-The repository now includes the calendar connection UI, server-side PKCE OAuth callback, encrypted access/refresh-token storage, Google Calendar and Microsoft Graph handlers, per-event links, a revision-checked cloud-save RPC, and sync conflict detection. Live connection is not verified yet because this environment has not configured or independently confirmed the provider app registrations/client secrets and Supabase migration.
+The repository now includes the calendar connection UI, server-side PKCE OAuth callback, encrypted access/refresh-token storage, Google Calendar and Microsoft Graph handlers, per-event links, a revision-checked cloud-save RPC, and sync conflict detection. Live connection is not verified yet because this environment has not configured or independently confirmed the provider app registrations/client secrets; server schema and deployment are complete.
 
 Follow docs/CALENDAR_OAUTH_SETUP.md. The remaining production steps are:
 
-1. Run supabase_calendar_setup.sql in the intended Supabase project.
+1. The calendar SQL and Edge Function are already installed in Weekwise.
 2. Register a Google OAuth web client and/or Microsoft Entra app and set the exact Supabase Edge Function callback URI.
-3. Store both provider client IDs/secrets and a stable 32-byte AES encryption key in Supabase Edge Function secrets.
-4. Deploy the weekwise-calendar Edge Function.
+3. Store provider client IDs/secrets in the correct project Vault; preserve the already-generated encryption key.
+4. Check health readiness before connecting; the server is deployed.
 5. Connect a dedicated test account and verify a Weekwise→provider create/update, a provider→Weekwise update/import, a simultaneous-edit conflict, deletion handling and token refresh.
 
 The live Auth workflow previously found Google and Microsoft/Azure Supabase sign-in providers disabled. Those are separate from the calendar OAuth clients described here; toggling a Supabase sign-in provider alone does not grant Calendar/Graph access. Do not mark calendar sync live until the external setup and round-trip tests pass.
@@ -60,7 +60,7 @@ The live Auth workflow previously found Google and Microsoft/Azure Supabase sign
 
 The repository includes the service-worker `push` and notification-click handlers, opt-in browser control, authenticated `weekwise-push` Edge Function, server-only subscription and delivery tables, an atomic deduplication claim, timezone conversion, stale-subscription cleanup, and an optional one-minute Cron setup. The UI does not report background reminders enabled until the current device subscription is registered with the signed-in account.
 
-It is **not yet verified as live** because this environment has no confirmed evidence that the production database migration, VAPID/private dispatcher secrets, Vault values, and Cron job are configured. We did not change them. Follow [docs/BACKGROUND_PUSH_SETUP.md](BACKGROUND_PUSH_SETUP.md), verify the existing project setup, and then test a future reminder with the app closed. The service worker caching the app shell alone never proved push delivery.
+Push tables, server, VAPID pair and Vault dispatcher/project settings are now deployed and verified. The scheduler is not installed: automatic approval review blocked pg_net enablement. Follow [BACKGROUND_PUSH_SETUP.md](BACKGROUND_PUSH_SETUP.md) after approval, then test a future reminder with the app closed. The service worker caching the shell alone never proves delivery.
 
 The dispatcher only reads the latest synced cloud snapshot, skips reminders more than 24 hours late, rejects untrusted push endpoint hostnames, and keeps subscription/delivery records unavailable to browser roles. This still needs real delivery tests with the app closed and with revoked/expired subscriptions and timezone changes.
 

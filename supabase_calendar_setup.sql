@@ -14,6 +14,8 @@ create table if not exists public.weekwise_calendar_oauth_states (
 create index if not exists weekwise_calendar_oauth_states_expiry_idx
   on public.weekwise_calendar_oauth_states (expires_at);
 
+create index if not exists weekwise_calendar_oauth_states_user_id_idx on public.weekwise_calendar_oauth_states (user_id);
+
 create table if not exists public.weekwise_calendar_connections (
   user_id uuid not null references auth.users(id) on delete cascade,
   provider text not null check (provider in ('google', 'microsoft')),

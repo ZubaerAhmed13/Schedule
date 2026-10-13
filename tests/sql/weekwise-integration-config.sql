@@ -11,10 +11,12 @@ create function auth.role() returns text language sql stable as $$select nullif(
 \ir ../../supabase_push_setup.sql
 \ir ../../supabase_calendar_setup.sql
 \ir ../../supabase/migrations/20261013135248_weekwise_runtime_configuration.sql
+\ir ../../supabase/migrations/20261013143031_weekwise_calendar_state_owner_index.sql
 -- Repeat setup must preserve keys/flags.
 create temporary table config_before as select name,secret from vault.secrets;
 \ir ../../supabase/migrations/20261013135248_weekwise_runtime_configuration.sql
 do $test$ begin
+ assert to_regclass('public.weekwise_calendar_oauth_states_user_id_idx') is not null,'calendar owner FK is indexed';
  assert (select count(*) from vault.secrets)=4,'only expected initial secret names';
  assert not exists(select 1 from config_before b join vault.secrets v using(name) where b.secret<>v.secret),'reapplying must preserve secret values';
 end; $test$;
