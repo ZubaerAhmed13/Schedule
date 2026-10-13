@@ -93,3 +93,9 @@ The older effort dashboard now calls completion totals marked-complete planned t
 Five additional Node tests cover date boundaries, exact IANA instants, changed-zone rejection, DST refusal, excluded clock-change capacity and carried commitments. A deterministic browser fixture freezes Sunday UTC/Monday Tokyo and verifies Monday's already-past availability produces no proposals. Final combined CI remains required.
 
 Phone Calendar screenshot review also removed the redundant legacy day strip and pinned the time axis during horizontal week scrolling. The browser scenario checks both behaviors.
+
+## Generated recurring-clock continuation
+
+An indexed read-only occupancy model now generates future occurrences using exact zone-aware slots. Overnight templates retain their expected start and duration; adjacent-day/next-week and future all-day commitments block collisions. Gap/fold/discontinuous template times remain unscheduled with a review reason, instead of being guessed or silently shifted. Existing materialized occurrences, including completed/customized/reminder history, are skipped unchanged. New generated records carry exact instants.
+
+Six pure tests cover midnight, DST, incremental occupancy, future all-day reservations, precise minutes and a 10,000-record canonical fixture. Two built-client scenarios cover daily overnight repetition/reload and a Berlin spring gap followed by a valid next day. Combined Node suite: 140 passed locally; remote browser/Edge/release checks remain required. The public browser and existing push/calendar source imports are now pinned to the same verified Supabase JS 2.117.3 used by account erasure, avoiding floating minor-version changes. No backend is deployed by this source change.

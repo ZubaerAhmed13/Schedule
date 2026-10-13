@@ -627,7 +627,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   renderTaskTemplateOptions();$('taskTemplateSelect').value='';$('deleteTaskTemplateBtn').disabled=true;
   $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit task':'Add a task';
   $('modalDescription').textContent=t?'To move this activity, choose a new day and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the day, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
-  $('modalDescription').textContent+=' Clock fields use '+(store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'.';
+  $('modalDescription').textContent+=' Clock fields use '+(store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'.';if(t?.recurrenceScheduleReview)$('modalDescription').textContent+=' Recurring time needs review: '+t.recurrenceScheduleReview.reason;
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   const folderView=workspaceView.startsWith('folder:'),selectedFolder=folderView?workspaceView.slice(7):'';
   const folderExisting=folderView?workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===selectedFolder):null;
@@ -741,7 +741,7 @@ function saveModalTask(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();r
       t.title=title;t.day=day;t.type=type;t.schedulingMode=schedulingMode;t.duration=duration;t.note=note;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.focusEstimateMinutes=focusEstimateMinutes;t.estimatedDurationMinutes=estimatedDurationMinutes;t.requiresCompletion=requiresCompletion;t.todayPriority=todayPriority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedTimes=(Array.isArray(t.reminderNotifiedTimes)?t.reminderNotifiedTimes:[]).filter(value=>reminderTimes.includes(value));if(t.reminderNotifiedAt&&reminderTimes.includes(t.reminderNotifiedAt)&&!t.reminderNotifiedTimes.includes(t.reminderNotifiedAt))t.reminderNotifiedTimes.push(t.reminderNotifiedAt);t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;t.attachments=attachments;t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...old,...s,id:old.id||s.id,done:!!old.done}:{...s};});
-      t.start=noSchedule||allDay?null:editorSlot.start;t.scheduleInstant=editorSlot?.scheduleInstant;t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
+      t.start=noSchedule||allDay?null:editorSlot.start;t.scheduleInstant=editorSlot?.scheduleInstant;delete t.recurrenceScheduleReview;t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
       if(recurrence==='none'){
         if(oldSeriesId){if($('modalRecurrenceScope').value==='occurrence'){const rule=store.recurringTemplates.find(r=>r.id===oldSeriesId);if(rule)rule.excludedDates=[...new Set([...(rule.excludedDates||[]),t.occurrenceDate||occurrenceDate])];t.seriesId=null;t.recurrence='none';t.occurrenceDate=null;}else stopRecurringSeries(t,occurrenceDate,$('modalRecurrenceScope').value);}
         else{t.recurrence='none';t.seriesId=null;t.occurrenceDate=null;}
@@ -1759,6 +1759,16 @@ function materializeRecurringRange(rangeStart,rangeEnd){
  if(!templates.length||!rangeStart||!rangeEnd)return;
  const start=new Date(rangeStart),end=new Date(rangeEnd);
  const occurrences=new Map();for(const record of workspaceRecords()){const t=record.task;if(t.seriesId&&t.occurrenceDate)occurrences.set(t.seriesId+'::'+t.occurrenceDate,t);}
+ const placements=WeekwiseRecurringPlacement.create(plannerSnapshot().store);let pendingBlock=0;
+ // Reserve upcoming all-day rules before timed generation, including the day
+ // after this range for overnight endings. Retained/moved exceptions win.
+ const protectedEnd=new Date(end);protectedEnd.setDate(protectedEnd.getDate()+1);
+ for(let date=new Date(start);date<=protectedEnd;date.setDate(date.getDate()+1)){
+  const key=dateKey(date);for(const template of templates){if(!template?.allDay||!recurrenceDateMatches(template,date)||(template.excludedDates||[]).includes(key)||occurrences.has(template.id+'::'+key))continue;
+   placements.add({week:dateKey(sundayOf(date)),task:{id:'pending-all-day-'+pendingBlock++,title:'Upcoming all-day commitment',day:date.getDay(),start:null,allDay:true,allDayDate:key,duration:Math.max(10,Number(template.duration)||30)}});
+  }
+ }
+
  for(let date=new Date(start);date<=end;date.setDate(date.getDate()+1)){
   const occurrenceDate=dateKey(date),day=date.getDay(),weekKey=dateKey(sundayOf(date));
   for(const template of templates){
@@ -1773,20 +1783,16 @@ function materializeRecurringRange(rangeStart,rangeEnd){
    // Saved occurrences include edits, completion history and reminder exceptions.
    if(existing)continue;
    const duration=Math.max(10,Number(template.duration)||30),preferred=template.start===null||template.start===undefined?null:Number(template.start);
-   let startTime=null;
-   if(preferred!==null){
-    const blockers=rows.filter(item=>item!==existing&&Number(item.day)===day&&item.start!==null&&item.start!==undefined&&!item.unscheduled&&Number(item.duration)>0);
-    startTime=findSlot(day,duration,preferred,0,1440,blockers);
-   }
+   const placement=template.allDay?{start:null}:placements.place(occurrenceDate,preferred,duration),startTime=placement.start;
    const dueDate=template.dueOffsetDays===null||template.dueOffsetDays===undefined?null:addDaysToKey(occurrenceDate,Number(template.dueOffsetDays)||0);
    const reminderRules=Array.isArray(template.reminderRules)?template.reminderRules:(template.reminderTime?[{offsetDays:template.reminderOffsetDays||0,time:template.reminderTime}]:[]);
    const reminderTimes=reminderRules.map(rule=>addDaysToKey(occurrenceDate,Number(rule.offsetDays)||0)+'T'+rule.time).filter(Boolean);
    const reminderAt=reminderTimes[0]||null;
    const priorNotified=[...(Array.isArray(existing?.reminderNotifiedTimes)?existing.reminderNotifiedTimes:[])];if(existing?.reminderNotifiedAt)priorNotified.push(existing.reminderNotifiedAt);
    const reminderNotifiedTimes=[...new Set(priorNotified.filter(value=>reminderTimes.includes(value)))];
-   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),focusEstimateMinutes:template.focusEstimateMinutes??null,estimatedDurationMinutes:template.estimatedDurationMinutes??null,requiresCompletion:template.requiresCompletion!==false,custom:true,fixed:false,schedulingMode:template.schedulingMode||'flexible',note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],attachments:[...(template.attachments||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
+   const values={day,title:template.title,type:template.type||'other',duration,start:startTime,scheduleInstant:placement.scheduleInstant,recurrenceScheduleReview:placement.review,allDay:!!template.allDay,allDayDate:template.allDay?occurrenceDate:null,folderName:template.folderName||defaultFolderName(template.listId||'other'),sectionName:template.sectionName||'',done:!!existing?.done,status:existing?.done?'done':(existing?.status==='in-progress'?'in-progress':'todo'),focusEstimateMinutes:template.focusEstimateMinutes??null,estimatedDurationMinutes:template.estimatedDurationMinutes??null,requiresCompletion:template.requiresCompletion!==false,custom:true,fixed:false,schedulingMode:template.schedulingMode||'flexible',note:template.note||'',unscheduled:!template.allDay&&startTime===null,seriesId:template.id,occurrenceDate,recurrence:template.frequency,listId:template.listId||'other',priority:template.priority||'none',importance:template.importance||'unclassified',urgency:template.urgency||'unclassified',dueDate,reminderAt,reminderTimes,reminderNotifiedTimes,reminderNotifiedAt:reminderNotifiedTimes.includes(reminderAt)?reminderAt:null,tags:[...(template.tags||[])],attachments:[...(template.attachments||[])],subtasks:(template.subtasks||[]).map(s=>({...s,done:!!(existing?.subtasks||[]).find(old=>old.id===s.id)?.done}))};
    if(existing)Object.assign(existing,values);
-   else {const created={id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values};rows.push(created);occurrences.set(template.id+'::'+occurrenceDate,created);}
+   else {const created={id:'rec_'+template.id+'_'+occurrenceDate.replace(/-/g,''),...values};rows.push(created);placements.add({week:weekKey,task:created});occurrences.set(template.id+'::'+occurrenceDate,created);}
   }
  }
 }

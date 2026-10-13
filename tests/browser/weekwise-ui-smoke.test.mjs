@@ -75,6 +75,7 @@ after(async () => {
 async function openPlanner(viewport, options={}) {
   const context = await browser.newContext({
     viewport,
+    timezoneId:options.timezoneId||"UTC",
     serviceWorkers: options.serviceWorkers||"block",
     isMobile: viewport.width <= 430,
     hasTouch: viewport.width <= 430
@@ -1089,5 +1090,23 @@ test('planning previews use the saved zone when its date differs from the device
  try{
   await createFlexibleTask(page,'Keep source-clock planning','30');await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');const before=await readPlannerStore(page);before.settings.timeZone='Asia/Tokyo';await page.evaluate(value=>localStorage.setItem('weekwise-planner-v2',JSON.stringify(value)),before);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);await page.locator('#workspaceSidebar [data-workspace-view="plan"]').click();await page.locator('#planWeek').fill('2030-01-06');for(const checkbox of await page.locator('[name="planDay"]').all())await checkbox.uncheck();await page.locator('[name="planDay"][value="1"]').check();await page.locator('#planStart').fill('07:00');await page.locator('#planEnd').fill('08:00');await page.locator('#planBuffer').fill('0');await page.locator('#planBreak').fill('0');await page.locator('#planPreferences button[type="submit"]').click();
   assert.match(await page.locator('#planCapacityNote').innerText(),/Planning clock: Asia\/Tokyo/);assert.equal(await page.locator('[name="planProposal"]').count(),0,'Monday 07:00–08:00 has passed at Tokyo Monday 08:30, even though the device is still on Sunday');assert.equal(await page.locator('#planApply').isDisabled(),true);assert.equal((await readPlannerStore(page)).weeks[Object.keys(before.weeks)[0]].tasks.filter(t=>t.title==='Keep source-clock planning')[0].start,null);
+ }finally{await context.close();}
+});
+
+test('generated daily overnight occurrences keep their hours across future canonical weeks',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill('Daily overnight template');await page.locator('#modalListId').selectOption('personal');await page.locator('#modalNoSchedule').uncheck();await page.locator('#modalDay').selectOption('5');await page.locator('#modalTime').fill('23:30');await page.locator('#modalEndTime').fill('00:30');await page.locator('#modalEndNextDay').check();await page.locator('#modalRecurrence').selectOption('daily');await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const records=Object.entries((await readPlannerStore(page)).weeks).flatMap(([week,value])=>value.tasks.filter(task=>task.title==='Daily overnight template').map(task=>({week,task})));assert.ok(records.length>20);for(const {task}of records){assert.equal(task.start,1410);assert.equal(task.duration,60);assert.equal(task.unscheduled,false);assert.equal(task.scheduleInstant.end-task.scheduleInstant.start,3600000);}
+  const retained=records[0];await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);const reloaded=Object.values((await readPlannerStore(page)).weeks).flatMap(value=>value.tasks).find(task=>task.id===retained.task.id);assert.equal(reloaded.start,1410);assert.deepEqual(reloaded.scheduleInstant,retained.task.scheduleInstant);
+ }finally{await context.close();}
+});
+
+test('a generated DST-gap occurrence needs review while the next valid day keeps its original rule time',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000},{now:Date.parse('2030-03-30T12:00:00Z'),timezoneId:'Europe/Berlin'});
+ try{
+  await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill('DST reviewed recurrence');await page.locator('#modalListId').selectOption('personal');await page.locator('#modalNoSchedule').uncheck();await page.locator('#modalTime').fill('02:30');await page.locator('#modalEndTime').fill('03:00');await page.locator('#modalRecurrence').selectOption('daily');await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const records=Object.values((await readPlannerStore(page)).weeks).flatMap(value=>value.tasks).filter(task=>task.title==='DST reviewed recurrence'),gap=records.find(task=>task.occurrenceDate==='2030-03-31'),next=records.find(task=>task.occurrenceDate==='2030-04-01');assert.ok(gap&&next);assert.equal(gap.start,null);assert.equal(gap.unscheduled,true);assert.match(gap.recurrenceScheduleReview.reason,/Nonexistent/);assert.equal(next.start,150);assert.equal(next.duration,30);assert.equal(new Date(next.scheduleInstant.start).toISOString(),'2030-04-01T00:30:00.000Z');
+  const original=records.find(task=>task.occurrenceDate==='2030-03-30');await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);const current=Object.values((await readPlannerStore(page)).weeks).flatMap(value=>value.tasks).find(task=>task.id===original.id);assert.deepEqual(current,original,'materialization never rewrites the retained original occurrence');
  }finally{await context.close();}
 });

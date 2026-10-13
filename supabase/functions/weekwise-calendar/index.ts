@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 import { fromZonedTime } from "npm:date-fns-tz@3.2.0";
 
 type Json = Record<string, unknown>;
