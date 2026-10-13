@@ -90,6 +90,7 @@
       if(/habit/.test(kind)){
         for(const field of ['checkIns','skippedDates'])if(item[field]!==undefined&&(!Array.isArray(item[field])||item[field].some(day=>!validDate(day))))throw new Error('Invalid habit '+field+' history.');
         if(item.scheduledDays!==undefined&&(!Array.isArray(item.scheduledDays)||item.scheduledDays.some(day=>!Number.isInteger(day)||day<0||day>6)))throw new Error('Invalid scheduled habit days.');
+        if(item.frequencyMode!==undefined&&!['scheduled-days','weekly-flexible'].includes(item.frequencyMode))throw new Error('Invalid habit frequency mode.');
       }
       if(/focus/.test(kind)){
         for(const field of ['minutes','seconds'])if(item[field]!==undefined&&(!Number.isFinite(item[field])||item[field]<0))throw new Error('Invalid recorded focus time.');
