@@ -625,3 +625,64 @@ test('recurring editor opt-in previews saved future metadata without moving time
   }
  }finally{await context.close();}
 });
+
+
+test('optional first-run guide can be skipped, restored from Settings, and navigated without adding records',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
+  const guide=page.locator('#todayOnboarding');
+  await guide.waitFor({state:'visible'});
+  assert.match(await guide.locator('#todayOnboardingTitle').innerText(),/Make Weekwise yours/);
+  assert.equal(await guide.locator('[data-experience-capture]').count(),1);
+  const before=await readPlannerStore(page);
+  await guide.locator('[data-experience-guide-dismiss]').click();
+  await guide.waitFor({state:'hidden'});
+  assert.deepEqual(await readPlannerStore(page),before,'dismissing a guide never touches planner records');
+  await page.reload();
+  await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
+  assert.equal(await page.locator('#todayOnboarding').count(),0,'dismissal persists on this device');
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
+  await page.locator('[data-experience-guide-show]').click();
+  await page.locator('#todayOnboarding').waitFor({state:'visible'});
+  await page.locator('#todayOnboarding [data-experience-plan]').click();
+  assert.equal(await page.locator('#planWorkspace').isVisible(),true);
+  await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
+  await page.locator('#todayOnboarding [data-experience-calendar]').click();
+  assert.equal(await page.locator('#calendarToolbar').isVisible(),true);
+ }finally{await context.close();}
+});
+
+test('task and settings dialogs trap keyboard focus and restore their actual launcher',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  const launcher=page.locator('#globalCaptureBtn');
+  await launcher.focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#taskModal').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.activeElement?.closest('#taskModal')!==null);
+  assert.equal(await page.locator('#taskModal [role="dialog"]').count(),0,'dialog must not contain a second nested dialog role');
+  assert.equal(await page.locator('#taskModal').getAttribute('aria-modal'),'true');
+  assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true);
+  await page.locator('#saveTaskBtn').focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'modalTitleInput','Tab wraps to first enabled editor input');
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'saveTaskBtn','Shift+Tab wraps to final editor action');
+  await page.locator('#closeModal').click();
+  await page.locator('#taskModal').waitFor({state:'hidden'});
+  await page.waitForFunction(()=>document.activeElement?.id==='globalCaptureBtn');
+  assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),false);
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
+  const settingsButton=page.locator('[data-settings-panel="settingsPanel"]').first();
+  await settingsButton.focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#utilityModal').waitFor({state:'visible'});
+  assert.equal(await page.locator('#utilityModal [role="dialog"]').count(),1);
+  await page.waitForFunction(()=>document.activeElement?.closest('#utilityModal')!==null);
+  await page.locator('#closeUtility').click();
+  await page.locator('#utilityModal').waitFor({state:'hidden'});
+  await page.waitForFunction(()=>document.activeElement?.getAttribute('data-settings-panel')==='settingsPanel');
+ }finally{await context.close();}
+});
