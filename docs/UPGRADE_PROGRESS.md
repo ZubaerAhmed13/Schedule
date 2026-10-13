@@ -92,3 +92,11 @@ This branch adds an account-isolated optional guide to the first empty Today vie
 Accessibility hardening fixes the launcher focus handoff race in the task editor: the activation control is remembered before the editor synchronously moves focus. Modal focus stays inside the active dialog and is restored to the actual launch control when the dialog closes. The existing task editor remains responsible for save/cancel, including discarding unsaved changes; no destructive behavior changed.
 
 Added Node onboarding invariants and built-client Chromium tests for dismissal/replay, preserved planner contents, Tab/Shift+Tab wrapping, single dialog semantics, background inertness and focus restoration. The tests must pass on the PR head before release. They do not establish WCAG 2.2 AA compliance, real screen-reader usability, text-zoom certification or touch-device behavior.
+
+## Continuation — honest daily workload and recovery Insights
+
+Insights now includes a seven-day scheduled-time view derived from the *union* of occupied intervals, including overnight spill into the next day and previous-week carry into Sunday. This represents **planned local wall-clock time only**, not measured work. All-day and unscheduled records do not silently consume arbitrary hours.
+
+The section also separates recorded user-approved recovery-history changes from manual edits that are not historically tracked. The optional task-linked recorded-focus-versus-explicit-estimates comparison is computed only when there are both associated timer sessions and actual user-supplied estimates; neither a calendar booking nor an estimate is reported as completed work.
+
+The helper is pure and tested for overlapping events, overnight boundaries, excluded all-day tasks, duplicate recovery entries, unknown work duration, session association and narrow-screen browser presentation. This does not provide a measured end-to-end actual-work system or field Core Web Vitals; source CI/Chromium verification is required before release.
