@@ -4,7 +4,7 @@
  function create(store){
   const model=root.WeekwiseCalendarRange,zone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone,days=new Map();
   function index(record){
-   if(!record.instant&&!record.allDay&&!record.zoneError)return;
+   if(!record.allDay&&!record.zoneError&&(!record.instant||record.instant.end<=record.instant.start))return;
    const first=model.ordinal(record.date)-(record.zoneError?1:0),last=record.zoneError?first+2:record.allDay?first+Math.max(1,Math.ceil((record.duration||0)/1440))-1:model.ordinal(model.parts(record.instant.end-1,zone).date);
    for(let day=first;day<=last;day++){const key=model.key(day);if(!days.has(key))days.set(key,new Set());days.get(key).add(record);}
   }

@@ -7,7 +7,7 @@ The live checked release is `0a16c73b24a7f521b2225459cece182168a2547c` (PRs #16â
 | Check | Verified result |
 |---|---|
 | Last released client | 134 Node tests and 51 built-client browser tests; release and all three Edge Function type checks passed |
-| Recurrence review code | First head `0130c6e35de220fe4e4fa273cadaf856c2de6ffd` passed 140 Node/53 browser tests and all release/Edge checks; additional anchor/dashboard safeguards now pass 142 Node tests locally and require final remote checks |
+| Recurrence review code | First head `0130c6e35de220fe4e4fa273cadaf856c2de6ffd` passed 140 Node/53 browser tests and all release/Edge checks; anchor/dashboard safeguards passed 142 Node/53 browser tests at the follow-up; the final reordered-cloud/midnight-scroll scenario adds one browser test and requires final remote checks |
 | Pages | Exact commit/run/hash independently matched; frontend-only build |
 | Privacy and integrations | Account-erasure controls/source are present but the server operation is disabled pending correct-project staging; no real account deleted |
 | Correct Supabase project | `iajkzlsurghfvsmqkmut` is inaccessible through the current connection; its direct project lookup returned a permission denial. No unrelated project was queried or changed |
@@ -104,3 +104,5 @@ Six pure tests cover midnight, DST, incremental occupancy, future all-day reserv
 ## Clock preservation follow-up
 
 Captured-instant anchors are matched by field values rather than JSON property order, preserving exact DST instants after reordered cloud/backup objects and retaining unknown anchor fields. The dashboard classifies past/future plans with saved source-zone instants, caches by scheduling coordinates and leaves ambiguous legacy clocks unclassified for review. Two additional Node regressions cover reordered fold anchors, source-zone classification, cache invalidation and unchanged ambiguous records.
+
+The final browser scenario loads a synthetic cloud row with reordered, extended DST-fold anchors, verifies its exact UTC card time and retained anchor on completion, and keeps a deliberate midnight scroll position. New Calendar view initialization uses its display-zone clock; updates in the same view preserve zero scroll. Zero-duration legacy markers remain stored but do not occupy generated recurrence slots.
