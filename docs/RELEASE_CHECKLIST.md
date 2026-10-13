@@ -101,3 +101,9 @@ The latest merged feature set is at `ea6573c08433ec6995feb6740968b7944ea4cb21`, 
 - [ ] Browser can create an any-day weekly target, check in, edit, and save without losing historical check-ins.
 - [ ] Switching frequency mode preserves original selected weekday checkboxes, and no fake missed days or reminder obligations follow meeting a weekly target.
 - [ ] Local/cloud collection validation and offline synchronization still pass.
+
+## Browser performance evidence gate
+
+- [ ] Chromium writes `lab-performance.json` for 390px and 1440px viewports (DOM-ready, paint samples, cumulative layout shift, resource count/size).
+- [ ] Values are numeric/finite and labeled **synthetic lab**, with no unsupported real-user LCP/CLS percentile or INP claim.
+- [ ] A person checks the per-release trend and separate 1k/5k/10k list paint timings; field Core Web Vitals/real phone tests remain unverified.
