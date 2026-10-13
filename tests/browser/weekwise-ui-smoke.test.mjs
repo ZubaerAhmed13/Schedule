@@ -582,3 +582,46 @@ test('TZID iCalendar import previews and commits atomically without changing exi
   assert.deepEqual(twice,after);
  }finally{await context.close();}
 });
+
+
+test('recurring editor opt-in previews saved future metadata without moving times or history',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await page.locator('#addTaskBtn').click();
+  await page.locator('#modalTitleInput').fill('Original repeat label');
+  await page.locator('#modalTime').fill('17:30');
+  await page.locator('#modalEndTime').fill('18:00');
+  await page.locator('#modalRecurrence').selectOption('daily');
+  await page.locator('#saveTaskBtn').click();
+  await page.locator('#taskModal').waitFor({state:'hidden'});
+  const before=await readPlannerStore(page);
+  const all=Object.values(before.weeks).flatMap(w=>w.tasks);
+  const source=all.find(t=>t.seriesId&&t.title==='Original repeat label');
+  assert.ok(source);
+  const upcoming=all.filter(t=>t.seriesId===source.seriesId&&t.occurrenceDate>source.occurrenceDate);
+  assert.ok(upcoming.length>0,'at least one future saved occurrence was created');
+  const beforeFuture=new Map(upcoming.map(t=>[t.id,{start:t.start,day:t.day,reminderTimes:t.reminderTimes,occurrenceDate:t.occurrenceDate}]));
+  await page.locator('#daysGrid .event-title[data-edit]').filter({hasText:'Original repeat label'}).first().click();
+  await page.locator('#modalRecurrenceScope').selectOption('future');
+  assert.equal(await page.locator('#recurringBulkField').isVisible(),true);
+  await page.locator('#modalRecurringBulkMetadata').check();
+  await page.locator('#modalTitleInput').fill('Updated repeat label');
+  await page.locator('#modalNote').fill('Safe descriptive update');
+  let reviewed=false;
+  page.once('dialog',dialog=>{assert.match(dialog.message(),/unchanged future recurring/);reviewed=true;dialog.accept();});
+  await page.locator('#saveTaskBtn').click();
+  await page.locator('#taskModal').waitFor({state:'hidden'});
+  assert.equal(reviewed,true);
+  const after=await readPlannerStore(page);
+  const changed=Object.values(after.weeks).flatMap(w=>w.tasks).filter(t=>beforeFuture.has(t.id));
+  assert.equal(changed.length,upcoming.length);
+  for(const t of changed){
+   assert.equal(t.title,'Updated repeat label');
+   assert.equal(t.note,'Safe descriptive update');
+   const prev=beforeFuture.get(t.id);
+   assert.equal(t.start,prev.start);assert.equal(t.day,prev.day);
+   assert.deepEqual(t.reminderTimes,prev.reminderTimes);
+   assert.equal(t.occurrenceDate,prev.occurrenceDate);
+  }
+ }finally{await context.close();}
+});
