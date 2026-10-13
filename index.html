@@ -21,6 +21,7 @@
     <h1 id="signinLandingTitle">Your day, at a glance.</h1>
     <p class="signin-description">Begin on this device, or sign in to keep your planner connected across your devices.</p>
     <button class="btn primary signin-continue" id="signinLandingContinue" type="button">Sign in to Weekwise <span aria-hidden="true">→</span></button>
+    <button class="btn signin-continue" id="signinOfflineAccount" type="button" hidden>Open saved account planner offline</button><p id="signinOfflineNote" class="signin-local-note" hidden>This device has a saved account copy. Offline edits stay here until you sign in to that same account again.</p>
     <button class="btn signin-continue" id="signinLocalContinue" type="button">Continue on this device</button><p class="signin-local-note">No account or sample schedule is required.</p>
   </div>
 </div>
@@ -437,7 +438,7 @@
   <div class="field" style="grid-column:1/-1"><label class="schedule-toggle-label" for="modalAllDay"><input id="modalAllDay" type="checkbox"><span><strong>All-day event</strong><small>Show on the selected date without creating a time block.</small></span></label></div>
   <div id="taskSchedulingFields" class="task-scheduling-fields">
     <div class="field"><label for="modalTime">Start time</label><input id="modalTime" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="10:00" value="10:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /></div>
-    <div class="field"><label for="modalEndTime">End time</label><input id="modalEndTime" class="time24" data-time24-end type="text" inputmode="numeric" maxlength="5" placeholder="11:00" value="10:30" required title="Use 24-hour end time. Use 24:00 for midnight." /><div class="hint">24-hour time; use 24:00 for midnight.</div></div>
+    <div class="field"><label for="modalEndTime">End time</label><input id="modalEndTime" class="time24" data-time24-end type="text" inputmode="numeric" maxlength="5" placeholder="11:00" value="10:30" required title="Use 24-hour end time. Use 24:00 for midnight." /><div class="hint">24-hour time; use 24:00 for midnight.</div><label><input id="modalEndNextDay" type="checkbox"> Ends next day</label></div>
     <div class="field duration-field"><label for="modalDuration">Duration</label><select id="modalDuration"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30" selected>30 minutes</option><option value="35">35 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option><option value="75">1 hour 15 minutes</option><option value="90">1 hour 30 minutes</option><option value="120">2 hours</option><option value="180">3 hours</option><option value="540">9 hours</option></select><div class="hint">Duration updates automatically when you change the end time.</div></div>
   </div>
   <div class="field"><label for="modalRecurrence">Repeat</label><select id="modalRecurrence"><option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option></select><div class="hint">Future occurrences are added automatically.</div></div><div class="field"><label for="modalRecurrenceScope">Apply recurring changes to</label><select id="modalRecurrenceScope"><option value="occurrence">This occurrence</option><option value="future">Rule from this occurrence onward</option><option value="series">Entire recurring rule</option></select><div class="hint">Saved occurrences and their history are retained. Rule changes affect newly created occurrences.</div></div><div class="field" id="recurringBulkField" hidden><label><input type="checkbox" id="modalRecurringBulkMetadata"> Also update unchanged future occurrences</label><div class="hint">Only title, category, list, notes, priority and selected metadata are updated. Existing dates, hours, reminders, completion and personalized occurrences are preserved. Review the exact count before saving.</div></div>
@@ -478,6 +479,7 @@
 <script src="./js/weekwise-task-history-ui.js"></script>
 <script src="./js/weekwise-calendar-layout.js"></script>
 <script src="./js/weekwise-calendar-range.js"></script>
+<script src="./js/weekwise-task-schedule.js"></script>
 <script src="./js/weekwise-calendar-range-ui.js"></script>
 <script src="./js/weekwise-list-window.js"></script>
 <script src="./js/weekwise-drafts.js"></script>

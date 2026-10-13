@@ -32,9 +32,9 @@ Automated browser tests use isolated synthetic records/mock cloud accounts. The 
 
 | Work | Concrete missing behavior or evidence |
 |---|---|
-| Calendar and planning zones | Date-aware IANA Calendar projection and Monday-first planning are delivered in PR #33. Planner availability/editor fields still use the saved source zone; arbitrary planner-zone conversion and explicit overnight editing remain. |
+| Calendar and planning zones | Date-aware IANA Calendar projection and Monday-first planning are delivered in PR #33. Planner availability/editor fields still use the saved source zone; arbitrary planner-zone conversion remains; explicit overnight editing is included in the follow-on reliability review. |
 | Account lifecycle | Task archive/remove/recovery and recurring schedule preview/Undo are delivered in PRs #31/#32. Account-erasure source/UI is now implemented, disabled until correct-project staging and cascade verification. No automatic retention purge. |
-| Calendar and offline reliability | Harden new Calendar movement focus/stale-pointer handling and swaps; explicitly open a saved account planner offline without pretending it is signed in. |
+| Calendar and offline reliability | Calendar movement focus/stale-pointer handling, swaps and saved-account offline opening are implemented in the follow-on review; final remote checks remain. |
 | Architecture and performance | Narrow pure/UI modules and bounded timezone derivations delivered; the app IIFE remains large. PR #29 lab metrics merged. Real-use field CWV and further profiling remain. |
 | Private cloud/security acceptance | Access to the correct Weekwise staging project/test identities; own-row/cross-user RLS, invitation enforcement, token expiry and real-device offline reconnect. Optional RPC hardening requires reviewed database authorization. |
 | Optional integrations | Real OAuth/provider consent, calendar create/update/delete/conflict/refresh, VAPID/scheduler and closed-app push acceptance; optional AI needs an explicitly configured provider and privacy decisions. |
@@ -73,3 +73,13 @@ Pure tests cover Monday/Sunday/year boundaries, cross-zone date projection, all-
 PR #29 lab reporting, #30 Focus selection, #31 task lifecycle, #32 recurring schedules and #33 Calendar/Monday preferences are merged. PR #33's exact head `f26771b65f9996eb41efe74c8f00ad9ef97fe06b` passed 112 Node tests, 43 built-client browser tests, release checks and both prior Edge Function type checks. Browser run: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38372873005 . Desktop screenshots were reviewed. A browser failure caught and fixed the old week-date onchange resetting an unsaved Monday preference; date and preference now save together. Public deployment verification is recorded separately from PR checks.
 
 The account-erasure continuation adds nine handler/device-cleanup Node tests (121 total locally) and three browser fixture regressions for disabled configuration, mismatched identity/scoped cleanup and a newer account during an in-flight request. Final remote browser and new Edge Function type checks are required before its release. Production erasure is not activated.
+
+## Calendar/editor/offline reliability continuation
+
+The follow-on review adds atomic reviewed swaps, retained keyboard focus and pointer account/snapshot/zone checks, carried multi-day all-day collision protection and paging for all-day/unscheduled Calendar items. Ordinary fixed blocks keep their original completion restrictions.
+
+The editor accepts explicitly confirmed next-day end times up to 24 hours and checks adjacent canonical weeks, prior-night spills and exact DST placements before mutation. Existing unchanged clock values retain their schedule during metadata edits. Overnight records automatically use the date-based Calendar so both carried dates are visible. No historic task is migrated or duplicated.
+
+A remembered account copy can be deliberately opened offline while the Auth SDK is unavailable; it retains its owner, edits and draft/focus scope without pretending to be signed in or sending cloud writes. The choice survives offline reload and clears when a real account session returns or the user chooses device-only mode. A real service-worker browser fixture checks this through reconnection. Final remote browser/release checks remain required; private real-device reconnect acceptance remains separate.
+
+The combined local suite currently passes 129 Node tests. New remote browser tests cover phone keyboard/stale-pointer movement, cached-account offline edits/reload/reconnect, explicit overnight editor retention and reviewed pointer swapping. The account-erasure source in PR #34 passed 121 Node/46 built-client browser tests and all three Deno handlers before merge; its production handler remains disabled pending correct-project access.
