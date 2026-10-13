@@ -1643,7 +1643,8 @@ function updateFocusDisplay(){
  $('focusStartBtn').textContent=state.runningSince!==null?'Pause':state.activeMs>0?'Resume':'Start '+(state.mode==='focus'?'focus':'break');
  $('focusTimerMessage').textContent=state.runningSince!==null?'Your timer continues across reloads. Paused time is excluded.':'Choose one task. Your timer is saved on this device.';
  const selectionLocked=state.runningSince!==null||state.activeMs>0;
- $('focusTaskSelect').disabled=selectionLocked;$('focusTaskSearch').disabled=selectionLocked;
+ $('focusTaskSelect').disabled=selectionLocked;$('focusTaskSearch').disabled=selectionLocked;$('focusPreset').disabled=selectionLocked;
+ if(state.mode==='focus'&&[25,50,90].includes(state.totalSeconds/60))$('focusPreset').value=String(state.totalSeconds/60);
  $('focusTaskPrevious').disabled=selectionLocked||!focusPickerPage?.hasPrevious;
  $('focusTaskNext').disabled=selectionLocked||!focusPickerPage?.hasNext;
 }
