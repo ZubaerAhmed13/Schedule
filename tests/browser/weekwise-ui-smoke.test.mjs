@@ -748,6 +748,9 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('settings');
   await page.locator('#workspaceSidebar [data-workspace-view="plan"]').click();
   await audit('plan');
+  await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
+  await audit('focus dialog');
+  await page.locator('#closeUtility').click();
   await page.locator('#globalCaptureBtn').click();
   await page.locator('#taskModal').waitFor({state:'visible'});
   await audit('task editor');
@@ -759,6 +762,9 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('today dark');
   await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();
   await audit('settings dark');
+  await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
+  await audit('focus dialog dark');
+  await page.locator('#closeUtility').click();
   await page.evaluate(()=>document.body.setAttribute('data-theme','light'));
   await page.locator('#workspaceSidebar [data-workspace-view="today"]').click();
   await page.setViewportSize({width:320,height:780});
