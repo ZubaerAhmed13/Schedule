@@ -35,6 +35,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: weekwise-plan-screenshots
-          path: test-results/*.png
+          name: weekwise-browser-artifacts
+          path: |
+            test-results/*.png
+            test-results/axe-*.json
           if-no-files-found: ignore
