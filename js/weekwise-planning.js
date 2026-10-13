@@ -61,6 +61,26 @@
   function records(store) {
     return Object.entries(store.weeks).flatMap(([week,value]) => value.tasks.map(task => ({week,task})));
   }
+  const clockBlockCache=new Map();
+  function clockBlocks(date,zone){
+    if(!zone)return [];if(!root.WeekwiseCalendarRange)throw new Error('The planner clock utility is unavailable. Reload before planning.');
+    const key=zone+'::'+date;if(clockBlockCache.has(key))return clockBlockCache.get(key);
+    const wall=minute=>root.WeekwiseCalendarRange.wall(date,minute,zone);let changed=false,prior=null;
+    for(let minute=0;minute<=DAY;minute+=60){try{const instant=wall(minute);if(prior!==null&&instant-prior!==3600000)changed=true;prior=instant;}catch(_){changed=true;prior=null;}}
+    const blocked=[];
+    if(changed){let start=null;for(let minute=0;minute<DAY;minute++){let valid=false;try{valid=wall(minute+1)-wall(minute)===60000;}catch(_){}if(!valid&&start===null)start=minute;if(valid&&start!==null){blocked.push([start,minute]);start=null;}}if(start!==null)blocked.push([start,DAY]);}
+    if(clockBlockCache.size>=64)clockBlockCache.delete(clockBlockCache.keys().next().value);clockBlockCache.set(key,blocked);return blocked;
+  }
+  function planningClock(store,epoch=Date.now()){
+    const zone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if(!root.WeekwiseCalendarRange)throw new Error('The planner clock utility is unavailable. Reload before planning.');
+    return {zone,...root.WeekwiseCalendarRange.parts(epoch,zone)};
+  }
+  function planningSlot(store,item){
+    const zone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if(!root.WeekwiseCalendarRange)throw new Error('The planner clock utility is unavailable. Reload before planning.');
+    return root.WeekwiseCalendarRange.slot(item.date,item.start,item.duration,zone,zone);
+  }
   function build({ store, weekStart, prefs, notBefore, mode='build', overrides={} }) {
     root.WeekwiseData.validateStore(store);
     const p = preferences(prefs), base = ordinal(weekStart), all = records(store);
@@ -69,7 +89,7 @@
     const busy = [], breaks = [], protectedRecords = [], timedRecords=[];
     for (const record of all) {
       const t = record.task, offset=(ordinal(record.week)-base)+t.day;
-      if (t.allDay) {busy.push([offset*DAY,(offset+1)*DAY]);protectedRecords.push(record);}
+      if (t.allDay) {busy.push([offset*DAY,(offset+Math.max(1,Math.ceil((t.duration||0)/DAY)))*DAY]);protectedRecords.push(record);}
       else if (t.start!=null && !t.unscheduled && t.duration>0) {
         const a=offset*DAY+t.start, b=a+t.duration;busy.push([a,b]);breaks.push([b,b+p.breakMinutes]);protectedRecords.push(record);timedRecords.push({...record,a,b,ref:record.week+'::'+t.id});
       }
@@ -77,12 +97,12 @@
     const conflicts=new Set();
     const sortedRecords=timedRecords.slice().sort((a,b)=>a.a-b.a);let latestEnd=-Infinity,latestRef=null;
     for(const entry of sortedRecords){if(entry.a<latestEnd){conflicts.add(entry.ref);conflicts.add(latestRef);}if(entry.b>latestEnd){latestEnd=entry.b;latestRef=entry.ref;}}
-    const days = []; let windows = [], free = [];
+    const days = []; let windows = [], free = [],clockChangeReserved=0;
     for (let day=0;day<7;day++) {
       const weekday=new Date((base+day)*86400000).getUTCDay();if(!p.days.includes(weekday))continue;
       const custom=p.windows.filter(window=>window.days.includes(weekday));
       const candidates=custom.length?custom:[{start:p.start,end:p.end}];
-      const window=merge(candidates.map(w=>[Math.max(day*DAY+w.start,earliest),day*DAY+w.end]));
+      const rawWindow=merge(candidates.map(w=>[Math.max(day*DAY+w.start,earliest),day*DAY+w.end])),window=subtract(rawWindow,clockBlocks(dateAt(weekStart,day),store.settings.timeZone).map(([a,b])=>[a+day*DAY,b+day*DAY]));clockChangeReserved+=sum(rawWindow)-sum(window);
       if(!window.length)continue;
       const afterBusy=subtract(window,busy),afterBreaks=subtract(afterBusy,breaks),afterBuffer=reserveTail(afterBreaks,p.buffer),committed=sum(window)-sum(afterBusy);
       const usable=reserveTail(afterBuffer,Math.max(0,sum(afterBuffer)-Math.max(0,p.maxDailyMinutes-committed)));
@@ -111,7 +131,7 @@
       requested+=duration;
       if (t.dueDate && !root.WeekwiseData.validDate(t.dueDate)) {fail('Deadline needs a valid date.');continue;}
       const deadline=t.dueDate?(ordinal(t.dueDate)-base+1)*DAY:7*DAY;
-      let slot=null;const ref=record.week+'::'+t.id,override=overrides[ref],options=[];
+      let slot=null;const validClock=value=>{if(!store.settings.timeZone)return true;try{planningSlot(store,{date:dateAt(weekStart,Math.floor(value/DAY)),start:value%DAY,duration});return true;}catch(_){return false;}};const ref=record.week+'::'+t.id,override=overrides[ref],options=[];
       for (const [a,b] of free) {
         const day=Math.floor(a/DAY),earliestStart=Math.ceil(a/15)*15;
         options.push({start:earliestStart,preferred:false,end:b});
@@ -121,9 +141,9 @@
       if(override){
         if(root.WeekwiseData.validDate(override.date)&&Number.isInteger(override.start)){
           const requestedSlot=(ordinal(override.date)-base)*DAY+override.start;
-          if(requestedSlot>=earliest&&requestedSlot>=0&&requestedSlot+duration<=deadline&&free.some(([a,b])=>requestedSlot>=a&&requestedSlot+duration+p.breakMinutes<=b))slot=requestedSlot;
+          if(validClock(requestedSlot)&&requestedSlot>=earliest&&requestedSlot>=0&&requestedSlot+duration<=deadline&&free.some(([a,b])=>requestedSlot>=a&&requestedSlot+duration+p.breakMinutes<=b))slot=requestedSlot;
         }
-      }else for(const option of options)if(option.start+duration<=Math.min(option.end,deadline)&&option.start+duration+p.breakMinutes<=option.end){slot=option.start;break;}
+      }else for(const option of options){for(let candidate=option.start;candidate+duration<=Math.min(option.end,deadline)&&candidate+duration+p.breakMinutes<=option.end;candidate+=15){if(validClock(candidate)){slot=candidate;break;}}if(slot!==null)break;}
       if (slot===null) {fail(override?'Your requested time is outside availability, overlaps another block, or misses the deadline. Clear it and try another slot.':deadline<=earliest?'Deadline has passed. Review the deadline before planning.':'No continuous slot fits before the deadline with your breaks and buffer.');continue;}
       const day=Math.floor(slot/DAY),start=slot%DAY;
       proposals.push({week:record.week,id:t.id,title:t.title,day:new Date((base+day)*86400000).getUTCDay(),start,duration,date:dateAt(weekStart,day),recovery:mode==='recover',from:{day:t.day,start:t.start,duration:t.duration,unscheduled:!!t.unscheduled},reason:(mode==='recover'?'Move unfinished or conflicting work. ':'')+(override?'Your chosen slot. ':'')+(t.dueDate?'Before the '+t.dueDate+' deadline. ':'')+'Earliest free slot; existing commitments, breaks and buffer are protected.'});
@@ -132,10 +152,11 @@
     const overlaps=[];
     const sorted=busy.slice().sort((a,b)=>a[0]-b[0]);let priorEnd=-Infinity;
     for (const [a,b] of sorted) {if(a<priorEnd && b>0 && a<7*DAY)overlaps.push([Math.max(a,0),Math.min(b,priorEnd,7*DAY)]);priorEnd=Math.max(priorEnd,b);}
-    return {weekStart,mode,notBefore:notBefore?clone(notBefore):null,overrides:clone(overrides),preferences:p,days,weeklyBufferReserved,dailyLimitReserved:days.reduce((n,d)=>n+d.dailyLimitReserved,0),proposals,unscheduled,unknown,requested,available:sum(windows),committed:days.reduce((n,d)=>n+d.committed,0),reservedBuffer:weeklyBufferReserved+days.reduce((n,d)=>n+d.buffer,0),existingBreaks:days.reduce((n,d)=>n+d.breaks,0),capacity:initialCapacity,remaining:sum(free),proposalBreaks:consumedBreaks,overcommitted:Math.max(0,requested+consumedBreaks-initialCapacity),overlaps:merge(overlaps),protectedCount:protectedRecords.filter(({week,task})=>{const day=ordinal(week)-base+task.day;return day>=0&&day<7;}).length};
+    return {weekStart,mode,timeZone:store.settings.timeZone||null,notBefore:notBefore?clone(notBefore):null,overrides:clone(overrides),preferences:p,days,clockChangeReserved,weeklyBufferReserved,dailyLimitReserved:days.reduce((n,d)=>n+d.dailyLimitReserved,0),proposals,unscheduled,unknown,requested,available:sum(windows),committed:days.reduce((n,d)=>n+d.committed,0),reservedBuffer:weeklyBufferReserved+days.reduce((n,d)=>n+d.buffer,0),existingBreaks:days.reduce((n,d)=>n+d.breaks,0),capacity:initialCapacity,remaining:sum(free),proposalBreaks:consumedBreaks,overcommitted:Math.max(0,requested+consumedBreaks-initialCapacity),overlaps:merge(overlaps),protectedCount:protectedRecords.filter(({week,task})=>{const begin=(ordinal(week)-base+task.day)*DAY+(task.allDay?0:task.start||0),span=task.allDay?Math.max(1,Math.ceil((task.duration||0)/DAY))*DAY:task.duration||0;return begin<7*DAY&&begin+span>0;}).length};
   }
   function apply(store, plan, selectedIds) {
     root.WeekwiseData.validateStore(store);
+    if((store.settings.timeZone||null)!==plan.timeZone)throw new Error('The planning time zone changed. Build a fresh preview.');
     const next=clone(store), chosen=plan.proposals.filter(p=>selectedIds.includes(p.week+'::'+p.id));
     if (!chosen.length) throw new Error('Select at least one suggested task.');
     const verified=build({store,weekStart:plan.weekStart,prefs:plan.preferences,notBefore:plan.notBefore,mode:plan.mode,overrides:plan.overrides||{}});
@@ -143,6 +164,7 @@
     for (const p of chosen) {
       const source=next.weeks[p.week], task=source?.tasks.find(t=>t.id===p.id);
       if (!task || task.done || task.status==='done' || isFixed(task) || (!p.recovery&&(isProtected(task)||(task.start!=null&&!task.unscheduled))) || (p.from&&(p.from.day!==task.day||p.from.start!==task.start||p.from.duration!==task.duration))) throw new Error('A task changed. Build a fresh preview.');
+      const exact=store.settings.timeZone?planningSlot(store,p):null;
       const targetWeek=dateAt(p.date,-new Date(p.date+'T12:00:00Z').getUTCDay());
       if (p.week!==targetWeek && next.weeks[targetWeek]?.tasks.some(t=>t.id===p.id)) throw new Error('Task ID already exists in the destination week. Nothing was changed.');
       if (p.week!==targetWeek) {
@@ -155,6 +177,7 @@
         if(task.seriesId)task.recurrenceOverride=true;
       }
       Object.assign(task,{day:p.day,start:p.start,duration:p.duration,unscheduled:false});
+      if(exact)task.scheduleInstant=exact.scheduleInstant;else delete task.scheduleInstant;
     }
     return root.WeekwiseData.validateStore(next);
   }
@@ -172,5 +195,5 @@
     task.planningOriginalEstimate=task.estimatedDurationMinutes??task.focusEstimateMinutes??null;task.estimatedDurationMinutes=parts.reduce((n,p)=>n+p.minutes,0);
     return root.WeekwiseData.validateStore(next);
   }
-  root.WeekwisePlanning=Object.freeze({merge,subtract,preferences,ordinal,dateAt,build,apply,isProtected,isFixed,splitTask});
+  root.WeekwisePlanning=Object.freeze({merge,subtract,preferences,ordinal,dateAt,planningClock,planningSlot,build,apply,isProtected,isFixed,splitTask});
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -83,3 +83,13 @@ The editor accepts explicitly confirmed next-day end times up to 24 hours and ch
 A remembered account copy can be deliberately opened offline while the Auth SDK is unavailable; it retains its owner, edits and draft/focus scope without pretending to be signed in or sending cloud writes. The choice survives offline reload and clears when a real account session returns or the user chooses device-only mode. A real service-worker browser fixture checks this through reconnection. Final remote browser/release checks remain required; private real-device reconnect acceptance remains separate.
 
 The combined local suite currently passes 129 Node tests. New remote browser tests cover phone keyboard/stale-pointer movement, cached-account offline edits/reload/reconnect, explicit overnight editor retention and reviewed pointer swapping. The account-erasure source in PR #34 passed 121 Node/46 built-client browser tests and all three Deno handlers before merge; its production handler remains disabled pending correct-project access.
+
+## Saved planning-clock continuation
+
+Planning previews now derive their current date/minute from the saved planner zone; apply checks actual source-zone instants, rejects DST gaps/folds/discontinuities and captures the exact accepted schedule. Changing the zone invalidates a pure preview. Multi-day all-day commitments reserve every occupied date, including carried blocks from earlier weeks. Planning remains in the saved source zone; the existing cross-device-zone review gate and reminder protections remain. This does not implement arbitrary planner-zone migration.
+
+The older effort dashboard now calls completion totals marked-complete planned time and describes unchecked past plans as review items. Recorded Focus sessions remain separate; completion checkmarks are not presented as measured work or wasted attention.
+
+Five additional Node tests cover date boundaries, exact IANA instants, changed-zone rejection, DST refusal, excluded clock-change capacity and carried commitments. A deterministic browser fixture freezes Sunday UTC/Monday Tokyo and verifies Monday's already-past availability produces no proposals. Final combined CI remains required.
+
+Phone Calendar screenshot review also removed the redundant legacy day strip and pinned the time axis during horizontal week scrolling. The browser scenario checks both behaviors.

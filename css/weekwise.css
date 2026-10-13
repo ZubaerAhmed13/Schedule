@@ -87,3 +87,5 @@ body[data-theme=dark] .workspace-empty h3{color:var(--ww-text)}
 #accountEraseDialog input:not([type="checkbox"]) { width:100%; box-sizing:border-box; }
 #accountEraseDialog .plan-checkbox { display:flex; align-items:flex-start; gap:10px; line-height:1.5; }
 #accountEraseStatus { min-height:3em; }
+
+.range-axis{position:sticky;left:0;z-index:6}.range-timeline>.calendar-corner{left:0;z-index:9}

@@ -29,7 +29,7 @@
  function render(value){
   if(!app)return false;state=value;const enabled=state.store.settings.weekStartsOn===1||!!state.store.settings.calendarTimeZone||Object.values(state.store.weeks).some(value=>value.tasks.some(task=>task.start!=null&&task.start+(task.duration||0)>1440||task.allDay&&(task.duration||0)>1440));if(!enabled){$('daysGrid').dataset.rangeActive='false';return false;}
   const grid=$('daysGrid');grid.dataset.rangeActive='true';grid.style.minHeight='0';grid.style.height='';grid.style.maxHeight=state.view==='week'||state.view==='day'?'78vh':'none';grid.setAttribute('aria-label',state.view+' calendar in '+zone());
-  const picker=$('mobileDayPicker'),help=$('mobileHelp');if(picker)picker.hidden=true;if(help)help.hidden=true;app.controls();
+  app.controls();const picker=$('mobileDayPicker'),help=$('mobileHelp');if(picker)picker.hidden=true;if(help)help.hidden=true;
   const priorTop=grid.scrollTop,priorLeft=grid.scrollLeft;let html;
   try{refreshRecords();
    const dates=model().range(state.anchor,state.store.settings.weekStartsOn===1?1:0);

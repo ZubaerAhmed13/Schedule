@@ -15,8 +15,8 @@
   function clearPreview(){preview=null;$('planResults').hidden=true;$('planApply').disabled=true;announce('Build a new preview to use these preferences. Your tasks have not changed.');}
   function buildPreview(){
     try{
-      const snapshot=app.snapshot(),now=new Date(),week=weekKey();$('planWeek').value=week;
-      const plan=root.WeekwisePlanning.build({store:snapshot.store,weekStart:week,prefs:readPreferences(),notBefore:{date:app.todayKey(),minute:now.getHours()*60+now.getMinutes()+1},mode,overrides});
+      const snapshot=app.snapshot(),clock=root.WeekwisePlanning.planningClock(snapshot.store),week=weekKey();$('planWeek').value=week;
+      const plan=root.WeekwisePlanning.build({store:snapshot.store,weekStart:week,prefs:readPreferences(),notBefore:{date:clock.date,minute:Math.floor(clock.minute)+1},mode,overrides});
       preview={plan,fingerprint:JSON.stringify(snapshot),account:app.account(),createdAt:Date.now()};
       renderPreview();announce(plan.proposals.length+' tasks suggested. Review and select the changes you want to apply.');
     }catch(error){announce(error.message,true);}
@@ -25,19 +25,13 @@
     const p=preview.plan;$('planPreviewTitle').textContent=p.mode==='recover'?'Review recovery adjustments':'Suggested placements';$('planRecoveryNote').textContent=p.mode==='recover'?'What changed: unfinished past activities or overlapping commitments. Only flexible activities appear here. Original slots stay reserved until you approve a move; some work may need a different week or revised deadline.':'';
     $('planResults').hidden=false;
     $('planSummary').innerHTML=[['Planning time',p.available],['Already committed',p.committed],['Reserved buffer',p.reservedBuffer],['Flexible capacity',p.capacity],['Remaining after preview',p.remaining]].map(([label,value])=>'<div class="plan-metric"><span>'+label+'</span><strong>'+duration(value)+'</strong></div>').join('');
-    $('planCapacityNote').textContent='Capacity uses only your chosen hours. Existing breaks reserve '+duration(p.existingBreaks)+', and suggested-task breaks reserve '+duration(p.proposalBreaks)+'. All-day events block that day. '+p.protectedCount+' existing calendar commitments remain unchanged.';
+    $('planCapacityNote').textContent='Planning clock: '+(p.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'. '+(p.clockChangeReserved?'Clock-change review excludes '+duration(p.clockChangeReserved)+'. ':'')+'Capacity uses only your chosen hours. Existing breaks reserve '+duration(p.existingBreaks)+', and suggested-task breaks reserve '+duration(p.proposalBreaks)+'. All-day events block that day. '+p.protectedCount+' existing calendar commitments remain unchanged.';
     $('planWarning').hidden=!(p.overcommitted||p.overlaps.length||p.unknown);
     $('planWarning').textContent=[p.overcommitted?duration(p.overcommitted)+' more estimated work and suggested breaks than flexible capacity. Review priorities or keep tasks unscheduled.':'',p.overlaps.length?'Existing commitments overlap. The overlap is counted once; review it in Calendar.':'',p.unknown?p.unknown+' tasks need a duration estimate before they can be placed.':''].filter(Boolean).join(' ');
     $('planDayCapacity').innerHTML=p.days.length?p.days.map(d=>'<div class="plan-day-capacity"><span>'+esc(new Date(d.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}))+'</span><strong>'+duration(d.capacity)+' available for tasks</strong></div>').join(''):'<p>No planning hours remain in this week. Choose a future week or update your availability.</p>';
     $('planProposals').innerHTML=p.proposals.length?p.proposals.map((item,index)=>'<article class="plan-proposal"><label><input type="checkbox" name="planProposal" value="'+index+'" checked><strong>'+esc(item.title)+'</strong></label><div><span class="plan-proposal-time">'+(item.recovery?'Previously '+esc(item.week)+' · '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][item.from.day]+' '+time(item.from.start)+' → ':'')+esc(item.date)+' · '+time(item.start)+'–'+time(item.start+item.duration)+'</span><small>'+esc(item.reason)+'</small><div class="plan-placement"><label>Date<input type="date" data-placement-date="'+index+'" value="'+item.date+'"></label><label>Start<input type="time" data-placement-start="'+index+'" value="'+time(item.start)+'"></label><button type="button" class="btn" data-placement-apply="'+index+'">Check placement</button></div></div></article>').join(''):'<div class="plan-empty">'+(p.mode==='recover'?'No flexible activity needs recovery, or none fits the remaining hours. Review any deadline risks below.':'No suggestions yet. Add a flexible task with an explicit duration estimate and choose planning hours.')+'</div>';
     $('planUnscheduled').innerHTML=p.unscheduled.length?p.unscheduled.map(item=>'<li><div><strong>'+esc(item.title)+'</strong><p>'+esc(item.reason)+'</p></div><button class="btn" type="button" data-plan-edit-id="'+esc(item.id)+'" data-plan-edit-week="'+esc(item.week)+'">Edit task</button><button class="btn" type="button" data-plan-split-id="'+esc(item.id)+'" data-plan-split-week="'+esc(item.week)+'">Split task</button></li>').join(''):'<li class="plan-empty">No eligible tasks were left unscheduled.</li>';
     $('planApply').disabled=!p.proposals.length;
-  }
-  function validLocalSlot(item){
-    const start=new Date(item.date+'T00:00:00');start.setMinutes(item.start);
-    const end=new Date(item.date+'T00:00:00');end.setMinutes(item.start+item.duration);
-    // Reject nonexistent times and a duration crossing a DST discontinuity.
-    return start.getHours()*60+start.getMinutes()===item.start && (end-start)/60000===item.duration;
   }
   function applySelected(){
     try{
@@ -48,9 +42,8 @@
       if(!selected.length)throw new Error('Select at least one suggested task.');
       const now=new Date();
       for(const item of selected){
-        if(!validLocalSlot(item))throw new Error('A suggested time crosses a clock change. Adjust your planning hours and rebuild.');
-        const start=new Date(item.date+'T00:00:00');start.setMinutes(item.start);
-        if(start<=now)throw new Error('A suggested start has already passed. Build a fresh preview.');
+        const slot=root.WeekwisePlanning.planningSlot(app.snapshot().store,item);
+        if(slot.scheduleInstant.start<=now.getTime())throw new Error('A suggested start has already passed in the saved planner zone. Build a fresh preview.');
       }
       const before=app.snapshot().store,next=root.WeekwisePlanning.apply(before,preview.plan,selected.map(p=>p.week+'::'+p.id));
       const expected=preview.fingerprint,account=preview.account;
