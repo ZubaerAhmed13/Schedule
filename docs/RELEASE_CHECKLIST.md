@@ -65,3 +65,11 @@ Never expose OAuth/VAPID/service-role/AI secrets in browser code. Never run prod
 The latest merged feature set is at `ea6573c08433ec6995feb6740968b7944ea4cb21`, PRs #16–#21 merged. Deployment smoke-test: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337641. Post-merge Chromium: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337738 (29 passed, 0 failed). Release/unit suite: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337745 (74 passed, 0 failed). Public Auth probe: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337747. Edge Function type checks: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337801.
 
 **Not certified:** No verified private Supabase RLS/invite test accounts; no external OAuth/Web Push round trip; no real installed-PWA upgrade, screen-reader/zoom, historical private-data migration or field Core Web Vitals measurement. These gates are tracked in [issue #22](https://github.com/ZubaerAhmed13/Schedule/issues/22).
+
+## Progressive onboarding and dialog accessibility release gate
+
+- [ ] Node: guide preference remains account-isolated, optional and safe if localStorage fails.
+- [ ] Chromium: guide appears for empty planner, dismissal persists, Settings can reopen it, and navigation works without adding tasks.
+- [ ] Chromium: task/utility dialog Tab wrap and Shift+Tab, real launcher focus return and no nested dialog role.
+- [ ] Verify narrow screens and PWA cache include guide script; no data-model, cloud, invite or session changes.
+- [ ] Human WCAG 2.2 AA, 200% text resize, screen-reader/TalkBack/VoiceOver, phone keyboard and installed-PWA reviews remain separately required.
