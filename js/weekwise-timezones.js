@@ -35,12 +35,12 @@
  function parseDateProperty(property){
   if(!property||typeof property.value!=='string')throw new Error('Missing iCalendar date.');
   const value=property.value.trim(),params=property.params||{},tzid=params.TZID;
-  if(/^\\d{8}$/.test(value)){
+  if(/^\d{8}$/.test(value)){
    const date=checkedComponents(Number(value.slice(0,4)),Number(value.slice(4,6)),Number(value.slice(6,8)));
    if(tzid)throw new Error('A date-only iCalendar value cannot use TZID.');
    return {date:new Date(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate(),12),allDay:true};
   }
-  const match=/^(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})?(Z)?$/.exec(value);
+  const match=/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?(Z)?$/.exec(value);
   if(!match)throw new Error('Unsupported iCalendar date format.');
   const [year,month,day,hour,minute,second]=[Number(match[1]),Number(match[2]),Number(match[3]),Number(match[4]),Number(match[5]),Number(match[6]||0)];
   const utc=checkedComponents(year,month,day,hour,minute,second);
