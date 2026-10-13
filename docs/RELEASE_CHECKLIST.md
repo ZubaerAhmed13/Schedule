@@ -73,3 +73,11 @@ The latest merged feature set is at `ea6573c08433ec6995feb6740968b7944ea4cb21`, 
 - [ ] Chromium: task/utility dialog Tab wrap and Shift+Tab, real launcher focus return and no nested dialog role.
 - [ ] Verify narrow screens and PWA cache include guide script; no data-model, cloud, invite or session changes.
 - [ ] Human WCAG 2.2 AA, 200% text resize, screen-reader/TalkBack/VoiceOver, phone keyboard and installed-PWA reviews remain separately required.
+
+## Scheduled workload / stability insight review
+
+- [ ] Node: overlapping fixed and flexible scheduled intervals are unioned, overnight spill is shown on both relevant days and previous-week spill into Sunday counted; all-day/unscheduled entries excluded.
+- [ ] Node: recorded recovery count deduplicates history; only timer-linked focus with explicit task estimates enters comparison, no actual time invented.
+- [ ] Built-client browser: 7-day workload is legible on desktop and small phone; legends distinguish scheduled hours, logged focus and estimates.
+- [ ] Confirm unrelated completion/habit metrics and weekly reflection persist unchanged.
+- [ ] Historical manual edits without reschedulingHistory are deliberately not counted as recorded recovery moves.
