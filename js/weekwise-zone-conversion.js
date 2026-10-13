@@ -6,7 +6,8 @@
  function canonical(date){const day=new Date(date+'T00:00:00Z').getUTCDay();return {week:range().key(range().ordinal(date)-day),day};}
  function reminderInstant(value,zone){
   if(typeof value!=='string'||value.length>40)throw new Error('Invalid reminder timestamp.');
-  if(/^\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d(?:\.\d{1,3})?)?(?:Z|[+-]\d\d:\d\d)$/.test(value)){const at=Date.parse(value);if(!Number.isFinite(at))throw new Error('Invalid reminder instant.');return at;}
+  const explicit=/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d)(?:\.\d{1,3})?)?(?:Z|[+-]\d\d:\d\d)$/.exec(value);
+  if(explicit){root.WeekwiseTimeZones.checkedComponents(...explicit.slice(1,7).map(part=>Number(part||0)));const at=Date.parse(value);if(!Number.isFinite(at))throw new Error('Invalid reminder instant.');return at;}
   const match=/^(\d{4}-\d\d-\d\d)T(\d\d):(\d\d)(?::(\d\d))?$/.exec(value);
   if(!match||!root.WeekwiseData.validDate(match[1])||Number(match[2])>23||Number(match[3])>59||Number(match[4]||0)>59)throw new Error('Invalid local reminder time.');
   return range().wall(match[1],Number(match[2])*60+Number(match[3])+Number(match[4]||0)/60,zone);
