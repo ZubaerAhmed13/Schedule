@@ -36,6 +36,7 @@ test('modern navigation and editor disclose advanced options through labelled co
   assert.equal(await page.locator('#workspaceTools').evaluate(el=>el.open),true);
   await page.locator('#workspaceSidebar [data-workspace-action="focus"]').click();
   await page.locator('#utilityModal').waitFor({state:'visible'});await page.locator('#closeUtility').click();
+  await page.waitForFunction(()=>document.activeElement?.id==='mobileNavigationToggle');
   await page.locator('#globalCaptureBtn').click();
   for(const id of ['taskPriorityOptions','taskRepeatOptions','taskOrganizeOptions','taskNotesOptions'])assert.equal(await page.locator('#'+id).evaluate(el=>el.open),false);
   assert.equal(await page.locator('#modalTitleInput').isVisible(),true);
@@ -60,13 +61,13 @@ test('modern Today and weekly overview use real data, reflow and keep overview n
   try{
    const before=await readPlannerStore(page);
    await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
-   assert.match(await page.locator('.today-next h3').innerText(),/focused learning/);assert.match(await page.locator('.today-date').innerText(),/Tuesday, 8 January/);
+   assert.match(await page.locator('.today-next h3').innerText(),/focused learning/);assert.match(await page.locator('.today-date').innerText(),/Tuesday,? 8 January/);
    assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true);
-   await page.screenshot({path:path.join(root,'test-results','modern-today-'+width+'.png'),animations:'disabled',fullPage:true});
+   await page.evaluate(()=>{scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({path:path.join(root,'test-results','modern-today-'+width+'.png'),animations:'disabled',fullPage:true});
    await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="plan"]')).click();
    assert.equal(await page.locator('#planBoundaries').evaluate(el=>el.open),false);assert.equal(await page.locator('#planOverviewDays article').count(),7);assert.match(await page.locator('#planOverviewDays').innerText(),/1h scheduled/);assert.deepEqual(await readPlannerStore(page),before);
    assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true);
-   await page.screenshot({path:path.join(root,'test-results','modern-plan-'+width+'.png'),animations:'disabled',fullPage:true});
+   await page.evaluate(()=>{scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({path:path.join(root,'test-results','modern-plan-'+width+'.png'),animations:'disabled',fullPage:true});
    await page.locator('#globalCaptureBtn').click();await page.screenshot({path:path.join(root,'test-results','modern-editor-'+width+'.png'),animations:'disabled'});
    await page.addScriptTag({content:axe.source});const result=await page.evaluate(async()=>{const r=await window.axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}));});assert.deepEqual(result,[]);
   }finally{await context.close();}

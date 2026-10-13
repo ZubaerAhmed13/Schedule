@@ -20,11 +20,11 @@
       $('planPreferenceSummary').textContent=days+' · '+time(prefs.start)+'–'+time(prefs.end)+' · '+duration(prefs.buffer)+' daily buffer'+(prefs.windows.length?' · custom windows':'');
       $('planOverviewRange').textContent=week+' — '+root.WeekwisePlanning.dateAt(week,6);
       $('planOverviewDays').innerHTML=workload.days.map(day=>'<article class="plan-overview-day"><strong>'+esc(new Date(day.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric'}))+'</strong><div class="plan-load-track" aria-hidden="true"><span style="width:'+Math.round(day.minutes/peak*100)+'%"></span></div><small>'+duration(day.minutes)+' scheduled</small></article>').join('');
-      $('planOverviewNote').textContent='Saved schedule in '+(zone||'your planner time zone')+'. Overlaps count once. This overview does not change tasks; build a preview to check availability and suggested placements.';
-    }catch(_){$('planPreferenceSummary').textContent='Review your hours';$('planOverviewNote').textContent='Choose valid planning preferences to see this week.';}
+      $('planOverviewNote').textContent='Saved schedule in '+(zone||'your planner time zone')+'. Bars compare scheduled time across days; overlaps count once. Build a preview to check availability and suggested placements. This overview does not change tasks.';
+    }catch(_){$('planPreferenceSummary').textContent='Review your hours';$('planOverviewDays').replaceChildren();$('planOverviewRange').textContent='';$('planOverviewNote').textContent='Choose valid planning preferences to see this week.';}
   }
   function weekKey(){const raw=$('planWeek').value;if(!root.WeekwiseData.validDate(raw))throw new Error('Choose a valid week.');const date=new Date(raw+'T12:00:00');const first=app.snapshot().store.settings.weekStartsOn===1?1:0;date.setDate(date.getDate()-(date.getDay()-first+7)%7);return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
-  function clearPreview(){preview=null;$('planResults').hidden=true;$('planApply').disabled=true;announce('Build a new preview to use these preferences. Your tasks have not changed.');}
+  function clearPreview(){preview=null;$('planResults').hidden=true;$('planApply').disabled=true;renderOverview();announce('Build a new preview to use these preferences. Your tasks have not changed.');}
   function buildPreview(){
     try{
       const snapshot=app.snapshot(),clock=root.WeekwisePlanning.planningClock(snapshot.store),week=weekKey();$('planWeek').value=week;
@@ -83,7 +83,7 @@
   function init(bridge){
     app=bridge;
     $('planPreferences').addEventListener('submit',e=>{e.preventDefault();mode='build';overrides={};buildPreview();});
-    $('planPreferences').addEventListener('input',()=>{overrides={};clearPreview();renderOverview();});$('planAddWindow').onclick=()=>{addWindow();clearPreview();renderOverview();};$('planRecover').onclick=()=>{mode='recover';overrides={};buildPreview();};
+    $('planPreferences').addEventListener('input',()=>{overrides={};clearPreview();});$('planAddWindow').onclick=()=>{addWindow();clearPreview();};$('planRecover').onclick=()=>{mode='recover';overrides={};buildPreview();};
     $('planApply').addEventListener('click',applySelected);$('planUndo').addEventListener('click',undoPlan);
     $('planSavePreferences').addEventListener('click',()=>{try{const snapshot=app.snapshot(),next=JSON.parse(JSON.stringify(snapshot.store));next.settings.planning=readPreferences();app.commit(JSON.stringify(snapshot),app.account(),next);clearPreview();announce('Planning preferences saved locally.');}catch(error){announce(error.message,true);}});
     $('planUnscheduled').addEventListener('click',e=>{const button=e.target.closest('[data-plan-edit-id]');if(button)app.edit(button.dataset.planEditId,button.dataset.planEditWeek);const split=e.target.closest('[data-plan-split-id]');if(split)openSplit({id:split.dataset.planSplitId,week:split.dataset.planSplitWeek});});

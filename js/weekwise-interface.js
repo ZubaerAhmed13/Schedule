@@ -9,19 +9,21 @@
   }
   function prepareEditor(){
     const groups={
-      taskPriorityOptions:['modalTodayPriority','modalPriority','modalStatus','modalFocusEstimate','modalDurationEstimate','modalImportance','modalUrgency'],
+      taskPriorityOptions:['modalTodayPriority','modalPriority','modalStatus','modalSchedulingMode','modalFocusEstimate','modalDurationEstimate','modalImportance','modalUrgency'],
       taskRepeatOptions:['modalRecurrence','modalReminderAt','modalReminderAt2','modalReminderAt3','modalReminderAt4','modalReminderAt5','modalDueDate'],
       taskOrganizeOptions:['modalSection','modalTags'],
       taskNotesOptions:['modalSubtasks','modalAttachments']
     };
-    const defaults={modalPriority:'none',modalStatus:'todo',modalRecurrence:'none',modalImportance:'unclassified',modalUrgency:'unclassified'};
+    const defaults={modalPriority:'none',modalStatus:'todo',modalSchedulingMode:'flexible',modalRecurrence:'none',modalImportance:'unclassified',modalUrgency:'unclassified'};
     for(const [id,fields] of Object.entries(groups)){
       $(id).open=fields.some(name=>{const el=$(name);return el.type==='checkbox'?el.checked:!!el.value&&el.value!==(defaults[name]||'');});
     }
+    if(!$('modalRequiresCompletion').checked)$('taskPriorityOptions').open=true;
+    if($('editTaskId').value&&$('modalFolder').value)$('taskOrganizeOptions').open=true;
     document.querySelector('.task-template-tools').open=false;
   }
   function navigation(view){
-    document.body.dataset.workspaceView=view;
+    document.body.dataset.activeView=view;
     document.querySelectorAll('#workspaceSidebar [data-workspace-view]').forEach(button=>{
       if(button.dataset.workspaceView===view)reveal(button);
     });
