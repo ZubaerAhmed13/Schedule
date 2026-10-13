@@ -28,3 +28,12 @@ export function activationSecretMatches(actual,expected){
  let difference=0;for(let index=0;index<64;index++)difference|=actual.charCodeAt(index)^expected.charCodeAt(index);
  return difference===0;
 }
+
+export async function activationRequestMatches(headers,secret,now=Date.now()){
+ const nonce=headers.get('x-weekwise-activation-nonce'),stamp=headers.get('x-weekwise-activation-time');
+ if(typeof secret!=='string'||secret.length!==64||!nonce||!/^[a-f0-9-]{36}$/.test(nonce)||!stamp||!/^\d{13}$/.test(stamp)||Math.abs(now-Number(stamp))>60000)return false;
+ const encoder=new TextEncoder(),key=await crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const bytes=new Uint8Array(await crypto.subtle.sign('HMAC',key,encoder.encode('weekwise-activation:'+nonce+':'+stamp)));
+ const signature=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+ return activationSecretMatches(headers.get('x-weekwise-activation-proof'),signature);
+}

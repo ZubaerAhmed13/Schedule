@@ -3,7 +3,7 @@
 import {createClient} from "npm:@supabase/supabase-js@2.117.3";
 import {accountServices} from "../_shared/account-services.ts";
 import {createHandler,CONFIRMATION} from "../weekwise-account/core.mjs";
-import {runtimeConfiguration,activationSecretMatches} from "../_shared/runtime-config.mjs";
+import {runtimeConfiguration,activationRequestMatches} from "../_shared/runtime-config.mjs";
 const url=Deno.env.get('SUPABASE_URL')||'',key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'',anon=Deno.env.get('SUPABASE_ANON_KEY')||'',origin='https://zubaerahmed13.github.io';
 const options={auth:{persistSession:false,autoRefreshToken:false}};
 Deno.serve(async(request:Request)=>{
@@ -11,7 +11,7 @@ Deno.serve(async(request:Request)=>{
  const admin=createClient(url,key,options);
  let configuration:Record<string,string>;
  try{configuration=await runtimeConfiguration(admin,(name:string)=>Deno.env.get(name),['WEEKWISE_ACTIVATION_CHECK_SECRET']);}catch(_){return Response.json({error:'Activation check unavailable.'},{status:503});}
- if(!activationSecretMatches(request.headers.get('x-weekwise-activation-secret'),configuration.WEEKWISE_ACTIVATION_CHECK_SECRET))return Response.json({error:'Operator authentication required.'},{status:401});
+ if(!await activationRequestMatches(request.headers,configuration.WEEKWISE_ACTIVATION_CHECK_SECRET))return Response.json({error:'Operator authentication required.'},{status:401});
  const {data:claimed,error:claimError}=await admin.rpc('weekwise_claim_activation_check');
  if(claimError||claimed!==true)return Response.json({error:'Activation check is disabled.'},{status:403});
  const ids:string[]=[],report:Record<string,boolean>={};let complete=false,stage="creating_fixture";
