@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import '../js/weekwise-data.js';
 import '../js/weekwise-planning.js';
 import '../js/weekwise-insights.js';
 const insights=globalThis.WeekwiseInsights,week='2026-10-11';
