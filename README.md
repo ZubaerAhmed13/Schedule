@@ -60,9 +60,9 @@ After the site is first opened online, the service worker caches the application
 
 The planner does not auto-fill a sample routine. Add real tasks and use recurring rules or the reusable work/class templates when you need them. Habit check-ins remain separate from ordinary task completion, and changing a task between views edits the same underlying task record.
 
-## Weekwise 2.0 review branch
+## Weekwise 2.0 released core and remaining gates
 
-The merged core upgrade [#16](https://github.com/ZubaerAhmed13/Schedule/pull/16) upgraded the actual app with Today/Insights, green responsive navigation, Smart Week Builder, Recover My Week, linked task splitting, timestamp-based focus, scheduled habits and safer local/cloud persistence. Existing tools remain available. Follow-up PRs [#17](https://github.com/ZubaerAhmed13/Schedule/pull/17) (draft recovery and bounded task-list rendering) and [#18](https://github.com/ZubaerAhmed13/Schedule/pull/18) (editor-history export) remain separate review changes, not live deployment. No production database migration is performed automatically.
+The merged core upgrade [#16](https://github.com/ZubaerAhmed13/Schedule/pull/16) upgraded the actual app with Today/Insights, green responsive navigation, Smart Week Builder, Recover My Week, linked task splitting, timestamp-based focus, scheduled habits and safer local/cloud persistence. Existing tools remain available. PRs [#17](https://github.com/ZubaerAhmed13/Schedule/pull/17) (draft recovery and bounded task lists), [#18](https://github.com/ZubaerAhmed13/Schedule/pull/18) (editor-history export), [#19](https://github.com/ZubaerAhmed13/Schedule/pull/19) (Monday-first month/year grids), [#20](https://github.com/ZubaerAhmed13/Schedule/pull/20) (timezone-aware calendar imports) and [#21](https://github.com/ZubaerAhmed13/Schedule/pull/21) (opt-in future recurring metadata) have all been merged and deployed. Private Supabase migrations and external provider configurations have **not** been automatically performed.
 
 Plan supports multiple availability windows, explicit duration estimates, preferred focus periods, daily limits, breaks and daily/weekly buffer. Review suggestions, adjust a placement using **Check placement**, and apply selected changes. Undo protects newer edits. Recovery moves existing IDs and retains original details/history. Unknown/impossible work remains visible.
 
@@ -98,7 +98,7 @@ Screenshots go to `test-results/` and a CI artifact. Existing Deno function chec
 
 `weekwise_rpc_hardening.sql` replaces the save RPC with an owner-scoped, revision-locked function and revokes direct authenticated table writes. Stage it and review `supabase_verify_rpc_hardening.sql` before requesting production approval. The migration is prepared only; it has not been executed. Apply it after the original setup script, which otherwise retains its original grants.
 
-### Calendar display preference (review branch)
+### Calendar display preference (released)
 
 Settings → Work day & weekly settings → **Month and year start day** offers Sunday or Monday as the first weekday column. It is a presentation preference only; it **never moves tasks** and Weekwise's underlying weekly planning records remain Sunday–Saturday. Time-zone conversion is not implemented by this setting, and saved wall times are still guarded when the device's zone changes.
 
