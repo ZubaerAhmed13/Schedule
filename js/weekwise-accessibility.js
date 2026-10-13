@@ -1,7 +1,7 @@
 /* Dialog focus containment, underlying-page isolation and launcher restoration.
    Existing task/editor handlers continue to control saving and dismissal. */
 (()=>{'use strict';
- let active=null,returnTo=null,refocusing=false;
+ let active=null,returnTo=null,refocusing=false,lastOutsideFocus=null,lastLauncher=null;
  const ids=['signinLanding','utilityModal','taskModal','templateModal'];
  const visible=el=>!!el&&!el.hidden&&(el.classList.contains('show')||el.id==='signinLanding'||el.id==='utilityModal');
  const controls=el=>[...el.querySelectorAll('button:not(:disabled),input:not(:disabled):not([type=hidden]),textarea:not(:disabled),select:not(:disabled),a[href],summary,[tabindex]:not([tabindex="-1"])')]
@@ -18,7 +18,7 @@
   if(next===active)return;
   const prior=active,launcher=document.activeElement;
   // Save the opener BEFORE applying inert; otherwise browsers may move focus to body.
-  if(next&&!prior)returnTo=launcher instanceof HTMLElement?launcher:null;
+  if(next&&!prior)returnTo=(lastLauncher?.isConnected?lastLauncher:null)||(lastOutsideFocus?.isConnected?lastOutsideFocus:null)||(launcher instanceof HTMLElement?launcher:null);
   active=next;
   const wrap=document.querySelector('.wrap');
   if(wrap)wrap.inert=!!active;
@@ -31,7 +31,9 @@
    if(target?.isConnected&&!target.closest('[hidden],[inert]'))target.focus({preventScroll:true});
   }
  }
- document.addEventListener('focusin',()=>{if(active)focusWithin();});
+ document.addEventListener('click',event=>{if(active)return;const launcher=event.target.closest?.('button,a,summary,[role="button"]');if(launcher&&!launcher.closest('#taskModal,#utilityModal,#templateModal,#signinLanding'))lastLauncher=launcher;},true);
+ document.addEventListener('keydown',event=>{if(active)return;if(event.key==='Enter'||event.key===' '){const launcher=document.activeElement;if(launcher instanceof HTMLElement&&!launcher.closest('#taskModal,#utilityModal,#templateModal,#signinLanding'))lastLauncher=launcher;}},true);
+ document.addEventListener('focusin',event=>{if(!active){if(event.target.closest?.('.wrap'))lastOutsideFocus=event.target;return;}focusWithin();});
  document.addEventListener('keydown',event=>{
   if(!active||event.key!=='Tab')return;
   const items=controls(active);
