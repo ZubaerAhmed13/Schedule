@@ -548,3 +548,37 @@ test('Monday-first Month and Year preference survives reload without migrating S
   assert.equal(after.settings.calendarGridStartDay,1);
  }finally{await context.close();}
 });
+
+
+test('TZID iCalendar import previews and commits atomically without changing existing records',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ const ics=['BEGIN:VCALENDAR','VERSION:2.0',
+  'BEGIN:VEVENT','UID:berlin-2026-07@example.invalid','DTSTART;TZID=Europe/Berlin:20260701T100000','DTEND;TZID=Europe/Berlin:20260701T110000','SUMMARY:Berlin lecture','END:VEVENT',
+  'BEGIN:VEVENT','UID:ambiguous@example.invalid','DTSTART;TZID=Europe/Berlin:20261025T023000','DTEND;TZID=Europe/Berlin:20261025T033000','SUMMARY:Unsafe DST time','END:VEVENT',
+  'END:VCALENDAR'].join('\\r\\n');
+ const file={name:'safe-tzid.ics',mimeType:'text/calendar',buffer:Buffer.from(ics)};
+ try{
+  const before=await readPlannerStore(page);
+  page.once('dialog',dialog=>dialog.dismiss());
+  await page.locator('#calendarImportFile').setInputFiles(file);
+  await page.waitForTimeout(250);
+  assert.deepEqual(await readPlannerStore(page),before);
+  page.once('dialog',dialog=>{assert.match(dialog.message(),/1 unsupported events/);dialog.accept();});
+  await page.locator('#calendarImportFile').setInputFiles(file);
+  await page.waitForFunction(()=>Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2')).weeks).some(w=>w.tasks.some(t=>t.externalUid==='berlin-2026-07@example.invalid')));
+  const after=await readPlannerStore(page);
+  const imported=Object.values(after.weeks).flatMap(w=>w.tasks).filter(t=>t.calendarImportSource==='ics');
+  assert.equal(imported.length,1);
+  assert.equal(imported[0].externalUid,'berlin-2026-07@example.invalid');
+  assert.equal(imported[0].title,'Berlin lecture');
+  assert.equal(imported[0].duration,60);
+  const localHour=await page.evaluate(()=>new Date('2026-07-01T08:00:00.000Z').getHours());
+  assert.equal(imported[0].start,localHour*60);
+  assert.ok(!imported.some(t=>t.title==='Unsafe DST time'));
+  assert.ok(Object.entries(before.weeks).every(([week,w])=>JSON.stringify((after.weeks[week]?.tasks||[]).filter(t=>!t.calendarImportSource))===JSON.stringify(w.tasks)));
+  await page.locator('#calendarImportFile').setInputFiles(file);
+  await page.waitForTimeout(250);
+  const twice=await readPlannerStore(page);
+  assert.deepEqual(twice,after);
+ }finally{await context.close();}
+});
