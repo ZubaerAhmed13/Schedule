@@ -2166,20 +2166,7 @@ function exportCalendarICS(){
 function unescapeICSText(value){
  return String(value||'').replace(/\\[nN]/g,'\n').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');
 }
-function parseICSDateProperty(prop){
- if(!prop||!prop.value)return null;
- const value=String(prop.value).trim();
- if(/^\d{8}$/.test(value)){
-  const y=Number(value.slice(0,4)),m=Number(value.slice(4,6)),d=Number(value.slice(6,8));
-  const date=new Date(y,m-1,d);if(date.getFullYear()!==y||date.getMonth()!==m-1||date.getDate()!==d)return null;
-  return {date,allDay:true};
- }
- const match=/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?(Z)?$/.exec(value);
- if(!match)return null;
- const y=Number(match[1]),month=Number(match[2])-1,day=Number(match[3]),hour=Number(match[4]),minute=Number(match[5]),second=Number(match[6]||0);
- const date=match[7]?new Date(Date.UTC(y,month,day,hour,minute,second)):new Date(y,month,day,hour,minute,second);
- return Number.isFinite(date.getTime())?{date,allDay:false}:null;
-}
+function parseICSDateProperty(prop){return WeekwiseTimeZones.parseDateProperty(prop);}
 function parseICSProperties(text){
  const sourceLines=String(text||'').replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n'),lines=[];
  sourceLines.forEach(line=>{if(/^[ \t]/.test(line)&&lines.length)lines[lines.length-1]+=line.slice(1);else lines.push(line);});
@@ -2195,38 +2182,59 @@ function parseICSProperties(text){
  });
  return events;
 }
-async function importCalendarICS(file){if(!dataCanWrite()){arguments[0]?.preventDefault?.();return;}
- if(file.size>WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Calendar file must be smaller than 10 MB.');
- const raw=await file.text(),events=parseICSProperties(raw);if(events.length>10000)throw new Error('Import up to 10,000 events at a time.');
+async function importCalendarICS(file){
+ if(!dataCanWrite())return;
+ if(!file||file.size>WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Calendar file must be smaller than 10 MB.');
+ const events=parseICSProperties(await file.text());
+ if(events.length>10000)throw new Error('Import up to 10,000 calendar events at a time.');
  if(!events.length){showToast('No calendar events were found in that .ics file.');return;}
- let added=0,skipped=0,invalid=0,changedCurrent=false,changedOther=false;
+ // Stage the entire import. Never change the live store during parsing or user review.
+ const next=JSON.parse(JSON.stringify(store));
+ next.weeks[currentWeek]={...(next.weeks[currentWeek]||{}),tasks:JSON.parse(JSON.stringify(tasks))};
+ const known=new Set();
+ Object.values(next.weeks).forEach(week=>(week.tasks||[]).forEach(t=>{
+  if(t.externalUid)known.add(String(t.externalUid));
+  known.add(String(t.id)+'@weekwise.local');
+ }));
+ let added=0,skipped=0,invalid=0,firstProblem='';
  for(const event of events){
-  if(event.DTSTART?.params?.TZID&&event.DTSTART.params.TZID!==Intl.DateTimeFormat().resolvedOptions().timeZone){invalid++;continue;}
-  const start=parseICSDateProperty(event.DTSTART),end=parseICSDateProperty(event.DTEND);
-  const title=unescapeICSText(event.SUMMARY?.value)||'Imported calendar event';
-  if(!start){invalid++;continue;}
-  const externalUid=unescapeICSText(event.UID?.value)||('weekwise-import:'+title+'|'+String(event.DTSTART.value));
-  if(workspaceRecords().some(record=>record.task.externalUid===externalUid||externalUid===String(record.task.id)+'@weekwise.local')){skipped++;continue;}
-  const date=dateOnly(start.date),weekKey=dateKey(sundayOf(date)),day=date.getDay(),isAllDay=start.allDay;
-  let startMinutes=null,duration=0,unscheduled=true;
-  if(!isAllDay){
-   startMinutes=start.date.getHours()*60+start.date.getMinutes();
-   const calculated=end&&!end.allDay?Math.round((end.date.getTime()-start.date.getTime())/60000):30;
-   duration=Math.max(10,Math.min(1440,calculated>0?calculated:30));unscheduled=false;
-  }
-  const dueDate=null;
-  const description=unescapeICSText(event.DESCRIPTION?.value);
-  const task={id:uid(),externalUid,calendarImportSource:'ics',day,title,type:'other',duration,start:startMinutes,done:false,status:'todo',custom:true,fixed:false,note:description,unscheduled:isAllDay?false:unscheduled,allDay:isAllDay,allDayDate:isAllDay?dateKey(date):null,listId:'other',folderName:defaultFolderName('other'),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
-  if(!store.weeks[weekKey]||!Array.isArray(store.weeks[weekKey].tasks))store.weeks[weekKey]={...(store.weeks[weekKey]||{}),tasks:[]};
-  const rows=weekKey===currentWeek?tasks:store.weeks[weekKey].tasks;
-  rows.push(task);added++;
-  if(weekKey===currentWeek)changedCurrent=true;else changedOther=true;
+  try{
+   if(!event.DTSTART)throw new Error('Missing DTSTART.');
+   if(event.RRULE||event['RECURRENCE-ID'])throw new Error('Recurring iCalendar items require manual review; no partial series imported.');
+   const start=parseICSDateProperty(event.DTSTART),end=event.DTEND?parseICSDateProperty(event.DTEND):null;
+   if(end&&start.allDay!==end.allDay)throw new Error('Event date types differ.');
+   const title=(unescapeICSText(event.SUMMARY?.value)||'Imported calendar event').trim().slice(0,300);
+   const externalUid=(unescapeICSText(event.UID?.value)||('weekwise-import:'+title+'|'+event.DTSTART.value)).slice(0,500);
+   if(known.has(externalUid)){skipped++;continue;}
+   const date=dateOnly(start.date),weekKey=dateKey(sundayOf(date)),day=date.getDay(),isAllDay=start.allDay;
+   let startMinutes=null,duration=0;
+   if(isAllDay){
+    if(end&&end.date.getTime()<=start.date.getTime())throw new Error('All-day event end must be after start.');
+    if(end&&Math.round((Date.UTC(end.date.getFullYear(),end.date.getMonth(),end.date.getDate())-Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()))/86400000)!==1)
+     throw new Error('Multi-day all-day imports need manual splitting.');
+   }else{
+    if(start.date.getSeconds()!==0||end&&end.date.getSeconds()!==0)throw new Error('Seconds-resolution event cannot be represented precisely.');
+    startMinutes=start.date.getHours()*60+start.date.getMinutes();
+    const durationMs=end?end.date.getTime()-start.date.getTime():30*60000;
+    if(durationMs<60000||durationMs>1440*60000||durationMs%60000!==0)throw new Error('Event duration is outside 1–1440 whole minutes.');
+    duration=durationMs/60000;
+   }
+   const task={id:uid(),externalUid,calendarImportSource:'ics',day,title,type:'other',duration,start:startMinutes,done:false,status:'todo',custom:true,fixed:false,note:unescapeICSText(event.DESCRIPTION?.value).slice(0,5000),unscheduled:false,allDay:isAllDay,allDayDate:isAllDay?dateKey(date):null,listId:'other',folderName:defaultFolderName('other'),sectionName:'',priority:'none',importance:'unclassified',urgency:'unclassified',dueDate:null,reminderAt:null,reminderNotifiedAt:null,tags:[],subtasks:[],recurrence:'none'};
+   if(!next.weeks[weekKey])next.weeks[weekKey]={tasks:[]};
+   next.weeks[weekKey].tasks.push(task);known.add(externalUid);added++;
+  }catch(error){invalid++;if(!firstProblem)firstProblem=String(error.message||'Unsupported event').slice(0,180);}
  }
- if(!added){showToast(skipped?'No new events imported; '+skipped+' already existed.':'No usable calendar events were found.');return;}
- if(changedCurrent)saveCurrent();
- if(changedOther)saveStore();
+ if(!added){showToast('No events imported: '+skipped+' duplicates, '+invalid+' unsupported. '+firstProblem);return;}
+ WeekwiseData.validateStore(next);
+ const details=invalid?' '+invalid+' unsupported events will be skipped'+(firstProblem?' (first: '+firstProblem+').':'.'):'';
+ if(!confirm('Import '+added+' new calendar '+(added===1?'event':'events')+'?'+(skipped?' '+skipped+' already exist.':'')+details+' Timed events will use your device time zone ('+Intl.DateTimeFormat().resolvedOptions().timeZone+'). Existing records stay unchanged.'))return;
+ if(!dataCanWrite())return;
+ // saveStore uses checked local transactions and restores the prior in-memory copy on failure.
+ store=next;
+ tasks=JSON.parse(JSON.stringify(next.weeks[currentWeek]?.tasks||[]));
+ if(!saveStore())throw new Error('Import not saved. Previous planner records were preserved.');
  renderAll();renderWorkspaceView();
- showToast('Imported '+added+' events'+(skipped?' · skipped '+skipped+' duplicates':'')+(invalid?' · ignored '+invalid+' unsupported entries':'')+'.');
+ showToast('Imported '+added+' events'+(skipped?' · '+skipped+' duplicates skipped':'')+(invalid?' · '+invalid+' unsupported skipped':'')+'.');
 }
 
 let activeVoiceRecognition=null;
