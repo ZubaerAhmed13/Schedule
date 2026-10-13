@@ -865,6 +865,42 @@ test('Focus search and selection do not carry into another account',async()=>{
  }finally{await context.close();}
 });
 
+test('task Archive and Recently removed preserve IDs, restore and guard Undo after newer edits',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await createFlexibleTask(page,'Recoverable responsibility');
+  const original=Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).find(t=>t.title==='Recoverable responsibility');
+  await page.locator('#workspaceSidebar [data-workspace-view="inbox"]').click();await page.locator('[data-workspace-edit]').first().click();
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#archiveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  assert.equal(await countStoredTasksNamed(page,original.title),0);
+  let stored=await readPlannerStore(page);assert.equal(stored.taskHistory.length,1);assert.deepEqual(stored.taskHistory[0].items[0].task,original);
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-task-history="archive"]').click();
+  await page.locator('[data-history-restore]').click();assert.equal(await countStoredTasksNamed(page,original.title),1);
+  assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).find(t=>t.title===original.title).id,original.id);
+  await page.locator('#closeUtility').click();await page.locator('#workspaceSidebar [data-workspace-view="inbox"]').click();await page.locator('[data-workspace-edit]').first().click();
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#deleteTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.equal(await countStoredTasksNamed(page,original.title),1);
+  await page.locator('#closeUtility').click();await page.locator('#workspaceSidebar [data-workspace-view="inbox"]').click();await page.locator('[data-workspace-edit]').first().click();page.once('dialog',dialog=>dialog.accept());await page.locator('#deleteTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  await createFlexibleTask(page,'Newer preserved responsibility');
+  await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.match(await page.locator('#taskHistoryStatus').innerText(),/Newer changes are protected/);assert.equal(await countStoredTasksNamed(page,'Newer preserved responsibility'),1);
+  await page.locator('[data-history-restore]').click();assert.equal(await countStoredTasksNamed(page,original.title),1);assert.equal(await countStoredTasksNamed(page,'Newer preserved responsibility'),1);
+ }finally{await context.close();}
+});
+
+test('task history survives reload and another account cannot see archived records',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  await createFlexibleTask(page,'Private archived responsibility');await page.locator('#workspaceSidebar [data-workspace-view="inbox"]').click();await page.locator('[data-workspace-edit]').first().click();
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#archiveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  await page.locator('#mobileNavigationToggle').click();await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-task-history="archive"]').click();assert.match(await page.locator('#taskHistoryEntries').innerText(),/Private archived responsibility/);
+  assert.equal(await page.locator('#taskHistoryEntries [data-history-restore]').count(),1);
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','task-history-mobile.png')});
+  await page.locator('#closeUtility').click();await page.evaluate(()=>WeekwiseTestAuth.setUser('history-owner-b'));await page.waitForFunction(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')||'{}').userId==='history-owner-b');
+  await page.locator('#mobileNavigationToggle').click();await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-task-history="archive"]').click();assert.equal(await page.locator('[data-history-restore]').count(),0);assert.ok(!(await page.locator('#taskHistoryEntries').innerText()).includes('Private archived responsibility'));
+ }finally{await context.close();}
+});
+
 
 test('capture reproducible desktop and mobile lab render metrics without claiming field Core Web Vitals',async()=>{
  const results=[];

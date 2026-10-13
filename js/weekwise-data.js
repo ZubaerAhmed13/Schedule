@@ -24,6 +24,14 @@
       }
     }
   }
+  function validateTask(task,ids=new Set()){
+        if (!plain(task) || typeof task.id !== 'string' || !task.id || ids.has(task.id)) throw new Error('Task IDs must be present and unique within each week.');
+        ids.add(task.id);
+        if (typeof task.title !== 'string') throw new Error('Task title must be text.');
+        if (!Number.isInteger(task.day) || task.day < 0 || task.day > 6) throw new Error('Invalid task weekday.');
+        if (task.start != null && (!Number.isFinite(task.start) || task.start < 0 || task.start >= 1440)) throw new Error('Invalid task start time.');
+        if (task.duration != null && (!Number.isFinite(task.duration) || task.duration < 0 || task.duration > 10080)) throw new Error('Invalid task duration.');
+  }
   function validateStore(value) {
     if (!plain(value) || !plain(value.settings) || !plain(value.weeks)) throw new Error('Planner settings and weeks must be objects.');
     assertSafeObject(value);
@@ -35,12 +43,17 @@
       if (!validDate(weekKey) || !plain(week) || !Array.isArray(week.tasks)) throw new Error('Invalid week in planner data.');
       const ids = new Set();
       for (const task of week.tasks) {
-        if (!plain(task) || typeof task.id !== 'string' || !task.id || ids.has(task.id)) throw new Error('Task IDs must be present and unique within each week.');
-        ids.add(task.id);
-        if (typeof task.title !== 'string') throw new Error('Task title must be text.');
-        if (!Number.isInteger(task.day) || task.day < 0 || task.day > 6) throw new Error('Invalid task weekday.');
-        if (task.start != null && (!Number.isFinite(task.start) || task.start < 0 || task.start >= 1440)) throw new Error('Invalid task start time.');
-        if (task.duration != null && (!Number.isFinite(task.duration) || task.duration < 0 || task.duration > 10080)) throw new Error('Invalid task duration.');
+        validateTask(task,ids);
+      }
+    }
+    if(value.taskHistory!==undefined){
+      if(!Array.isArray(value.taskHistory)||value.taskHistory.length>10000)throw new Error('Invalid task history.');
+      const historyIds=new Set();
+      for(const entry of value.taskHistory){
+        if(!plain(entry)||typeof entry.id!=='string'||!entry.id||historyIds.has(entry.id)||!['archive','trash'].includes(entry.kind)||typeof entry.createdAt!=='string'||!Number.isFinite(Date.parse(entry.createdAt))||!Array.isArray(entry.items)||!entry.items.length||!Array.isArray(entry.rules))throw new Error('Invalid task history entry.');
+        historyIds.add(entry.id);const taskIds=new Set();
+        for(const item of entry.items){if(!plain(item)||!validDate(item.week))throw new Error('Invalid task history location.');validateTask(item.task,taskIds);}
+        for(const rule of entry.rules)if(!plain(rule)||typeof rule.id!=='string'||!plain(rule.before)||!plain(rule.after))throw new Error('Invalid archived recurrence rule.');
       }
     }
     return value; // Preserve every field, record, identifier and history entry.

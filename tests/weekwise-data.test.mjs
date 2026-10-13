@@ -67,9 +67,9 @@ test('sync badge never reports synced for errors, pending writes or conflicts',(
 function planBridgeFixture(options={}) {
  const storage=memoryStorage({'weekwise-planner-v2':JSON.stringify(fixture())},options.failAt);
  let bridge;
- const c={store:fixture(),currentWeek:'2026-10-11',tasks:[structuredClone(task)],cloudUser:{id:'user-a'},cloudConflict:null,plannerStorageBlocked:false,zoneNeedsReview:()=>false,WeekwiseData:data,localStorage:storage,STORE_KEY:'weekwise-planner-v2',lastSavedDisk:storage.getItem('weekwise-planner-v2'),JSON,Date,syncSettingsForm(){},renderAll(){},queueCloudSave(){},window:{WeekwisePlanUI:{init(value){bridge=value;}}}};
- const start=html.indexOf('window.WeekwisePlanUI.init({'),end=html.indexOf('\n});',start)+5;
- vm.runInNewContext(html.slice(start,end),c);
+ const c={store:fixture(),currentWeek:'2026-10-11',tasks:[structuredClone(task)],cloudUser:{id:'user-a'},currentDataOwner:'user-a',cloudConflict:null,plannerStorageBlocked:false,zoneNeedsReview:()=>false,WeekwiseData:data,localStorage:storage,STORE_KEY:'weekwise-planner-v2',lastSavedDisk:storage.getItem('weekwise-planner-v2'),JSON,Date,syncSettingsForm(){},renderAll(){},queueCloudSave(){},window:{WeekwisePlanUI:{init(value){bridge=value;}}}};
+ const start=html.indexOf('const plannerBridge={'),end=html.indexOf('\n};',start)+3;
+ vm.runInNewContext(html.slice(start,end)+'\nwindow.WeekwisePlanUI.init(plannerBridge);',c);
  return {c,storage,get bridge(){return bridge;}};
 }
 test('plan bridge refuses changed account, stale snapshot and cloud conflicts before writing',()=>{
