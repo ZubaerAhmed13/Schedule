@@ -1,5 +1,6 @@
 /* Exact RFC 5545 date conversion. Never silently guess a DST gap/fold in a TZID. */
-(function(root){'use strict';
+(function(root){'use strict';const formats=new Map(),offsetCache=new Map();
+ function formatter(zone){if(!formats.has(zone)){if(formats.size>=16)formats.delete(formats.keys().next().value);formats.set(zone,new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}));}return formats.get(zone);}
  function checkedComponents(year,month,day,hour=0,minute=0,second=0){
   if(![year,month,day,hour,minute,second].every(Number.isInteger)||
      year<1000||year>9999||month<1||month>12||day<1||day>31||
@@ -9,20 +10,20 @@
   return value;
  }
  function zonedParts(timestamp,zone){
-  const format=new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
+  const format=formatter(zone);
   const parts=Object.fromEntries(format.formatToParts(timestamp).filter(part=>part.type!=='literal').map(part=>[part.type,Number(part.value)]));
   return [parts.year,parts.month,parts.day,parts.hour,parts.minute,parts.second];
  }
  function wallTimeInZone({year,month,day,hour,minute,second=0},zone){
   const naive=checkedComponents(year,month,day,hour,minute,second).getTime();
   if(typeof zone!=='string'||!zone||zone.length>128)throw new Error('Invalid IANA time zone.');
-  try{new Intl.DateTimeFormat('en-US',{timeZone:zone});}
+  try{formatter(zone);}
   catch(_){throw new Error('Unsupported iCalendar time zone: '+zone);}
-  const fields=[year,month,day,hour,minute,second],offsets=new Set();
-  for(let hours=-36;hours<=36;hours+=6){
+  const fields=[year,month,day,hour,minute,second],cacheKey=zone+'::'+year+'-'+month+'-'+day;let offsets=offsetCache.get(cacheKey);
+  if(!offsets){offsets=new Set();for(let hours=-36;hours<=36;hours+=6){
    const sample=naive+hours*3600000,local=zonedParts(sample,zone);
    offsets.add(Date.UTC(local[0],local[1]-1,local[2],local[3],local[4],local[5])-sample);
-  }
+  }if(offsetCache.size>=512)offsetCache.delete(offsetCache.keys().next().value);offsetCache.set(cacheKey,offsets);}
   const matches=[];
   for(const offset of offsets){
    const time=naive-offset;
