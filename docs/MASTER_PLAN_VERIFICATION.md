@@ -90,3 +90,7 @@ After correct WeekWise connection, read-only catalog/RLS/grant/cascade inspectio
 ## Authorized integration setup
 
 PR #41 and [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md) record migration `20261013142457`, actual three-service deployment, stable Vault keys and live health/RLS checks. Automatic approval rejected pg_net enablement; no cron or disposable Auth test ran and erasure remains disabled. Provider registrations/credentials/consent and actual device notifications remain external. Earlier no-production-operation/undeployed statements describe historical stages.
+
+## Scoped signed account activation
+
+PR #42 provides an expiring one-use HMAC operator request that avoids pg_net. The actual disposable check passed wrong-password/target/token rejection, six owner cascades, other-account preservation, deleted-identity rejection, refresh revocation and the deployed endpoint. Both disposable accounts were cleaned, erasure is enabled and the harness is retired to HTTP 410. Scheduling remains blocked by its pg_net/pg_cron approval, and provider/device/human acceptance still applies.

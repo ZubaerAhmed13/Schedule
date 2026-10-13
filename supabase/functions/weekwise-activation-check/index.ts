@@ -19,9 +19,9 @@ Deno.serve(async(request:Request)=>{
  try{
   const users=[];
   for(let index=0;index<2;index++){
-   const nonce=crypto.randomUUID(),email='weekwise-disposable-'+nonce+'@example.invalid',password=crypto.randomUUID()+crypto.randomUUID()+'aA1!';
-   const {data,error}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{weekwise_disposable_activation_check:true}});if(error||!data.user)throw new Error('fixture_creation');
-   ids.push(data.user.id);const auth=createClient(url,anon,options),login=await auth.auth.signInWithPassword({email,password});if(login.error||!login.data.session)throw new Error('fixture_login');
+   const nonce=crypto.randomUUID(),email='weekwise-disposable-'+nonce+'@example.com',password=crypto.randomUUID()+'aA1!';
+   report.fixture_create_started=true;const {data,error}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{weekwise_disposable_activation_check:true}});report.fixture_create_returned=true;if(error||!data.user){const code=error?.code;if(code&&/^[a-z_]{1,40}$/.test(code))report['auth_create_code_'+code]=true;if(error?.status&&[400,401,403,422,429,500].includes(error.status))report[error.status===400?'auth_create_bad_request':'auth_create_http_failure']=true;if(code&&['email_address_invalid','email_exists','email_provider_disabled','signup_disabled','weak_password','unexpected_failure','over_request_rate_limit','not_admin'].includes(code))report['auth_create_'+code]=true;throw new Error('fixture_creation');}report.fixture_created=true;
+   ids.push(data.user.id);const auth=createClient(url,anon,options),login=await auth.auth.signInWithPassword({email,password});if(login.error||!login.data.session){const code=login.error?.code;if(code&&['invalid_credentials','email_provider_disabled','signup_disabled','email_not_confirmed','over_request_rate_limit','captcha_failed','unexpected_failure'].includes(code))report['auth_login_'+code]=true;throw new Error('fixture_login');}report.fixture_login_verified=true;
    users.push({id:data.user.id,email,password,token:login.data.session.access_token,refresh:login.data.session.refresh_token});
    const cloud={version:1,store:{settings:{timeZone:'Europe/Berlin'},weeks:{},recurringTemplates:[],customLists:[]},reminders:[],focusSessions:[],habits:[],countdowns:[],savedTaskFilters:[],taskTemplates:[]};
    stage="seeding_fixture";
@@ -47,7 +47,7 @@ Deno.serve(async(request:Request)=>{
   const endpoint=url+'/functions/v1/weekwise-account',headers={Origin:origin,apikey:anon,Authorization:'Bearer '+b.token,'Content-Type':'application/json'};
   const response=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify({confirmation:CONFIRMATION,backedUp:true,password:b.password})}),outcome=await response.json();required(response.ok&&outcome.deleted===true&&outcome.owner===b.id,'deployed_endpoint_verified');
   complete=true;
- }catch(_){report["failure_"+stage]=true;complete=false;}
+ }catch(error){report["failure_"+stage]=true;if(error instanceof TypeError)report.exception_type_error=true;if(error instanceof ReferenceError)report.exception_reference_error=true;complete=false;}
  finally{
   let cleaned=true;for(const id of ids){const remaining=await admin.auth.admin.getUserById(id);if(remaining.error&&remaining.error.status!==404&&remaining.error.code!=='user_not_found')cleaned=false;if(remaining.data?.user){const removed=await admin.auth.admin.deleteUser(id);if(removed.error)cleaned=false;}}
   report.disposable_identities_cleaned=cleaned;complete=complete&&cleaned;
