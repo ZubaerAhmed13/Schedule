@@ -12,3 +12,14 @@ test('activation operator secret requires the exact bounded server value',async(
  for(const actual of [null,'',expected+'a','b'+expected.slice(1),'a'.repeat(100000)])assert.equal(activationSecretMatches(actual,expected),false);
  assert.equal(activationSecretMatches('',''),false);
 });
+
+test('operator proof expires and authenticates exact nonce/time without revealing the key',async()=>{
+ const {createHmac}=await import('node:crypto'),{activationRequestMatches}=await import('../supabase/functions/_shared/runtime-config.mjs');
+ const key='a'.repeat(64),nonce='12345678-1234-1234-1234-123456789abc',time=1791900000000;
+ const proof=createHmac('sha256',key).update('weekwise-activation:'+nonce+':'+time).digest('hex');
+ const headers=new Headers({'x-weekwise-activation-nonce':nonce,'x-weekwise-activation-time':String(time),'x-weekwise-activation-proof':proof});
+ assert.equal(await activationRequestMatches(headers,key,time),true);
+ assert.equal(await activationRequestMatches(headers,key,time+60001),false);
+ headers.set('x-weekwise-activation-nonce','22345678-1234-1234-1234-123456789abc');assert.equal(await activationRequestMatches(headers,key,time),false);
+ assert.equal(await activationRequestMatches(new Headers(),key,time),false);
+});

@@ -1,18 +1,20 @@
--- Reviewable next action. Not executed: pg_net enablement requires explicit approval.
--- First redeploy the checked weekwise-activation-check source; currently it returns 410.
--- pg_net queues decrypted headers. Every database LOGIN role must be trusted;
--- keep net outside the Data API exposed schemas. Do not select request headers.
-begin;
-create extension if not exists pg_net;
-update private.weekwise_runtime_flags set value=true where name='activation_check_enabled';
-select net.http_post(
- url:='https://iajkzlsurghfvsmqkmut.supabase.co/functions/v1/weekwise-activation-check',
- headers:=jsonb_build_object('Content-Type','application/json','x-weekwise-activation-secret',
-  (select decrypted_secret from vault.decrypted_secrets where name='WEEKWISE_ACTIVATION_CHECK_SECRET')),
- body:='{}'::jsonb,timeout_milliseconds:=60000
-) as activation_request_id;
-commit;
--- After completion, inspect only the bounded boolean receipt:
+-- Scoped signed check, without pg_net. Historical successful activation is recorded.
+-- Redeploy the checked harness only during an authorized disposable-account check.
+-- The operator proof expires in 60 seconds and the private flag can be claimed once.
+-- The signing secret never leaves Vault. Do not log/persist the derived proof.
+with enabled as (
+ update private.weekwise_runtime_flags set value=true
+ where name='activation_check_enabled' and value=false returning name
+),challenge as (
+ select extensions.gen_random_uuid()::text as nonce,
+ (extract(epoch from clock_timestamp())*1000)::bigint::text as stamp
+)
+select nonce,stamp,encode(extensions.hmac(
+ 'weekwise-activation:'||nonce||':'||stamp,
+ (select decrypted_secret from vault.decrypted_secrets where name='WEEKWISE_ACTIVATION_CHECK_SECRET'),
+ 'sha256'),'hex') as proof from challenge cross join enabled;
+-- POST {} to /functions/v1/weekwise-activation-check within 60 seconds using
+-- x-weekwise-activation-nonce, x-weekwise-activation-time and x-weekwise-activation-proof.
+-- Only fresh disposable identities are selected/deleted; no email is sent.
+-- Inspect bounded booleans only, then retire the harness to its 410 handler:
 select passed,report from private.weekwise_activation_checks order by id desc limit 1;
--- Require passed=true and disposable_identities_cleaned=true before scheduling push.
--- Retire the check function to its 410 handler and ensure activation_check_enabled=false.
