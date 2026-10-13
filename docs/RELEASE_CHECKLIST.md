@@ -81,3 +81,10 @@ The latest merged feature set is at `ea6573c08433ec6995feb6740968b7944ea4cb21`, 
 - [ ] Built-client browser: 7-day workload is legible on desktop and small phone; legends distinguish scheduled hours, logged focus and estimates.
 - [ ] Confirm unrelated completion/habit metrics and weekly reflection persist unchanged.
 - [ ] Historical manual edits without reschedulingHistory are deliberately not counted as recorded recovery moves.
+
+## Service-worker update handoff regression
+
+- [ ] Node and Chromium: update initiation blocked while task/template/utility editor, quick capture or unsaved weekly review is active.
+- [ ] Once draft/review is saved or closed, update becomes eligible without clearing planner storage.
+- [ ] Existing device-only offline create/reload, account isolation, browser and Edge checks remain green.
+- [ ] Actual installed-PWA update, interrupted installation and mobile standalone lifecycle are still real-device certification gates.
