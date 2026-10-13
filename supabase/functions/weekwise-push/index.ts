@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 import { pushConfiguration } from "../_shared/runtime-config.mjs";
 import webpush from "npm:web-push@3.6.7";
-import { reminderTime, reminderZone } from "../_shared/reminder-clock.mjs";
+import { taskReminderTime, reminderZone } from "../_shared/reminder-clock.mjs";
 
 type Json = Record<string, unknown>;
 type BrowserPushSubscription = {
@@ -172,7 +172,7 @@ async function dispatchDueReminders(admin: ReturnType<typeof adminClient>) {
       if(!timeZone){totals.skipped+=records.length;continue;}
 
       for (const record of records) {
-        const reminder = reminderTime(record.reminderAt, timeZone);
+        const reminder = taskReminderTime(record.task, record.reminderAt, timeZone);
         if (!reminder){totals.skipped+=1;continue;}
         const timestamp = reminder.getTime();
         if (timestamp > now.getTime() || timestamp < cutoff) continue;

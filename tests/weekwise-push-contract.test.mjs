@@ -1,3 +1,4 @@
+import {readApplication,exposeController} from './application-source.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -7,7 +8,7 @@ const edge = read("../supabase/functions/weekwise-push/index.ts");
 const sql = read("../supabase_push_setup.sql");
 const cron = read("../supabase_push_cron_setup.sql");
 const worker = read("../sw.js");
-const html = read("../index.html") + "\n" + read("../js/weekwise-app.js");
+const html = read("../index.html") + "\n" + readApplication();
 const clientScript = read("../weekwise-push.js");
 
 test("background push records cannot be queried or mutated by browser roles", () => {
@@ -26,7 +27,7 @@ test("push dispatcher is authenticated, secret-gated and timezone-aware", () => 
   assert.match(edge, /auth\.getUser\(\)/);
   assert.match(edge, /x-weekwise-cron-secret/);
   assert.match(edge, /constantTimeEqual\(receivedSecret, expectedSecret\)/);
-  assert.match(edge, /reminderTime\(record\.reminderAt, timeZone\)/);
+  assert.match(edge, /taskReminderTime\(record\.task, record\.reminderAt, timeZone\)/);
   assert.match(edge, /MAX_REMINDER_AGE_MS = 24 \* 60 \* 60 \* 1000/);
   assert.match(edge, /weekwise_claim_push_delivery/);
   assert.match(edge, /statusCode === 404 \|\| statusCode === 410/);

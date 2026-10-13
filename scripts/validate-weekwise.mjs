@@ -14,7 +14,7 @@ const failures = [];
 const pass = (message) => console.log("PASS " + message);
 const fail = (message) => { failures.push(message); console.error("FAIL " + message); };
 
-const applicationText = fs.readFileSync(path.join(root, "js/weekwise-app.js"), "utf8");
+const applicationText = ['weekwise-app.js',...fs.readdirSync(path.join(root,'js')).filter(name=>/^weekwise-app-.+\.js$/.test(name))].map(name=>fs.readFileSync(path.join(root,'js',name),'utf8')).join('\n').replace(/\bweekwiseRuntime\./g,'');
 const indexPath = path.join(root, "index.html");
 if (!fs.existsSync(indexPath)) {
   fail("index.html exists");
@@ -64,7 +64,7 @@ if (!fs.existsSync(indexPath)) {
 }
 
 // Parse all independent local scripts, including the additive data/planning modules.
-for (const filename of ["js/weekwise-recurring-placement.js", "js/weekwise-account-privacy.js", "js/weekwise-account-ui.js", "js/weekwise-task-schedule.js", "js/weekwise-calendar-range.js", "js/weekwise-calendar-range-ui.js", "js/weekwise-data.js", "js/weekwise-timezones.js", "js/weekwise-recurring-bulk.js", "js/weekwise-onboarding.js", "js/weekwise-insights.js", "js/weekwise-update-safety.js", "js/weekwise-calendar-layout.js", "js/weekwise-planning.js", "js/weekwise-plan-ui.js", "js/weekwise-app.js", "js/weekwise-focus.js", "js/weekwise-cloud-transport.js", "js/weekwise-experience.js", "js/weekwise-accessibility.js", "js/weekwise-habits.js", "js/weekwise-pwa.js", "js/weekwise-drafts.js", "js/weekwise-list-window.js"]) {
+for (const filename of fs.readdirSync(path.join(root,'js')).filter(name=>name.endsWith('.js')).map(name=>'js/'+name)) {
   try { new vm.Script(fs.readFileSync(path.join(root, filename), "utf8"), { filename }); pass(filename + " parses"); }
   catch (error) { fail(filename + " parses: " + error.message); }
 }
@@ -243,7 +243,7 @@ if (fs.existsSync(pushEdgePath) && fs.existsSync(pushSqlPath) && fs.existsSync(p
       /x-weekwise-cron-secret/.test(pushEdge) &&
       /constantTimeEqual\(receivedSecret, expectedSecret\)/.test(pushEdge) &&
       /weekwise_claim_push_delivery/.test(pushEdge) &&
-      /reminderTime\(record\.reminderAt, timeZone\)/.test(pushEdge) &&
+      /taskReminderTime\(record\.task, record\.reminderAt, timeZone\)/.test(pushEdge) &&
       /isTrustedPushEndpoint\(endpoint\)/.test(pushEdge)) {
     pass("background push verifies user sessions, cron secret, time zones and push endpoint hosts");
   } else fail("background push verifies user sessions, cron secret, time zones and push endpoint hosts");
