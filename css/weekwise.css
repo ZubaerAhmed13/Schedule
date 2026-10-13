@@ -49,3 +49,13 @@ body[data-theme=dark] .workspace-sidebar,body[data-theme=dark] .task-workspace,b
 .update-notice .update-safety-message{flex:1 1 100%;line-height:1.5;color:var(--ww-muted)}
 .update-notice .btn:disabled{opacity:.62;cursor:not-allowed}
 @media(max-width:760px){.update-notice{max-width:none}.update-notice>span{flex:1 1 100%}}
+
+/* Automated WCAG 2.2 A/AA contrast fixes: use established adaptive text tokens. */
+.workspace-folder-empty,.workspace-tag-empty,.workspace-sidebar-footer,.workspace-sort-wrap,
+.workspace-empty p,.workspace-list-footnote,.workspace-capture-hint kbd{color:var(--ww-muted)}
+.workspace-capture-hint kbd{background:var(--ww-soft);border-color:var(--ww-line)}
+body[data-theme=dark] .workspace-folder-empty,body[data-theme=dark] .workspace-tag-empty,
+body[data-theme=dark] .workspace-sidebar-footer,body[data-theme=dark] .workspace-sort-wrap,
+body[data-theme=dark] .workspace-empty p,body[data-theme=dark] .workspace-list-footnote,
+body[data-theme=dark] .workspace-capture-hint kbd{color:var(--ww-muted)}
+body[data-theme=dark] .workspace-capture-hint kbd{background:var(--ww-soft);border-color:var(--ww-line)}
