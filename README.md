@@ -113,3 +113,9 @@ Importing an `.ics` file now previews the number of new, duplicate, and unsuppor
 ### Previously saved recurring series (opt-in, released)
 
 When editing a recurring task, choose **Rule from this occurrence onward** or **Entire recurring rule**. The new, *unchecked-by-default* “Also update unchanged future occurrences” option lets you review and approve the number of existing future records that will receive descriptive changes. Completed work, separately edited exceptions, times, reminders and saved history are never overwritten by this option. Scheduling-time and recurrence-cadence migrations are not automatically propagated.
+
+### Optional getting-started guide
+
+New, empty planners can choose one of three lightweight starting points in Today: capture a task, set realistic planning time, or explore the calendar. The guide requires no account or sample data, and can be dismissed. Settings → **Getting started** reopens it, including for existing planners. That display preference stays on this device and is separated by planner owner. This guided flow does not automatically schedule or move anything.
+
+The task and utility dialogs trap keyboard focus, make the rest of the interface inert during modal interaction, and return focus to the control that opened the dialog. Keyboard accessibility is covered by targeted Chromium tests; a full real-device/WCAG accessibility review is still required.

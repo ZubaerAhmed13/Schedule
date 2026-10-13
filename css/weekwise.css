@@ -14,3 +14,18 @@ body[data-theme=dark] .workspace-sidebar,body[data-theme=dark] .task-workspace,b
 .field input[type=checkbox]{width:18px;min-height:18px;max-width:18px;vertical-align:middle}.field label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px;min-height:42px;color:var(--ww-text)}
 .modalgrid>.field{min-width:0}@media(max-width:480px){.modalgrid{grid-template-columns:minmax(0,1fr)}.modalgrid input,.modalgrid select,.modalgrid textarea{max-width:100%}}
 .draft-notice{display:flex;align-items:center;justify-content:space-between;gap:20px;border:1px solid var(--ww-line);border-left:4px solid var(--ww-brand);border-radius:12px;padding:16px 20px;background:var(--ww-surface);margin-bottom:20px}.draft-notice p{font-size:13px;color:var(--ww-muted);margin:4px 0;overflow-wrap:anywhere}.list-page-footer{display:flex;justify-content:space-between;gap:16px;align-items:center;margin:18px 0;padding:16px;background:var(--ww-soft);border-radius:12px;color:var(--ww-muted);font-size:13px}@media(max-width:760px){.draft-notice{display:block;padding:16px}.draft-notice .plan-actions{margin-top:14px}.list-page-footer{flex-wrap:wrap}}
+
+
+/* Progressive getting-started guidance: no required steps or forced overlay. */
+.today-onboarding{padding:clamp(16px,2.2vw,28px);background:var(--surface,#fff);border:1px solid var(--line,var(--border,#d9e3dc));border-radius:18px;margin:0 0 20px}
+.today-onboarding-head{display:flex;gap:16px;justify-content:space-between;align-items:start;flex-wrap:wrap}
+.today-onboarding-head h3{font-size:clamp(20px,2.2vw,28px);margin:5px 0 6px}
+.today-onboarding-head p{margin:0 0 16px;color:var(--muted,#66766d);max-width:660px;line-height:1.55}
+.today-onboarding-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.today-onboarding-steps article{min-width:0;padding:16px;border:1px solid var(--line,var(--border,#d9e3dc));border-radius:14px}
+.today-onboarding-steps article>span{font-size:12px;font-weight:750;color:var(--muted,#66766d);letter-spacing:.08em}
+.today-onboarding-steps h4{font-size:16px;line-height:1.3;margin:8px 0}
+.today-onboarding-steps p{font-size:13px;color:var(--muted,#66766d);line-height:1.5;margin:0 0 14px;min-height:55px}
+.today-onboarding-steps .btn{max-width:100%;white-space:normal;text-align:center;min-height:42px}
+@media(max-width:850px){.today-onboarding-steps{grid-template-columns:1fr}.today-onboarding-steps p{min-height:0}.today-onboarding-steps article{padding:14px}}
+@media(prefers-reduced-motion:reduce){.today-onboarding *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
