@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+import { runtimeConfiguration } from "../_shared/runtime-config.mjs";
 import { fromZonedTime } from "npm:date-fns-tz@3.2.0";
 
 type Json = Record<string, unknown>;
@@ -40,6 +41,8 @@ type NormalEvent = {
   cancelled: boolean;
 };
 
+let runtime: Record<string,string> = {};
+const configValue=(name:string)=>Deno.env.get(name)||runtime[name];
 const APP_URL = "https://zubaerahmed13.github.io/Schedule/";
 const ALLOWED_ORIGIN = Deno.env.get("WEEKWISE_ALLOWED_ORIGIN") ?? "https://zubaerahmed13.github.io";
 const PAGE_SIZE = 250;
@@ -100,7 +103,7 @@ function jsonResponse(body: Json, status = 200) {
 }
 
 function requiredEnv(name: string): string {
-  const value = Deno.env.get(name)?.trim();
+  const value = configValue(name)?.trim();
   if (!value) throw new Error("Server configuration is missing " + name + ".");
   return value;
 }
@@ -121,7 +124,7 @@ function providerValid(value: unknown): value is Provider {
 
 function encryptionConfigured(): boolean {
   try {
-    return fromBase64Url(Deno.env.get("WEEKWISE_CALENDAR_ENCRYPTION_KEY") ?? "").length === 32;
+    return fromBase64Url(configValue("WEEKWISE_CALENDAR_ENCRYPTION_KEY") ?? "").length === 32;
   } catch {
     return false;
   }
@@ -129,9 +132,9 @@ function encryptionConfigured(): boolean {
 
 function providerConfigured(provider: Provider): boolean {
   if (provider === "google") {
-    return Boolean(Deno.env.get("GOOGLE_CALENDAR_CLIENT_ID") && Deno.env.get("GOOGLE_CALENDAR_CLIENT_SECRET"));
+    return Boolean(configValue("GOOGLE_CALENDAR_CLIENT_ID") && configValue("GOOGLE_CALENDAR_CLIENT_SECRET"));
   }
-  return Boolean(Deno.env.get("MICROSOFT_CALENDAR_CLIENT_ID") && Deno.env.get("MICROSOFT_CALENDAR_CLIENT_SECRET"));
+  return Boolean(configValue("MICROSOFT_CALENDAR_CLIENT_ID") && configValue("MICROSOFT_CALENDAR_CLIENT_SECRET"));
 }
 
 function credentials(provider: Provider) {
@@ -148,10 +151,10 @@ function credentials(provider: Provider) {
     clientId: requiredEnv("MICROSOFT_CALENDAR_CLIENT_ID"),
     clientSecret: requiredEnv("MICROSOFT_CALENDAR_CLIENT_SECRET"),
     authEndpoint: "https://login.microsoftonline.com/" +
-      encodeURIComponent(Deno.env.get("MICROSOFT_CALENDAR_TENANT")?.trim() || "common") +
+      encodeURIComponent(configValue("MICROSOFT_CALENDAR_TENANT")?.trim() || "common") +
       "/oauth2/v2.0/authorize",
     tokenEndpoint: "https://login.microsoftonline.com/" +
-      encodeURIComponent(Deno.env.get("MICROSOFT_CALENDAR_TENANT")?.trim() || "common") +
+      encodeURIComponent(configValue("MICROSOFT_CALENDAR_TENANT")?.trim() || "common") +
       "/oauth2/v2.0/token",
     scopes: ["offline_access", "User.Read", "Calendars.ReadWrite"],
   };
@@ -1310,4 +1313,10 @@ async function main(request: Request): Promise<Response> {
   }
 }
 
-Deno.serve(main);
+Deno.serve(async(request:Request)=>{
+ const origin=request.headers.get('Origin');if(request.method==='OPTIONS'||(origin&&origin!==ALLOWED_ORIGIN))return main(request);
+ try{runtime=await runtimeConfiguration(adminClient(),(name:string)=>Deno.env.get(name),['WEEKWISE_CALENDAR_ENCRYPTION_KEY','GOOGLE_CALENDAR_CLIENT_ID','GOOGLE_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_CLIENT_ID','MICROSOFT_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_TENANT']);}
+ catch(_){return jsonResponse({error:'Secure calendar configuration is unavailable.'},503);}
+ if(request.method==='GET'&&new URL(request.url).searchParams.get('health')==='1')return jsonResponse({ok:true,configured:{google:providerConfigured('google'),microsoft:providerConfigured('microsoft'),encryption:encryptionConfigured()}});
+ return main(request);
+});

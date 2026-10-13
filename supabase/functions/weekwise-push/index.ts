@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+import { pushConfiguration } from "../_shared/runtime-config.mjs";
 import webpush from "npm:web-push@3.6.7";
 import { fromZonedTime } from "npm:date-fns-tz@3.2.0";
 
@@ -17,6 +18,7 @@ type PushSubscriptionRow = {
 };
 type CloudRow = { user_id: string; data: Json; revision: number };
 
+let runtime: Record<string,string> = {};
 const APP_URL = "https://zubaerahmed13.github.io/Schedule/";
 const ALLOWED_ORIGIN = Deno.env.get("WEEKWISE_ALLOWED_ORIGIN") ?? "https://zubaerahmed13.github.io";
 const MAX_REMINDER_AGE_MS = 24 * 60 * 60 * 1000;
@@ -38,7 +40,7 @@ function jsonResponse(body: Json, status = 200, extraHeaders: Record<string, str
 }
 
 function requiredEnv(name: string): string {
-  const value = Deno.env.get(name)?.trim();
+  const value = (Deno.env.get(name) || runtime[name])?.trim();
   if (!value) throw new Error("Server configuration is missing " + name + ".");
   return value;
 }
@@ -246,6 +248,7 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return jsonResponse({ error: "Use POST for this endpoint." }, 405);
 
   try {
+    runtime = await pushConfiguration(adminClient(), (name:string)=>Deno.env.get(name), ()=>webpush.generateVAPIDKeys());
     const body = await request.json().catch(() => ({} as Json)) as Json;
     const action = String(body.action ?? "");
 
