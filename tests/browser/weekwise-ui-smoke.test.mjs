@@ -704,3 +704,27 @@ test('Insights shows seven daily workload values and distinguishes planned from 
   assert.ok(measured.scroll<=measured.inner+2,'workload bars fit narrow screen without horizontal clipping');
  }finally{await context.close();}
 });
+
+
+test('PWA reload guard respects unfinished task, quick capture and weekly review input',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:900});
+ try{
+  const guard=()=>page.evaluate(()=>window.WeekwiseUpdateSafety.reason(document,window.WeekwiseExperience.hasPendingReview()));
+  assert.equal(await guard(),'');
+  await page.locator('#workspaceCaptureInput').fill('Draft that is not yet added');
+  assert.match(await guard(),/quick-capture/);
+  await page.locator('#workspaceCaptureInput').fill('');
+  assert.equal(await guard(),'');
+  await page.locator('#globalCaptureBtn').click();
+  await page.locator('#taskModal').waitFor({state:'visible'});
+  assert.match(await guard(),/open editor/);
+  await page.locator('#closeModal').click();
+  await page.locator('#taskModal').waitFor({state:'hidden'});
+  assert.equal(await guard(),'');
+  await page.locator('#workspaceSidebar [data-workspace-view="insights"]').click();
+  await page.locator('#reviewworked').fill('A reflection that has not been saved');
+  assert.match(await guard(),/weekly review/);
+  await page.locator('#weeklyReviewForm button[type="submit"]').click();
+  assert.equal(await guard(),'');
+ }finally{await context.close();}
+});
