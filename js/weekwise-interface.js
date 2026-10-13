@@ -9,6 +9,7 @@
   function icon(name){return '<svg class="ww-icon" viewBox="0 0 24 24" aria-hidden="true">'+(paths[name]||paths.sliders)+'</svg>';}
   const navKey=owner=>'weekwise-nav-groups-v1:'+encodeURIComponent(owner);
   function readGroups(owner){try{const value=JSON.parse(localStorage.getItem(navKey(owner))||'{}');if(!value||typeof value!=='object'||Array.isArray(value))return {};return Object.fromEntries(groups.filter(id=>typeof value[id]==='boolean').map(id=>[id,value[id]]));}catch(_){return {};}}
+  function checkpointGroups(){if(!app)return;try{localStorage.setItem(navKey(app.account()),JSON.stringify(Object.fromEntries(groups.map(id=>[id,$(id).open]))));}catch(_){}}
   function pins(){const value=app?.snapshot().store.settings.pinnedLists;return Array.isArray(value)?value.filter(id=>typeof id==='string').slice(0,50):[];}
   function renderPins(){
     if(!app)return;const list=app.lists(),saved=pins(),items=list.filter(item=>saved.includes(item.id));
@@ -18,6 +19,8 @@
   }
   function init(bridge){
     app=bridge;navigation(app.view());renderPins();
+    window.addEventListener('beforeunload',checkpointGroups);
+    window.addEventListener('pagehide',checkpointGroups);
     document.addEventListener('click',event=>{
       const summary=event.target.closest('#workspaceSidebar .nav-group > summary');
       if(summary){const owner=app.account(),group=summary.parentElement;setTimeout(()=>{if(app.account()!==owner)return;try{const saved=readGroups(owner);saved[group.id]=group.open;localStorage.setItem(navKey(owner),JSON.stringify(saved));}catch(_){app.announce('Navigation opened, but its preference could not be saved.');}},0);}

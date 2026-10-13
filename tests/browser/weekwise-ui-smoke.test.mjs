@@ -37,7 +37,7 @@ const productivityOptions=()=>({now:Date.parse('2030-01-08T12:00:00Z'),rows:prod
 test('quick list editing moves a stable task across weeks, retains metadata and supports exact Undo on a phone',async()=>{
  const {context,page}=await openPlanner({width:390,height:844},productivityOptions());
  try{
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();const before=await readPlannerStore(page);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();const before=await readPlannerStore(page);
   await page.locator('#workspaceTaskList [data-task-quick="action-a"]').click();assert.equal(await page.locator('#taskModal').isVisible(),false);
   await page.locator('#taskQuickPriority').selectOption('high');await page.locator('#taskQuickDue').fill('2030-01-15');await page.locator('#taskQuickEstimate').fill('45');await page.locator('#taskQuickDate').fill('2030-01-14');await page.locator('#taskQuickTime').fill('15:00');await page.locator('#taskQuickDuration').fill('45');
   assert.deepEqual(await readPlannerStore(page),before,'typing only changes the private draft');
@@ -69,7 +69,7 @@ test('Today highlights cap at three, pinned lists sync and navigation groups rem
   for(const id of ['action-a','action-b','action-c'])await page.locator('#todayHighlightList [data-task-highlight="'+id+'"]').click();await page.locator('#todayHighlightList [data-task-highlight="action-d"]').click();assert.match(await page.locator('#todayHighlightStatus').innerText(),/Three highlights/);assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).filter(t=>t.todayPriority).length,3);
   await page.locator('#todayHighlightList [data-task-highlight="action-b"]').click();await page.locator('#todayHighlightList [data-task-highlight="action-d"]').click();await page.locator('#todayHighlightClose').click();assert.equal(await page.locator('.today-priorities article').count(),3);
   await page.locator('#workspaceLists [data-pin-list="study"]').click();assert.equal(await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').isVisible(),true);await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
-  await page.locator('#workspaceLists > summary').click();assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),false);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),false);assert.equal(await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').isVisible(),true);
+  await page.locator('#workspaceLists > summary').click();assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),false);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),false);await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').waitFor({state:'visible'});assert.equal(await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').isVisible(),true);
   await page.screenshot({path:path.join(root,'test-results','productivity-today-pins-desktop.png'),animations:'disabled',fullPage:true});
   await page.evaluate(()=>window.WeekwiseTestAuth.setUser('another-productivity-owner'));await page.waitForFunction(()=>document.querySelector('#cloudUserEmail')?.textContent==='another-productivity-owner@example.invalid');await page.waitForFunction(()=>!document.querySelector('#workspacePinnedListsNav [data-workspace-view="list-study"]'));assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),true);assert.equal(await page.locator('.today-priorities article').count(),0);
  }finally{await context.close();}
@@ -960,6 +960,9 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('today');
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
   await audit('settings');
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','settings-polished-desktop.png')});
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="calendar"]')).click();await audit('calendar');
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="habits"]')).click();await audit('habits dialog');await page.locator('#closeUtility').click();
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="plan"]')).click();
   await audit('plan');
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="focus"]')).click();
@@ -982,12 +985,22 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('settings dark');
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="focus"]')).click();
   await audit('focus dialog dark');
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','focus-polished-dark-desktop.png')});
   await page.locator('#closeUtility').click();
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="calendar"]')).click();await audit('calendar dark');
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="habits"]')).click();await audit('habits dialog dark');await page.locator('#closeUtility').click();
   await page.evaluate(()=>document.body.setAttribute('data-theme','light'));
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
   await page.setViewportSize({width:320,height:780});
   await page.waitForTimeout(300); // ensure responsive transition styles have settled
   await audit('today 320px');
+  await page.setViewportSize({width:390,height:844});
+  for(const theme of ['light','dark']){
+   await page.evaluate(value=>document.body.setAttribute('data-theme',value),theme);await page.waitForTimeout(300);
+   for(const view of ['settings','calendar']){await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="'+view+'"]')).click();await audit(view+' phone '+theme);await page.screenshot({animations:'disabled',path:path.join(root,'test-results',view+'-polished-phone-'+theme+'.png')});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,view+' fits the phone');}
+   for(const action of ['habits','focus']){await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="'+action+'"]')).click();await audit(action+' phone '+theme);await page.screenshot({animations:'disabled',path:path.join(root,'test-results',action+'-polished-phone-'+theme+'.png')});assert.equal(await page.locator('#utilityModal').evaluate(el=>el.scrollWidth<=el.clientWidth+2),true,action+' fits the phone dialog');await page.locator('#closeUtility').click();}
+  }
+  await page.evaluate(()=>document.body.setAttribute('data-theme','light'));await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();await page.setViewportSize({width:320,height:780});
   const widths=await page.evaluate(()=>({viewport:window.innerWidth,document:document.documentElement.scrollWidth,body:document.body.scrollWidth}));
   assert.ok(widths.document<=widths.viewport+2&&widths.body<=widths.viewport+2,'Today must reflow at 320 CSS px without horizontal page scrolling: '+JSON.stringify(widths));
   fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
@@ -1024,6 +1037,10 @@ test('flexible weekly habit goal keeps actual check-ins and restores its editor 
   const afterEdit=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1')));
   assert.equal(afterEdit[0].checkIns.length,1,'editing frequency does not discard past check-ins');
   assert.equal(afterEdit[0].goal,'One small practice session');
+  assert.equal(await page.locator('#habitEditorDetails').evaluate(el=>el.open),false);
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','habits-polished-desktop.png')});
+  await page.setViewportSize({width:390,height:844});await page.screenshot({animations:'disabled',path:path.join(root,'test-results','habits-filled-phone-light.png')});
+  await page.evaluate(()=>document.body.setAttribute('data-theme','dark'));await page.waitForTimeout(300);await page.screenshot({animations:'disabled',path:path.join(root,'test-results','habits-filled-phone-dark.png')});
  }finally{await context.close();}
 });
 
