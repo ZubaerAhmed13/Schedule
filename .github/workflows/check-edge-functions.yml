@@ -26,3 +26,5 @@ jobs:
         run: deno check --no-lock supabase/functions/weekwise-push/index.ts
       - name: Type-check Google and Microsoft calendar handler
         run: deno check --no-lock supabase/functions/weekwise-calendar/index.ts
+      - name: Type-check disabled-by-default account erasure handler
+        run: deno check --no-lock supabase/functions/weekwise-account/index.ts

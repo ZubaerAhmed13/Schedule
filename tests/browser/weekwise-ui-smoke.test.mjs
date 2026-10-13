@@ -990,3 +990,50 @@ test('an IANA Calendar zone projects one record through every view and edits the
   await page.screenshot({animations:'disabled',path:path.join(root,'test-results','calendar-zone-desktop.png')});
  }finally{await context.close();}
 });
+
+async function openAccountErasure(page){
+ await page.locator('#workspaceSidebar [data-workspace-view="settings"]').click();await page.locator('[data-account-erase]').click();await page.locator('#accountEraseDialog').waitFor({state:'visible'});
+}
+async function fillAccountErasure(page){
+ await page.locator('#accountErasePassword').fill('fixture-password');await page.locator('#accountErasePhrase').fill('DELETE MY WEEKWISE ACCOUNT');await page.locator('#accountEraseBackup').check();
+}
+function accountRoute(context,handler){
+ return context.route('**/functions/v1/weekwise-account',async route=>{
+  const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET, POST, OPTIONS'},request=route.request();
+  if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});
+  const result=await handler(request);return route.fulfill({status:result.status||200,headers,contentType:'application/json',body:JSON.stringify(result.body)});
+ });
+}
+test('unconfigured account erasure stays disabled and preserves device records',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  let posts=0;await accountRoute(context,request=>{if(request.method()==='POST')posts++;return {body:{configured:false,operation:'delete-own-account'}};});
+  await page.evaluate(()=>localStorage.setItem('weekwise-account-cache-v1:weekwise-browser-test-user','preserved-original'));
+  await openAccountErasure(page);await page.waitForFunction(()=>document.querySelector('#accountEraseStatus').textContent.includes('not activated'));
+  assert.equal(await page.locator('#accountEraseSubmit').isDisabled(),true);assert.equal(posts,0);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:weekwise-browser-test-user')),'preserved-original');
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','account-erasure-mobile.png')});await page.locator('#accountEraseClose').click();assert.equal(await page.locator('#accountEraseDialog').evaluate(el=>el.open),false);
+ }finally{await context.close();}
+});
+test('account erasure rejects a mismatched server identity, then cleans only the confirmed owner after isolation',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  let wrong=true,posts=[];await accountRoute(context,request=>{if(request.method()==='GET')return {body:{configured:true,operation:'delete-own-account'}};posts.push({body:request.postDataJSON(),authorization:request.headers().authorization});return {body:{deleted:true,revokedRefreshSessions:true,owner:wrong?'other-owner':'weekwise-browser-test-user'}};});
+  await page.evaluate(()=>{localStorage.setItem('weekwise-editor-draft-v1:weekwise-browser-test-user','{malformed');localStorage.setItem('weekwise-account-cache-v1:other-owner','other-original');});
+  await openAccountErasure(page);await page.locator('#accountEraseSubmit').waitFor();await page.waitForFunction(()=>!document.querySelector('#accountEraseSubmit').disabled);await fillAccountErasure(page);page.once('dialog',d=>d.accept());await page.locator('#accountEraseSubmit').click();await page.waitForFunction(()=>document.querySelector('#accountEraseStatus').textContent.includes('did not confirm'));
+  assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-editor-draft-v1:weekwise-browser-test-user')),'{malformed');assert.equal(await page.locator('#accountErasePassword').inputValue(),'');
+  // Clear the synthetic malformed draft so normal account isolation can be checked.
+  await page.evaluate(()=>localStorage.removeItem('weekwise-editor-draft-v1:weekwise-browser-test-user'));wrong=false;await fillAccountErasure(page);page.once('dialog',d=>d.accept());await page.locator('#accountEraseSubmit').click();await page.waitForFunction(()=>document.querySelector('#accountEraseStatus').textContent.includes('were deleted'));
+  assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:weekwise-browser-test-user')),null);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:other-owner')),'other-original');assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')).userId),'');
+  assert.equal(posts.length,2);assert.deepEqual(Object.keys(posts[1].body).sort(),['backedUp','confirmation','password']);assert.equal(posts[1].authorization,'Bearer browser-test-access-token:weekwise-browser-test-user');
+  assert.equal(await page.evaluate(()=>Object.values(localStorage).some(value=>String(value).includes('fixture-password'))),false);
+ }finally{await context.close();}
+});
+test('a delayed erasure response cleans its captured owner without signing out a newer account',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  let release,started;const began=new Promise(resolve=>started=resolve);await accountRoute(context,async request=>{if(request.method()==='GET')return {body:{configured:true,operation:'delete-own-account'}};started();await new Promise(resolve=>release=resolve);return {body:{deleted:true,revokedRefreshSessions:true,owner:'weekwise-browser-test-user'}};});
+  await openAccountErasure(page);await page.waitForFunction(()=>!document.querySelector('#accountEraseSubmit').disabled);await fillAccountErasure(page);page.once('dialog',d=>d.accept());await page.locator('#accountEraseSubmit').click();await began;
+  await page.evaluate(()=>window.WeekwiseTestAuth.setUser('newer-account'));await page.waitForFunction(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')||'{}').userId==='newer-account');release();await page.waitForFunction(()=>document.querySelector('#accountEraseStatus').textContent.includes('were deleted'));
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')).userId),'newer-account');assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:weekwise-browser-test-user')),null);
+ }finally{await context.close();}
+});

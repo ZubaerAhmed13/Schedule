@@ -28,21 +28,19 @@ Automated browser tests use isolated synthetic records/mock cloud accounts. The 
 - Automated pinned axe WCAG A/AA checks for serious/critical findings; reports retain inconclusive results for review.
 - Flexible 1–7 check-ins/week habit targets with preserved legacy weekday schedules and check-ins.
 
-## Remaining work, in priority order
+## Remaining work, in priority order (updated after PR #33)
 
 | Work | Concrete missing behavior or evidence |
 |---|---|
-| Large Focus task selection | This branch adds all-record search, 100-task pages, pinned selected/session tasks and owner-reset UI state. Local tests pass; built-client/browser release evidence must be recorded separately. |
-| Calendar and planning zones | General fixed-IANA planner rendering/conversion, historical wall-time interpretation, cross-midnight recurrence cases and DST-safe planning migration. The import helper does not finish this requirement. |
-| Monday-first weekly planning | A safe cross-week lookup/storage strategy and migration/compatibility tests. Rotating Month/Year headings is already delivered. |
-| Recurring schedules | Preview/revalidation for date, time, duration and cadence changes to materialized future occurrences, including customized/completed protection and Undo. Metadata propagation is already delivered. |
-| Task and account lifecycle | Full archive/recover/undo-deletion UX and deliberately designed authenticated data/account erasure. No automatic deletion or archive retention sweep is implemented. |
-| Architecture and performance | Reduce the remaining large app IIFE and repeated derivations; profile calendars/long recurrence/history; field CWV require real-use evidence. Open PR #29 already covers laboratory metric reporting and is left intact. |
+| Calendar and planning zones | Date-aware IANA Calendar projection and Monday-first planning are delivered in PR #33. Planner availability/editor fields still use the saved source zone; arbitrary planner-zone conversion and explicit overnight editing remain. |
+| Account lifecycle | Task archive/remove/recovery and recurring schedule preview/Undo are delivered in PRs #31/#32. Account-erasure source/UI is now implemented, disabled until correct-project staging and cascade verification. No automatic retention purge. |
+| Calendar and offline reliability | Harden new Calendar movement focus/stale-pointer handling and swaps; explicitly open a saved account planner offline without pretending it is signed in. |
+| Architecture and performance | Narrow pure/UI modules and bounded timezone derivations delivered; the app IIFE remains large. PR #29 lab metrics merged. Real-use field CWV and further profiling remain. |
 | Private cloud/security acceptance | Access to the correct Weekwise staging project/test identities; own-row/cross-user RLS, invitation enforcement, token expiry and real-device offline reconnect. Optional RPC hardening requires reviewed database authorization. |
 | Optional integrations | Real OAuth/provider consent, calendar create/update/delete/conflict/refresh, VAPID/scheduler and closed-app push acceptance; optional AI needs an explicitly configured provider and privacy decisions. |
 | Human/release certification | Real phone keyboard/rotation, 200% zoom, screen readers, installed-PWA updates/interrupted installation and representative historic private backups in isolated profiles. |
 
-No production Supabase migration, user-data deletion or provider activation is part of this change. Existing GitHub release authorization permits checked frontend releases. The 32-section master plan remains **partially complete**, with the exact limitations above.
+No production Supabase migration, real user-data deletion or provider activation was performed. Account erasure remains disabled by default and requires the gates in [ACCOUNT_ERASURE_SETUP.md](ACCOUNT_ERASURE_SETUP.md). Existing GitHub release authorization permits checked frontend releases. The 32-section master plan remains **partially complete**, with the exact limitations above.
 
 ## Focus selector implementation
 
@@ -69,3 +67,9 @@ Monday-first Calendar Week, Smart Week Builder and weekly review operate over ac
 The Calendar can project timed activities into an explicit IANA display zone across Day/Week/Month/Agenda/Year; date-only/all-day events keep their calendar dates. Cards keep original source-week/ID references for editing and completion. Cross-week pointer/keyboard moves check actual occupied instants, retain metadata and record history; fixed/completed records are protected. Calendar-created placements capture exact instants, including distinguishable source-zone DST folds. Ambiguous/nonexistent old wall-clock values remain saved and visible in a review list instead of receiving invented instants. Task-editor fields and planning availability remain in the saved planner zone, explicitly labelled; this is a non-destructive calendar display preference, not a silent historical-zone migration.
 
 Pure tests cover Monday/Sunday/year boundaries, cross-zone date projection, all-day dates, DST ambiguity, exact captured instants, collision/protection and target-week persistence. Built-client tests cover boundary records, Sunday planning/Undo, all five projected views and original-clock editor identity. Date conversion reuses bounded Intl formatter/offset caches; derived Calendar records are cached per snapshot rather than recomputed per cell. Final branch CI and responsive visual review remain required.
+
+## Verified continuation through PR #33
+
+PR #29 lab reporting, #30 Focus selection, #31 task lifecycle, #32 recurring schedules and #33 Calendar/Monday preferences are merged. PR #33's exact head `f26771b65f9996eb41efe74c8f00ad9ef97fe06b` passed 112 Node tests, 43 built-client browser tests, release checks and both prior Edge Function type checks. Browser run: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38372873005 . Desktop screenshots were reviewed. A browser failure caught and fixed the old week-date onchange resetting an unsaved Monday preference; date and preference now save together. Public deployment verification is recorded separately from PR checks.
+
+The account-erasure continuation adds nine handler/device-cleanup Node tests (121 total locally) and three browser fixture regressions for disabled configuration, mismatched identity/scoped cleanup and a newer account during an in-flight request. Final remote browser and new Edge Function type checks are required before its release. Production erasure is not activated.
