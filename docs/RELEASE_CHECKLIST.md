@@ -41,21 +41,27 @@ Never expose OAuth/VAPID/service-role/AI secrets in browser code. Never run prod
 
 ## Calendar display safety
 
-- [ ] Verify the new Month/Year Sunday-vs-Monday display order using Node and built-client browser tests on the final PR commit.
-- [ ] Verify task weeks and recurring occurrence IDs are unchanged when switching grid preference; weekly planning remains Sunday-canonical.
+- [x] Month/Year Sunday-vs-Monday display order tested with Node/Chromium on PR #19 and deployed at dd372f38; 27/27 browser tests passed.
+- [x] Switching grid preference leaves task week bytes unchanged in browser regression; weekly planning remains Sunday-canonical.
 - [ ] Keep arbitrary fixed IANA zone conversion and full Monday-canonical week migration blocked pending a separate, tested migration design.
 
 ## 13 October 2026 — TZID and atomic import review branch
 
-- [ ] Node conversion tests: Europe/Berlin, America/New_York, Asia/Kolkata, DST fold/gap, leap years and invalid zone.
-- [ ] Built-client import test: preview cancellation keeps identical planner bytes, accepted import uses exact local clock, ambiguous DST event skipped, duplicate UID does not create another task.
-- [ ] Static build caches the new time-zone module and still passes offline browser regression.
-- [ ] Browser and CI checks pass at the exact reviewed head SHA.
+- [x] Unit conversion tests cover Europe/Berlin, New York, Kolkata, DST folds/gaps, leap years and invalid zones. PR #20 Node suite passed.
+- [x] Built-client import test covers preview cancellation, confirmed atomic save, correct timezone conversion, ambiguous DST rejection and duplicate UID. PR #20 browser suite passed 28/28.
+- [x] Versioned Pages shell includes timezone module; offline browser regression passed with PR #20.
+- [x] PR #20 reviewed head passed Node/browser/Edge checks; post-merge main Pages and Chromium workflow succeeded at 96d0dbc3.
 - [ ] Real provider OAuth, full app timezone selection and recurrence ICS ingestion remain separate release gates.
 
 ## Safe bulk recurring edit review
 
-- [ ] Unit tests prove unchanged future metadata propagation, exceptions/completions protected, stale original rejection, immutable preview and unchanged reminder/time/history fields.
-- [ ] Browser confirms opt-in default off, preview dialogue, future saved propagation and unchanged stable identity/times/alerts.
-- [ ] Browser offline and cloud regression suites pass at the reviewed head.
+- [x] Recurring bulk unit tests protect customized/completed tasks, immutable previews, stale originals and time/reminder/history fields; Node suite passed 74/74.
+- [x] Browser tested opt-in preview, future propagation, stable identity and unchanged time/alert fields; 29/29 on post-merge main at ea6573c0.
+- [x] Browser regression/isolated cloud/offline fixtures passed, 29/29 on deployed main ea6573c0.
 - [ ] Changes of dates, recurrence cadence, deadlines or scheduled times on previously materialized activities remain outside bulk metadata scope.
+
+## Release evidence — 13 October 2026
+
+The latest merged feature set is at `ea6573c08433ec6995feb6740968b7944ea4cb21`, PRs #16–#21 merged. Deployment smoke-test: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337641. Post-merge Chromium: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337738 (29 passed, 0 failed). Release/unit suite: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337745 (74 passed, 0 failed). Public Auth probe: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337747. Edge Function type checks: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337801.
+
+**Not certified:** No verified private Supabase RLS/invite test accounts; no external OAuth/Web Push round trip; no real installed-PWA upgrade, screen-reader/zoom, historical private-data migration or field Core Web Vitals measurement. These gates are tracked in [issue #22](https://github.com/ZubaerAhmed13/Schedule/issues/22).
