@@ -51,12 +51,15 @@ select 'Invitation limits, revocation, expiry, private access and preservation p
 -- Exact operator transaction must also reapply without touching any old rows.
 \ir ../../supabase/operations/weekwise-invitation-approved-update.sql
 \ir ../../supabase/migrations/20261013180639_weekwise_invitation_metadata_minimization.sql
+\ir ../../supabase/migrations/20261013182730_weekwise_invitation_metadata_updates.sql
 do $test$ declare before_count bigint;before_hash text;check_data jsonb;new_id uuid=extensions.gen_random_uuid();begin
  select count(*),md5(string_agg(to_jsonb(u)::text,'' order by id)) into before_count,before_hash from auth.users u;
  perform set_config('request.jwt.claim.role','service_role',true);
  check_data=public.weekwise_prepare_backend_check_invites();
  insert into auth.users(id,raw_user_meta_data) values(new_id,jsonb_build_object('weekwise_referral_code',check_data->>'valid','keep','metadata'));
  assert (select not raw_user_meta_data ? 'weekwise_referral_code' and raw_user_meta_data->>'keep'='metadata' from auth.users where id=new_id),'discard only submitted invitation after verifying';
+ update auth.users set raw_user_meta_data=raw_user_meta_data||jsonb_build_object('weekwise_referral_code',check_data->>'valid','new_field','preserve') where id=new_id;
+ assert (select not raw_user_meta_data ? 'weekwise_referral_code' and raw_user_meta_data->>'keep'='metadata' and raw_user_meta_data->>'new_field'='preserve' from auth.users where id=new_id),'Auth follow-up writes cannot reintroduce a newly submitted invite';
  assert (select count(*)-1=before_count and md5(string_agg(to_jsonb(u)::text,'' order by id) filter(where id<>new_id))=before_hash from auth.users u),'old users unchanged';
  assert public.weekwise_cleanup_backend_check_invites((check_data->>'check_id')::uuid),'minimization fixture cleanup';
 end;$test$;
