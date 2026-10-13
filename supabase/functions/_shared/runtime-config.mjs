@@ -1,5 +1,5 @@
 // Server-only configuration. Never import this module into the Pages client.
-export const RUNTIME_KEYS=Object.freeze(['VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','VAPID_SUBJECT','WEEKWISE_PUSH_CRON_SECRET','WEEKWISE_CALENDAR_ENCRYPTION_KEY','GOOGLE_CALENDAR_CLIENT_ID','GOOGLE_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_CLIENT_ID','MICROSOFT_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_TENANT','WEEKWISE_ACCOUNT_ERASURE_ENABLED']);
+export const RUNTIME_KEYS=Object.freeze(['VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','VAPID_SUBJECT','WEEKWISE_PUSH_CRON_SECRET','WEEKWISE_CALENDAR_ENCRYPTION_KEY','GOOGLE_CALENDAR_CLIENT_ID','GOOGLE_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_CLIENT_ID','MICROSOFT_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_TENANT','WEEKWISE_ACCOUNT_ERASURE_ENABLED','WEEKWISE_ACTIVATION_CHECK_SECRET']);
 export async function runtimeConfiguration(admin,env,names){
  if(!Array.isArray(names)||names.some(name=>!RUNTIME_KEYS.includes(name)))throw new Error('Unknown server configuration key.');
  /** @type {Record<string,string>} */
@@ -21,4 +21,10 @@ export async function pushConfiguration(admin,env,generate){
  }
  if(!values.VAPID_PUBLIC_KEY||!values.VAPID_PRIVATE_KEY||!values.VAPID_SUBJECT||!values.WEEKWISE_PUSH_CRON_SECRET)throw new Error('Background push configuration is incomplete. Existing keys were not replaced.');
  return values;
+}
+
+export function activationSecretMatches(actual,expected){
+ if(typeof actual!=="string"||typeof expected!=="string"||expected.length!==64||actual.length!==64)return false;
+ let difference=0;for(let index=0;index<64;index++)difference|=actual.charCodeAt(index)^expected.charCodeAt(index);
+ return difference===0;
 }

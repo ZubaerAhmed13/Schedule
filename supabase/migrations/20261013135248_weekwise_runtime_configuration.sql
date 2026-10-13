@@ -17,6 +17,9 @@ begin
  if not exists(select 1 from vault.secrets where name='WEEKWISE_CALENDAR_ENCRYPTION_KEY') then
   perform vault.create_secret(pg_catalog.rtrim(pg_catalog.translate(pg_catalog.encode(extensions.gen_random_bytes(32),'base64'),'+/','-_'),'='),'WEEKWISE_CALENDAR_ENCRYPTION_KEY','Stable Weekwise calendar token encryption key; preserve during upgrades');
  end if;
+ if not exists(select 1 from vault.secrets where name='WEEKWISE_ACTIVATION_CHECK_SECRET') then
+  perform vault.create_secret(pg_catalog.encode(extensions.gen_random_bytes(32),'hex'),'WEEKWISE_ACTIVATION_CHECK_SECRET','One-time operator activation authentication');
+ end if;
  if not exists(select 1 from vault.secrets where name='VAPID_SUBJECT') then
   perform vault.create_secret('https://zubaerahmed13.github.io/Schedule/','VAPID_SUBJECT','Public Weekwise application contact URL');
  end if;
@@ -27,7 +30,7 @@ create or replace function public.weekwise_runtime_configuration(p_names text[])
 returns jsonb language plpgsql security definer set search_path=pg_catalog as $function$
 declare result jsonb;
 begin
- if p_names is null or cardinality(p_names)>11 or exists(select 1 from unnest(p_names) name where name is null or name<>all(array['VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','VAPID_SUBJECT','WEEKWISE_PUSH_CRON_SECRET','WEEKWISE_CALENDAR_ENCRYPTION_KEY','GOOGLE_CALENDAR_CLIENT_ID','GOOGLE_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_CLIENT_ID','MICROSOFT_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_TENANT','WEEKWISE_ACCOUNT_ERASURE_ENABLED'])) then
+ if p_names is null or cardinality(p_names)>12 or exists(select 1 from unnest(p_names) name where name is null or name<>all(array['VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','VAPID_SUBJECT','WEEKWISE_PUSH_CRON_SECRET','WEEKWISE_CALENDAR_ENCRYPTION_KEY','GOOGLE_CALENDAR_CLIENT_ID','GOOGLE_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_CLIENT_ID','MICROSOFT_CALENDAR_CLIENT_SECRET','MICROSOFT_CALENDAR_TENANT','WEEKWISE_ACCOUNT_ERASURE_ENABLED','WEEKWISE_ACTIVATION_CHECK_SECRET'])) then
   raise exception 'Unknown Weekwise server configuration key.' using errcode='22023';
  end if;
  select coalesce(jsonb_object_agg(keys.name,secrets.decrypted_secret),'{}'::jsonb) into result

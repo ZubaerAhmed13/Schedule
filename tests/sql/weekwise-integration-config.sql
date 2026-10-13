@@ -15,7 +15,7 @@ create function auth.role() returns text language sql stable as $$select nullif(
 create temporary table config_before as select name,secret from vault.secrets;
 \ir ../../supabase/migrations/20261013135248_weekwise_runtime_configuration.sql
 do $test$ begin
- assert (select count(*) from vault.secrets)=3,'only expected initial secret names';
+ assert (select count(*) from vault.secrets)=4,'only expected initial secret names';
  assert not exists(select 1 from config_before b join vault.secrets v using(name) where b.secret<>v.secret),'reapplying must preserve secret values';
 end; $test$;
 update private.weekwise_runtime_flags set value=true where name='activation_check_enabled';
