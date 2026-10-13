@@ -1,3 +1,4 @@
+import {readApplication,exposeController} from './application-source.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -6,7 +7,7 @@ const read = (path) => fs.readFileSync(new URL(path, import.meta.url), "utf8");
 const edge = read("../supabase/functions/weekwise-calendar/index.ts");
 const sql = read("../supabase_calendar_setup.sql");
 const client = read("../weekwise-calendar.js");
-const html = read("../index.html") + "\n" + read("../js/weekwise-app.js");
+const html = read("../index.html") + "\n" + readApplication();
 const worker = read("../sw.js");
 const config = read("../supabase/config.toml");
 

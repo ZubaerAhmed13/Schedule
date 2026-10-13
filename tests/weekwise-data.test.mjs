@@ -1,3 +1,4 @@
+import {readApplication,exposeController} from './application-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -7,7 +8,7 @@ import '../js/weekwise-timezones.js';
 import '../js/weekwise-calendar-range.js';
 import '../js/weekwise-recurring-placement.js';
 const data = globalThis.WeekwiseData;
-const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8') + "\n" + fs.readFileSync(new URL("../js/weekwise-app.js", import.meta.url), "utf8");
+const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8') + "\n" + readApplication();
 const task = { id:'legacy', title:'German practice', day:1, start:600, duration:30, custom:false, fixed:true, done:true, completionAt:'2026-10-01', reminderTimes:['2026-10-12T09:00'], subtasks:[{id:'s',title:'Practice',done:true}], futureField:{preserve:true} };
 const fixture = () => ({ settings:{theme:'dark'}, weeks:{'2026-10-11':{notes:'Keep week metadata',tasks:[structuredClone(task)]}}, recurringTemplates:[], futureField:{keep:true} });
 function functionSource(start, end) { return html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start))); }
@@ -39,17 +40,17 @@ test('failed checkpoint write stops before replacing any data',()=>{
 });
 test('loadWeek preserves every legacy record, field and week metadata',()=>{
   const store=fixture();let saves=0;
-  const c={store,tasks:[],currentWeek:'',JSON,materializeCurrentAndUpcoming(){},syncSettingsForm(){},renderAll(){},saveCurrent(){saves++;}};
-  vm.runInNewContext(functionSource('function loadWeek(week){','function setWeekFromInput'),c);
+  const c={store,tasks:[],currentWeek:'',JSON,zoneNeedsReview:()=>false,materializeCurrentAndUpcoming(){},syncSettingsForm(){},renderAll(){},saveCurrent(){saves++;}};
+  exposeController(c,'settings',['loadWeek']);
   c.loadWeek('2026-10-11');
   assert.equal(JSON.stringify(c.tasks),JSON.stringify(store.weeks['2026-10-11'].tasks));assert.equal(saves,0);
   assert.ok(!html.includes('removeAutoPopulatedSampleData('),'no title-based startup deletion remains');
 });
 test('corrupt local JSON blocks saving without overwriting its original bytes',()=>{
   const storage=memoryStorage({'weekwise-planner-v2':'{broken'});
-  const c={STORE_KEY:'weekwise-planner-v2',localStorage:storage,WeekwiseData:data,defaultSettings:()=>({}),JSON};
-  vm.runInNewContext('let plannerStorageBlocked=false,plannerStorageError="";'+functionSource('function loadStore(){','function loadReminders()')+'\nglobalThis.blocked=()=>plannerStorageBlocked;',c);
-  c.loadStore();assert.equal(c.blocked(),true);assert.equal(storage.getItem(c.STORE_KEY),'{broken');
+  const c={STORE_KEY:'weekwise-planner-v2',localStorage:storage,WeekwiseData:data,defaultSettings:()=>({}),JSON,plannerStorageBlocked:false};
+  exposeController(c,'persistence',['loadStore']);
+  c.loadStore();assert.equal(c.plannerStorageBlocked,true);assert.equal(storage.getItem(c.STORE_KEY),'{broken');
 });
 test('recurrence reload preserves existing occurrence edits and history',()=>{
   const existing={...task,id:'rec_1',seriesId:'series',occurrenceDate:'2026-10-12',note:'An occurrence exception',start:900};
@@ -57,7 +58,7 @@ test('recurrence reload preserves existing occurrence edits and history',()=>{
   const c={store,currentWeek:'2026-10-11',tasks:[existing],Date,Array,Number,dateKey:d=>d.toISOString().slice(0,10),sundayOf:d=>{const x=new Date(d);x.setUTCDate(x.getUTCDate()-x.getUTCDay());return x;},recurrenceDateMatches:()=>true};
   c.WeekwiseRecurringPlacement=globalThis.WeekwiseRecurringPlacement;c.plannerSnapshot=()=>({store:{...c.store,weeks:{...c.store.weeks,[c.currentWeek]:{tasks:c.tasks}}},currentWeek:c.currentWeek});
   c.workspaceRecords=()=>Object.values(c.store.weeks).flatMap(w=>w.tasks||[]).concat(c.tasks).map(task=>({task}));
-  vm.runInNewContext(functionSource('function materializeRecurringRange(','function materializeCurrentAndUpcoming()'),c);
+  exposeController(c,'recurrence',['materializeRecurringRange']);
   const before=JSON.stringify(existing);c.materializeRecurringRange(new Date('2026-10-12T00:00:00Z'),new Date('2026-10-12T00:00:00Z'));
   assert.equal(JSON.stringify(existing),before);assert.equal(c.tasks.length,1);
 });
@@ -72,6 +73,7 @@ function planBridgeFixture(options={}) {
  const storage=memoryStorage({'weekwise-planner-v2':JSON.stringify(fixture())},options.failAt);
  let bridge;
  const c={store:fixture(),currentWeek:'2026-10-11',tasks:[structuredClone(task)],cloudUser:{id:'user-a'},currentDataOwner:'user-a',cloudConflict:null,plannerStorageBlocked:false,zoneNeedsReview:()=>false,WeekwiseData:data,localStorage:storage,STORE_KEY:'weekwise-planner-v2',lastSavedDisk:storage.getItem('weekwise-planner-v2'),JSON,Date,syncSettingsForm(){},renderAll(){},queueCloudSave(){},window:{WeekwisePlanUI:{init(value){bridge=value;}}}};
+ exposeController(c,'persistence',['commitPlannerSnapshot','plannerSnapshot']);
  const start=html.indexOf('const plannerBridge={'),end=html.indexOf('\n};',start)+3;
  vm.runInNewContext(html.slice(start,end)+'\nwindow.WeekwisePlanUI.init(plannerBridge);',c);
  return {c,storage,get bridge(){return bridge;}};

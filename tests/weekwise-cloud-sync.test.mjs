@@ -1,12 +1,10 @@
+import {readApplication,exposeController} from './application-source.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 
-const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8") + "\n" + fs.readFileSync(new URL("../js/weekwise-app.js", import.meta.url), "utf8");
-const match = html.match(/async function saveCloudSnapshot\(\)\{[\s\S]*?\n\}\nasync function startCloudForUser\(/);
-assert.ok(match, "saveCloudSnapshot function is present");
-const functionSource = match[0].replace(/\nasync function startCloudForUser\($/, "");
+const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8") + "\n" + readApplication();
 
 function makeContext() {
   let resolveRpc;
@@ -43,7 +41,7 @@ function makeContext() {
     Array,
     Promise,
   };
-  vm.runInNewContext(functionSource, context);
+  exposeController(context,'cloud',['saveCloudSnapshot']);
   return {
     context,
     setPayload(value) { payload = value; },
@@ -114,4 +112,4 @@ test('an old account response cannot mark a new account synced or change its rev
  const f=makeContext(),saving=f.context.saveCloudSnapshot();await Promise.resolve();f.context.cloudSessionEpoch++;f.context.cloudUser={id:'new-user'};f.context.cloudRevision=20;f.getResolveRpc()({data:[{saved:true,revision:5}],error:null});await saving;assert.equal(f.context.cloudRevision,20);assert.ok(!f.getStatuses().some(m=>m.startsWith('All changes synced')));
 });
 
-test('cloud queue skips unchanged snapshots and queues actual local changes',()=>{const start=html.indexOf('function queueCloudSave(){'),end=html.indexOf('\nasync function saveCloudSnapshot()',start),payload={version:1,store:{}};const fingerprint=JSON.stringify(payload);let timers=0;const c={plannerStorageBlocked:false,localStorage:{getItem:()=>null},STORE_KEY:'planner',lastSavedDisk:null,WeekwiseData:{blockedKeys:()=>[]},cloudClient:{},cloudUser:{id:'a'},cloudReady:true,cloudApplyingRemote:false,cloudConflict:null,cloudSyncTimer:null,readCloudMeta:()=>({userId:'a',fingerprint}),buildCloudPayload:()=>payload,cloudFingerprint:JSON.stringify,setCloudStatus(){},setTimeout:()=>++timers,clearTimeout(){}};vm.runInNewContext(html.slice(start,end),c);c.queueCloudSave();assert.equal(timers,0);payload.localChange=true;c.queueCloudSave();assert.equal(timers,1);});
+test('cloud queue skips unchanged snapshots and queues actual local changes',()=>{const start=html.indexOf('function queueCloudSave(){'),end=html.indexOf('\nasync function saveCloudSnapshot()',start),payload={version:1,store:{}};const fingerprint=JSON.stringify(payload);let timers=0;const c={plannerStorageBlocked:false,localStorage:{getItem:()=>null},STORE_KEY:'planner',lastSavedDisk:null,WeekwiseData:{blockedKeys:()=>[]},cloudClient:{},cloudUser:{id:'a'},cloudReady:true,cloudApplyingRemote:false,cloudConflict:null,cloudSyncTimer:null,readCloudMeta:()=>({userId:'a',fingerprint}),buildCloudPayload:()=>payload,cloudFingerprint:JSON.stringify,setCloudStatus(){},setTimeout:()=>++timers,clearTimeout(){}};exposeController(c,'cloud',['queueCloudSave']);c.queueCloudSave();assert.equal(timers,0);payload.localChange=true;c.queueCloudSave();assert.equal(timers,1);});

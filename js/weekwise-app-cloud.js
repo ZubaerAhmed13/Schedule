@@ -1,0 +1,357 @@
+/* cloud controller. Explicit live state access; no runtime evaluation or new dependency. */
+(function(root){
+'use strict';
+function create(weekwiseRuntime){
+function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month','agenda','year'].includes(v))view=v;}catch(_){}return {version:1,store:weekwiseRuntime.store,reminders:weekwiseRuntime.reminders,focusSessions:weekwiseRuntime.focusSessions,habits:weekwiseRuntime.habits,countdowns:weekwiseRuntime.countdowns,savedTaskFilters:weekwiseRuntime.savedTaskFilters,taskTemplates:weekwiseRuntime.taskTemplates,calendarView:view};}
+
+function localHasWeekwiseData(){const hasActivities=Object.values(weekwiseRuntime.store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(weekwiseRuntime.reminders)&&weekwiseRuntime.reminders.length>0;const hasHabits=Array.isArray(weekwiseRuntime.habits)&&weekwiseRuntime.habits.length>0;const hasCountdowns=Array.isArray(weekwiseRuntime.countdowns)&&weekwiseRuntime.countdowns.length>0;const hasFilters=Array.isArray(weekwiseRuntime.savedTaskFilters)&&weekwiseRuntime.savedTaskFilters.length>0;const hasCustomLists=Array.isArray(weekwiseRuntime.store.customLists)&&weekwiseRuntime.store.customLists.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(weekwiseRuntime.store.settings)!==JSON.stringify(weekwiseRuntime.defaultSettings());}catch(_){}return hasActivities||hasNotes||hasHabits||hasCountdowns||hasFilters||hasCustomLists||(Array.isArray(weekwiseRuntime.taskTemplates)&&weekwiseRuntime.taskTemplates.length>0)||settingsChanged;}
+
+function readCloudMeta(){try{return JSON.parse(localStorage.getItem(weekwiseRuntime.CLOUD_META_KEY)||'null');}catch(_){return null;}}
+
+function writeCloudMeta(revision,payload){localStorage.setItem(weekwiseRuntime.CLOUD_META_KEY,JSON.stringify({userId:weekwiseRuntime.cloudUser?.id||'',revision:Number(revision)||0,fingerprint:weekwiseRuntime.cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}
+
+function setCloudStatus(message){const el=weekwiseRuntime.$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=weekwiseRuntime.$('cloudMenuBadge');if(badge){badge.textContent=WeekwiseData.syncLabel(message,!!weekwiseRuntime.cloudUser,!!weekwiseRuntime.cloudConflict);badge.title=message;}}
+
+function offlineAccountSelected(){return !weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&localStorage.getItem('weekwise-offline-owner-v1')===weekwiseRuntime.currentDataOwner;}
+
+function renderOfflineAccountGate(){const available=!weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local';weekwiseRuntime.$('signinOfflineAccount').hidden=!available;weekwiseRuntime.$('signinOfflineNote').hidden=!available;}
+
+function openOfflineAccount(){
+ if(weekwiseRuntime.currentDataOwner==='local'||weekwiseRuntime.cloudUser)return;
+ if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length){weekwiseRuntime.setCloudStatus('Recover the saved account copy before opening it offline.');return;}
+ weekwiseRuntime.cloudSessionEpoch++;weekwiseRuntime.cloudReady=false;clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.cloudSyncTimer=null;
+ localStorage.setItem('weekwise-offline-owner-v1',weekwiseRuntime.currentDataOwner);weekwiseRuntime.finishSignInLanding();weekwiseRuntime.renderCloudPanel();
+}
+
+function renderCloudPanel(){
+ weekwiseRuntime.renderOfflineAccountGate();
+ const form=weekwiseRuntime.$('cloudAuthForm'),signed=weekwiseRuntime.$('cloudSignedIn'),email=weekwiseRuntime.$('cloudUserEmail'),conflict=weekwiseRuntime.$('cloudConflict');
+ const recovery=weekwiseRuntime.cloudAuthMode==='recovery';
+ if(form)form.hidden=!!weekwiseRuntime.cloudUser&&!recovery;
+ if(signed)signed.hidden=!weekwiseRuntime.cloudUser||recovery;
+ if(email)email.textContent=weekwiseRuntime.cloudUser?.email||'';
+ if(conflict)conflict.hidden=!weekwiseRuntime.cloudConflict;
+ if(!weekwiseRuntime.cloudClient)weekwiseRuntime.setCloudStatus('Cloud sign-in is unavailable because the Supabase library did not load. Local planning still works.');
+ else if(!weekwiseRuntime.cloudUser)weekwiseRuntime.setCloudStatus('Weekwise is using this browser only. Sign in to sync schedules across devices.');
+ if(weekwiseRuntime.cloudConflict)weekwiseRuntime.setCloudStatus('Sync paused to protect both versions. Choose which copy to keep.');
+ if(weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.setCloudStatus('Saved account planner open offline. Changes stay on this device until this account is signed in again.');weekwiseRuntime.$('cloudMenuBadge').textContent='Offline';}
+}
+
+function validateCloudPayload(payload){
+ if(!payload||!payload.store)throw new Error('The cloud planner snapshot is incomplete.');WeekwiseData.validateStore(payload.store);
+ for(const name of ['reminders','focusSessions','habits','countdowns','savedTaskFilters','taskTemplates'])if(payload[name]!==undefined)WeekwiseData.validateCollection(payload[name],name);
+ return payload;
+}
+
+function saveCloudLocalPayload(payload){
+ if(localStorage.getItem(weekwiseRuntime.STORE_KEY)!==weekwiseRuntime.lastSavedDisk)throw new Error('Another tab has local changes. Reload this tab before downloading cloud data.');
+ if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length)throw new Error('Stored data needs recovery before cloud changes can be applied.');
+ const safe=JSON.parse(JSON.stringify(weekwiseRuntime.validateCloudPayload(payload)));
+ safe.store.settings={...weekwiseRuntime.defaultSettings(),...safe.store.settings,timeZone:safe.store.settings.timeZone};safe.store.customLists=safe.store.customLists||[];safe.store.recurringTemplates=safe.store.recurringTemplates||[];
+ const pairs=[['reminders',weekwiseRuntime.REMINDERS_KEY],['focusSessions',weekwiseRuntime.FOCUS_SESSIONS_KEY],['habits',weekwiseRuntime.HABITS_KEY],['countdowns',weekwiseRuntime.COUNTDOWNS_KEY],['savedTaskFilters',weekwiseRuntime.TASK_FILTERS_KEY],['taskTemplates',weekwiseRuntime.TASK_TEMPLATES_KEY]];
+ const entries=[[weekwiseRuntime.STORE_KEY,JSON.stringify(safe.store)],...pairs.filter(([name])=>Array.isArray(safe[name])).map(([name,key])=>[key,JSON.stringify(safe[name])])];
+ if(['day','week','month','agenda','year'].includes(safe.calendarView))entries.push(['weekwise-calendar-view-v1',safe.calendarView]);
+ WeekwiseData.commitStorage(localStorage,entries,'weekwise-pre-cloud-v1');
+ weekwiseRuntime.cloudApplyingRemote=true;
+ try{
+  weekwiseRuntime.store=safe.store;weekwiseRuntime.lastSavedStore=JSON.stringify(weekwiseRuntime.store);weekwiseRuntime.lastSavedDisk=localStorage.getItem(weekwiseRuntime.STORE_KEY);
+  if(safe.reminders)weekwiseRuntime.reminders=safe.reminders;if(safe.focusSessions)weekwiseRuntime.focusSessions=safe.focusSessions;if(safe.habits)weekwiseRuntime.habits=safe.habits;if(safe.countdowns)weekwiseRuntime.countdowns=safe.countdowns;if(safe.savedTaskFilters)weekwiseRuntime.savedTaskFilters=safe.savedTaskFilters;if(safe.taskTemplates)weekwiseRuntime.taskTemplates=safe.taskTemplates;
+  weekwiseRuntime.syncWorkspaceLists();weekwiseRuntime.currentWeek=weekwiseRuntime.dateKey(weekwiseRuntime.sundayOf(weekwiseRuntime.now));weekwiseRuntime.mobileDay=weekwiseRuntime.now.getDay();weekwiseRuntime.monthAnchor=new Date(weekwiseRuntime.now.getFullYear(),weekwiseRuntime.now.getMonth(),1);weekwiseRuntime.loadWeek(weekwiseRuntime.currentWeek);weekwiseRuntime.renderReminders();
+ }finally{weekwiseRuntime.cloudApplyingRemote=false;}
+}
+
+function isolatePlannerOwner(nextOwner){
+ if(weekwiseRuntime.currentDataOwner===nextOwner)return;
+ const previousOwner=weekwiseRuntime.currentDataOwner,payload=JSON.parse(JSON.stringify(weekwiseRuntime.buildCloudPayload()));
+ if(weekwiseRuntime.focusState?.owner===previousOwner){weekwiseRuntime.focusState=WeekwiseFocus.pause(weekwiseRuntime.focusState);WeekwiseData.commitStorage(localStorage,[['weekwise-focus-active-v1:'+previousOwner,JSON.stringify(weekwiseRuntime.focusState)]]);}
+ weekwiseRuntime.checkpointEditorDraft();
+ localStorage.setItem('weekwise-account-cache-v1:'+previousOwner,JSON.stringify({payload,meta:weekwiseRuntime.readCloudMeta()}));
+ weekwiseRuntime.closeTaskModal(true);
+ // First-time local capture belongs to the account the user deliberately signs into.
+ if(previousOwner==='local'&&nextOwner!=='local'&&!weekwiseRuntime.readCloudMeta()?.userId&&Object.values(payload.store.weeks).some(w=>w.tasks?.length)&&confirm('Use your device-only planner with this account? Cancel keeps it separate on this device.')){weekwiseRuntime.currentDataOwner=nextOwner;return;}
+ const cached=WeekwiseData.readJSON(localStorage,'weekwise-account-cache-v1:'+nextOwner,value=>{weekwiseRuntime.validateCloudPayload(value.payload);return value;},null);
+ if(WeekwiseData.blockedKeys().length)throw new Error('This account cache needs recovery. Export the original data before continuing.');
+ const next=cached?.payload||{version:1,store:{settings:weekwiseRuntime.defaultSettings(),weeks:{},recurringTemplates:[],customLists:[]},reminders:[],focusSessions:[],habits:[],countdowns:[],savedTaskFilters:[],taskTemplates:[]};
+ for(const name of ['reminders','focusSessions','habits','countdowns','savedTaskFilters','taskTemplates'])if(!Array.isArray(next[name]))next[name]=[];
+ weekwiseRuntime.saveCloudLocalPayload(next);weekwiseRuntime.currentDataOwner=nextOwner;
+ localStorage.setItem(weekwiseRuntime.CLOUD_META_KEY,JSON.stringify(cached?.meta||{userId:nextOwner==='local'?'':nextOwner,revision:0,fingerprint:weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload())}));
+ weekwiseRuntime.focusState=null;
+}
+
+async function requestCloudSave(payload,revision,userId){return WeekwiseCloudTransport.save({client:weekwiseRuntime.cloudClient,url:SUPABASE_URL,key:SUPABASE_PUBLISHABLE_KEY,userId,payload,revision});}
+
+function applyCloudRow(row){
+ weekwiseRuntime.saveCloudLocalPayload(row.data||{});
+ weekwiseRuntime.cloudRevision=Number(row.revision)||0;weekwiseRuntime.cloudReady=true;weekwiseRuntime.cloudConflict=null;
+ weekwiseRuntime.writeCloudMeta(weekwiseRuntime.cloudRevision,weekwiseRuntime.buildCloudPayload());
+ weekwiseRuntime.renderCloudPanel();
+ weekwiseRuntime.setCloudStatus('All changes synced. Last saved '+new Date(row.updated_at||Date.now()).toLocaleString()+'.');
+}
+
+function showCloudConflict(row){
+ weekwiseRuntime.cloudConflict=row;weekwiseRuntime.cloudRevision=Number(row?.revision)||0;
+ weekwiseRuntime.renderCloudPanel();
+ weekwiseRuntime.setCloudStatus('Both this device and the cloud have changes. Choose which version to keep.');
+}
+
+function queueCloudSave(){
+ if(localStorage.getItem(weekwiseRuntime.STORE_KEY)!==weekwiseRuntime.lastSavedDisk||['weekwise-reminders-v1','weekwise-focus-sessions-v1','weekwise-habits-v1','weekwise-countdowns-v1','weekwise-saved-filters-v1','weekwise-task-templates-v1'].some(key=>WeekwiseData.unchanged?.(localStorage,key)===false)){weekwiseRuntime.setCloudStatus('Another tab changed this planner. Reload before syncing.');return;}
+ if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length||!weekwiseRuntime.cloudClient||!weekwiseRuntime.cloudUser||!weekwiseRuntime.cloudReady||weekwiseRuntime.cloudApplyingRemote||weekwiseRuntime.cloudConflict)return;
+ const meta=weekwiseRuntime.readCloudMeta();if(meta?.userId===weekwiseRuntime.cloudUser.id&&meta.fingerprint===weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload())){if(weekwiseRuntime.cloudSyncTimer){clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.cloudSyncTimer=null;}return;}
+ if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);
+ weekwiseRuntime.setCloudStatus('Changes saved on this device. Syncing to cloud…');
+ weekwiseRuntime.cloudSyncTimer=setTimeout(()=>{weekwiseRuntime.cloudSyncTimer=null;weekwiseRuntime.saveCloudSnapshot();},900);
+}
+
+async function saveCloudSnapshot(){
+ if(localStorage.getItem(weekwiseRuntime.STORE_KEY)!==weekwiseRuntime.lastSavedDisk||['weekwise-reminders-v1','weekwise-focus-sessions-v1','weekwise-habits-v1','weekwise-countdowns-v1','weekwise-saved-filters-v1','weekwise-task-templates-v1'].some(key=>WeekwiseData.unchanged?.(localStorage,key)===false)){weekwiseRuntime.setCloudStatus('Another tab changed this planner. Reload before syncing.');return;}
+ if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length||!weekwiseRuntime.cloudClient||!weekwiseRuntime.cloudUser||!weekwiseRuntime.cloudReady||weekwiseRuntime.cloudApplyingRemote||weekwiseRuntime.cloudConflict||weekwiseRuntime.cloudBusy)return;
+ weekwiseRuntime.cloudBusy=true;
+ const payload=JSON.parse(JSON.stringify(weekwiseRuntime.buildCloudPayload())),expectedRevision=weekwiseRuntime.cloudRevision,savingUserId=weekwiseRuntime.cloudUser.id,savingEpoch=weekwiseRuntime.cloudSessionEpoch;
+ let savedPayload=null;
+ try{
+  const {data,error}=await weekwiseRuntime.requestCloudSave(payload,expectedRevision,savingUserId);
+  if(savingEpoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==savingUserId)return;
+  if(error)throw error;
+  const result=Array.isArray(data)?data[0]:data;
+  if(!result)throw new Error('The cloud returned no save result.');
+  if(!result.saved){weekwiseRuntime.showCloudConflict({data:result.data||{},revision:Number(result.revision)||0,updated_at:result.updated_at||null});return;}
+  weekwiseRuntime.cloudRevision=Number(result.revision)||expectedRevision+1;weekwiseRuntime.cloudReady=true;
+  weekwiseRuntime.writeCloudMeta(weekwiseRuntime.cloudRevision,payload);
+  savedPayload=payload;
+  weekwiseRuntime.setCloudStatus('All changes synced · '+new Date(result.updated_at||Date.now()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+  const badge=weekwiseRuntime.$('cloudMenuBadge');if(badge)badge.textContent='Synced';
+ }catch(error){
+  if(savingEpoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==savingUserId)return;
+  console.warn('Weekwise cloud save could not be confirmed.');
+  weekwiseRuntime.setCloudStatus('Cloud save failed. Your changes remain on this device. Open Cloud sync and try Sync now. '+(error?.message||''));
+ }finally{
+  weekwiseRuntime.cloudBusy=false;
+  // Recheck only after releasing the save lock. A timer may have fired while the
+  // previous request was still in flight, so schedule again if newer edits exist.
+  if(savedPayload&&weekwiseRuntime.cloudUser&&weekwiseRuntime.cloudReady&&!weekwiseRuntime.cloudConflict&&weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload())!==weekwiseRuntime.cloudFingerprint(savedPayload))weekwiseRuntime.queueCloudSave();
+  if(savingEpoch!==weekwiseRuntime.cloudSessionEpoch&&weekwiseRuntime.cloudUser&&weekwiseRuntime.cloudReady&&!weekwiseRuntime.cloudConflict)weekwiseRuntime.queueCloudSave();
+ }
+}
+
+async function startCloudForUser(user,force=false){
+ localStorage.removeItem('weekwise-offline-owner-v1');
+ if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length){weekwiseRuntime.setCloudStatus('Cloud sync paused: stored data needs recovery.');return;}
+ if(!weekwiseRuntime.cloudClient||!user)return;
+ if(weekwiseRuntime.cloudUser?.id===user.id&&weekwiseRuntime.currentDataOwner===user.id&&weekwiseRuntime.cloudReady&&!force)return;
+ const epoch=weekwiseRuntime.cloudSessionEpoch,userId=user.id;
+ const initializing=(async()=>{
+  weekwiseRuntime.cloudUser=user;weekwiseRuntime.cloudReady=false;weekwiseRuntime.cloudConflict=null;
+  try{
+   weekwiseRuntime.isolatePlannerOwner(userId);weekwiseRuntime.renderCloudPanel();weekwiseRuntime.setCloudStatus('Checking your cloud data…');
+   const {data:row,error}=await weekwiseRuntime.cloudClient.from('weekwise_cloud_data').select('user_id,data,revision,updated_at').eq('user_id',userId).maybeSingle();
+   if(epoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==userId)return;if(error)throw error;
+   const payload=weekwiseRuntime.buildCloudPayload(),meta=weekwiseRuntime.readCloudMeta(),localFingerprint=weekwiseRuntime.cloudFingerprint(payload),hasLocal=weekwiseRuntime.localHasWeekwiseData();
+   if(!row){weekwiseRuntime.cloudRevision=0;weekwiseRuntime.cloudReady=true;await weekwiseRuntime.saveCloudSnapshot();return;}
+   weekwiseRuntime.validateCloudPayload(row.data);weekwiseRuntime.cloudReady=true;weekwiseRuntime.cloudRevision=Number(row.revision)||0;
+   if(meta?.userId===userId){
+    const localDirty=localFingerprint!==meta.fingerprint,remoteChanged=Number(row.revision)>Number(meta.revision||0);
+    if(localDirty&&remoteChanged){weekwiseRuntime.showCloudConflict(row);return;}
+    if(localDirty){weekwiseRuntime.queueCloudSave();return;}
+    weekwiseRuntime.applyCloudRow(row);return;
+   }
+   if(!hasLocal){weekwiseRuntime.applyCloudRow(row);return;}weekwiseRuntime.showCloudConflict(row);
+  }catch(error){if(epoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==userId)return;weekwiseRuntime.cloudReady=false;weekwiseRuntime.setCloudStatus('Cloud sync could not be initialized. Your data is preserved on this device. '+error.message);weekwiseRuntime.renderCloudPanel();}
+ })();
+ weekwiseRuntime.cloudInitializationUser=userId;weekwiseRuntime.cloudInitPromise=initializing;
+ try{await initializing;}finally{if(weekwiseRuntime.cloudInitPromise===initializing){weekwiseRuntime.cloudInitPromise=null;weekwiseRuntime.cloudInitializationUser=null;}}
+ if(epoch===weekwiseRuntime.cloudSessionEpoch&&weekwiseRuntime.cloudUser?.id===userId&&weekwiseRuntime.currentDataOwner===userId)weekwiseRuntime.finishSignInLanding();
+}
+
+async function initializeCloud(){
+ weekwiseRuntime.setCloudAuthMode('signin',false);
+ const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=false;document.body.classList.add('signin-required');window.signinGateInFlow=false;}
+ if(!weekwiseRuntime.cloudClient){if((localStorage.getItem('weekwise-local-mode-v1')==='true'&&weekwiseRuntime.currentDataOwner==='local')||weekwiseRuntime.offlineAccountSelected())weekwiseRuntime.finishSignInLanding();weekwiseRuntime.setCloudStatus('Cloud library unavailable. Weekwise still saves locally. Check your internet connection and reload to enable cloud sync.');weekwiseRuntime.renderCloudPanel();return;}
+ try{
+  // Subscribe before reading the session so auth redirects such as password recovery are not missed.
+  weekwiseRuntime.cloudClient.auth.onAuthStateChange((event,session)=>{
+   if(session?.user?.id!==weekwiseRuntime.cloudUser?.id||event==='SIGNED_OUT'){weekwiseRuntime.cloudSessionEpoch++;weekwiseRuntime.cloudReady=false;if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.$('signinLanding').hidden=false;document.body.classList.add('signin-required');}
+   setTimeout(async()=>{
+    if(event==='PASSWORD_RECOVERY'&&session?.user){await weekwiseRuntime.startCloudForUser(session.user);weekwiseRuntime.cloudUser=session.user;const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');}weekwiseRuntime.setCloudAuthMode('recovery');weekwiseRuntime.openCloudPanel();return;}
+    if(session?.user)weekwiseRuntime.startCloudForUser(session.user).catch(()=>{});
+    else{if(weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.finishSignInLanding();weekwiseRuntime.renderCloudPanel();return;}if(weekwiseRuntime.activeUtilityPanel===weekwiseRuntime.$('cloudPanel'))weekwiseRuntime.closeUtilityPanel(false);try{weekwiseRuntime.isolatePlannerOwner('local');}catch(error){weekwiseRuntime.setCloudStatus('Account data could not be isolated: '+error.message);return;}weekwiseRuntime.cloudUser=null;weekwiseRuntime.cloudReady=false;weekwiseRuntime.cloudRevision=0;weekwiseRuntime.cloudConflict=null;if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.renderCloudPanel();weekwiseRuntime.setCloudStatus('Signed out. Your schedules remain saved on this device.');weekwiseRuntime.$('signinLanding').hidden=false;document.body.classList.add('signin-required');window.signinGateInFlow=false;}
+   },0);
+  });
+  const {data:{session}}=await weekwiseRuntime.cloudClient.auth.getSession();
+  if(session?.user)await weekwiseRuntime.startCloudForUser(session.user);else if((localStorage.getItem('weekwise-local-mode-v1')==='true'&&weekwiseRuntime.currentDataOwner==='local')||weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.finishSignInLanding();weekwiseRuntime.renderCloudPanel();}else weekwiseRuntime.renderOfflineAccountGate();
+ }catch(error){console.error(error);weekwiseRuntime.setCloudStatus('Could not check cloud sign-in. Local planning still works.');}
+}
+
+function setCloudAuthMode(mode,resetStatus=true){
+ weekwiseRuntime.cloudAuthMode=['signin','signup','recovery'].includes(mode)?mode:'signin';
+ const signup=weekwiseRuntime.cloudAuthMode==='signup',recovery=weekwiseRuntime.cloudAuthMode==='recovery';
+ const signInTab=weekwiseRuntime.$('cloudSignInMode'),signUpTab=weekwiseRuntime.$('cloudSignUpBtn'),tabs=document.querySelector('.cloud-auth-tabs');
+ if(signInTab){signInTab.classList.toggle('active',weekwiseRuntime.cloudAuthMode==='signin');signInTab.setAttribute('aria-selected',weekwiseRuntime.cloudAuthMode==='signin'?'true':'false');}
+ if(signUpTab){signUpTab.classList.toggle('active',signup);signUpTab.setAttribute('aria-selected',signup?'true':'false');}
+ if(tabs)tabs.hidden=recovery;
+ weekwiseRuntime.$('cloudAuthIntro').textContent=recovery?'Choose a new password for your Weekwise account.':signup?'Create one account to access the same schedules and reminders on all your devices.':'Sign in to keep your Weekwise schedule synced across your devices.';
+ weekwiseRuntime.$('cloudSignInBtn').textContent=recovery?'Update password':signup?'Create account':'Sign in';
+ weekwiseRuntime.$('cloudPasswordLabel').textContent=recovery?'New password':'Password';
+ weekwiseRuntime.$('cloudPassword').placeholder=recovery?'Choose a new password':signup?'At least 8 characters':'Enter your password';
+ weekwiseRuntime.$('cloudPassword').autocomplete=signup||recovery?'new-password':'current-password';
+ weekwiseRuntime.$('cloudConfirmPasswordWrap').hidden=!(signup||recovery);
+ weekwiseRuntime.$('cloudConfirmPassword').required=signup||recovery;
+ weekwiseRuntime.$('cloudReferralCodeWrap').hidden=!signup;
+ weekwiseRuntime.$('cloudReferralCode').required=signup;
+ if(!signup)weekwiseRuntime.$('cloudReferralCode').value='';
+ weekwiseRuntime.$('cloudConfirmPassword').autocomplete='new-password';
+ weekwiseRuntime.$('cloudForgotPassword').hidden=signup||recovery;
+ weekwiseRuntime.$('cloudPasswordHint').textContent=recovery?'Use at least 8 characters.':signup?'A referral code and a password of at least 8 characters are required.':'Use your Weekwise account details.';
+ if(!signup&&!recovery)weekwiseRuntime.$('cloudConfirmPassword').value='';
+ if(resetStatus)weekwiseRuntime.setCloudStatus(recovery?'Enter and confirm your new password.':signup?'Create a Weekwise account with your email.':'Sign in to sync schedules across devices.');
+ weekwiseRuntime.renderCloudPanel();
+}
+
+function setCloudAuthBusy(busy){
+ weekwiseRuntime.cloudAuthBusy=busy;
+ ['cloudEmail','cloudPassword','cloudConfirmPassword','cloudReferralCode','cloudSignInBtn','cloudSignUpBtn','cloudSignInMode','cloudForgotPassword','cloudTogglePassword'].forEach(id=>{const el=weekwiseRuntime.$(id);if(el)el.disabled=busy;});
+ const button=weekwiseRuntime.$('cloudSignInBtn');
+ if(button&&busy){button.dataset.previousLabel=button.textContent;button.textContent=weekwiseRuntime.cloudAuthMode==='signup'?'Creating account…':weekwiseRuntime.cloudAuthMode==='recovery'?'Updating password…':'Signing in…';}
+ else if(button&&!busy){button.textContent=weekwiseRuntime.cloudAuthMode==='signup'?'Create account':weekwiseRuntime.cloudAuthMode==='recovery'?'Update password':'Sign in';}
+}
+
+function validateCloudPassword(){
+ const password=weekwiseRuntime.$('cloudPassword').value,confirmation=weekwiseRuntime.$('cloudConfirmPassword').value;
+ if(password.length<8){weekwiseRuntime.setCloudStatus('Use a password with at least 8 characters.');weekwiseRuntime.$('cloudPassword').focus();return false;}
+ if((weekwiseRuntime.cloudAuthMode==='signup'||weekwiseRuntime.cloudAuthMode==='recovery')&&password!==confirmation){weekwiseRuntime.setCloudStatus('The passwords do not match. Please check both fields.');weekwiseRuntime.$('cloudConfirmPassword').focus();return false;}
+ return true;
+}
+
+async function cloudSignIn(){
+ if(!weekwiseRuntime.cloudClient){weekwiseRuntime.setCloudStatus('Cloud library unavailable. Your local schedules are still saved.');return;}
+ const email=weekwiseRuntime.$('cloudEmail').value.trim(),password=weekwiseRuntime.$('cloudPassword').value;
+ if(!email||!password){weekwiseRuntime.$('cloudAuthForm').reportValidity();return;}
+ weekwiseRuntime.setCloudAuthBusy(true);weekwiseRuntime.setCloudStatus('Signing in…');
+ try{
+  const {data,error}=await weekwiseRuntime.cloudClient.auth.signInWithPassword({email,password});
+  if(error){
+   const message=error.message||'Please try again.';
+   if(/email not confirmed/i.test(message))weekwiseRuntime.setCloudStatus('Your email is not confirmed yet. Open the confirmation email from Supabase, then return and sign in.');
+   else if(/invalid login credentials/i.test(message))weekwiseRuntime.setCloudStatus('Email or password is incorrect. Check your details or use Forgot password.');
+   else weekwiseRuntime.setCloudStatus('Sign-in failed: '+message);
+   return;
+  }
+  if(data?.user){weekwiseRuntime.cloudUser=data.user;await weekwiseRuntime.startCloudForUser(data.user,true);}
+ }catch(error){weekwiseRuntime.setCloudStatus('Could not sign in: '+(error?.message||'Please try again.'));}
+ finally{weekwiseRuntime.setCloudAuthBusy(false);}
+}
+
+async function cloudSignUp(){
+ if(!weekwiseRuntime.cloudClient){weekwiseRuntime.setCloudStatus('Cloud library unavailable. Your local schedules are still saved.');return;}
+ const email=weekwiseRuntime.$('cloudEmail').value.trim();
+ const referralCode=weekwiseRuntime.$('cloudReferralCode').value.trim().toUpperCase();
+ if(!email||!referralCode){weekwiseRuntime.$('cloudAuthForm').reportValidity();if(!referralCode){weekwiseRuntime.setCloudStatus('A referral code from the Weekwise owner is required to create an account.');weekwiseRuntime.$('cloudReferralCode').focus();}return;}
+ if(!weekwiseRuntime.validateCloudPassword())return;
+ weekwiseRuntime.setCloudAuthBusy(true);weekwiseRuntime.setCloudStatus('Checking invite and creating your Weekwise account…');
+ try{
+  const {data,error}=await weekwiseRuntime.cloudClient.auth.signUp({email,password:weekwiseRuntime.$('cloudPassword').value,options:{emailRedirectTo:location.origin+location.pathname,data:{weekwise_referral_code:referralCode}}});
+  if(error){weekwiseRuntime.setCloudStatus('Account creation failed: '+(error.message||'Check your referral code and try again.'));return;}
+  weekwiseRuntime.$('cloudReferralCode').value='';
+  if(data?.session&&data?.user){
+   weekwiseRuntime.cloudUser=data.user;await weekwiseRuntime.startCloudForUser(data.user,true);if(weekwiseRuntime.cloudReady)weekwiseRuntime.setCloudStatus('Account created and cloud sync is ready.');
+  }else{
+   weekwiseRuntime.setCloudStatus('Account created. Check your inbox and spam folder for the confirmation link, then return here to sign in. If the link fails, add the Weekwise site address to Supabase Authentication → URL Configuration.');
+   weekwiseRuntime.setCloudAuthMode('signin',false);
+  }
+ }catch(error){weekwiseRuntime.setCloudStatus('Could not create your account: '+(error?.message||'Please try again.'));}
+ finally{weekwiseRuntime.setCloudAuthBusy(false);}
+}
+
+async function cloudResetPassword(){
+ if(!weekwiseRuntime.cloudClient){weekwiseRuntime.setCloudStatus('Cloud library unavailable.');return;}
+ const email=weekwiseRuntime.$('cloudEmail').value.trim();
+ if(!email){weekwiseRuntime.setCloudStatus('Enter your email address first, then choose Forgot password.');weekwiseRuntime.$('cloudEmail').focus();return;}
+ weekwiseRuntime.setCloudAuthBusy(true);weekwiseRuntime.setCloudStatus('Sending password-reset link…');
+ try{
+  const {error}=await weekwiseRuntime.cloudClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  if(error)throw error;
+  weekwiseRuntime.setCloudStatus('Password-reset email sent if that account exists. Check your inbox and spam folder.');
+ }catch(error){weekwiseRuntime.setCloudStatus('Could not send reset email: '+(error?.message||'Please try again.'));}
+ finally{weekwiseRuntime.setCloudAuthBusy(false);}
+}
+
+async function cloudUpdatePassword(){
+ if(!weekwiseRuntime.cloudClient||!weekwiseRuntime.cloudUser){weekwiseRuntime.setCloudStatus('Open the password-reset link from your email again to continue.');return;}
+ if(!weekwiseRuntime.validateCloudPassword())return;
+ weekwiseRuntime.setCloudAuthBusy(true);weekwiseRuntime.setCloudStatus('Updating your password…');
+ try{
+  const {error}=await weekwiseRuntime.cloudClient.auth.updateUser({password:weekwiseRuntime.$('cloudPassword').value});
+  if(error)throw error;
+  weekwiseRuntime.$('cloudPassword').value='';weekwiseRuntime.$('cloudConfirmPassword').value='';
+  weekwiseRuntime.setCloudAuthMode('signin',false);weekwiseRuntime.setCloudStatus('Password updated successfully.');
+  weekwiseRuntime.renderCloudPanel();
+ }catch(error){weekwiseRuntime.setCloudStatus('Could not update password: '+(error?.message||'Please try again.'));}
+ finally{weekwiseRuntime.setCloudAuthBusy(false);}
+}
+
+async function submitCloudAuth(){
+ if(weekwiseRuntime.cloudAuthBusy)return;
+ if(weekwiseRuntime.cloudAuthMode==='signup')return weekwiseRuntime.cloudSignUp();
+ if(weekwiseRuntime.cloudAuthMode==='recovery')return weekwiseRuntime.cloudUpdatePassword();
+ return weekwiseRuntime.cloudSignIn();
+}
+
+function wireCloudAuthControls(){
+ weekwiseRuntime.$('cloudSignInMode').addEventListener('click',()=>weekwiseRuntime.setCloudAuthMode('signin'));
+ weekwiseRuntime.$('cloudSignUpBtn').addEventListener('click',()=>weekwiseRuntime.setCloudAuthMode('signup'));
+ weekwiseRuntime.$('cloudForgotPassword').addEventListener('click',weekwiseRuntime.cloudResetPassword);
+ weekwiseRuntime.$('cloudTogglePassword').addEventListener('click',()=>{
+  const input=weekwiseRuntime.$('cloudPassword'),show=input.type==='password';input.type=show?'text':'password';
+  weekwiseRuntime.$('cloudTogglePassword').textContent=show?'Hide':'Show';
+  weekwiseRuntime.$('cloudTogglePassword').setAttribute('aria-label',show?'Hide password':'Show password');
+  weekwiseRuntime.$('cloudTogglePassword').setAttribute('aria-pressed',show?'true':'false');
+ });
+ weekwiseRuntime.$('cloudConfirmPassword').addEventListener('input',()=>{
+  const input=weekwiseRuntime.$('cloudConfirmPassword');
+  input.setCustomValidity(input.value&&input.value!==weekwiseRuntime.$('cloudPassword').value?'Passwords do not match.':'');
+ });
+ weekwiseRuntime.$('cloudPassword').addEventListener('input',()=>{
+  const input=weekwiseRuntime.$('cloudConfirmPassword');
+  if(input.value)input.setCustomValidity(input.value!==weekwiseRuntime.$('cloudPassword').value?'Passwords do not match.':'');
+ });
+ weekwiseRuntime.$('cloudAuthForm').addEventListener('submit',e=>{e.preventDefault();weekwiseRuntime.submitCloudAuth();});
+}
+
+async function cloudUseRemote(){
+ if(!weekwiseRuntime.cloudConflict)return;
+ const row=weekwiseRuntime.cloudConflict;weekwiseRuntime.cloudConflict=null;weekwiseRuntime.applyCloudRow(row);
+}
+
+async function cloudUseLocal(){
+ if(!weekwiseRuntime.cloudConflict||!weekwiseRuntime.cloudUser)return;
+ if(!confirm('Replace the cloud copy with the planner saved on this device? This cannot be automatically undone. Export a backup first if you need both versions.'))return;
+ const row=weekwiseRuntime.cloudConflict;weekwiseRuntime.cloudConflict=null;weekwiseRuntime.cloudRevision=Number(row.revision)||0;weekwiseRuntime.cloudReady=true;
+ await weekwiseRuntime.saveCloudSnapshot();weekwiseRuntime.renderCloudPanel();
+}
+
+async function cloudSyncNow(){
+ if(!weekwiseRuntime.cloudUser){weekwiseRuntime.openUtilityPanel('cloudPanel','Cloud sync & account');weekwiseRuntime.setCloudStatus('Sign in to sync your schedules.');return;}
+ if(weekwiseRuntime.cloudConflict){weekwiseRuntime.renderCloudPanel();weekwiseRuntime.setCloudStatus('Choose which version to keep before syncing.');return;}
+ if(!weekwiseRuntime.cloudReady){await weekwiseRuntime.startCloudForUser(weekwiseRuntime.cloudUser,true);return;}
+ await weekwiseRuntime.saveCloudSnapshot();
+}
+
+async function checkCloudForRemoteChanges(){
+ if(!weekwiseRuntime.cloudClient||!weekwiseRuntime.cloudUser||!weekwiseRuntime.cloudReady||weekwiseRuntime.cloudBusy||weekwiseRuntime.cloudConflict||document.hidden)return;
+ try{
+  const readUser=weekwiseRuntime.cloudUser.id,readEpoch=weekwiseRuntime.cloudSessionEpoch;const {data:row,error}=await weekwiseRuntime.cloudClient.from('weekwise_cloud_data').select('user_id,data,revision,updated_at').eq('user_id',readUser).maybeSingle();
+  if(readEpoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==readUser)return;if(error)throw error;if(!row||Number(row.revision)<=weekwiseRuntime.cloudRevision)return;
+  const meta=weekwiseRuntime.readCloudMeta(),localFingerprint=weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload()),localDirty=meta?.userId===weekwiseRuntime.cloudUser.id&&localFingerprint!==meta.fingerprint;
+  if(localDirty)weekwiseRuntime.showCloudConflict(row);else weekwiseRuntime.applyCloudRow(row);
+ }catch(error){console.warn('Could not check cloud for updates',error);}
+}
+
+function openCloudPanel(){weekwiseRuntime.renderCloudPanel();weekwiseRuntime.openUtilityPanel('cloudPanel','Cloud sync & account');}
+
+function openSignInFromLanding(){const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=true;}weekwiseRuntime.openCloudPanel();}
+
+function finishSignInLanding(){const gate=weekwiseRuntime.$('signinLanding');if(!gate)return;if(weekwiseRuntime.activeUtilityPanel===weekwiseRuntime.$('cloudPanel'))weekwiseRuntime.closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;weekwiseRuntime.now=new Date();weekwiseRuntime.mobileDay=weekwiseRuntime.now.getDay();weekwiseRuntime.currentWeek=weekwiseRuntime.dateKey(weekwiseRuntime.sundayOf(weekwiseRuntime.now));weekwiseRuntime.monthAnchor=new Date(weekwiseRuntime.now.getFullYear(),weekwiseRuntime.now.getMonth(),1);weekwiseRuntime.loadWeek(weekwiseRuntime.currentWeek);weekwiseRuntime.setWorkspaceView('today');weekwiseRuntime.restoreFocusState();weekwiseRuntime.renderReminders();const heading=weekwiseRuntime.$('calendarInstruction');if(heading)heading.hidden=true;weekwiseRuntime.showToast('Welcome to Weekwise. Here is today’s plan.');}
+return Object.freeze({buildCloudPayload,localHasWeekwiseData,readCloudMeta,writeCloudMeta,setCloudStatus,offlineAccountSelected,renderOfflineAccountGate,openOfflineAccount,renderCloudPanel,validateCloudPayload,saveCloudLocalPayload,isolatePlannerOwner,requestCloudSave,applyCloudRow,showCloudConflict,queueCloudSave,saveCloudSnapshot,startCloudForUser,initializeCloud,setCloudAuthMode,setCloudAuthBusy,validateCloudPassword,cloudSignIn,cloudSignUp,cloudResetPassword,cloudUpdatePassword,submitCloudAuth,wireCloudAuthControls,cloudUseRemote,cloudUseLocal,cloudSyncNow,checkCloudForRemoteChanges,openCloudPanel,openSignInFromLanding,finishSignInLanding});
+}
+root.WeekwiseAppCloud=Object.freeze({create});
+})(typeof window!=='undefined'?window:globalThis);

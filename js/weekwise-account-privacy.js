@@ -2,7 +2,7 @@
 (function(root){
  'use strict';
  function ownedEntries(storage,owner){if(typeof owner!=='string'||!owner||owner==='local')throw new Error('Choose a signed-in account.');
-  const exact=new Set(['weekwise-account-cache-v1:'+owner,'weekwise-focus-active-v1:'+owner,'weekwise-editor-draft-v1:'+owner,'weekwise-onboarding-v1:'+encodeURIComponent(owner)]);
+  const exact=new Set(['weekwise-account-cache-v1:'+owner,'weekwise-focus-active-v1:'+owner,'weekwise-editor-draft-v1:'+owner,'weekwise-onboarding-v1:'+encodeURIComponent(owner),'weekwise-zone-review-v1:'+encodeURIComponent(owner),'weekwise-zone-backup-v1:'+encodeURIComponent(owner)]);
   const entries=[];for(let i=0;i<storage.length;i++){const key=storage.key(i);if(exact.has(key)||key.startsWith('weekwise-editor-draft-archive-v1:'+owner+':'))entries.push([key,storage.getItem(key)]);}
   if(storage.getItem('weekwise-offline-owner-v1')===owner)entries.push(['weekwise-offline-owner-v1',owner]);return entries;
  }
