@@ -48,3 +48,5 @@ do $test$ begin
 end;$test$;
 reset role;
 select 'Invitation limits, revocation, expiry, private access and preservation passed' as result;
+-- Exact operator transaction must also reapply without touching any old rows.
+\ir ../../supabase/operations/weekwise-invitation-approved-update.sql
