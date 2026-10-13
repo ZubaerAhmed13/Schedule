@@ -99,5 +99,42 @@ end;$function$;
 revoke all on function public.weekwise_register_push_subscription(uuid,text,jsonb,text,text) from public,anon,authenticated;
 grant execute on function public.weekwise_register_push_subscription(uuid,text,jsonb,text,text) to service_role;
 
+-- Minimize newly submitted invitation metadata; preserve every existing user.
+create or replace function private.weekwise_require_referral_code()
+returns trigger language plpgsql security definer set search_path=pg_catalog as $function$
+declare submitted text;begin
+ submitted=upper(btrim(coalesce(new.raw_user_meta_data->>'weekwise_referral_code','')));
+ if length(submitted)<1 or length(submitted)>64 then
+  raise exception 'A valid Weekwise invitation is required.' using errcode='P0001';
+ end if;
+ -- The submitted code is untrusted input, never a role/owner claim. The private
+ -- hash and one atomic conditional UPDATE decide whether signup is permitted.
+ update private.weekwise_invite_codes set use_count=use_count+1
+ where code_hash=encode(extensions.digest(submitted,'sha256'),'hex') and is_active
+ and (expires_at is null or expires_at>now()) and (max_uses is null or use_count<max_uses);
+ if not found then raise exception 'A valid Weekwise invitation is required.' using errcode='P0001';end if;
+ -- Discard the untrusted submitted invitation after successful verification.
+ -- Existing accounts/metadata are untouched. It must not enter new JWTs.
+ new.raw_user_meta_data=new.raw_user_meta_data-'weekwise_referral_code';
+ return new;
+end;$function$;
+revoke all on function private.weekwise_require_referral_code() from public,anon,authenticated;
+
+-- Auth may write submitted signup metadata again after the initial insert.
+-- Strip only a newly introduced invitation field from future metadata updates;
+-- migration execution never changes existing users or historical metadata.
+create or replace function private.weekwise_minimize_new_invitation_metadata()
+returns trigger language plpgsql set search_path=pg_catalog as $function$
+begin
+ new.raw_user_meta_data=new.raw_user_meta_data-'weekwise_referral_code';
+ return new;
+end;$function$;
+revoke all on function private.weekwise_minimize_new_invitation_metadata() from public,anon,authenticated;
+drop trigger if exists weekwise_minimize_new_invitation_metadata on auth.users;
+create trigger weekwise_minimize_new_invitation_metadata
+ before update of raw_user_meta_data on auth.users for each row
+ when (new.raw_user_meta_data ? 'weekwise_referral_code' and not (old.raw_user_meta_data ? 'weekwise_referral_code'))
+ execute function private.weekwise_minimize_new_invitation_metadata();
+
 do $preserved$ declare old record;current_count bigint;current_hash text;begin for old in select * from weekwise_invite_guard loop execute format('select count(*),md5(coalesce(string_agg(md5(to_jsonb(r)::text),'''' order by md5(to_jsonb(r)::text)),'''')) from %s r',old.table_name) into current_count,current_hash;if current_count<>old.rows or current_hash<>old.fingerprint then raise exception 'Existing Weekwise data changed during invitation migration; transaction rolled back.';end if;end loop;end;$preserved$;
 commit;

@@ -10,39 +10,27 @@ It keeps one set of task records across Today, Inbox, Upcoming, project lists an
 
 https://zubaerahmed13.github.io/Schedule/
 
-## Publish with GitHub Pages
+## Run, test and publish
 
-1. Open **Settings → Pages** for this repository.
-2. Under **Build and deployment**, select **Deploy from a branch**.
-3. Select branch **main** and folder **/(root)**, then save.
-4. Wait for GitHub Pages to publish the site.
+Serve the repository root with a static HTTP server, or build with `node scripts/build-weekwise.mjs` and serve `dist/`. Run `node scripts/validate-weekwise.mjs` and `node --test tests/*.test.mjs`. GitHub Actions runs pinned Playwright/axe browser checks, isolated PostgreSQL and Deno checks. Pages uses **Settings → Pages → GitHub Actions**, with `.github/workflows/deploy-pages.yml`; the output is frontend-only and publishes an exact commit/run/asset marker.
 
-## Cloud sync setup
+## Current cloud, invitations and erasure
 
-Weekwise uses Supabase Auth and a revision-aware save function to sync user data between devices. Cloud sync requires the database setup to be run once:
+The production Weekwise Supabase project is configured. Authentication, owner-isolated revision RPC saves, private invitation enforcement and password-reauthenticated account erasure passed live disposable-account checks. Do not rerun an old bootstrap against production as a repair. [LIVE_BACKEND_ACCEPTANCE.md](docs/LIVE_BACKEND_ACCEPTANCE.md) records reviewed migration order, exact applied IDs, cleanup and source/operator limitations. The private additional owner invitation is stored in Supabase Vault under `weekwise_owner_invite_code`; never put it or service credentials into public source.
 
-1. In the Supabase project’s **SQL Editor**, run `weekwise_supabase_setup.sql`.
-2. Run `supabase_invite_code_setup.sql` if you want invite-code-only account creation. The current app sign-up flow requires a referral code.
-3. In **Authentication → URL Configuration**, set the Site URL to `https://zubaerahmed13.github.io/Schedule/` and add `https://zubaerahmed13.github.io/Schedule/**` as a Redirect URL.
-4. In **Authentication → Providers → Email**, configure email confirmation to match how you want people to register.
+For a separate new environment, review the baseline schema and ordered migrations with the setup documentation, set correct Auth redirect URLs and verify its own permissions before connecting a client. Device-only mode remains available without an account.
 
-The app includes only the Supabase publishable client key. Never place a service-role key or database password in `index.html` or another public file. If database setup is missing, Weekwise can still keep changes in the current browser, but those changes will not sync to another device until the SQL setup succeeds.
+## Background reminders
 
+VAPID configuration, authenticated subscription service and one active minute scheduler are live. Live checks verify account ownership, duplicate claims and opt-out. Enable each device explicitly and grant its browser permission. **App-closed provider/OS delivery is unverified on a device until tested there**; the UI distinguishes subscription status from delivery evidence. See [BACKGROUND_PUSH_SETUP.md](docs/BACKGROUND_PUSH_SETUP.md) and [LIVE_BACKEND_ACCEPTANCE.md](docs/LIVE_BACKEND_ACCEPTANCE.md). Server/VAPID private keys stay server-only.
 
-## Background task reminders (optional)
+## Google Calendar and Outlook
 
-The repository now includes a service-worker Web Push implementation, authenticated Edge Function, protected subscription/delivery tables, and an optional one-minute scheduler. **Background delivery is not active in the live app until the external Supabase setup is completed.** Follow [docs/BACKGROUND_PUSH_SETUP.md](docs/BACKGROUND_PUSH_SETUP.md), run `supabase_push_setup.sql`, deploy the Edge Function, configure server-only VAPID/dispatcher secrets, store the scheduler secret in Vault, and install `supabase_push_cron_setup.sql`.
-
-The browser notification option already in Weekwise works while the app is running; it is not a substitute for server-driven Web Push. Never commit a VAPID private key or service-role key.
-
-
-## Google Calendar and Outlook (optional)
-
-Weekwise now includes code for secure Google Calendar and Microsoft Outlook OAuth, primary-calendar sync, encrypted provider tokens and conflict-aware event reconciliation. It is **not active in production until you configure provider OAuth clients/secrets in Supabase, run supabase_calendar_setup.sql, deploy the weekwise-calendar Edge Function and pass real calendar round-trip tests**.
-
-Follow docs/CALENDAR_OAUTH_SETUP.md for the exact callback URL, provider setup and safe secret configuration. Do not put client secrets, refresh tokens, or the AES encryption key in this repository. The existing .ics import/export remains available separately.
+These account connections are **deferred by the user**. OAuth/PKCE/state/encryption/conflict-aware source and secure server configuration are retained, but provider credentials/consent and actual round trips are not configured or claimed. Local `.ics` import/export remains available. See [CALENDAR_OAUTH_SETUP.md](docs/CALENDAR_OAUTH_SETUP.md) when this work resumes.
 
 ## Data, privacy and backups
+
+[Read the data and privacy page](https://zubaerahmed13.github.io/Schedule/privacy.html) for actual storage, sharing, retention and erasure controls.
 
 Local browser storage keeps the planner responsive and supports offline use after the app shell has been cached. When signed in and configured, Supabase synchronizes the saved task store, reminders, focus history, habits, countdowns and saved filters. If a remote/local conflict is detected, Weekwise pauses sync and asks which copy to keep rather than silently overwriting either copy.
 

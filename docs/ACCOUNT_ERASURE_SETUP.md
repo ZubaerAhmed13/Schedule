@@ -1,5 +1,6 @@
 # Account erasure: deployed and activated
 
+> Current verified state and remaining limits: [CURRENT_STATUS.md](CURRENT_STATUS.md) and [LIVE_BACKEND_ACCEPTANCE.md](LIVE_BACKEND_ACCEPTANCE.md). Earlier phase wording below is historical; erasure/invitations/push scheduling are active, Google/Outlook are deferred.
 The password-account endpoint is deployed in the correct Weekwise project and reports `configured=true` after a successful real disposable-account check. Existing users were not deleted. [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md) records the actual results. The scheduler approval blocker was avoided for erasure through a scoped signed operator proof.
 
 ## Activation gate

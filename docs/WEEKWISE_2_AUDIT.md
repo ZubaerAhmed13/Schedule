@@ -1,5 +1,6 @@
 # Weekwise 2.0 repository audit
 
+> Current verified state and remaining limits: [CURRENT_STATUS.md](CURRENT_STATUS.md) and [LIVE_BACKEND_ACCEPTANCE.md](LIVE_BACKEND_ACCEPTANCE.md). Earlier phase wording below is historical; erasure/invitations/push scheduling are active, Google/Outlook are deferred.
 Audit date: 2026-10-12. Baseline: `dc5167a299fc1f9cd00fe889619dd8a6ef335b4c` (main). Initial working tree clean. Development branch: `codex/weekwise-2-foundation`. No production database or deployment changes authorized or made.
 
 ## Evidence and limits

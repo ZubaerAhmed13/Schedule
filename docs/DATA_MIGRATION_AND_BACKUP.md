@@ -2,9 +2,9 @@
 
 ## Compatibility
 
-No production database or destructive storage migration is executed. Planner key `weekwise-planner-v2`, cloud envelope version 1 and backup version 6 remain. New fields are additive and unknown task/week/store extensions are retained. Baseline IDs, completed records, non-custom tasks, reminders and recurring exceptions survive reload.
+Approved backend migrations are recorded in LIVE_BACKEND_ACCEPTANCE.md. No existing user/planner record is used as a writable fixture or destructively migrated. Planner key `weekwise-planner-v2`, cloud envelope version 1 and backup version 6 remain. New fields are additive and unknown task/week/store extensions are retained. Baseline IDs, completed records, non-custom tasks, reminders and recurring exceptions survive reload.
 
-The existing v1 Monday-to-Sunday conversion retains the original v1 key, IDs and metadata. Canonical weeks remain Sunday buckets; configurable week start and fixed-zone conversion require a separately tested migration/design. Do not reinterpret historical calendar data to implement a preference superficially.
+The existing v1 Monday-to-Sunday conversion retains the original v1 key, IDs and metadata. Canonical weeks remain Sunday buckets. Monday-first display/planning does not rename those buckets. Historical zone conversion is now reviewed through WeekwiseZoneConversion: original download, full review/checksum, owner checkpoint, exact-instant or local-clock policy, preserved IDs/reminder identifiers and guarded Undo. Missing source zones, DST gaps/folds and destination collisions require explicit review; no ordinary save silently assigns a device zone.
 
 Recurring reload uses a global occurrence lookup. Editing one occurrence marks an exception; editing a rule affects new occurrences. Stopping a rule sets an end boundary and retains every already materialized occurrence, including completed and edited history. The editor explains these conservative scope semantics.
 

@@ -1,100 +1,42 @@
-# Weekwise 2.0 — master-plan verification matrix
-Original baseline reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and code on `main` at `b173a18551b3b5c45d0be456632afaedb1a3eea9` (2026-10-13).
+# Weekwise master-plan verification
 
-Current release/tests and remaining acceptance gates are in [CURRENT_STATUS.md](CURRENT_STATUS.md). The current status page supersedes this historical baseline. PRs #16–#37 are merged; saved-clock Today/Focus/Insights is the current follow-up.
+Reviewed against all 1,921 lines / 32 sections of the original `Pasted text(4).txt` on 13 October 2026. Current user instruction: finish non-calendar work; defer Google and Outlook. [CURRENT_STATUS.md](CURRENT_STATUS.md) owns exact release evidence. Delivered means implemented and checked within the stated fixture scope; it does not turn external acceptance into a certificate.
 
-**Status vocabulary:** VERIFIED = scope asserted by automated tests; PARTIAL = exists but lacks specified functionality or independent verification; EXTERNAL = credentials/private environment/real device is required; POLICY = instructions, not a software feature. Historical source descriptions in other docs may predate merges.
+| Section | Area | Current result / limit |
+|---|---|---|
+| 1 | Existing application | Preserved features and canonical IDs; legacy fixture checks pass |
+| 2 | Product vision | Connected capture/plan/focus/recover/review workflow delivered; real usability remains human evidence |
+| 3 | Repository audit | Baseline audit and current backend/source/release review delivered |
+| 4 | Data protection | Checked transactions, archives, recovery, backups, exact conversion/Undo and account erasure; private-history samples not supplied |
+| 5 | UI and accessibility | Responsive light/dark screens, keyboard controls and axe checks; physical/human accessibility remains |
+| 6 | Navigation | Five main destinations and secondary advanced tools retained; shortcuts covered |
+| 7 | Today | Saved-clock next commitments, unioned capacity, priorities, habits and focus action delivered |
+| 8 | Smart Week Builder | Explainable deterministic constraints, buffer, selected preview/apply and linked splitting checked |
+| 9 | Recover My Week | Past-work/deadline/fixed/completed safeguards, capacity review and Undo checked |
+| 10 | Calendar/time zones | Five modes, Monday display, exact instants, overnight/DST/import and historical conversion checked |
+| 11 | Task management | Editor, NLP review, subtasks, recurrence, archive/trash/restore and stale/unsaved guards checked |
+| 12 | Insights | Unioned workload, actual recorded focus, completion/recovery history and weekly review delivered |
+| 13 | Habits | Daily/selected weekdays/flexible weekly targets, skip/pause/history and neutral wording checked |
+| 14 | Focus | Persisted timestamps, pause/resume/reload and task-linked history checked; native suspension remains device QA |
+| 15 | Optional AI | Disabled because no valid service is configured; deterministic planner works without it |
+| 16 | Onboarding | Optional owner-isolated guide, skip/replay and empty-state actions checked |
+| 17 | Settings | Organized planning/account/privacy/notification/zone/week-start/theme controls; English/24-hour presentation retained |
+| 18 | Architecture | 17 controller factories, 607-line startup, explicit state APIs and shared validation/clock/persistence modules delivered |
+| 19 | Cloud/offline | Live isolation/revision races and fresh-client reload pass; browser offline/reconnect/account races pass; physical devices remain |
+| 20 | Google/Outlook | Deferred by user; source/server encryption retained; no credentials/consent or fake live sync |
+| 21 | Push | VAPID/service/minute scheduler and live owner/opt-out/dedup checks pass; controlled closed-tab API call passes; provider/OS delivery remains unverified |
+| 22 | Security/privacy | Six RLS/cascades, RPC grants, invite enforcement/minimization and public retention controls checked; free-plan leaked-password option and legal review remain |
+| 23 | Performance | Synthetic browser loads/10k records and scheduling profiling recorded; field CWV are not available |
+| 24 | Errors/polish | Quota, damaged data, offline, conflicts, stale ownership and interrupted worker update recovery checked |
+| 25 | Automated tests | 167 Node, 61 built-browser, isolated PostgreSQL, five Deno handlers, 48 live boolean checks and exact Pages gates |
+| 26 | Quality standards | Core implementation/automation delivered; manual product/security/accessibility acceptance remains scoped evidence |
+| 27 | Roadmap | Phases 0–4 and non-calendar phase-5 engineering delivered; phase-6 automated release gates plus explicit external limits |
+| 28 | Development rules | Existing data retained; checked branches, expected-head merges, no secrets or existing users used as fixtures |
+| 29 | Documentation | Current status, architecture, backup, privacy, backend acceptance, release and README refreshed |
+| 30 | Reporting | Actual changes, tests, deployment and remaining evidence reported; historical progress is in Git history |
+| 31 | Final acceptance | Core automation/live backend evidence delivered; full professional certification still requires physical/human/private-history/field evidence |
+| 32 | Implementation | Actual source/backend changes completed incrementally; external limits stay explicit |
 
-| Section | Master-plan area | Actual state | Remaining acceptance evidence / work |
-|---|---|---|---|
-| 1 | Existing project and preservation | VERIFIED for representative workflows | Continue regression coverage on legacy files/real user data |
-| 2 | Reality-aware product vision | PARTIAL | Validate real end-user outcomes/usability |
-| 3 | Comprehensive repository audit | VERIFIED baseline | Refresh audit for each release |
-| 4 | Data protection | PARTIAL | Private historic backup migrations, account-deletion policy |
-| 5 | Premium UI, responsive design, accessibility | PARTIAL | Automated axe and modal keyboard gates delivered; human WCAG 2.2 AA, real phone keyboard/text zoom remain |
-| 6 | Five-destination navigation | VERIFIED for core views | Comprehensive deep-link/PWA shortcuts QA |
-| 7 | Today | VERIFIED for core task/capacity widgets | Usability study and all edge-state coverage |
-| 8 | Smart Week Builder | VERIFIED for deterministic core | Arbitrary time-zone planning and observed usage |
-| 9 | Recover My Week | VERIFIED for core | Complex recurring/multi-device production cases |
-| 10 | Calendar, DST, midnight, overlapping events | PARTIAL | Date-aware Calendar display and Monday planning delivered; arbitrary planner-zone conversion and arbitrary historical planner-zone migration remains; explicit overnight editing is delivered |
-| 11 | Task management and NLP capture | VERIFIED for representative fixtures | Archive, Recently removed, restore and guarded Undo delivered; historic/private-data acceptance remains |
-| 12 | Useful Insights | PARTIAL | Daily unioned workload, recorded recovery and task-linked focus/estimate comparison delivered; broader historic actual-work trends and usability remain |
-| 13 | Habits | PARTIAL | Flexible 1–7/week targets and legacy-preserving UI delivered; manual real-user QA remains |
-| 14 | Focus | VERIFIED for measured focus, pause and reload | Installed-PWA foreground/background platform QA |
-| 15 | Optional AI | EXTERNAL | No provider configured; do not generate fake responses or transmit data |
-| 16 | Optional onboarding | PARTIAL | Optional account-isolated guide and replay delivered; real-device usability remains |
-| 17 | Settings | PARTIAL | Full general locale/zone/account/privacy controls |
-| 18 | Incremental architecture | PARTIAL | Main app IIFE remains large; module API and maintainability work |
-| 19 | Cloud/offline | VERIFIED for synthetic fixtures | Real two-device reconnect, RLS, invite and expired-token tests |
-| 20 | Google Calendar/Outlook | EXTERNAL | Server/tables/encryption deployed; OAuth credentials/consent and real round trips remain |
-| 21 | Push | EXTERNAL | Server/tables/VAPID and minute scheduler deployed/verified; device delivery/opt-out/expiry remain |
-| 22 | Security and privacy | PARTIAL | Production RLS, optional RPC hardening, CSP threat model, legal review |
-| 23 | Performance | PARTIAL | Synthetic browser large-lists tested; field CWV, long recurrence profiling |
-| 24 | Errors and polish | PARTIAL | Broader interrupted/suspended/recovery tests |
-| 25 | Automated testing | PARTIAL | Existing Node/Chromium/Edge tests; production-specific regression gates |
-| 26 | Professional quality | PARTIAL | Human end-to-end product and security review |
-| 27 | Six-phase roadmap | PARTIAL | Phases 0–4 substantially implemented, Phase 5/6 gated by external QA |
-| 28 | Strict development rules | POLICY | Preserve data, refuse unverified claims, use review branches |
-| 29 | Documentation | PARTIAL | Current-status audit refreshed; historical candidate text explicitly labelled; continue recording exact-head release evidence |
-| 30 | Progress reporting | POLICY | Report implementation, changed files, tests, blockers, limitations |
-| 31 | Final acceptance criteria | PARTIAL | Real RLS, installed PWA, accessibility, integrations, historical migration |
-| 32 | Instructions to implement | PARTIAL | Continue verified improvements, never claim full completion prematurely |
+No existing account or real planner was a writable test fixture. Temporary tests used reserved-domain confirmed identities without sending mail; all fresh identities/invites were cleaned and test endpoints retired. Provider registrations are intentionally deferred. Retention is explained without unsupported GDPR compliance claims.
 
-## This iteration: iCalendar timezone/data-import hardening
-
-- New `WeekwiseTimeZones` helper validates strict iCalendar date/time fields; supports named IANA TZID values using `Intl.DateTimeFormat`; rejects invalid time zones, nonexistent local times and ambiguous DST-fold instants rather than guessing.
-- Exact UTC values and date-only events retain distinct semantics. Normal floating times remain in device-local wall time.
-- The importer stages changes to a cloned planner, deduplicates with a Set, rejects unsupported recurring items instead of importing misleading partial series, warns about unsupported entries, requires user confirmation, and makes one checked local storage commit. It no longer truncates oversized durations silently.
-- The existing rule that live calendar providers need real configuration and calendar import is **not** two-way sync remains unchanged.
-- This does **not** implement arbitrary IANA-zone week-view rendering, universal TZ conversion of historical planner entries, timezone migration, a recurring `.ics` importer, or server-timezone push guarantees.
-
-## External release gates (cannot be inferred from repository code)
-
-1. With **staging** Supabase project and dedicated test identities: inspect RLS, row isolation, invite enforcement, token expiry and revision locks. Apply any RPC privilege migration only after production-specific approval and backup.
-2. For optional calendars: provider registrations, OAuth consent, secure keys, backend migration/Edge deployment; verify create/update/delete, conflicts and token rotation with actual providers.
-3. For optional push: configure server-side VAPID and scheduler with scoped credentials, verify closed-app delivery, unsubscribe and expired-subscription behavior.
-4. For release certification: test 200% zoom, TalkBack/VoiceOver, real mobile keyboard/rotation, PWA installs and upgrades; test copies of real historical backups in isolated profiles.
-5. Never put private API keys into GitHub commits or a public browser bundle. The only currently authorized production writes in this thread have been GitHub merges/Pages deployments, not Supabase migrations or user-data deletions.
-
-This checklist prevents claims of master-plan completion until the corresponding evidence is actually available.
-
-## Verified additions and evidence at 13 October 2026
-
-- **Calendar import** (section 10): PR #20 implements strict named IANA TZID/UTC/floating event handling with DST fold/gap refusal, review and one checked storage transaction. This is limited to `.ics` import, not a general planner time-zone migration.
-- **Recurring metadata** (sections 10–11): PR #21 offers an unchecked-by-default bulk choice with preview. Only eligible, unmodified future occurrences receive descriptive metadata updates. It explicitly does **not** reschedule tasks, change rule cadence/alarms, or replace completion history.
-- **Testing/release** (sections 23, 25 and 31): Node 74/74, built Chromium 29/29, Edge checks and exact Pages deployment passed at `ea6573c0`. Synthetic browser list navigation-to-paint at 1,000/5,000/10,000 items is measured but is not a real-world Core Web Vitals percentile.
-- **Remaining work**: [issue #22](https://github.com/ZubaerAhmed13/Schedule/issues/22) tracks the external, human, infrastructure and high-risk migration work needed before the entire 32-section plan can be certified.
-
-## Continuation through PR #33 and account-erasure source
-
-PRs #29–#33 deliver lab performance metrics, full Focus search/paging, reversible task lifecycle, reviewed recurring date/time/cadence changes and Monday-first Calendar/planning with IANA Calendar projection. See CURRENT_STATUS.md for exact-head evidence and limits. Account-erasure implementation is disabled by default pending correct-project access, cascade/RLS staging tests and deployment; see ACCOUNT_ERASURE_SETUP.md. None of these automated fixtures establishes production deletion, provider readiness or human accessibility certification.
-
-## Continuation through PR #35 and saved-clock review
-
-PR #34 supplies gated account-erasure source and controls; it is disabled in production pending staging/project access. PR #35's final head `368c38356ca8f00e08ff8541971becb0b5c4d595` passed 129 Node/50 built-client browser tests and all release/Edge gates, adding overnight editing, reviewed swaps, stale-pointer/focus guards and cached-account offline/reconnect fixtures. Phone screenshots were reviewed.
-
-Saved planning-clock review adds source-zone date/instant checks, conservative DST review intervals, carried all-day planning capacity and clear planned-completion labels. Further cross-zone historical migration, private-backend tests, optional providers, field measurements and human accessibility/PWA certification remain external or separate design work; the 32-section plan is still partially complete.
-
-## Generated recurring-clock and preservation review
-
-PR #37 indexes actual source-zone occupancy, preserves generated overnight hours, reserves future all-day commitments and leaves DST gap/fold occurrences unscheduled for review. Retained materialized records are not rewritten. Exact-instant anchors survive reordered object keys; dashboard past/future classification uses captured/source-zone time. The first code head passed 140 Node/53 browser tests and release/Edge checks; final follow-up adds two Node regressions and requires fresh remote checks. SDK imports are pinned to the verified current bundle, with no backend deployment.
-
-## Latest master brief and daily-clock continuation
-
-The later `Pasted text(4).txt` master brief was read in full on 13 October 2026 and retains the same 32-section scope. PR #37 is released with 142 Node/54 browser checks and independently matched Pages marker. The daily-clock follow-up addresses sections 7, 12, 14, 17 and 18 by reusing saved-zone dates and exact instants in read views, extracting pure daily derivation and correcting recorded-history week grouping. Four new Node scenarios and one browser scenario are added; final remote checks remain the release gate. External/device/historical migration gates above still apply.
-
-## Approved cloud-save production update
-
-After correct WeekWise connection, read-only catalog/RLS/grant/cascade inspection and isolated PostgreSQL contract/rollback CI, the user explicitly approved the scoped cloud-save validation update. Migration `20261013132923` was applied only to Weekwise `iajkzlsurghfvsmqkmut`; an atomic aggregate content/row-count assertion preserved every stored row/revision/timestamp. Live read-only checks confirmed malformed/oversized rejection and unrelated-identity read isolation; grants/output order remain compatible. [BACKEND_ACCESS_AUDIT.md](BACKEND_ACCESS_AUDIT.md) records exact SQL/fingerprints and limits. Earlier statements that no production SQL had run describe their historical stage. Optional provider/invitation/erasure activation and real test-identity/device acceptance remain pending; this specific approval does not authorize every future production operation.
-
-## Authorized integration setup
-
-PR #41 and [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md) record migration `20261013142457`, actual three-service deployment, stable Vault keys and live health/RLS checks. Automatic approval rejected pg_net enablement; no cron or disposable Auth test ran and erasure remains disabled. Provider registrations/credentials/consent and actual device notifications remain external. Earlier no-production-operation/undeployed statements describe historical stages.
-
-## Scoped signed account activation
-
-PR #42 provides an expiring one-use HMAC operator request that avoids pg_net. The actual disposable check passed wrong-password/target/token rejection, six owner cascades, other-account preservation, deleted-identity rejection, refresh revocation and the deployed endpoint. Both disposable accounts were cleaned, erasure is enabled and the harness is retired to HTTP 410. Scheduling remains blocked by its pg_net/pg_cron approval, and provider/device/human acceptance still applies.
-
-## Approved minute push scheduler
-
-The user explicitly approved pg_net/pg_cron after the exact role/queued-header risk was explained. Migration `20261013151217` installed exactly one active minute job. Two actual scheduled HTTP responses were 200/ok=true, without timeout/transport failure. Zero devices were subscribed, so this verifies the scheduler/backend boundary, not app-closed notification delivery. Account erasure remains enabled. Calendar credentials and consent, device subscription/permission and wider master-plan acceptance remain external.
+The master brief includes suggested/optional features and asks implementation to continue as environment/permissions allow; do not represent unconfigured optional AI, arbitrary localization, physical OS notifications or legal/field certifications as completed features. [Issue #22](https://github.com/ZubaerAhmed13/Schedule/issues/22) tracks the remaining acceptance scope.

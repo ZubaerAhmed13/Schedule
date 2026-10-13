@@ -1,111 +1,33 @@
-# Weekwise 2.0 release gates
+# Weekwise release checklist
 
-> Current review: [CURRENT_STATUS.md](CURRENT_STATUS.md). The dated sections below are retained as historical release evidence; their earlier candidate labels, counts and pending checkboxes are not the current status.
+Scope: current [CURRENT_STATUS.md](CURRENT_STATUS.md), original 32-section brief, Google/Outlook deferred by the user. Earlier checklists and phase evidence remain in Git history.
 
-Current release checklist. Source/test success alone is not verification of external integrations, private database permissions, real devices or human accessibility. The GitHub Pages build is separately deployed and smoke-tested.
+## Checked core gates
 
-## Implemented checks
+- [x] Preserve canonical task IDs, unknown metadata, completed/history/rules/reminder identifiers and legacy backups.
+- [x] Check account ownership, full snapshot, local baselines, corruption, cloud revision and review age before replacement.
+- [x] Download/checkpoint original historical zone data, SHA-256 review, DST/collision refusal and guarded Undo.
+- [x] Modular controller factories are exercised by behavior tests; all assets are in the versioned offline shell.
+- [x] 167 Node tests, 61 built-browser checks, isolated PostgreSQL and five Deno handlers pass on the checked feature head.
+- [x] 48 live backend boolean checks pass; fresh identities/invitations are cleaned; one-use checker is retired.
+- [x] Invitations are private/hash checked; new submitted invitation metadata is removed despite Auth follow-up updates.
+- [x] Own/cross/anonymous cloud reads, direct-write denial, competing/stale revisions and fresh-client reload verified live.
+- [x] Push ownership/opt-out/dedup and active minute dispatch verified live; UI labels app-closed delivery unverified.
+- [x] Account erasure remains active and password/session/owner protected; other fixture account preserved.
+- [x] Controlled worker install interruption/retry, unfinished editor update guards and offline privacy reload pass.
+- [x] Responsive screenshots generated/reviewed, keyboard/doubled text and axe checks recorded with human limits.
+- [x] Public data/privacy behavior and retention documented; server secrets stay out of Pages.
+- [x] Synthetic browser/list and scheduling measurements recorded without field-CWV claims.
+- [x] Final reviewed PR head requires fresh checks after any last copy/document change.
+- [x] Merge/deploy pipeline uses an expected head and verifies Pages exact commit/run/hash; post-merge workflows are checked separately.
 
-- [x] Audit exact baseline and retain a separate development branch.
-- [x] Preserve canonical keys, stable IDs, completed history, legacy/non-custom data, recurring exceptions and unknown fields.
-- [x] Protect damaged planner/auxiliary data and checked restore/checkpoint behavior.
-- [x] Planning/recovery/splitting require explicit acceptance; stale, conflicting and infeasible changes are rejected.
-- [x] Persist focus timestamps, pause semantics and partial records; separate account caches and device-only mode.
-- [x] Dependency-free tests, syntax/release checks and deterministic frontend build pass locally.
-- [x] Existing browser/calendar/editor and added offline/account tests passed on the intermediate candidate.
-- [x] Expanded remote browser workflow exercises valid restore, recurring recovery, two-device conflict, stale local tabs and responsive dark views; inspect latest PR status before release.
-- [x] Both Supabase Edge Functions type-checked on intermediate candidates; inspect final PR check.
-- [x] Light/dark desktop/tablet/phone screenshots generated and visually reviewed.
-- [x] Frontend-only deployment output with matching versioned JS/CSS and service-worker shell.
-- [x] Optional RPC hardening/privilege diagnostic prepared without production execution.
+## Deferred or external acceptance
 
-## Required before claiming production readiness
+- [ ] Google/Outlook credentials, consent and real calendar round trips — explicitly deferred.
+- [ ] Physical notification permission/provider delivery with Weekwise closed, actual expired-device cleanup and installed PWA operation.
+- [ ] Human VoiceOver/TalkBack, real browser zoom and phone keyboard/rotation review.
+- [ ] Physical two-device reconnect, actual historical private-backup upgrade and real signed-token waiting/expiry/mail delivery.
+- [ ] Real-user 75th-percentile CWV; legal/privacy certification where applicable.
+- [ ] Leaked-password protection — requires Supabase Pro or above; current free plan is unchanged.
 
-- [x] All 55 Node tests, 22 browser tests and both Edge checks pass at 92b2d14; inspect the final follow-up/released commit separately.
-- [ ] Human keyboard/screen-reader, contrast, 200% zoom and actual phone-keyboard review.
-- [ ] Installed-PWA upgrade, standalone layout and interrupted install review.
-- [ ] Actual historical user/backup upgrade in an isolated profile.
-- [ ] Private test-account RLS/invite/token-expiry/reconnect and real device verification.
-- [ ] Stage and authorize optional RPC hardening; ensure direct authenticated writes are revoked and legacy clients still save.
-- [ ] Provider OAuth round trip and configured Google/Outlook integration, if enabled.
-- [ ] Closed-app Web Push delivery/expiry/unsubscribe tests, if enabled.
-- [ ] Measured browser performance for large visible lists; no unsupported Core Web Vitals claims.
-- [ ] Fixed-zone/week-start migration design if those preferences are introduced.
-- [ ] Review and authorize merge/Pages release.
-- [ ] After release, verify `build-info.json` matches the exact commit/run and review installed-client updates.
-
-Never expose OAuth/VAPID/service-role/AI secrets in browser code. Never run production SQL, merge or deploy merely because a source check passes.
-
-## Additional privacy-export gate
-
-- [x] Editor-history export preserves current/archived and malformed drafts while excluding other owners. Node/release CI passed: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307144930; 26 built-client browser tests passed: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38307145282.
-- [x] UI and README warn that exported JSON contains sensitive plaintext; export leaves local archives unchanged (browser assertion). No automatic deletion is implemented.
-
-## Calendar display safety
-
-- [x] Month/Year Sunday-vs-Monday display order tested with Node/Chromium on PR #19 and deployed at dd372f38; 27/27 browser tests passed.
-- [x] Switching grid preference leaves task week bytes unchanged in browser regression; weekly planning remains Sunday-canonical.
-- [ ] Keep arbitrary fixed IANA zone conversion and full Monday-canonical week migration blocked pending a separate, tested migration design.
-
-## 13 October 2026 — TZID and atomic import review branch
-
-- [x] Unit conversion tests cover Europe/Berlin, New York, Kolkata, DST folds/gaps, leap years and invalid zones. PR #20 Node suite passed.
-- [x] Built-client import test covers preview cancellation, confirmed atomic save, correct timezone conversion, ambiguous DST rejection and duplicate UID. PR #20 browser suite passed 28/28.
-- [x] Versioned Pages shell includes timezone module; offline browser regression passed with PR #20.
-- [x] PR #20 reviewed head passed Node/browser/Edge checks; post-merge main Pages and Chromium workflow succeeded at 96d0dbc3.
-- [ ] Real provider OAuth, full app timezone selection and recurrence ICS ingestion remain separate release gates.
-
-## Safe bulk recurring edit review
-
-- [x] Recurring bulk unit tests protect customized/completed tasks, immutable previews, stale originals and time/reminder/history fields; Node suite passed 74/74.
-- [x] Browser tested opt-in preview, future propagation, stable identity and unchanged time/alert fields; 29/29 on post-merge main at ea6573c0.
-- [x] Browser regression/isolated cloud/offline fixtures passed, 29/29 on deployed main ea6573c0.
-- [ ] Changes of dates, recurrence cadence, deadlines or scheduled times on previously materialized activities remain outside bulk metadata scope.
-
-## Release evidence — 13 October 2026
-
-The latest merged feature set is at `ea6573c08433ec6995feb6740968b7944ea4cb21`, PRs #16–#21 merged. Deployment smoke-test: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337641. Post-merge Chromium: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337738 (29 passed, 0 failed). Release/unit suite: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337745 (74 passed, 0 failed). Public Auth probe: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337747. Edge Function type checks: https://github.com/ZubaerAhmed13/Schedule/actions/runs/38354337801.
-
-**Not certified:** No verified private Supabase RLS/invite test accounts; no external OAuth/Web Push round trip; no real installed-PWA upgrade, screen-reader/zoom, historical private-data migration or field Core Web Vitals measurement. These gates are tracked in [issue #22](https://github.com/ZubaerAhmed13/Schedule/issues/22).
-
-## Progressive onboarding and dialog accessibility release gate
-
-- [ ] Node: guide preference remains account-isolated, optional and safe if localStorage fails.
-- [ ] Chromium: guide appears for empty planner, dismissal persists, Settings can reopen it, and navigation works without adding tasks.
-- [ ] Chromium: task/utility dialog Tab wrap and Shift+Tab, real launcher focus return and no nested dialog role.
-- [ ] Verify narrow screens and PWA cache include guide script; no data-model, cloud, invite or session changes.
-- [ ] Human WCAG 2.2 AA, 200% text resize, screen-reader/TalkBack/VoiceOver, phone keyboard and installed-PWA reviews remain separately required.
-
-## Scheduled workload / stability insight review
-
-- [ ] Node: overlapping fixed and flexible scheduled intervals are unioned, overnight spill is shown on both relevant days and previous-week spill into Sunday counted; all-day/unscheduled entries excluded.
-- [ ] Node: recorded recovery count deduplicates history; only timer-linked focus with explicit task estimates enters comparison, no actual time invented.
-- [ ] Built-client browser: 7-day workload is legible on desktop and small phone; legends distinguish scheduled hours, logged focus and estimates.
-- [ ] Confirm unrelated completion/habit metrics and weekly reflection persist unchanged.
-- [ ] Historical manual edits without reschedulingHistory are deliberately not counted as recorded recovery moves.
-
-## Service-worker update handoff regression
-
-- [ ] Node and Chromium: update initiation blocked while task/template/utility editor, quick capture or unsaved weekly review is active.
-- [ ] Once draft/review is saved or closed, update becomes eligible without clearing planner storage.
-- [ ] Existing device-only offline create/reload, account isolation, browser and Edge checks remain green.
-- [ ] Actual installed-PWA update, interrupted installation and mobile standalone lifecycle are still real-device certification gates.
-
-## Automated accessibility quality gate
-
-- [ ] Run pinned `axe-core` WCAG 2.0/2.1/2.2 A and AA checks on the built Chromium Today, Settings, Plan and task editor, plus dark-mode Today/Settings and 320px Today; block serious and critical findings, and check 320px horizontal reflow.
-- [ ] Save the full violation and inconclusive-check summary as a CI artifact; manually triage moderate and needs-review items.
-- [ ] Confirm keyboard focus restoration, text scaling/reflow and actual phone screen readers independently. Automated axe results are not proof of full WCAG 2.2 AA conformance.
-
-## Weekly-flexible habit rhythm
-
-- [ ] Node checks 1–7/week target, completed versus in-progress week, weekly streak, skip/pause semantics, and legacy scheduled-day behavior.
-- [ ] Browser can create an any-day weekly target, check in, edit, and save without losing historical check-ins.
-- [ ] Switching frequency mode preserves original selected weekday checkboxes, and no fake missed days or reminder obligations follow meeting a weekly target.
-- [ ] Local/cloud collection validation and offline synchronization still pass.
-
-## Browser performance evidence gate
-
-- [ ] Chromium writes `lab-performance.json` for 390px and 1440px viewports (DOM-ready, paint samples, cumulative layout shift, resource count/size).
-- [ ] Values are numeric/finite and labeled **synthetic lab**, with no unsupported real-user LCP/CLS percentile or INP claim.
-- [ ] A person checks the per-release trend and separate 1k/5k/10k list paint timings; field Core Web Vitals/real phone tests remain unverified.
+Optional generative AI stays disabled without safe valid service configuration. No secret, email or real-user write is required merely to pass a synthetic test. An external gate is not satisfied by changing its label.

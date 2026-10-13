@@ -12,4 +12,23 @@ Use the reviewed SQL challenge from `supabase/operations/weekwise-activation-che
 
 These are live backend fixtures, not a real physical two-device test, real notification-provider delivery, mail delivery or a test of waiting for a signed access token to expire. Supabase access tokens can remain valid until their expiry after sign-out; refresh revocation is checked separately. Existing automated browser expiry/offline/reconnect tests remain complementary evidence. Do not change production JWT lifetime or authentication configuration merely to accelerate a test. Legal accessibility/privacy certification and physical device evidence remain separate acceptance work.
 
-Live results are pending for this candidate; append exact applied migration IDs, function versions, boolean receipts, cleanup counts and released commit after verification.
+## Actual production results — 13 October 2026
+
+Applied only through WeekWise / `iajkzlsurghfvsmqkmut`:
+
+| Migration | Applied ID |
+|---|---|
+| Atomic push owner registration | `20261013180116` |
+| Private invitation enforcement | `20261013180214` |
+| Initial invitation metadata minimization | `20261013182224` |
+| Auth follow-up metadata update guard | `20261013183111` |
+
+The larger combined guarded request twice returned `Invalid or expired requestState` and did not apply. Smaller reviewed migrations then succeeded. Their DDL adds private configuration/trigger/function behavior; it never updates an existing Auth user or any of the six existing public Weekwise tables. The combined aggregate-preservation transaction is verified in isolated PostgreSQL and retained for future reviewed use; it is not represented as the initial production execution.
+
+Live acceptance first passed 46 checks. A subsequent minimization check exposed Auth writing signup metadata again after the initial insert; all failed-check fixtures were cleaned. The additional update trigger removes only a newly introduced invitation field on future metadata writes and never rewrites historical account metadata during migration. The final persisted-user and subsequent sign-in checks pass, with all **48 boolean checks true**. Zero fresh identities/invite groups remain, the one-use flag is false and erasure is still enabled. Push version 5 is active; backend checker version 4 ran acceptance and is retired as version 5 / HTTP 410. Existing erasure activation checker remains retired.
+
+The automatic review rejected a temporary rollback to the older direct-upsert push handler because it would retain the known ownership flaw. The safer atomic ownership migration succeeded and that rollback was not executed. No approval blocker remains for that operation.
+
+The original bootstrap hash and owner Vault invitation survive cleanup. Future operators must include both metadata migrations when recreating/reapplying invitation setup; reapplying the legacy bootstrap script alone would not preserve current minimization behavior. Read-only postchecks confirm service helpers are denied to browser roles, minute dispatch remains HTTP 200/ok=true, all six owner cascades remain validated and the save-RPC contract is retained.
+
+Security advisors retain intentional owner-checked cloud RPC and pg_net catalog-namespace warnings plus free-plan leaked-password protection. [Remediation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). No policies/browser grants were added to the server-only tables to suppress INFO notices.

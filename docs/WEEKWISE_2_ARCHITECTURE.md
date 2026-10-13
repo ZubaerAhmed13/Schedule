@@ -1,13 +1,15 @@
 # Weekwise 2.0 architecture
 
-Weekwise retains the existing HTML/CSS/JavaScript application and Supabase endpoints. Canonical data remains compatible with the baseline; no production database migration has been executed. PRs #16–#37 are released. [CURRENT_STATUS.md](CURRENT_STATUS.md) records exact-head evidence and remaining acceptance gates.
+Weekwise retains the existing HTML/CSS/JavaScript application and Supabase endpoints. Canonical data remains compatible with the baseline. Approved non-calendar production setup is recorded in LIVE_BACKEND_ACCEPTANCE.md; Google/Outlook remain deferred. [CURRENT_STATUS.md](CURRENT_STATUS.md) records exact-head evidence and remaining acceptance gates.
 
 ## Client modules
 
 | File | Responsibility |
 | --- | --- |
 | `index.html` | Semantic markup, public Supabase configuration and relative asset references |
-| `js/weekwise-app.js` | Canonical state, preserved editors/views/utilities, recurrence, integration bridges and cloud orchestration |
+| `js/weekwise-app.js` | 607-line canonical-state startup/orchestrator with explicit live state accessors |
+| `js/weekwise-app-*.js` | 17 injected controller factories: persistence, cloud, editor, calendar, settings, workspace, focus, habits, recurrence, notifications, transfers, capture, templates, zones, countdowns, primitives and startup |
+| `js/weekwise-zone-conversion.js`, `js/weekwise-zone-conversion-ui.js` | Pure reviewed historical zone conversion, original download/checkpoint, SHA-256 review and guarded apply/Undo |
 | `js/weekwise-data.js` | Validation, recovery guards, checked local transactions and sync labels |
 | `js/weekwise-planning.js` | Pure availability/capacity engine, deterministic proposals, recovery, selected application and linked splitting |
 | `js/weekwise-plan-ui.js` | Preferences, custom windows, placement review, selected approval, checkpoints and guarded Undo |
@@ -29,7 +31,7 @@ Weekwise retains the existing HTML/CSS/JavaScript application and Supabase endpo
 | `css/weekwise-legacy.css` | Extracted existing styles for preserved feature compatibility |
 | `css/weekwise-plan.css`, `css/weekwise.css` | Planning components and shared green design tokens/responsive overrides |
 
-The main module is still large. Further separation should follow measured behavior, with pure state APIs replacing individual legacy functions incrementally. This refactor removes executable app logic and legacy styles from HTML without replacing working features.
+The former 2,740-line controller is split into 17 factories and a 607-line orchestrator. Factories receive explicit live getters/setters and export real function references; no runtime evaluation or new shipped dependency is used. Behavioral tests execute actual factories. Pure model modules remain separate from DOM presentation. Future refactors should reduce explicit state coupling incrementally; the shared state accessor layer is intentional compatibility scaffolding.
 
 ## State and transactions
 
@@ -45,7 +47,7 @@ Cloud saves deep-copy their payload and capture the authenticated token, user ID
 
 Storage key remains `weekwise-planner-v2`; cloud payload version is 1; JSON backup version is 6. Existing extension fields, IDs, completed history, reminders, recurring exceptions and week metadata are retained. New fields are additive: scheduling mode, explicit duration estimate, completion requirement, Today highlight, split links/history, planning preferences, weekly reviews, habit schedules and recorded device timezone.
 
-Canonical weeks remain Sunday buckets with stable original references. Monday-first Week/planning/review operate over real date ranges spanning those buckets. Calendar can project into a separate IANA display zone; date-only/all-day records keep calendar dates. New checked placements capture `scheduleInstant` with a scalar-matched anchor; unchanged legacy records are not rewritten. Source-zone planning/recurrence and the current Today/Focus/Insights follow-up share these date/instant utilities. Invalid/ambiguous DST wall times require review; no invented instant is assigned. A different device zone still pauses editing/reminder checks until explicit review. Full historical source-zone migration and independent planning-zone conversion remain separate design work. Legacy data without timezone metadata uses the device zone until saved.
+Canonical weeks remain Sunday buckets with stable original references. Monday-first Week/planning/review operate over real date ranges spanning those buckets. Calendar can project into a separate IANA display zone; date-only/all-day records keep calendar dates. New checked placements capture `scheduleInstant` with a scalar-matched anchor; unchanged legacy records are not rewritten. Source-zone planning/recurrence and the current Today/Focus/Insights follow-up share these date/instant utilities. Invalid/ambiguous DST wall times require review; no invented instant is assigned. A different device zone needs explicit owner/device review; users can retain their saved zone or review historical conversion. Missing legacy zone metadata remains missing until its source is explicitly chosen. Historical conversion preserves either exact instants or local clock values, including archived records, completed history and reminder identities. Date-only records keep dates; future source-zone recurring rules carry their own IANA zone.
 
 ## Build and offline behavior
 
@@ -55,4 +57,4 @@ Service-worker install caches one matching shell. Navigation falls back to that 
 
 ## Server boundaries
 
-Push, calendar OAuth/sync and account erasure are separate Supabase Edge Functions. Browser source has public URL/anon configuration only. Erasure is disabled until explicit correct-project configuration and cascade/RLS staging validation; the frontend does not collect password/confirmation fields until the health check confirms configuration. Function type checks and synthetic transport tests do not prove private production policies or provider readiness.
+Push, calendar OAuth/sync and account erasure are separate Supabase Edge Functions. Browser source has public URL/anon configuration only. Erasure is active after live disposable-account/cascade/session checks; health-gated confirmation remains in the client. Invitations, owner-preserving push registration and minute scheduling are active. All 48 live backend checks pass. Temporary signed checkers are retired. Provider/OS notification delivery and calendar credentials/consent remain separate evidence. Browser source contains only public client configuration.
