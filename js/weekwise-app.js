@@ -633,7 +633,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   renderTaskTemplateOptions();$('taskTemplateSelect').value='';$('deleteTaskTemplateBtn').disabled=true;
   $('editTaskId').value=t?.id||'';if(!t)clearActivityTemplateSelection();else hideActivitySuggestions();$('modalTitle').textContent=t?'Edit task':'Add a task';
   $('modalDescription').textContent=t?'To move this activity, choose a new day and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the day, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
-  $('modalDescription').textContent+=' Clock fields use '+(store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'.';if(t?.recurrenceScheduleReview)$('modalDescription').textContent+=' Recurring time needs review: '+t.recurrenceScheduleReview.reason;
+  $('modalDescription').textContent+=' Clock fields use '+(store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'.';if(t?.recurrenceScheduleReview){const review=t.recurrenceScheduleReview;$('modalDescription').textContent+=' Recurring time needs review: '+(Number.isFinite(review.preferred)?minsTime(review.preferred)+' on '+review.date+' in '+review.zone+'. ':'')+(review.reason||'Choose reviewed hours.');}
   $('modalTitleInput').value=t?.title||'';$('modalDay').value=String(t?.day??day);$('modalCategory').value=t?.type||'life';
   const folderView=workspaceView.startsWith('folder:'),selectedFolder=folderView?workspaceView.slice(7):'';
   const folderExisting=folderView?workspaceRecords().find(r=>(r.task.folderName||defaultFolderName(r.listId))===selectedFolder):null;
@@ -655,7 +655,7 @@ function openTaskModal(id=null,day=mobileDay,startAt=null,defaultListId=null){
   $('modalNoSchedule').checked=!!(t&&(t.unscheduled||t.start==null)&&!t.allDay)||(!t&&defaultListId==='inbox');
   const durationSelect=$('modalDuration'),duration=String(t?.duration||30);
   if(!Array.from(durationSelect.options).some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=durationLabel(Number(duration));durationSelect.add(option);}
-  durationSelect.value=duration;const chosenStart=t?.start??(startAt===null||startAt===undefined?nextQuarterHour():startAt);$('modalTime').value=minsTime(chosenStart);updateEndTimeFromDuration();$('modalNote').value=t?.note||'';
+  durationSelect.value=duration;const chosenStart=t?.start??(Number.isFinite(t?.recurrenceScheduleReview?.preferred)?t.recurrenceScheduleReview.preferred:(startAt===null||startAt===undefined?nextQuarterHour():startAt));$('modalTime').value=minsTime(chosenStart);updateEndTimeFromDuration();$('modalNote').value=t?.note||'';
   $('saveTaskBtn').textContent=t?'Save changes':'Add task';$('deleteTaskBtn').style.display=t&&!t.fixed?'inline-flex':'none';$('archiveTaskBtn').hidden=!t||!!t.fixed;$('seriesScheduleOpen').hidden=!t?.seriesId||!!t.fixed;
   updateModalScheduleVisibility();
   taskModalInitialFingerprint=taskModalFingerprint();
@@ -747,7 +747,7 @@ function saveModalTask(e){if(!dataCanWrite()){arguments[0]?.preventDefault?.();r
       t.title=title;t.day=day;t.type=type;t.schedulingMode=schedulingMode;t.duration=duration;t.note=note;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.focusEstimateMinutes=focusEstimateMinutes;t.estimatedDurationMinutes=estimatedDurationMinutes;t.requiresCompletion=requiresCompletion;t.todayPriority=todayPriority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedTimes=(Array.isArray(t.reminderNotifiedTimes)?t.reminderNotifiedTimes:[]).filter(value=>reminderTimes.includes(value));if(t.reminderNotifiedAt&&reminderTimes.includes(t.reminderNotifiedAt)&&!t.reminderNotifiedTimes.includes(t.reminderNotifiedAt))t.reminderNotifiedTimes.push(t.reminderNotifiedAt);t.reminderNotifiedAt=t.reminderNotifiedAt===reminderAt?reminderAt:null;t.tags=tags;t.attachments=attachments;t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;
       const prior=Array.isArray(t.subtasks)?t.subtasks:[];
       t.subtasks=subtasks.map(s=>{const old=prior.find(p=>typeof p==='object'&&p.title===s.title);return old?{...old,...s,id:old.id||s.id,done:!!old.done}:{...s};});
-      t.start=noSchedule||allDay?null:editorSlot.start;t.scheduleInstant=editorSlot?.scheduleInstant;delete t.recurrenceScheduleReview;t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
+      t.start=noSchedule||allDay?null:editorSlot.start;t.scheduleInstant=editorSlot?.scheduleInstant;if(editorSlot?.start!=null||allDay||recurrence==='none')delete t.recurrenceScheduleReview;t.unscheduled=noSchedule||(!allDay&&t.start===null);actualStart=t.start;
       if(recurrence==='none'){
         if(oldSeriesId){if($('modalRecurrenceScope').value==='occurrence'){const rule=store.recurringTemplates.find(r=>r.id===oldSeriesId);if(rule)rule.excludedDates=[...new Set([...(rule.excludedDates||[]),t.occurrenceDate||occurrenceDate])];t.seriesId=null;t.recurrence='none';t.occurrenceDate=null;}else stopRecurringSeries(t,occurrenceDate,$('modalRecurrenceScope').value);}
         else{t.recurrence='none';t.seriesId=null;t.occurrenceDate=null;}
@@ -2721,7 +2721,7 @@ const plannerBridge={
  }
 };
 WeekwiseAccountUI.init({
- owner(){return currentDataOwner;},url:SUPABASE_URL+'/functions/v1/weekwise-account',key:SUPABASE_PUBLISHABLE_KEY,announce:showToast,
+ owner(){return currentDataOwner;},signedIn(owner){return cloudUser?.id===owner&&currentDataOwner===owner;},label(){return cloudUser?.email||'No signed-in account';},url:SUPABASE_URL+'/functions/v1/weekwise-account',key:SUPABASE_PUBLISHABLE_KEY,announce:showToast,
  async session(owner){
   if(!cloudClient||cloudUser?.id!==owner||currentDataOwner!==owner)throw new Error('Sign in to this account before erasure.');
   const verified=await cloudClient.auth.getUser(),session=await cloudClient.auth.getSession();

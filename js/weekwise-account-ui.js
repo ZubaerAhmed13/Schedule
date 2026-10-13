@@ -2,10 +2,10 @@
  'use strict';let app=null,owner=null,configured=false,busy=false,checking=0;
  const $=id=>document.getElementById(id),phrase='DELETE MY WEEKWISE ACCOUNT';
  function status(message){$('accountEraseStatus').textContent=message;}
- function controls(){$('accountEraseSubmit').disabled=busy||!configured;$('accountEraseClose').disabled=busy;}
+ function controls(){$('accountEraseSubmit').disabled=busy||!configured;$('accountEraseClose').disabled=busy;for(const id of ['accountErasePassword','accountErasePhrase','accountEraseBackup'])$(id).disabled=busy||!configured;}
  async function open(){
-  if(busy)return;owner=app.owner();configured=false;$('accountEraseForm').reset();controls();$('accountEraseDialog').showModal();
-  if(!owner||owner==='local'){status('Sign in to the password account you want to delete. Device-only planners have no cloud account to erase.');return;}
+  if(busy)return;owner=app.owner();$('accountEraseOwner').textContent=app.label();configured=false;$('accountEraseForm').reset();controls();$('accountEraseDialog').showModal();
+  if(!owner||owner==='local'||!app.signedIn(owner)){status('Sign in to the password account you want to delete. Device-only planners have no cloud account to erase.');return;}
   const request=++checking;status('Checking whether account erasure is configured…');
   try{const response=await fetch(app.url,{headers:{apikey:app.key},cache:'no-store'}),value=await response.json();
    if(request!==checking)return;
