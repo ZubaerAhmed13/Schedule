@@ -31,3 +31,7 @@ Account caches use owner-specific keys. A transition preserves the previous payl
 PRs #16–#21 have been reviewed, merged and deployed. The live build after PR #21 is `ea6573c08433ec6995feb6740968b7944ea4cb21`. To roll back code, create a normal revert commit rather than force pushing. Export all data before downgrading; the old baseline had deletion heuristics and must not be reintroduced into a real profile without isolated compatibility checks.
 
 Browser coverage includes legacy and recurring history, damaged primary/habit bytes, invalid restore, valid confirmed restore, quota failure, account separation and actual offline reload. Real historical backups and private test-account/backend verification remain release gates.
+
+## Recoverable task lifecycle
+
+Optional `taskHistory` entries retain Archive/Recently removed groups, original week/task snapshots and changed recurrence exclusions. Legacy planners without this field load unchanged. Backups and cloud snapshots carry the history; malformed history is rejected rather than cleared. Restore preserves original identities and details, refuses identity/slot collisions, and offers an explicitly chosen unscheduled restore with the original schedule retained. No retention purge runs. Undo rejects newer planner/account changes.

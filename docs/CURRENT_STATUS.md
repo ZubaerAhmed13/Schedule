@@ -51,3 +51,9 @@ No production Supabase migration, user-data deletion or provider activation is p
 Six Node behavior tests cover 10,000 records, search outside the first page, pinned selection, completion/removal, empty results and index bounds. Two built-client browser tests exercise narrow-screen paging/search, paused reload/completed association, exact logged session identity, full canonical preservation and account separation. The selector script is included in the versioned offline shell. Browser CI remains the release gate.
 
 The Focus dialog now uses the shared green theme and readable text colors. The existing axe gate also audits the Focus dialog in light and dark mode; its serious/critical findings must be empty before release.
+
+## Task lifecycle continuation
+
+Existing task removal now moves original records to Recently removed; the task editor also offers Archive. Settings exposes both collections with search, 100-entry paging, exact-record restore, optional unscheduled restore when original slots are occupied, and guarded last-removal Undo. Linked task parts move as one group. Recurrence exclusions prevent archived occurrences being regenerated; restoring does not overwrite a subsequently edited rule. History is part of the account-scoped planner store, ordinary JSON backup and cloud snapshot. Fixed settings blocks cannot be removed here. No automatic purge or actual user-account deletion is performed.
+
+Seven new pure tests plus existing shared transaction tests cover retention, linked identity, backup validation, conflicting restore and independent recurrence edits. Two Chromium regressions cover archive/remove/restore/Undo, reload and account isolation. The shared checked commit bridge is reused across planning and task lifecycle to protect stale tabs, account changes, quotas and cloud conflicts. Final branch checks remain mandatory. Archive changes active task totals; recorded focus history remains retained.
