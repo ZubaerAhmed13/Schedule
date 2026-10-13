@@ -59,3 +59,10 @@ body[data-theme=dark] .workspace-sidebar-footer,body[data-theme=dark] .workspace
 body[data-theme=dark] .workspace-empty p,body[data-theme=dark] .workspace-list-footnote,
 body[data-theme=dark] .workspace-capture-hint kbd{color:var(--ww-muted)}
 body[data-theme=dark] .workspace-capture-hint kbd{background:var(--ww-soft);border-color:var(--ww-line)}
+
+
+/* Restore themed surfaces for onboarding; never put dark-theme text over white cards. */
+.today-onboarding{background:var(--ww-surface);color:var(--ww-text);border-color:var(--ww-line)}
+.today-onboarding-steps article{background:transparent;border-color:var(--ww-line)}
+.today-onboarding-head h3,.today-onboarding-steps h4{color:var(--ww-text)}
+.today-onboarding-head p,.today-onboarding-steps article>span,.today-onboarding-steps p{color:var(--ww-muted)}
