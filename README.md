@@ -110,6 +110,6 @@ The original 32-section master upgrade plan is audited in [docs/MASTER_PLAN_VERI
 
 Importing an `.ics` file now previews the number of new, duplicate, and unsupported entries before any planner changes. Named IANA `TZID` values are converted to the importing device's time zone. A missing/nonexistent local time or ambiguous DST-fold occurrence is **skipped and reported** rather than assigned a potentially incorrect instant. A regular UTC `Z` timestamp stays absolute; a floating timestamp follows the device's local clock. Date-only events keep their calendar dates. Recurring rules from external files are intentionally not imported as one-off instances; use calendar integration when configured or add those manually. No records are changed if the confirmation is dismissed.
 
-### Previously saved recurring series (review feature)
+### Previously saved recurring series (opt-in, released)
 
 When editing a recurring task, choose **Rule from this occurrence onward** or **Entire recurring rule**. The new, *unchecked-by-default* “Also update unchanged future occurrences” option lets you review and approve the number of existing future records that will receive descriptive changes. Completed work, separately edited exceptions, times, reminders and saved history are never overwritten by this option. Scheduling-time and recurrence-cadence migrations are not automatically propagated.
