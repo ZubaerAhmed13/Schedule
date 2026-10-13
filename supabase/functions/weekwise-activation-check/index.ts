@@ -10,7 +10,7 @@ Deno.serve(async(request:Request)=>{
  if(request.method!=='POST')return Response.json({error:'Use POST for an operator-enabled check.'},{status:405});
  const admin=createClient(url,key,options);
  let configuration:Record<string,string>;
- try{configuration=await runtimeConfiguration(admin,name=>Deno.env.get(name),['WEEKWISE_ACTIVATION_CHECK_SECRET']);}catch(_){return Response.json({error:'Activation check unavailable.'},{status:503});}
+ try{configuration=await runtimeConfiguration(admin,(name:string)=>Deno.env.get(name),['WEEKWISE_ACTIVATION_CHECK_SECRET']);}catch(_){return Response.json({error:'Activation check unavailable.'},{status:503});}
  if(!activationSecretMatches(request.headers.get('x-weekwise-activation-secret'),configuration.WEEKWISE_ACTIVATION_CHECK_SECRET))return Response.json({error:'Operator authentication required.'},{status:401});
  const {data:claimed,error:claimError}=await admin.rpc('weekwise_claim_activation_check');
  if(claimError||claimed!==true)return Response.json({error:'Activation check is disabled.'},{status:403});
