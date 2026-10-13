@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.weekwise-calendar]
 verify_jwt = false
+
+[functions.weekwise-account]
+verify_jwt = false

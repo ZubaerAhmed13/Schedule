@@ -1,5 +1,5 @@
 # Weekwise 2.0 — master-plan verification matrix
-Reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and code on `main` at `b173a18551b3b5c45d0be456632afaedb1a3eea9` (2026-10-13).
+Original baseline reviewed against the user's original 32-section "MASTER DEVELOPMENT PROMPT" and code on `main` at `b173a18551b3b5c45d0be456632afaedb1a3eea9` (2026-10-13).
 
 Current release/tests and the prioritized backlog are in [CURRENT_STATUS.md](CURRENT_STATUS.md). PRs #16–#28 are merged; the baseline passes 83 Node and 35 built-client browser tests.
 
@@ -16,8 +16,8 @@ Current release/tests and the prioritized backlog are in [CURRENT_STATUS.md](CUR
 | 7 | Today | VERIFIED for core task/capacity widgets | Usability study and all edge-state coverage |
 | 8 | Smart Week Builder | VERIFIED for deterministic core | Arbitrary time-zone planning and observed usage |
 | 9 | Recover My Week | VERIFIED for core | Complex recurring/multi-device production cases |
-| 10 | Calendar, DST, midnight, overlapping events | PARTIAL | Full IANA-zone planner view and cross-midnight recurrence validation |
-| 11 | Task management and NLP capture | PARTIAL | Complete undo/archive/deletion UX |
+| 10 | Calendar, DST, midnight, overlapping events | PARTIAL | Date-aware Calendar display and Monday planning delivered; arbitrary planner-zone conversion and explicit overnight editor remain |
+| 11 | Task management and NLP capture | VERIFIED for representative fixtures | Archive, Recently removed, restore and guarded Undo delivered; historic/private-data acceptance remains |
 | 12 | Useful Insights | PARTIAL | Daily unioned workload, recorded recovery and task-linked focus/estimate comparison delivered; broader historic actual-work trends and usability remain |
 | 13 | Habits | PARTIAL | Flexible 1–7/week targets and legacy-preserving UI delivered; manual real-user QA remains |
 | 14 | Focus | VERIFIED for measured focus, pause and reload | Installed-PWA foreground/background platform QA |
@@ -64,3 +64,7 @@ This checklist prevents claims of master-plan completion until the corresponding
 - **Recurring metadata** (sections 10–11): PR #21 offers an unchecked-by-default bulk choice with preview. Only eligible, unmodified future occurrences receive descriptive metadata updates. It explicitly does **not** reschedule tasks, change rule cadence/alarms, or replace completion history.
 - **Testing/release** (sections 23, 25 and 31): Node 74/74, built Chromium 29/29, Edge checks and exact Pages deployment passed at `ea6573c0`. Synthetic browser list navigation-to-paint at 1,000/5,000/10,000 items is measured but is not a real-world Core Web Vitals percentile.
 - **Remaining work**: [issue #22](https://github.com/ZubaerAhmed13/Schedule/issues/22) tracks the external, human, infrastructure and high-risk migration work needed before the entire 32-section plan can be certified.
+
+## Continuation through PR #33 and account-erasure source
+
+PRs #29–#33 deliver lab performance metrics, full Focus search/paging, reversible task lifecycle, reviewed recurring date/time/cadence changes and Monday-first Calendar/planning with IANA Calendar projection. See CURRENT_STATUS.md for exact-head evidence and limits. Account-erasure implementation is disabled by default pending correct-project access, cascade/RLS staging tests and deployment; see ACCOUNT_ERASURE_SETUP.md. None of these automated fixtures establishes production deletion, provider readiness or human accessibility certification.

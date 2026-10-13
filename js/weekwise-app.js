@@ -2695,6 +2695,23 @@ const plannerBridge={
   syncSettingsForm();renderAll();queueCloudSave();
  }
 };
+WeekwiseAccountUI.init({
+ owner(){return currentDataOwner;},url:SUPABASE_URL+'/functions/v1/weekwise-account',key:SUPABASE_PUBLISHABLE_KEY,announce:showToast,
+ async session(owner){
+  if(!cloudClient||cloudUser?.id!==owner||currentDataOwner!==owner)throw new Error('Sign in to this account before erasure.');
+  const verified=await cloudClient.auth.getUser(),session=await cloudClient.auth.getSession();
+  if(verified.error||verified.data?.user?.id!==owner||session.error||session.data?.session?.user?.id!==owner||!session.data.session.access_token||currentDataOwner!==owner)throw new Error('Your verified account session changed. Sign in again.');
+  return session.data.session;
+ },
+ async detach(owner){
+  if(currentDataOwner!==owner)return;
+  // Invalidate delayed saves before switching away from a confirmed deleted owner.
+  cloudSessionEpoch++;cloudReady=false;clearTimeout(cloudSyncTimer);cloudSyncTimer=null;
+  try{isolatePlannerOwner('local');}catch(error){throw new Error('The cloud account was deleted, but device isolation failed: '+error.message+'. Export your device data before clearing anything.');}
+  cloudUser=null;cloudRevision=0;cloudConflict=null;renderCloudPanel();renderAll();
+  try{const result=await cloudClient.auth.signOut({scope:'local'});if(result?.error)throw result.error;}catch(_){throw new Error('Device sign-out could not finish. Account caches are retained until sign-out is resolved.');}
+ }
+});
 WeekwisePlanUI.init(plannerBridge);
 WeekwiseTaskHistoryUI.init({...plannerBridge,panel:openUtilityPanel,announce:showToast});
 WeekwiseSeriesScheduleUI.init({...plannerBridge,panel:openUtilityPanel,announce:showToast});
