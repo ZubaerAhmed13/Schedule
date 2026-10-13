@@ -1,6 +1,6 @@
 # Weekwise 2.0 release gates
 
-Review branch only. A passing source/test suite is not a production deployment or external-integration verification.
+Current release checklist. Source/test success alone is not verification of external integrations, private database permissions, real devices or human accessibility. The GitHub Pages build is separately deployed and smoke-tested.
 
 ## Implemented checks
 
