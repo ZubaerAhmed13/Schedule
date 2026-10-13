@@ -23,14 +23,41 @@
   const a=parts(begin,sourceZone),b=parts(end,sourceZone),day=new Date(a.date+'T00:00:00Z').getUTCDay(),week=key(ordinal(a.date)-day),wallDuration=(ordinal(b.date)-ordinal(a.date))*1440+b.minute-a.minute;
   const canonical={week,day,start:a.minute,duration:wallDuration>0?wallDuration:duration};canonical.scheduleInstant={start:begin,end,anchor:{week,day,start:canonical.start,duration:canonical.duration,zone:sourceZone}};return canonical;
  }
- function move(store,{week,id},date,start,zone){root.WeekwiseData.validateStore(store);const original=store.weeks[week]?.tasks.find(task=>task.id===id);if(!original||original.fixed||original.done||original.status==='done')throw new Error('Fixed and completed records remain protected.');
-  const sourceZone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone,record=project(store,zone).find(record=>record.week===week&&record.task.id===id),duration=record.instant?(record.instant.end-record.instant.start)/60000:original.duration||30,destination=slot(date,start,duration,zone,sourceZone);
-  const conflicts=project(store,zone).some(other=>!(other.week===week&&other.task.id===id)&&((other.instant&&destination.scheduleInstant.start<other.instant.end&&other.instant.start<destination.scheduleInstant.end)||(other.allDay&&other.date>=date&&other.date<=parts(destination.scheduleInstant.end-1,zone).date)));
-  if(conflicts)throw new Error('The destination overlaps another activity. Nothing was moved.');
-  const next=copy(store);if(destination.week!==week&&next.weeks[destination.week]?.tasks.some(task=>task.id===id))throw new Error('This identity already exists in the destination week.');
-  next.weeks[week].tasks=next.weeks[week].tasks.filter(task=>task.id!==id);if(!next.weeks[destination.week])next.weeks[destination.week]={tasks:[]};
-  const task={...copy(original),day:destination.day,start:destination.start,duration:destination.duration,scheduleInstant:destination.scheduleInstant,unscheduled:false,allDay:false};if(task.seriesId)task.recurrenceOverride=true;
-  task.reschedulingHistory=[...(task.reschedulingHistory||[]),{fromWeek:week,fromDay:original.day,fromStart:original.start,fromDuration:original.duration,toWeek:destination.week,toDay:destination.day,toStart:destination.start,changedAt:new Date().toISOString(),reason:'User-approved calendar move'}];next.weeks[destination.week].tasks.push(task);return root.WeekwiseData.validateStore(next);
+ function moveRecords(store,moves,zone,reason){
+  root.WeekwiseData.validateStore(store);const projected=project(store,zone),sourceZone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone,identity=ref=>JSON.stringify([ref.week,ref.id]),selected=new Set();
+  const changes=moves.map(({ref,date,start})=>{
+   const record=projected.find(r=>r.week===ref.week&&r.task.id===ref.id);
+   if(!record||record.task.fixed||record.task.done||record.task.status==='done')throw new Error('Fixed and completed records remain protected.');
+   if(selected.has(identity(ref)))throw new Error('Choose two different activities.');selected.add(identity(ref));
+   if(record.zoneError)throw new Error('Review the original clock time before moving this activity.');
+   const duration=record.instant?(record.instant.end-record.instant.start)/60000:record.task.duration||30;
+   return {ref,record,destination:slot(date,start,duration,zone,sourceZone)};
+  });
+  const overlaps=(a,b)=>a.start<b.end&&b.start<a.end;
+  for(let i=0;i<changes.length;i++){
+   const span=changes[i].destination.scheduleInstant,begin=parts(span.start,zone).date,end=parts(span.end-1,zone).date;
+   for(const other of projected){
+    if(selected.has(identity({week:other.week,id:other.task.id})))continue;
+    const allDayEnd=ordinal(other.date)+Math.max(1,Math.ceil((other.duration||0)/1440));
+    if((other.instant&&overlaps(span,other.instant))||(other.allDay&&ordinal(other.date)<=ordinal(end)&&allDayEnd>ordinal(begin))||(other.zoneError&&ordinal(other.date)>=ordinal(begin)-1&&ordinal(other.date)<=ordinal(end)+1))throw new Error('The destination overlaps another activity or a clock time needing review. Nothing was moved.');
+   }
+   for(let j=0;j<i;j++)if(overlaps(span,changes[j].destination.scheduleInstant))throw new Error('The swapped activities would overlap. Nothing was moved.');
+  }
+  const next=copy(store);
+  for(const {ref}of changes)next.weeks[ref.week].tasks=next.weeks[ref.week].tasks.filter(task=>task.id!==ref.id);
+  for(const {ref,record,destination}of changes){
+   if(next.weeks[destination.week]?.tasks.some(task=>task.id===ref.id))throw new Error('This identity already exists in the destination week.');
+   if(!next.weeks[destination.week])next.weeks[destination.week]={tasks:[]};
+   const original=record.task,task={...copy(original),day:destination.day,start:destination.start,duration:destination.duration,scheduleInstant:destination.scheduleInstant,unscheduled:false,allDay:false};if(task.seriesId)task.recurrenceOverride=true;
+   task.reschedulingHistory=[...(task.reschedulingHistory||[]),{fromWeek:ref.week,fromDay:original.day,fromStart:original.start,fromDuration:original.duration,toWeek:destination.week,toDay:destination.day,toStart:destination.start,changedAt:new Date().toISOString(),reason}];next.weeks[destination.week].tasks.push(task);
+  }
+  return root.WeekwiseData.validateStore(next);
  }
- root.WeekwiseCalendarRange=Object.freeze({range,wall,parts,project,slot,move,ordinal,key});
+ function move(store,ref,date,start,zone){return moveRecords(store,[{ref,date,start}],zone,'User-approved calendar move');}
+ function swap(store,first,second,zone){
+  const records=project(store,zone),find=ref=>records.find(r=>r.week===ref.week&&r.task.id===ref.id),a=find(first),b=find(second);
+  if(!a?.instant||!b?.instant||a.allDay||b.allDay)throw new Error('Choose two timed activities with reviewed clock times.');
+  return moveRecords(store,[{ref:first,date:b.date,start:b.start},{ref:second,date:a.date,start:a.start}],zone,'User-approved calendar swap');
+ }
+ root.WeekwiseCalendarRange=Object.freeze({range,wall,parts,project,slot,move,swap,ordinal,key});
 })(typeof window!=='undefined'?window:globalThis);
