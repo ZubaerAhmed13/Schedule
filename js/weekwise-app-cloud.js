@@ -164,6 +164,7 @@ async function startCloudForUser(user,force=false){
  if(weekwiseRuntime.cloudUser?.id===user.id&&weekwiseRuntime.currentDataOwner===user.id&&weekwiseRuntime.cloudReady&&!force)return;
  const epoch=weekwiseRuntime.cloudSessionEpoch,userId=user.id;
  if(weekwiseRuntime.cloudInitPromise&&weekwiseRuntime.cloudInitializationUser===userId&&initializingEpoch===epoch)return weekwiseRuntime.cloudInitPromise;
+ const needsLanding=weekwiseRuntime.currentDataOwner!==userId||!weekwiseRuntime.$('signinLanding')?.hidden||!!weekwiseRuntime.cloudAuthBusy;
  initializingEpoch=epoch;
  const initializing=(async()=>{
   weekwiseRuntime.cloudUser=user;weekwiseRuntime.cloudReady=false;weekwiseRuntime.cloudConflict=null;
@@ -185,7 +186,7 @@ async function startCloudForUser(user,force=false){
  })();
  weekwiseRuntime.cloudInitializationUser=userId;weekwiseRuntime.cloudInitPromise=initializing;
  try{await initializing;}finally{if(weekwiseRuntime.cloudInitPromise===initializing){weekwiseRuntime.cloudInitPromise=null;weekwiseRuntime.cloudInitializationUser=null;}}
- if(epoch===weekwiseRuntime.cloudSessionEpoch&&weekwiseRuntime.cloudUser?.id===userId&&weekwiseRuntime.currentDataOwner===userId)weekwiseRuntime.finishSignInLanding();
+ if(needsLanding&&epoch===weekwiseRuntime.cloudSessionEpoch&&weekwiseRuntime.cloudUser?.id===userId&&weekwiseRuntime.currentDataOwner===userId)weekwiseRuntime.finishSignInLanding();
 }
 
 async function initializeCloud(){
