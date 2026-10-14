@@ -3,6 +3,9 @@
 'use strict';
 function create(weekwiseRuntime){
 let cloudReadInFlight=null,initializingEpoch=-1;
+const diagnosticClock=()=>root.performance?.now?.()??Date.now();
+function diagnostic(operation,outcome,owner,started){try{if(owner!==weekwiseRuntime.currentDataOwner)return;const recorded=root.WeekwiseDiagnostics?.record(localStorage,owner,{operation,outcome,build:root.WeekwisePerformance?.build()||'development',durationMs:diagnosticClock()-started});if(recorded&&root.dispatchEvent&&root.Event)root.dispatchEvent(new root.Event('weekwise-diagnostics-change'));}catch(_){}}
+function notifySync(){if(root.dispatchEvent&&root.Event)root.dispatchEvent(new root.Event('weekwise-sync-status'));}
 function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month','agenda','year'].includes(v))view=v;}catch(_){}return {version:1,store:weekwiseRuntime.store,reminders:weekwiseRuntime.reminders,focusSessions:weekwiseRuntime.focusSessions,habits:weekwiseRuntime.habits,countdowns:weekwiseRuntime.countdowns,savedTaskFilters:weekwiseRuntime.savedTaskFilters,taskTemplates:weekwiseRuntime.taskTemplates,calendarView:view};}
 
 function localHasWeekwiseData(){const hasActivities=Object.values(weekwiseRuntime.store.weeks||{}).some(w=>Array.isArray(w&&w.tasks)&&w.tasks.length>0);const hasNotes=Array.isArray(weekwiseRuntime.reminders)&&weekwiseRuntime.reminders.length>0;const hasHabits=Array.isArray(weekwiseRuntime.habits)&&weekwiseRuntime.habits.length>0;const hasCountdowns=Array.isArray(weekwiseRuntime.countdowns)&&weekwiseRuntime.countdowns.length>0;const hasFilters=Array.isArray(weekwiseRuntime.savedTaskFilters)&&weekwiseRuntime.savedTaskFilters.length>0;const hasCustomLists=Array.isArray(weekwiseRuntime.store.customLists)&&weekwiseRuntime.store.customLists.length>0;let settingsChanged=false;try{settingsChanged=JSON.stringify(weekwiseRuntime.store.settings)!==JSON.stringify(weekwiseRuntime.defaultSettings());}catch(_){}return hasActivities||hasNotes||hasHabits||hasCountdowns||hasFilters||hasCustomLists||(Array.isArray(weekwiseRuntime.taskTemplates)&&weekwiseRuntime.taskTemplates.length>0)||settingsChanged;}
@@ -11,7 +14,7 @@ function readCloudMeta(){try{const meta=JSON.parse(localStorage.getItem(weekwise
 
 function writeCloudMeta(revision,payload){localStorage.setItem(weekwiseRuntime.CLOUD_META_KEY,JSON.stringify({userId:weekwiseRuntime.cloudUser?.id||'',revision:Number(revision)||0,fingerprint:weekwiseRuntime.cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}
 
-function setCloudStatus(message){const el=weekwiseRuntime.$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|incorrect|do not match|unavailable|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=weekwiseRuntime.$('cloudMenuBadge');if(badge){badge.textContent=WeekwiseData.syncLabel(message,!!weekwiseRuntime.cloudUser,!!weekwiseRuntime.cloudConflict);badge.title=message;}}
+function setCloudStatus(message){const el=weekwiseRuntime.$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|incorrect|do not match|unavailable|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=weekwiseRuntime.$('cloudMenuBadge');if(badge){badge.textContent=WeekwiseData.syncLabel(message,!!weekwiseRuntime.cloudUser,!!weekwiseRuntime.cloudConflict);badge.title=message;}notifySync();}
 
 function offlineAccountSelected(){return !weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&localStorage.getItem('weekwise-offline-owner-v1')===weekwiseRuntime.currentDataOwner;}
 
@@ -128,7 +131,7 @@ function queueCloudSave(){
 async function saveCloudSnapshot(){
  if(localStorage.getItem(weekwiseRuntime.STORE_KEY)!==weekwiseRuntime.lastSavedDisk||['weekwise-reminders-v1','weekwise-focus-sessions-v1','weekwise-habits-v1','weekwise-countdowns-v1','weekwise-saved-filters-v1','weekwise-task-templates-v1'].some(key=>WeekwiseData.unchanged?.(localStorage,key)===false)){weekwiseRuntime.setCloudStatus('Another tab changed this planner. Reload before syncing.');return;}
  if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length||!weekwiseRuntime.cloudClient||!weekwiseRuntime.cloudUser||!weekwiseRuntime.cloudReady||weekwiseRuntime.cloudApplyingRemote||weekwiseRuntime.cloudConflict||weekwiseRuntime.cloudBusy)return;
- weekwiseRuntime.cloudBusy=true;
+ weekwiseRuntime.cloudBusy=true;notifySync();const diagnosticStart=diagnosticClock();
  const payload=JSON.parse(JSON.stringify(weekwiseRuntime.buildCloudPayload())),expectedRevision=weekwiseRuntime.cloudRevision,savingUserId=weekwiseRuntime.cloudUser.id,savingEpoch=weekwiseRuntime.cloudSessionEpoch;
  let savedPayload=null;
  let reconciled=false;
@@ -138,18 +141,18 @@ async function saveCloudSnapshot(){
   if(error)throw error;
   const result=Array.isArray(data)?data[0]:data;
   if(!result)throw new Error('The cloud returned no save result.');
-  if(!result.saved){const row={data:result.data||{},revision:Number(result.revision)||0,updated_at:result.updated_at||null};reconciled=reconcileCloudRow(row);if(!reconciled)weekwiseRuntime.showCloudConflict(row);return;}
+  if(!result.saved){diagnostic('sync-save','review',savingUserId,diagnosticStart);const row={data:result.data||{},revision:Number(result.revision)||0,updated_at:result.updated_at||null};reconciled=reconcileCloudRow(row);if(!reconciled)weekwiseRuntime.showCloudConflict(row);return;}
   weekwiseRuntime.cloudRevision=Number(result.revision)||expectedRevision+1;weekwiseRuntime.cloudReady=true;
   weekwiseRuntime.writeCloudMeta(weekwiseRuntime.cloudRevision,payload);
-  savedPayload=payload;
+  savedPayload=payload;diagnostic('sync-save','success',savingUserId,diagnosticStart);
   weekwiseRuntime.setCloudStatus('All changes synced · '+new Date(result.updated_at||Date.now()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
   const badge=weekwiseRuntime.$('cloudMenuBadge');if(badge)badge.textContent='Synced';
  }catch(error){
   if(savingEpoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==savingUserId)return;
-  console.warn('Weekwise cloud save could not be confirmed.');
+  console.warn('Weekwise cloud save could not be confirmed.');diagnostic('sync-save','failed',savingUserId,diagnosticStart);
   weekwiseRuntime.setCloudStatus('Cloud save failed. Your changes remain on this device. Weekwise will retry automatically when you reconnect. '+(error?.message||''));
  }finally{
-  weekwiseRuntime.cloudBusy=false;
+  weekwiseRuntime.cloudBusy=false;notifySync();
   if(reconciled)weekwiseRuntime.queueCloudSave();
   // Recheck only after releasing the save lock. A timer may have fired while the
   // previous request was still in flight, so schedule again if newer edits exist.
@@ -383,10 +386,10 @@ async function checkCloudForRemoteChanges(force=false){
  if(!weekwiseRuntime.cloudReady){await weekwiseRuntime.startCloudForUser(weekwiseRuntime.cloudUser,true);return;}
  const readUser=weekwiseRuntime.cloudUser.id,readEpoch=weekwiseRuntime.cloudSessionEpoch;
  if(cloudReadInFlight?.user===readUser&&cloudReadInFlight.epoch===readEpoch)return cloudReadInFlight.promise;
- const reading=(async()=>{try{
+ const diagnosticStart=diagnosticClock();const reading=(async()=>{try{
   const {data:row,error}=await weekwiseRuntime.cloudClient.from('weekwise_cloud_data').select('user_id,data,revision,updated_at').eq('user_id',readUser).maybeSingle();
   if(readEpoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==readUser||weekwiseRuntime.currentDataOwner!==readUser||weekwiseRuntime.cloudBusy||weekwiseRuntime.cloudConflict)return;
-  if(error)throw error;
+  if(error)throw error;diagnostic('sync-read','success',readUser,diagnosticStart);
   const meta=weekwiseRuntime.readCloudMeta(),localFingerprint=weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload()),localDirty=meta?.userId!==readUser||localFingerprint!==meta.fingerprint;
   if(row&&Number(row.revision)>weekwiseRuntime.cloudRevision){
    if(localDirty){if(reconcileCloudRow(row))weekwiseRuntime.queueCloudSave();else weekwiseRuntime.showCloudConflict(row);}else weekwiseRuntime.applyCloudRow(row);
@@ -397,7 +400,7 @@ async function checkCloudForRemoteChanges(force=false){
    await weekwiseRuntime.saveCloudSnapshot();
   }else weekwiseRuntime.setCloudStatus('All changes synced. Checked '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'.');
  }catch(_){
-  if(readEpoch===weekwiseRuntime.cloudSessionEpoch&&weekwiseRuntime.cloudUser?.id===readUser)weekwiseRuntime.setCloudStatus('Cloud check failed. Changes remain on this device; Weekwise will retry automatically when you reconnect.');
+  if(readEpoch===weekwiseRuntime.cloudSessionEpoch&&weekwiseRuntime.cloudUser?.id===readUser){diagnostic('sync-read','failed',readUser,diagnosticStart);weekwiseRuntime.setCloudStatus('Cloud check failed. Changes remain on this device; Weekwise will retry automatically when you reconnect.');}
  }})();
  const active={user:readUser,epoch:readEpoch,promise:reading};cloudReadInFlight=active;
  try{await reading;}finally{if(cloudReadInFlight===active)cloudReadInFlight=null;}

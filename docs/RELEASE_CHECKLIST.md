@@ -31,3 +31,11 @@ Scope: current [CURRENT_STATUS.md](CURRENT_STATUS.md), original 32-section brief
 - [ ] Leaked-password protection — requires Supabase Pro or above; current free plan is unchanged.
 
 Optional generative AI stays disabled without safe valid service configuration. No secret, email or real-user write is required merely to pass a synthetic test. An external gate is not satisfied by changing its label.
+
+## Quality upgrade gates
+
+- Verify the guide stays after first capture, previews remain read-only, approved scheduling completes saved-evidence steps, and dismissal/reopen remains optional.
+- Verify sync diagnostics record an actual controlled failed save and successful retry, protect canonical bytes, exclude private content, stop/clear safely and remain owner-scoped.
+- Audit help and device panels in phone light/dark layouts; inspect actual final screenshots and retain incomplete manual checks.
+- Check public probes with denial, timeout/failure and mismatched-build fixtures, then run the GET-only live checks. Configure owner Actions notifications separately.
+- Retain physical/device/mail/historical-backup/field-performance evidence and server-backup/SMTP setup as unresolved until observed.

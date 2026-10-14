@@ -41,4 +41,5 @@ jobs:
             test-results/*-auth-*.png
             test-results/axe-*-device.json
             test-results/axe-*-auth.json
+            test-results/axe-*-help.json
           if-no-files-found: ignore

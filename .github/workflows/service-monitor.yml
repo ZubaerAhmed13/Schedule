@@ -1,0 +1,26 @@
+name: Weekwise public service monitor
+on:
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/probe-services.mjs'
+      - '.github/workflows/service-monitor.yml'
+permissions:
+  contents: read
+concurrency:
+  group: weekwise-public-service-monitor
+  cancel-in-progress: false
+jobs:
+  public-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check public services without account data or secrets
+        run: node scripts/probe-services.mjs
