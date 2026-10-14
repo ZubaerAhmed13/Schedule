@@ -33,7 +33,7 @@ The final `css/weekwise-polish.css` layer shares adaptive depth, readable numeri
 
 Menus, native dialogs, utility panels, the task editor and the sign-in illustration use finite entrance animations. No action, form submission, focus restoration or dialog close waits for an animation. CSS and JavaScript both follow `prefers-reduced-motion`; changing that preference cancels active JavaScript animations immediately. Hidden pages cancel queued effects. No library, analytics, network call, persisted preference or planner mutation is added by motion. Both assets belong to the versioned offline shell.
 
-Content remains fully opaque throughout entrances so text contrast is retained during motion. Only decorative illustration/backdrop layers fade. Text links and keyboard rings follow the selected palette; primary add actions use the existing local SVG icon system instead of font-dependent full-width symbols.
+Content remains fully opaque throughout entrances so text contrast is retained during motion. Only decorative illustration/backdrop layers fade. Foreground and background palette colours change together immediately; shadow and transform feedback can still animate. Text links and keyboard rings follow the selected palette; primary add actions use the existing local SVG icon system instead of font-dependent full-width symbols.
 
 Browser checks cover rapid navigation, finite animation duration, preference changes during motion, unchanged original records, keyboard Escape/focus restoration, native copy dialogs, phone overflow and reduced-motion task capture. Existing five-theme audits and desktop/phone screenshots remain part of review.
 
