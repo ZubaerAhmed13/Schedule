@@ -15,13 +15,12 @@
  }
  function update(){
   const next=document.querySelector('dialog[open]')||ids.map(id=>document.getElementById(id)).filter(visible).pop()||null;
+  const wrap=document.querySelector('.wrap');if(wrap)wrap.inert=!!next;
   if(next===active)return;
   const prior=active,launcher=document.activeElement;
   // Save the opener BEFORE applying inert; otherwise browsers may move focus to body.
   if(next&&!prior)returnTo=(lastLauncher?.isConnected?lastLauncher:null)||(lastOutsideFocus?.isConnected?lastOutsideFocus:null)||(launcher instanceof HTMLElement?launcher:null);
   active=next;
-  const wrap=document.querySelector('.wrap');
-  if(wrap)wrap.inert=!!active;
   if(active){
    const dialog=active.matches('[role="dialog"]')?active:(active.querySelector('[role="dialog"],.modal')||active);
    dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');

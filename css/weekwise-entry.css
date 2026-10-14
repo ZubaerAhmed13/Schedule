@@ -37,6 +37,7 @@
 .cloud-account-line {color:var(--ww-muted);font-size:13px;line-height:1.7;margin:0 0 18px;}
 .cloud-account-line strong {display:block;color:var(--ww-text);font-size:15px;font-weight:600;}
 .cloud-auth-form>fieldset {border:0;min-width:0;margin:0;padding:0;}
+.cloud-auth-form .cloud-auth-tab,.cloud-auth-form .cloud-password-toggle,.cloud-auth-form .cloud-submit {transition:none;}
 .cloud-auth-tabs {padding:4px;border:1px solid var(--ww-line);border-radius:13px;background:var(--ww-bg);gap:4px;}
 .cloud-auth-tab {padding:11px;color:var(--ww-muted);font-size:13px;font-weight:600;border-radius:9px;min-height:42px;}
 .cloud-auth-tab.active {background:var(--ww-surface);color:var(--ww-brand);box-shadow:0 2px 5px #243b3109;}
