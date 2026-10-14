@@ -28,6 +28,13 @@ async function open(width=390){
 }
 async function credentials(page,password='fixture-password'){await page.locator('#cloudEmail').fill('fixture@example.invalid');await page.locator('#cloudPassword').fill(password);}
 async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-auth-'+name+'.png'),animations:'disabled'});}
+test('the initial form remains visible and refuses credentials until its submit handler is attached',async()=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});let resume,requestedResolve;const requested=new Promise(resolve=>requestedResolve=resolve);
+ await context.route('**/supabase.min.js',route=>new Promise(resolve=>{resume=async()=>{await route.fulfill({status:200,contentType:'text/javascript',body:sdk});resolve();};requestedResolve();}));
+ const page=await context.newPage();try{
+  await page.goto(origin,{waitUntil:'commit'});await requested;await page.locator('#signinFormSlot #cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#cloudEmail').isEnabled(),false);assert.equal(await page.locator('#cloudSignInBtn').isEnabled(),false);assert.equal(await page.locator('#cloudAuthForm').getAttribute('aria-busy'),'true');assert.equal(new URL(page.url()).search,'');assert.ok(resume);const complete=resume;resume=null;await complete();await page.waitForLoadState('domcontentloaded');assert.equal(await page.locator('#cloudEmail').isEnabled(),true);assert.equal(await page.locator('#cloudAuthForm').getAttribute('aria-busy'),'false');
+ }finally{if(resume)await resume().catch(()=>{});await context.close();}
+});
 test('the real sign-in form is visible immediately with stable password-manager fields and one form copy',async()=>{
  const {context,page,errors}=await open(1440);try{
   assert.equal(await page.locator('#signinLanding').isVisible(),true);assert.equal(await page.locator('#utilityModal').isVisible(),false);assert.equal(await page.locator('#cloudAuthForm').count(),1);assert.equal(await page.locator('#cloudEmail').getAttribute('autocomplete'),'username');assert.equal(await page.locator('#cloudPassword').getAttribute('autocomplete'),'current-password');assert.equal(await page.locator('#signinLanding .brand-symbol').count(),1);
@@ -56,7 +63,7 @@ test('password-reset feedback remains visible and recovery requires only the new
 });
 test('entry layouts fit narrow phones and pass automated accessibility checks in light and dark themes',async()=>{
  const results=[];for(const width of [320,390,1440]){const {context,page}=await open(width);try{
-  await page.addScriptTag({content:axe.source});for(const theme of ['light','dark']){await page.evaluate(theme=>document.body.setAttribute('data-theme',theme),theme);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);const result=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));results.push({width,theme,violations:result.violations.map(v=>({id:v.id,impact:v.impact,targets:v.nodes.map(n=>n.target)})),incomplete:result.incomplete.map(v=>v.id)});await snap(page,width+'-'+theme);}
+  await page.addScriptTag({content:axe.source});for(const theme of ['light','dark']){await page.evaluate(theme=>document.body.setAttribute('data-theme',theme),theme);await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);const result=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));results.push({width,theme,violations:result.violations.map(v=>({id:v.id,impact:v.impact,targets:v.nodes.map(n=>n.target)})),incomplete:result.incomplete.map(v=>v.id)});await snap(page,width+'-'+theme);}
  }finally{await context.close();}}
  fs.writeFileSync(path.join(root,'test-results','axe-'+engine+'-auth.json'),JSON.stringify(results,null,2));assert.deepEqual(results.flatMap(r=>r.violations.filter(v=>['serious','critical'].includes(v.impact))),[]);
 });

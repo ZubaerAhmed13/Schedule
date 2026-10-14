@@ -34,6 +34,7 @@
 .cloud-panel-heading {margin:0 0 22px;}
 .cloud-panel-heading .entry-auth-eyebrow {color:var(--ww-muted);font-size:10px;font-weight:600;letter-spacing:1.4px;margin:0 0 10px;}
 .cloud-panel-heading h2 {font-size:30px;line-height:1.2;color:var(--ww-text);letter-spacing:-1px;font-weight:650;margin:0;}
+.cloud-auth-form>fieldset {border:0;min-width:0;margin:0;padding:0;}
 .cloud-auth-tabs {padding:4px;border:1px solid var(--ww-line);border-radius:13px;background:var(--ww-bg);gap:4px;}
 .cloud-auth-tab {padding:11px;color:var(--ww-muted);font-size:13px;font-weight:600;border-radius:9px;min-height:42px;}
 .cloud-auth-tab.active {background:var(--ww-surface);color:var(--ww-brand);box-shadow:0 2px 5px #243b3109;}
@@ -72,7 +73,7 @@ body[data-theme=dark] .cloud-status[data-tone=error] {color:#ffd4c9;background:#
  .signin-landing{padding:20px}.signin-card.entry-shell{max-width:520px;grid-template-columns:1fr;border-radius:26px;}
  .entry-story{padding:24px 28px 20px;background:var(--ww-bg);color:var(--ww-text);border-bottom:1px solid var(--ww-line);}
  .entry-story .signin-brand{color:var(--ww-text);font-size:23px;margin:0 0 16px;}.entry-story .logo{width:42px;height:42px;box-shadow:none;}
- .entry-story h1{font-size:27px;letter-spacing:-.9px;line-height:1.2;}.entry-story h1 em{color:var(--ww-brand);}.entry-story h1 br{display:none;}
+ .entry-story h1{color:var(--ww-text);font-size:27px;letter-spacing:-.9px;line-height:1.2;}.entry-story h1 em{color:var(--ww-brand);}.entry-story h1 br{display:none;}
  .entry-story .signin-eyebrow,.entry-story .signin-description,.entry-preview,.entry-story-footer{display:none;}
  .entry-access{padding:28px;}.cloud-panel-heading{margin-bottom:20px;}.cloud-panel-heading h2{font-size:27px;}
  .entry-footer{margin-top:24px;}.cloud-auth-fields input{font-size:16px;}

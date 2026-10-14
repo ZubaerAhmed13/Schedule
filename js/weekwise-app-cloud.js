@@ -353,6 +353,10 @@ function wireCloudAuthControls(){
   if(input.value)input.setCustomValidity(input.value!==weekwiseRuntime.$('cloudPassword').value?'Passwords do not match.':'');
  });
  weekwiseRuntime.$('cloudAuthForm').addEventListener('submit',e=>{e.preventDefault();weekwiseRuntime.submitCloudAuth();});
+ // The static form is visible before the SDK loads. Enable it only after its
+ // submit handler is attached, so credentials cannot enter a native GET URL.
+ const controls=weekwiseRuntime.$('cloudAuthControls');if(controls)controls.disabled=!weekwiseRuntime.cloudClient;
+ weekwiseRuntime.$('cloudAuthForm').setAttribute('aria-busy','false');
 }
 
 async function cloudUseRemote(){

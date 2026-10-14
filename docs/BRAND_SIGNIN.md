@@ -2,7 +2,7 @@
 
 The new mark is a rounded W with one warm accent: recognizable at small sizes, clean in a wordmark, and playful without adding visual noise. Its cream stroke and apricot dot sit on Weekwise's forest palette. The SVG is the source for the inline brand, favicon, 192/512 application icons and 180-pixel Apple touch icon. The glyph and accent stay within the maskable safe circle.
 
-The entry screen now presents the real email/password form immediately, with a desktop brand panel and a compact phone layout. The decorative week is an illustration, not seeded planner data. Sign-in, invite-based account creation, offline account access and device-only planning retain their existing handlers. No social provider or calendar connection has been activated.
+The entry screen now presents the real email/password form in the initial HTML, with a desktop brand panel and a compact phone layout. Controls are disabled until the submit handler is attached, preventing credentials from entering a native GET URL before the SDK loads. The decorative week is an illustration, not seeded planner data. Sign-in, invite-based account creation, offline account access and device-only planning retain their existing handlers. No social provider or calendar connection has been activated.
 
 One authentication form moves between the entry screen and the signed-in account/recovery dialog. There are no duplicate credential fields or parallel sessions. A signed-out user's account menu returns to the same full entry screen. The account modal retains its owner-scoped sync/conflict controls. Planner data, invitations, session ownership, revision checks and backend settings remain outside the visual redesign.
 
@@ -10,4 +10,4 @@ Stable field IDs and names, username/current-password/new-password autocomplete,
 
 Phone layouts retain scrollable entry content, 50-pixel credential inputs, visible focus and the existing visual-viewport keyboard handling. Existing device and offline acceptance remains applicable; automated engine checks do not certify physical password-manager autofill, VoiceOver/TalkBack, OS icon refresh or real mail delivery.
 
-Six additional browser scenarios cover the direct entry form, keyboard tabs/validation, failed and successful sign-in, invite/confirmation/busy feedback, password reset/recovery, and narrow/light/dark accessibility. They use controlled SDK and RPC fixtures; no existing user account is used as a test fixture.
+Seven additional browser scenarios cover SDK-loading submission protection, the direct entry form, keyboard tabs/validation, failed and successful sign-in, invite/confirmation/busy feedback, password reset/recovery, and narrow/light/dark accessibility. They use controlled SDK and RPC fixtures; no existing user account is used as a test fixture.
