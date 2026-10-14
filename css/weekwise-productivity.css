@@ -40,3 +40,5 @@
 .utility-dialog .habit-empty-state{background:var(--ww-bg);border-color:var(--ww-line);color:var(--ww-text)}
 
 .utility-dialog .habit-empty-state strong{color:var(--ww-text)}
+.toast{z-index:2200;max-width:calc(100vw - 32px);background:var(--ww-text);color:var(--ww-surface);transition:transform .2s}
+@media(max-width:760px){.toast{bottom:calc(82px + env(safe-area-inset-bottom))}}
