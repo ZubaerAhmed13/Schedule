@@ -3,7 +3,7 @@
   "use strict";
   const $ = id => document.getElementById(id);
   const providerNames = { google: "Google Calendar", microsoft: "Microsoft Outlook" };
-  let busy = false, owner = null, generation = 0, operation = 0, statusSequence = 0, identityReady = false, feedback = null;
+  let busy = false, owner = null, generation = 0, operation = 0, statusSequence = 0, identityReady = false, feedback = null, pendingOAuthFeedback = null;
   let configured = { google: false, microsoft: false, encryption: false }, providers = { google: null, microsoft: null };
   const client = () => window.weekwiseCloudClient || null;
   const bridgeOwner = () => window.weekwiseCalendarBridge?.owner?.() || null;
@@ -136,14 +136,19 @@
     history.replaceState(null, "", url.pathname + url.search + url.hash);
     const hints = { invalid_state: "The connection link was invalid. Start again.", invalid_or_expired_state: "The connection expired or was already used. Start again.", provider_cancelled: "Authorization was cancelled.", refresh_token_missing: "Offline access was not granted. Reconnect and approve calendar access.", server_setup: "The Weekwise owner needs to complete provider setup.", token_exchange_failed: "Authorization could not be completed. Reconnect or contact the Weekwise owner." };
     feedback = { message: status === "connected" ? name + " connected. Sync to import events and reconcile changes." : name + ": " + (hints[reason] || "The connection could not be completed."), error: status !== "connected" };
-    setStatus(feedback.message, feedback.error); return true;
+    pendingOAuthFeedback = feedback; setStatus(feedback.message, feedback.error); return true;
   }
   function init() {
     renderProviders();
     $("calendarConnectionsMenuBtn")?.addEventListener("click", () => { window.weekwiseCalendarBridge?.openPanel?.(); refreshStatus(); });
     $("calendarRefreshStatus")?.addEventListener("click", () => refreshStatus(false));
     for (const [id, action, provider] of [["connectGoogleCalendarBtn", connect, "google"], ["connectMicrosoftCalendarBtn", connect, "microsoft"], ["syncGoogleCalendarBtn", sync, "google"], ["syncMicrosoftCalendarBtn", sync, "microsoft"], ["disconnectGoogleCalendarBtn", disconnect, "google"], ["disconnectMicrosoftCalendarBtn", disconnect, "microsoft"]]) $(id)?.addEventListener("click", () => action(provider));
-    client()?.auth?.onAuthStateChange?.((event, value) => { changed(value?.user?.id || null); window.setTimeout(() => refreshStatus(), 0); });
+    client()?.auth?.onAuthStateChange?.((event, value) => {
+      const returned = event === "INITIAL_SESSION" && value?.user?.id ? pendingOAuthFeedback : null;
+      pendingOAuthFeedback = null; changed(value?.user?.id || null);
+      if (returned) { feedback = returned; setStatus(returned.message, returned.error); }
+      window.setTimeout(() => refreshStatus(), 0);
+    });
     window.addEventListener("focus", () => refreshStatus()); handleOAuthReturn(); refreshStatus();
   }
   window.WeekwiseCalendarUI = Object.freeze({ refreshStatus, connect, sync, disconnect });

@@ -18,7 +18,7 @@ The user's 14 October scope now includes completing Google and Outlook activatio
 
 | Check | Result |
 |---|---|
-| Node | 223 tests pass locally, including six calendar session, feedback, provider-readiness and stale-account contracts. [PR #53](https://github.com/ZubaerAhmed13/Schedule/pull/53) records fresh CI evidence and the exact reviewed source. |
+| Node | 224 tests pass locally, including seven calendar session, OAuth-return feedback, provider-readiness and stale-account contracts. [PR #53](https://github.com/ZubaerAhmed13/Schedule/pull/53) records fresh CI evidence and the exact reviewed source. |
 | Built browsers | The calendar activation candidate passed 78 Chromium regression tests and 24 device/auth cases per engine across Chromium, Firefox and WebKit on `ec749eac5336477c466215d3124f2e541e37f902`. PR #53 records subsequent checks and release identity. These use controlled provider fixtures, not real provider consent or calendar round trips. |
 | Database / functions / release | Isolated PostgreSQL, all five Deno handlers and release/build checks passed on that candidate head; PR #53 records the final reviewed head's checks. |
 | Live backend | 48 bounded boolean checks passed: invitations and minimized stored/sign-in metadata, own/cross/anonymous reads, direct-write denial, first/competing/stale saves, fresh-client reload, push isolation/opt-out/deduplication, refresh revocation, recovery/password/token replay and erasure |

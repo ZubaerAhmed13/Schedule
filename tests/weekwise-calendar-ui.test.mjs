@@ -1,13 +1,13 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
 const source=fs.readFileSync(new URL('../weekwise-calendar.js',import.meta.url),'utf8');
 const configured={google:true,microsoft:false,encryption:true},connected={provider_account_email:'fixture-google@example.invalid'};
-function fixture(){
+function fixture({url='https://fixture.invalid/'}={}){
  let owner='a',handler,domReady,service=async body=>body.action==='status'?{configured,providers:{google:connected,microsoft:null}}:{},prepare=async()=>{},reloads=0;
  const elements=new Map(),calls=[],redirects=[],toasts=[];
  const el=id=>{if(!elements.has(id))elements.set(id,{textContent:'',dataset:{},disabled:false,hidden:false,addEventListener(){}});return elements.get(id);};
- const window={weekwiseCalendarBridge:{owner:()=>owner,async prepareSync(){await prepare();},async reloadAfterSync(){reloads++;},toast:t=>toasts.push(t),openPanel(){}},weekwiseCloudClient:{auth:{async getSession(){return {data:{session:owner?{user:{id:owner},access_token:'fixture-token-'+owner}:null}}},onAuthStateChange(fn){handler=fn;}},functions:{async invoke(name,args){calls.push({name,...args});return {data:await service(args.body,args.headers)}}}},location:{href:'https://fixture.invalid/',assign:url=>redirects.push(url)},confirm:()=>true,setTimeout(){},addEventListener(){}};
+ const window={weekwiseCalendarBridge:{owner:()=>owner,async prepareSync(){await prepare();},async reloadAfterSync(){reloads++;},toast:t=>toasts.push(t),openPanel(){}},weekwiseCloudClient:{auth:{async getSession(){return {data:{session:owner?{user:{id:owner},access_token:'fixture-token-'+owner}:null}}},onAuthStateChange(fn){handler=fn;}},functions:{async invoke(name,args){calls.push({name,...args});return {data:await service(args.body,args.headers)}}}},location:{href:url,assign:url=>redirects.push(url)},confirm:()=>true,setTimeout(){},addEventListener(){}};
  const context={window,document:{readyState:'loading',getElementById:el,addEventListener(name,fn){if(name==='DOMContentLoaded')domReady=fn;}},history:{replaceState(){}},URL,Intl,Date,console};vm.runInNewContext(source,context);domReady();
- return {api:window.WeekwiseCalendarUI,window,el,calls,redirects,toasts,get reloads(){return reloads},setService(fn){service=fn},setPrepare(fn){prepare=fn},switchOwner(next){owner=next;handler('SIGNED_IN',next?{user:{id:next}}:null)}};
+ return {api:window.WeekwiseCalendarUI,window,el,calls,redirects,toasts,get reloads(){return reloads},setService(fn){service=fn},setPrepare(fn){prepare=fn},switchOwner(next,event='SIGNED_IN'){owner=next;handler(event,next?{user:{id:next}}:null)}};
 }
 const turn=async()=>{await Promise.resolve();await Promise.resolve();await Promise.resolve();};
 test('calendar status scopes requests to the active account and never enables an unconfigured sibling provider',async()=>{
@@ -30,4 +30,9 @@ test('unsafe authorization URLs are rejected and both valid provider hosts remai
 });
 test('an older status result cannot restore the previous owner’s connection or unlock controls after sign-out',async()=>{
  const f=fixture();await f.api.refreshStatus();let release;f.setService(()=>new Promise(r=>release=r));const pending=f.api.refreshStatus();await turn();f.switchOwner(null);release({configured,providers:{google:connected}});await pending;assert.doesNotMatch(f.el('googleCalendarConnectionDetail').textContent,/fixture-google/);assert.equal(f.el('connectGoogleCalendarBtn').disabled,true);assert.equal(f.el('syncGoogleCalendarBtn').hidden,true);
+});
+test('OAuth return feedback survives initial-session hydration and clears on a later account switch',async()=>{
+ const f=fixture({url:'https://fixture.invalid/?calendar_oauth_status=failed&calendar_provider=google&calendar_reason=provider_cancelled'});
+ f.switchOwner('a','INITIAL_SESSION');await f.api.refreshStatus();assert.match(f.el('calendarConnectionsStatus').textContent,/Authorization was cancelled/);assert.equal(f.el('calendarConnectionsStatus').dataset.tone,'error');
+ f.switchOwner('b');await f.api.refreshStatus();assert.doesNotMatch(f.el('calendarConnectionsStatus').textContent,/Authorization was cancelled/);
 });
