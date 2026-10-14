@@ -1,6 +1,6 @@
 # Weekwise Google Calendar and Microsoft Outlook integration
 
-Activation is authorized as of 14 October 2026. The calendar handler and server-only tables are deployed in Weekwise. Its health check confirms encryption is configured, but Google and Microsoft credentials are absent, so provider connections remain unavailable until the account owner creates the registrations and enters the issued credentials. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md). The live Supabase Auth probe previously reported Google/Azure sign-in providers as disabled; these calendar connections use a separate OAuth flow and do not depend on Supabase social sign-in.
+Activation is authorized as of 14 October 2026. The calendar handler and server-only tables are deployed in Weekwise. Its health check confirms encryption is configured, but Google and Microsoft credentials are absent, so provider connections remain unavailable until the account owner creates the registrations and enters the issued credentials. Database installation and function deployment (steps 2 and 6) are already complete for the current project; adding provider credentials in Vault does not require repeating them. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md). The live Supabase Auth probe previously reported Google/Azure sign-in providers as disabled; these calendar connections use a separate OAuth flow and do not depend on Supabase social sign-in.
 
 ## What is implemented in the repository
 
