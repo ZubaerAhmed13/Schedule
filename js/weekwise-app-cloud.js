@@ -2,9 +2,10 @@
 (function(root){
 'use strict';
 function create(weekwiseRuntime){
-let cloudReadInFlight=null,initializingEpoch=-1;
+let cloudReadInFlight=null,initializingEpoch=-1,failedOwner=null,failedEpoch=-1;
+function cloudFailure(){return failedOwner===weekwiseRuntime.currentDataOwner&&failedEpoch===weekwiseRuntime.cloudSessionEpoch;}
 const diagnosticClock=()=>root.performance?.now?.()??Date.now();
-function diagnostic(operation,outcome,owner,started){try{if(owner!==weekwiseRuntime.currentDataOwner)return;const recorded=root.WeekwiseDiagnostics?.record(localStorage,owner,{operation,outcome,build:root.WeekwisePerformance?.build()||'development',durationMs:diagnosticClock()-started});if(recorded&&root.dispatchEvent&&root.Event)root.dispatchEvent(new root.Event('weekwise-diagnostics-change'));}catch(_){}}
+function diagnostic(operation,outcome,owner,started){try{if(owner!==weekwiseRuntime.currentDataOwner)return;if(outcome==='failed'){failedOwner=owner;failedEpoch=weekwiseRuntime.cloudSessionEpoch;}else if(operation==='sync-save'&&outcome==='success'){failedOwner=null;failedEpoch=-1;}const recorded=root.WeekwiseDiagnostics?.record(localStorage,owner,{operation,outcome,build:root.WeekwisePerformance?.build()||'development',durationMs:diagnosticClock()-started});if(recorded&&root.dispatchEvent&&root.Event)root.dispatchEvent(new root.Event('weekwise-diagnostics-change'));}catch(_){}}
 function notifySync(){if(root.dispatchEvent&&root.Event)root.dispatchEvent(new root.Event('weekwise-sync-status'));}
 function buildCloudPayload(){let view='week';try{const v=localStorage.getItem('weekwise-calendar-view-v1');if(['day','week','month','agenda','year'].includes(v))view=v;}catch(_){}return {version:1,store:weekwiseRuntime.store,reminders:weekwiseRuntime.reminders,focusSessions:weekwiseRuntime.focusSessions,habits:weekwiseRuntime.habits,countdowns:weekwiseRuntime.countdowns,savedTaskFilters:weekwiseRuntime.savedTaskFilters,taskTemplates:weekwiseRuntime.taskTemplates,calendarView:view};}
 
@@ -390,7 +391,7 @@ async function checkCloudForRemoteChanges(force=false){
   const {data:row,error}=await weekwiseRuntime.cloudClient.from('weekwise_cloud_data').select('user_id,data,revision,updated_at').eq('user_id',readUser).maybeSingle();
   if(readEpoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==readUser||weekwiseRuntime.currentDataOwner!==readUser||weekwiseRuntime.cloudBusy||weekwiseRuntime.cloudConflict)return;
   if(error)throw error;diagnostic('sync-read','success',readUser,diagnosticStart);
-  const meta=weekwiseRuntime.readCloudMeta(),localFingerprint=weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload()),localDirty=meta?.userId!==readUser||localFingerprint!==meta.fingerprint;
+  const meta=weekwiseRuntime.readCloudMeta(),localFingerprint=weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload()),localDirty=meta?.userId!==readUser||localFingerprint!==meta.fingerprint;if(!localDirty){failedOwner=null;failedEpoch=-1;}
   if(row&&Number(row.revision)>weekwiseRuntime.cloudRevision){
    if(localDirty){if(reconcileCloudRow(row))weekwiseRuntime.queueCloudSave();else weekwiseRuntime.showCloudConflict(row);}else weekwiseRuntime.applyCloudRow(row);
   }else if(localDirty){
@@ -418,7 +419,7 @@ function openCloudPanel(){
 function openSignInFromLanding(){const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=false;document.body.classList.add('signin-required');}window.signinGateInFlow=false;root.WeekwiseEntry?.refresh();weekwiseRuntime.$('cloudEmail').focus();}
 
 function finishSignInLanding(){const gate=weekwiseRuntime.$('signinLanding');if(!gate)return;if(weekwiseRuntime.activeUtilityPanel===weekwiseRuntime.$('cloudPanel'))weekwiseRuntime.closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;weekwiseRuntime.now=new Date();weekwiseRuntime.mobileDay=weekwiseRuntime.now.getDay();weekwiseRuntime.currentWeek=weekwiseRuntime.dateKey(weekwiseRuntime.sundayOf(weekwiseRuntime.now));weekwiseRuntime.monthAnchor=new Date(weekwiseRuntime.now.getFullYear(),weekwiseRuntime.now.getMonth(),1);weekwiseRuntime.loadWeek(weekwiseRuntime.currentWeek);weekwiseRuntime.setWorkspaceView('today');weekwiseRuntime.restoreFocusState();weekwiseRuntime.renderReminders();const heading=weekwiseRuntime.$('calendarInstruction');if(heading)heading.hidden=true;weekwiseRuntime.showToast('Welcome to Weekwise. Here is today’s plan.');}
-return Object.freeze({buildCloudPayload,localHasWeekwiseData,readCloudMeta,writeCloudMeta,setCloudStatus,offlineAccountSelected,renderOfflineAccountGate,openOfflineAccount,renderCloudPanel,validateCloudPayload,saveCloudLocalPayload,isolatePlannerOwner,requestCloudSave,applyCloudRow,showCloudConflict,queueCloudSave,saveCloudSnapshot,startCloudForUser,initializeCloud,setCloudAuthMode,setCloudAuthBusy,validateCloudPassword,cloudSignIn,cloudSignUp,cloudResetPassword,cloudUpdatePassword,submitCloudAuth,wireCloudAuthControls,cloudUseRemote,cloudUseLocal,cloudSyncNow,checkCloudForRemoteChanges,openCloudPanel,openSignInFromLanding,finishSignInLanding});
+return Object.freeze({cloudFailure,buildCloudPayload,localHasWeekwiseData,readCloudMeta,writeCloudMeta,setCloudStatus,offlineAccountSelected,renderOfflineAccountGate,openOfflineAccount,renderCloudPanel,validateCloudPayload,saveCloudLocalPayload,isolatePlannerOwner,requestCloudSave,applyCloudRow,showCloudConflict,queueCloudSave,saveCloudSnapshot,startCloudForUser,initializeCloud,setCloudAuthMode,setCloudAuthBusy,validateCloudPassword,cloudSignIn,cloudSignUp,cloudResetPassword,cloudUpdatePassword,submitCloudAuth,wireCloudAuthControls,cloudUseRemote,cloudUseLocal,cloudSyncNow,checkCloudForRemoteChanges,openCloudPanel,openSignInFromLanding,finishSignInLanding});
 }
 root.WeekwiseAppCloud=Object.freeze({create});
 })(typeof window!=='undefined'?window:globalThis);
