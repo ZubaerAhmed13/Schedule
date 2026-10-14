@@ -158,3 +158,40 @@ body .field label,body .modal .field label,body .template-form .field label,body
 @media print {.plan-overview{break-inside:avoid}.topbar,.workspace-sidebar,.list-actions{display:none!important}.wrap{padding:0}.workspace-shell{display:block}}
 
 .calendar-connection-row>div{min-width:0}.calendar-connection-row p{overflow-wrap:anywhere}.calendar-connection-actions .btn{min-height:44px;font-size:12px}.calendar-owner-setup{margin:18px 0;font-size:13px}.calendar-owner-setup>summary{min-height:44px;font-weight:600;color:var(--ww-text)}.calendar-owner-setup p{line-height:1.6;color:var(--ww-muted)}.calendar-owner-setup a{color:var(--ww-brand);display:inline-flex;align-items:center;min-height:44px}
+
+/* Phone Week view: a complete date strip and readable day groups. */
+@media(max-width:650px){
+ #calendarToolbar.mobile-week-toolbar{padding:14px 16px;margin-bottom:10px}
+ .mobile-week-toolbar .calendar-heading h2{font-size:27px;margin:0 0 12px}
+ .mobile-week-toolbar .calendar-actions{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
+ .mobile-week-toolbar .view-switch{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:3px;width:100%}
+ .mobile-week-toolbar .view-switch-btn{min-width:0;min-height:42px;font-size:12px;padding:7px 3px}
+ .mobile-week-toolbar .week-control{grid-column:1;grid-row:2;gap:4px;order:0;width:auto}
+ .mobile-week-toolbar .week-control .btn{min-height:42px;height:auto;min-width:32px;padding:6px 8px;font-size:13px}
+ .mobile-week-toolbar .weeklabel{grid-column:2;grid-row:2;min-width:0;padding:0;font-size:12px;text-align:right;white-space:normal;line-height:1.5;order:0}
+ .mobile-week-toolbar .calendar-create-actions{grid-column:1/-1;grid-row:3;gap:8px}
+ .mobile-week-toolbar .calendar-create-actions .btn{min-height:42px;font-size:12px;padding:8px 10px}
+ #daysGrid.mobile-week-mode{height:72vh!important;height:72dvh!important;min-height:340px!important;max-height:760px!important;overflow-x:hidden;overflow-y:auto;padding:0 12px 14px;background:var(--ww-surface);border:1px solid var(--ww-line);border-radius:20px;scroll-padding-top:84px}
+ .mobile-week-mode .range-zone-label{padding:10px 2px 0;margin:0;font-size:11px;color:var(--ww-muted)}
+ .mobile-week-index{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;padding:10px 0;background:var(--ww-surface);border-bottom:1px solid var(--ww-line)}
+ .mobile-week-date{display:grid;place-items:center;gap:3px;min-width:0;min-height:66px;padding:7px 1px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--ww-text);font:inherit;font-size:11px;cursor:pointer}
+ .mobile-week-date strong{font-size:18px;font-weight:750;line-height:1.2}.mobile-week-date small{font-size:10px;color:var(--ww-muted)}
+ .mobile-week-date.is-today{background:var(--ww-soft);border-color:var(--ww-brand)}
+ .mobile-week-date:focus-visible,.mobile-week-add:focus-visible,.mobile-week-title:focus-visible,.mobile-week-note summary:focus-visible,.mobile-week-complete:focus-within{outline:2px solid var(--ww-brand);outline-offset:2px}
+ .mobile-week-day{padding:18px 0 16px;border-bottom:1px solid var(--ww-line);scroll-margin-top:84px}.mobile-week-day:last-child{border-bottom:0}
+ .mobile-week-day>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+ .mobile-week-day h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin:0;font-size:17px;color:var(--ww-text);line-height:1.5;letter-spacing:-.3px}
+ .mobile-week-day h3 time{font-size:13px;font-weight:500;color:var(--ww-muted)}.mobile-week-day h3:focus{outline:2px solid var(--ww-brand);outline-offset:3px;border-radius:4px}
+ .mobile-week-day>header p{margin:3px 0 0;font-size:12px;color:var(--ww-muted)}
+ .mobile-week-add{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:1px solid var(--ww-line);border-radius:13px;background:var(--ww-soft);color:var(--ww-text);font:inherit;font-size:25px;cursor:pointer}
+ .mobile-week-event{display:flex;align-items:flex-start;gap:8px;margin:8px 0;padding:10px 10px 10px 12px;border:1px solid var(--ww-line);border-left:4px solid var(--ww-brand);border-radius:14px;background:var(--ww-soft);color:var(--ww-text)}
+ .mobile-week-event.t-job,.mobile-week-event.t-other{background:var(--ww-sky)}.mobile-week-event.t-study,.mobile-week-event.t-fixed{background:var(--ww-lavender)}.mobile-week-event.t-language,.mobile-week-event.t-hobby{background:var(--ww-peach)}
+ .mobile-week-event-main{flex:1;min-width:0}.mobile-week-time{margin:0;font-size:12px;font-weight:650;line-height:1.6;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+ .mobile-week-event h4{margin:0;font-size:15px;line-height:1.5}.mobile-week-title{display:block;width:100%;min-height:44px;padding:4px 0;border:0;background:transparent;color:inherit;text-align:left;font:inherit;font-weight:700;overflow-wrap:anywhere;cursor:pointer}
+ .mobile-week-event.done .mobile-week-title{text-decoration:line-through;text-decoration-thickness:1.5px}
+ .mobile-week-complete{display:grid;place-items:center;flex:0 0 44px;width:44px;min-height:44px;border-radius:10px;cursor:pointer}.mobile-week-complete input{width:23px;height:23px;margin:0;accent-color:var(--ww-action);cursor:pointer}
+ .mobile-week-fixed{font-size:10px;color:var(--ww-muted);padding-top:10px}
+ .mobile-week-note summary{display:flex;align-items:center;min-height:44px;width:fit-content;padding:0 8px;font-size:12px;font-weight:600;cursor:pointer}.mobile-week-note summary::before{content:'+';margin-right:7px}.mobile-week-note[open] summary::before{content:'−'}
+ .mobile-week-note p{margin:0 0 8px;font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+ .mobile-week-empty{margin:0;padding:12px 0;color:var(--ww-muted);font-size:13px;line-height:1.6}.mobile-week-more{min-height:44px;width:100%;font-size:13px;white-space:normal}
+}
