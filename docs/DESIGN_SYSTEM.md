@@ -1,6 +1,6 @@
 # Weekwise design system
 
-Shared tokens in `css/weekwise.css` and the final `css/weekwise-modern.css` layer define warm off-white backgrounds, white surfaces, forest text, green actions and restrained peach/lavender/sky accents. Dark mode uses neutral charcoal surfaces with readable green actions. Existing tool styles share the adaptive surface/text/border aliases. Assets are local and service-worker cached; no new framework or font service is required. The optional device evidence module uses a pinned, locally served web-vitals bundle.
+Shared tokens in `css/weekwise.css`, `css/weekwise-modern.css` and the final `css/weekwise-polish.css` layer define warm off-white backgrounds, white surfaces, forest text, green actions and restrained peach/lavender/sky accents. Dark mode uses neutral charcoal surfaces with readable green actions. Existing tool styles share the adaptive surface/text/border aliases. Assets are local and service-worker cached; no new framework or font service is required. The optional device evidence module uses a pinned, locally served web-vitals bundle.
 
 Primary navigation: Today, Inbox, Plan, Calendar and Insights, with consistent SVG line icons. Tools & views groups Search, Tomorrow, Upcoming, Board, Filters, Matrix, Habits, Focus, Countdowns and Statistics. Pinned lists appear above grouped navigation. List pins sync through existing planner settings; owner-scoped disclosure preferences stay on the device. Lists, folders and tags use native labelled disclosures; a saved active destination reveals its parent group. Settings remains directly reachable. On phones the five primary destinations form a bottom bar; Menu exposes all groups. The global add button opens the existing editor. Existing More actions and deep links remain.
 
@@ -10,7 +10,7 @@ The editor keeps title, list, day, schedule mode, time/duration and a note visib
 
 ## Components
 
-- System typography: 31–36px workspace headings, 13–14px task/body text and 16px phone inputs.
+- Self-hosted Plus Jakarta Sans variable typography, with system fallback: 42px desktop and 34px phone workspace headings, 13–14px task/body text and 16px phone inputs. The full OFL notice ships with the 60KB WOFF2 asset; its content-derived filename and preload match the offline cache. No browser request goes to a font service.
 - Cards: 15–22px radii, one-pixel borders, restrained shadows and 18–28px padding.
 - Green primary action with white text in light mode and dark text on pale green in dark mode; neutral secondary actions. Visible focus ring and recognizable disabled state.
 - Labeled inputs, fieldsets, checkbox text labels and wrapping button rows. Phone inputs use readable text sizes, scrollable editors and bottom action visibility.
@@ -36,6 +36,12 @@ Menus, native dialogs, utility panels, the task editor and the sign-in illustrat
 Content remains fully opaque throughout entrances so text contrast is retained during motion. Only decorative illustration/backdrop layers fade. Foreground and background palette colours change together immediately; shadow and transform feedback can still animate. Text links and keyboard rings follow the selected palette; primary add actions use the existing local SVG icon system instead of font-dependent full-width symbols.
 
 Browser checks cover rapid navigation, finite animation duration, preference changes during motion, unchanged original records, keyboard Escape/focus restoration, native copy dialogs, phone overflow and reduced-motion task capture. Existing five-theme audits and desktop/phone screenshots remain part of review.
+
+## Workspace composition
+
+Desktop navigation occupies a bounded, scrollable surface with a solid selected destination. Phone navigation retains the five primary destinations and the expandable Menu. Compact page actions use the same labelled local SVG controls. Today combines the next saved commitment with a read-only completion summary, then highlights and the timeline; capture stays directly above the overview. The completion summary includes activities assigned to today, carried overnight/all-day activities and deadlines due today, and excludes records that explicitly do not require completion. It counts saved completion marks, not measured work. An unassigned day uses text rather than an invented progress chart.
+
+Task lists share a continuous surface and show real schedule metadata without repeating Inbox labels. Every edit, selection, highlight and delete control remains available, with a compact two-column action grid on phones. Plan uses a compact four/three-column phone day overview and three readiness metrics so navigation and planning preferences remain close to the workload. Settings cards use consistent decorative line icons, and the editor, habit, focus, summary and filter forms share the same type and surface hierarchy. Browser checks include a failed-font fallback that still permits task capture and preserves existing records.
 
 ## Productivity controls
 

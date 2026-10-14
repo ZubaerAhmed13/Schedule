@@ -20,7 +20,9 @@
   timed.sort((a,b)=>a.instant.start-b.instant.start);
   const next=timed.find(r=>!r.task.done&&r.task.status!=='done'&&r.instant.end>epoch);
   const scheduled=root.WeekwisePlanning.merge(timed.map(r=>[Math.max(dayStart,r.instant.start),Math.min(dayEnd,r.instant.end)])).reduce((total,[a,b])=>total+(b-a)/60000,0);
-  return {...current,timed,review,next,scheduled};
+  const completion=records.filter(r=>r.task.requiresCompletion!==false&&(occursOn(r,current.date)||r.task.dueDate===current.date));
+  const completed=completion.filter(r=>r.task.done||r.task.status==='done').length;
+  return {...current,timed,review,next,scheduled,completion:{total:completion.length,completed}};
  }
  root.WeekwiseToday=Object.freeze({clock,daily,occursOn});
 })(typeof window!=='undefined'?window:globalThis);

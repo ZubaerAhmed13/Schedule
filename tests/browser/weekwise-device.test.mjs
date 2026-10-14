@@ -8,7 +8,7 @@ function seed(id){rows.set(id,{user_id:id,revision:1,updated_at:'2030-01-08T11:0
 function serve(req,res){
  const u=new URL(req.url,'http://localhost');if(u.pathname==='/__device_cloud'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(rows.get(u.searchParams.get('user'))||null));return;}
  const file=path.resolve(site,'.'+decodeURIComponent(u.pathname));if(!file.startsWith(site+path.sep)&&file!==site){res.writeHead(403);res.end();return;}
- const target=fs.existsSync(file)&&fs.statSync(file).isDirectory()?path.join(file,'index.html'):file;fs.readFile(target,(error,data)=>{if(error){res.writeHead(404);res.end();return;}const ext=path.extname(target),types={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png'};res.writeHead(200,{'Content-Type':types[ext]||'text/plain','Cache-Control':'no-store'});res.end(data);});
+ const target=fs.existsSync(file)&&fs.statSync(file).isDirectory()?path.join(file,'index.html'):file;fs.readFile(target,(error,data)=>{if(error){res.writeHead(404);res.end();return;}const ext=path.extname(target),types={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2'};res.writeHead(200,{'Content-Type':types[ext]||'text/plain','Cache-Control':'no-store'});res.end(data);});
 }
 before(async()=>{if(!{chromium,firefox,webkit}[engine])throw new Error('Unsupported browser engine');fs.mkdirSync(path.join(root,'test-results'),{recursive:true});server=http.createServer(serve);await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port+'/';browser=await {chromium,firefox,webkit}[engine].launch({headless:true});});
 beforeEach(()=>{rows.clear();blocked.clear();seed(owner);});
@@ -27,6 +27,17 @@ async function quality(page){await navigate(page,'settings');await page.locator(
 async function canonical(page){return page.evaluate(()=>Object.fromEntries(['weekwise-planner-v2','weekwise-reminders-v1','weekwise-focus-sessions-v1','weekwise-habits-v1','weekwise-countdowns-v1','weekwise-saved-filters-v1','weekwise-task-templates-v1'].map(k=>[k,localStorage.getItem(k)])));}
 async function downloadedJSON(download){const file=await download.path();return JSON.parse(fs.readFileSync(file,'utf8'));}
 async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-device-'+name+'.png'),animations:'disabled'});}
+
+test('the design keeps narrow layouts and existing records usable when the local typeface cannot load',async()=>{
+ const {context,page}=await open({width:320});try{
+  await page.evaluate(()=>document.fonts.ready);assert.equal(await page.evaluate(()=>Array.from(document.fonts).some(face=>face.family==='Plus Jakarta Sans'&&face.status==='loaded')),true);
+  const before=await canonical(page);await context.route('**/*.woff2',route=>route.abort());await page.reload();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden);await page.evaluate(()=>document.fonts.ready);
+  assert.equal(await page.evaluate(()=>Array.from(document.fonts).some(face=>face.family==='Plus Jakarta Sans'&&face.status==='loaded')),false);
+  await navigate(page,'inbox');assert.equal(await page.locator('.workspace-task-row').count(),2);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+  assert.deepEqual(JSON.parse((await canonical(page))['weekwise-planner-v2']).weeks['2030-01-06'].tasks,JSON.parse(before['weekwise-planner-v2']).weeks['2030-01-06'].tasks);
+  await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill('Readable fallback draft');assert.equal(await page.locator('#saveTaskBtn').isVisible(),true);await snap(page,'design-font-fallback');
+ }finally{await context.close();}
+});
 
 test('motion settles after rapid navigation, preserves records and stops when the device preference changes',async()=>{
  const {context,page}=await open({width:1440,height:1000});const errors=[];page.on('pageerror',error=>errors.push(error.message));
