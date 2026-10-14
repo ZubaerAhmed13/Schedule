@@ -60,14 +60,17 @@ function exportEditorHistory(){
 function exportBackup(){if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length){weekwiseRuntime.showToast('Download the original data from the recovery notice before restoring.');return;}const payload={...weekwiseRuntime.store,app:'Weekwise',version:6,exportedAt:new Date().toISOString(),settings:weekwiseRuntime.store.settings,weeks:weekwiseRuntime.store.weeks,recurringTemplates:weekwiseRuntime.store.recurringTemplates||[],customLists:weekwiseRuntime.store.customLists||[],reminders:weekwiseRuntime.reminders,focusSessions:weekwiseRuntime.focusSessions,habits:weekwiseRuntime.habits,countdowns:weekwiseRuntime.countdowns,savedTaskFilters:weekwiseRuntime.savedTaskFilters,taskTemplates:weekwiseRuntime.taskTemplates};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${weekwiseRuntime.currentWeek}.json`;a.click();URL.revokeObjectURL(url);weekwiseRuntime.showToast('Backup exported');}
 
 async function loadImport(file){
+ const readingOwner=weekwiseRuntime.currentDataOwner,readingEpoch=weekwiseRuntime.cloudSessionEpoch,before=new Map(WeekwiseRecovery.keys.map(key=>[key,localStorage.getItem(key)]));
+ const ownerChanged=()=>readingOwner!==weekwiseRuntime.currentDataOwner||readingEpoch!==weekwiseRuntime.cloudSessionEpoch||!!(weekwiseRuntime.cloudUser&&weekwiseRuntime.cloudUser.id!==readingOwner);
+ const checkOwner=()=>{if(ownerChanged())throw new Error('Your account changed while this backup was being read. Choose it again.');};
+ const checkEntries=entries=>{checkOwner();if(entries.some(([key])=>localStorage.getItem(key)!==before.get(key)))throw new Error('Your planner changed while reading the backup. Choose it again to review the restore.');};
  try{
   if(file.size>WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Backup must be smaller than 10 MB.');
-  const data=WeekwiseData.parseBackup(await file.text());
+  const raw=await file.text();checkOwner();const data=WeekwiseData.parseBackup(raw),entries=WeekwiseRecovery.entries(data);checkEntries(entries);
   const count=Object.values(data.weeks).reduce((sum,week)=>sum+week.tasks.length,0);
   if(!confirm('Restore this backup with '+count+' tasks? It replaces the planner on this device and, when synced, your cloud copy. A local recovery checkpoint will be kept. Export a backup first if you need a separate copy.'))return;
+  checkEntries(entries);
   const restored=WeekwiseData.storeFromBackup(data);
-  const collections=[['reminders',weekwiseRuntime.REMINDERS_KEY],['focusSessions',weekwiseRuntime.FOCUS_SESSIONS_KEY],['habits',weekwiseRuntime.HABITS_KEY],['countdowns',weekwiseRuntime.COUNTDOWNS_KEY],['savedTaskFilters',weekwiseRuntime.TASK_FILTERS_KEY],['taskTemplates',weekwiseRuntime.TASK_TEMPLATES_KEY]];
-  const entries=[[weekwiseRuntime.STORE_KEY,JSON.stringify(restored)],...collections.filter(([name])=>Array.isArray(data[name])).map(([name,key])=>[key,JSON.stringify(data[name])])];
   WeekwiseData.commitStorage(localStorage,entries,'weekwise-pre-restore-v1');
   WeekwiseData.clearBlocked(entries.map(([key])=>key));weekwiseRuntime.plannerStorageBlocked=false;weekwiseRuntime.plannerStorageError='';weekwiseRuntime.store=restored;weekwiseRuntime.lastSavedStore=JSON.stringify(weekwiseRuntime.store);weekwiseRuntime.lastSavedDisk=localStorage.getItem(weekwiseRuntime.STORE_KEY);
   if(Array.isArray(data.reminders))weekwiseRuntime.reminders=data.reminders;
@@ -79,7 +82,7 @@ async function loadImport(file){
   weekwiseRuntime.store.settings={...weekwiseRuntime.defaultSettings(),...weekwiseRuntime.store.settings,timeZone:weekwiseRuntime.store.settings.timeZone};
   weekwiseRuntime.syncWorkspaceLists();weekwiseRuntime.loadWeek(weekwiseRuntime.currentWeek);weekwiseRuntime.renderReminders();weekwiseRuntime.renderHabitTracker();weekwiseRuntime.renderCountdowns();weekwiseRuntime.renderTaskTemplateOptions();
   weekwiseRuntime.$('storageRecoveryNotice')?.remove();weekwiseRuntime.queueCloudSave();weekwiseRuntime.showToast('Backup restored. A pre-restore recovery checkpoint is kept on this device.');
- }catch(e){weekwiseRuntime.showToast(e.message||'That file does not look like a Weekwise backup.');}
+ }catch(e){weekwiseRuntime.showToast(ownerChanged()?'Your account changed while this backup was being read. Choose it again.':e.message||'That file does not look like a Weekwise backup.');}
 }
 
 function showStorageRecoveryNotice(){

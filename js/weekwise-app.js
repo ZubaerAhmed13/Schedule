@@ -579,6 +579,7 @@ const plannerBridge={
 };
 const productivityBridge={...plannerBridge,view(){return workspaceView;},lists(){return [{id:'inbox',label:'Inbox'},...WORKSPACE_LISTS];},announce:showToast,focusActive(){const state=ensureFocusState();return state.runningSince!==null||state.activeMs>0;}};
 WeekwiseInterface.init(productivityBridge);WeekwiseProductivity.init(productivityBridge);
+WeekwiseQuality.init({account:()=>currentDataOwner,open:openUtilityPanel,announce:showToast});
 WeekwiseAccountUI.init({
  owner(){return currentDataOwner;},signedIn(owner){return cloudUser?.id===owner&&currentDataOwner===owner;},label(){return cloudUser?.email||'No signed-in account';},url:SUPABASE_URL+'/functions/v1/weekwise-account',key:SUPABASE_PUBLISHABLE_KEY,announce:showToast,
  async session(owner){
