@@ -18,7 +18,8 @@
       const workload=root.WeekwiseInsights.weekly(records,week,[],zone),peak=Math.max(60,...workload.days.map(day=>day.minutes));
       const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],days=prefs.days.length===5&&prefs.days.every((day,i)=>day===i+1)?'Weekdays':prefs.days.map(day=>names[day]).join(', ')||'No days selected';
       $('planPreferenceSummary').textContent=days+' · '+time(prefs.start)+'–'+time(prefs.end)+' · '+duration(prefs.buffer)+' daily buffer'+(prefs.windows.length?' · custom windows':'');
-      $('planOverviewRange').textContent=week+' — '+root.WeekwisePlanning.dateAt(week,6);
+      const rangeLabel=date=>new Date(date+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});
+      $('planOverviewRange').textContent=rangeLabel(week)+' – '+rangeLabel(root.WeekwisePlanning.dateAt(week,6));
       $('planOverviewDays').innerHTML=workload.days.map(day=>'<article class="plan-overview-day"><strong>'+esc(new Date(day.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric'}))+'</strong><div class="plan-load-track" aria-hidden="true"><span style="width:'+Math.round(day.minutes/peak*100)+'%"></span></div><small>'+duration(day.minutes)+' scheduled</small></article>').join('');
       const tasks=records.map(record=>record.task).filter(task=>!task.done&&task.status!=='done'),flexible=tasks.filter(task=>!root.WeekwisePlanning.isProtected(task)),ready=flexible.filter(task=>Number(task.estimatedDurationMinutes??task.focusEstimateMinutes)>0),missing=flexible.length-ready.length,fixed=tasks.length-flexible.length;
       $('planReadiness').innerHTML=[['Ready to plan',ready.length,'Flexible tasks with an estimate'],['Needs an estimate',missing,'Add minutes in the task editor'],['Protected commitments',fixed,'Fixed or repeating activities']].map(([label,count,note])=>'<article><span>'+label+'</span><strong>'+count+'</strong><small>'+note+'</small></article>').join('');

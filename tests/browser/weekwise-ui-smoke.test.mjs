@@ -147,6 +147,8 @@ test('modern Today and weekly overview use real data, reflow and keep overview n
    const before=await readPlannerStore(page);
    await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
    assert.match(await page.locator('.today-next h3').innerText(),/focused learning/);assert.match(await page.locator('.today-date').innerText(),/Tuesday,? 8 January/);
+   assert.equal(await page.locator('.today-progress-ring').getAttribute('aria-valuemax'),'1');assert.equal(await page.locator('.today-progress-ring').getAttribute('aria-valuenow'),'0');
+   assert.equal(await page.evaluate(async()=>{const faces=await document.fonts.load('400 16px "Plus Jakarta Sans"');return faces.length>0&&faces.every(face=>face.status==='loaded');}),true);
    assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true);
    await page.evaluate(()=>{scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({path:path.join(root,'test-results','modern-today-'+width+'.png'),animations:'disabled',fullPage:true});
    await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="plan"]')).click();
@@ -256,6 +258,7 @@ function serveStatic(req, res) {
     const mime = ext === ".html" ? "text/html; charset=utf-8"
       : ext === ".js" ? "text/javascript; charset=utf-8"
       : ext === ".css" ? "text/css; charset=utf-8"
+      : ext === ".woff2" ? "font/woff2"
       : ext === ".json" || ext === ".webmanifest" ? "application/json; charset=utf-8"
       : ext === ".svg" ? "image/svg+xml"
       : "application/octet-stream";

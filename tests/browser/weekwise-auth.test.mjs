@@ -16,7 +16,7 @@ before(async()=>{
   const u=new URL(req.url,'http://localhost'),file=path.resolve(site,'.'+decodeURIComponent(u.pathname));
   if(!file.startsWith(site+path.sep)&&file!==site){res.writeHead(403);res.end();return;}
   const target=fs.existsSync(file)&&fs.statSync(file).isDirectory()?path.join(file,'index.html'):file;
-  fs.readFile(target,(err,data)=>{if(err){res.writeHead(404);res.end();return;}const types={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json'};res.writeHead(200,{'Content-Type':types[path.extname(target)]||'text/plain','Cache-Control':'no-store'});res.end(data);});
+  fs.readFile(target,(err,data)=>{if(err){res.writeHead(404);res.end();return;}const types={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.webmanifest':'application/manifest+json'};res.writeHead(200,{'Content-Type':types[path.extname(target)]||'text/plain','Cache-Control':'no-store'});res.end(data);});
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));origin='http://127.0.0.1:'+server.address().port+'/';browser=await {chromium,firefox,webkit}[engine].launch({headless:true});
 });
 after(async()=>{await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));});
