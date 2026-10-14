@@ -142,5 +142,17 @@ body .field label,body .modal .field label,body .template-form .field label,body
   .utility-dialog{border-radius:22px}.more-trigger{min-height:42px}.top-actions{gap:5px;flex-wrap:nowrap}.list-actions-menu{right:0}.signin-card{padding:28px}
 }
 @media(max-width:380px) {.brand h1{font-size:18px}.plan-preference-grid{grid-template-columns:1fr}.topbar{padding:12px}.topbar .more-trigger{width:42px;padding:8px;text-align:center}#globalCaptureBtn{width:42px;padding:0}.task-scheduling-fields{grid-template-columns:1fr}.modalgrid .task-scheduling-fields>.duration-field{grid-column:auto}}
+/* Grouped overflow menu follows the same calm palette as the workspace. */
+.topbar .more-panel {width:286px;min-width:0;max-width:calc(100vw - 32px);padding:8px;gap:0;max-height:min(76dvh,620px);overflow-y:auto;background:var(--ww-surface);border:1px solid var(--ww-line);border-radius:16px;box-shadow:0 12px 36px #243b311a;}
+.more-panel .menu-group {display:grid;gap:2px;padding:4px 0;}
+.more-panel .menu-group + .menu-group {border-top:1px solid var(--ww-line);margin-top:5px;padding-top:9px;}
+.more-panel .menu-section-label {padding:6px 12px 4px;color:var(--ww-muted);font-size:11px;font-weight:600;letter-spacing:.3px;line-height:1.4;}
+.topbar .more-panel .btn {min-height:44px;padding:10px 12px!important;gap:11px;background:transparent;color:var(--ww-text);border:1px solid transparent;border-radius:10px;font-size:13px;font-weight:500;line-height:1.4;transform:none;box-shadow:none;}
+.topbar .more-panel .btn:hover {background:var(--ww-soft);color:var(--ww-brand);border-color:transparent;transform:none;}
+.more-panel .menu-item-icon {flex:0 0 20px;width:20px;height:20px;background:transparent;color:var(--ww-muted);border-radius:0;}
+.more-panel .btn:hover .menu-item-icon {color:var(--ww-brand);}
+.more-panel .menu-item-icon .ww-icon {width:19px;height:19px;}
+.more-panel .reminder-badge {font-size:10px;font-weight:600;max-width:92px;white-space:normal;text-align:center;}
+@media(max-width:760px) {.topbar .more-panel {max-height:calc(100dvh - 100px);}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media print {.plan-overview{break-inside:avoid}.topbar,.workspace-sidebar,.list-actions{display:none!important}.wrap{padding:0}.workspace-shell{display:block}}
