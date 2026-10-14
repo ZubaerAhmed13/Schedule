@@ -42,7 +42,7 @@ function openReminders(){weekwiseRuntime.renderReminders();weekwiseRuntime.openU
 
 function nudgeDueReminders(){const due=weekwiseRuntime.reminderDueOpen();if(!due.length)return;const today=weekwiseRuntime.reminderTodayKey();let seen='';try{seen=localStorage.getItem('weekwise-reminder-nudge-v1')||'';}catch(_){}if(seen===today)return;try{localStorage.setItem('weekwise-reminder-nudge-v1',today);}catch(_){}weekwiseRuntime.showToast(due.length===1?'You have 1 reminder due. Open More → Reminders & sticky notes.':'You have '+due.length+' reminders due. Open More → Reminders & sticky notes.');}
 
-function cloudFingerprint(payload){return JSON.stringify(payload);}
+function cloudFingerprint(payload){return root.WeekwiseCloudMerge?.fingerprint(payload)||JSON.stringify(payload);}
 
 async function enableTaskNotifications(){
  if(!('Notification' in window)){weekwiseRuntime.showToast('This browser does not support notifications.');weekwiseRuntime.renderTaskNotificationSettings();return;}

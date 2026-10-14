@@ -337,10 +337,10 @@
       </div>
       <div id="cloudConflict" class="cloud-conflict" hidden>
         <strong>There are different changes on this device and in the cloud.</strong>
-        <p>Choose which copy to keep. The other copy will not be merged automatically.</p>
+        <p>Independent changes sync automatically. These changes overlap or have no shared sync history. Export a backup before choosing which complete copy to keep.</p>
         <div class="cloud-form-actions"><button class="btn" id="cloudUseRemote" type="button">Use cloud version</button><button class="btn primary" id="cloudUseLocal" type="button">Keep this device's version</button></div>
       </div>
-      <p class="cloud-footnote">Your existing local schedules and sticky notes stay on this device. The first sync asks before replacing data when both copies contain changes. Cloud access requires the Weekwise database setup to be completed in Supabase.</p>
+      <p class="cloud-footnote">Use the same account on each device. Changes upload automatically, retry when you reconnect, and refresh when you return to Weekwise. While open, updates are checked every 15 seconds. A Synced badge confirms the upload.</p>
     </div>
   </details>
 
@@ -515,6 +515,7 @@
 <script src="./js/weekwise-list-window.js"></script>
 <script src="./js/weekwise-drafts.js"></script>
 <script src="./js/weekwise-cloud-transport.js"></script>
+<script src="./js/weekwise-cloud-merge.js"></script>
 <script src="./js/weekwise-habits.js"></script>
 <script src="./js/weekwise-focus.js"></script>
 <script src="./js/weekwise-focus-picker.js"></script>
