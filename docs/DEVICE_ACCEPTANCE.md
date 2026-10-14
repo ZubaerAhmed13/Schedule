@@ -1,6 +1,6 @@
 # Weekwise priorities 4–6: device, accessibility and recovery evidence
 
-Open **Settings → Device, speed & recovery** on the device you normally use. These tools are implemented; physical acceptance still needs real observations. Google/Outlook remain deferred, and optional AI remains disabled.
+Open **Settings → Device, speed & recovery** on the device you normally use. These tools are implemented; physical acceptance still needs real observations. Google/Outlook activation is requested and still needs actual provider credentials and consent; optional AI remains disabled.
 
 | Priority | Delivered engineering | Evidence still required |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Weekwise quality roadmap and acceptance
 
-The product promise is simple: capture responsibilities, build a realistic week, and recover when plans change. The existing calendar, planning, habits, focus, history, backups and offline functionality remain available. Google/Outlook remain deferred and optional AI stays disabled.
+The product promise is simple: capture responsibilities, build a realistic week, and recover when plans change. The existing calendar, planning, habits, focus, history, backups and offline functionality remain available. Google/Outlook activation is now requested; provider registrations, secure credentials and real consent/round trips remain pending. Optional AI stays disabled.
 
 | Area | Engineering delivered | Acceptance still needed |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Weekwise Google Calendar and Microsoft Outlook integration
 
-The calendar handler and server-only tables are deployed in Weekwise. Its health check confirms encryption is configured, but Google and Microsoft credentials are absent, so provider connections remain unavailable. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md). The live Supabase Auth probe previously reported Google/Azure sign-in providers as disabled; these calendar connections use a separate OAuth flow and do not depend on Supabase social sign-in.
+Activation is authorized as of 14 October 2026. The calendar handler and server-only tables are deployed in Weekwise. Its health check confirms encryption is configured, but Google and Microsoft credentials are absent, so provider connections remain unavailable until the account owner creates the registrations and enters the issued credentials. See [INTEGRATION_ACTIVATION.md](INTEGRATION_ACTIVATION.md). The live Supabase Auth probe previously reported Google/Azure sign-in providers as disabled; these calendar connections use a separate OAuth flow and do not depend on Supabase social sign-in.
 
 ## What is implemented in the repository
 
@@ -16,7 +16,7 @@ The calendar handler and server-only tables are deployed in Weekwise. Its health
 
 ## 1. Back up first
 
-In Weekwise, choose More → Export backup. Use test accounts and test calendar events while validating OAuth and synchronization. The calendar code does not seed a sample planner or intentionally delete external events.
+In Weekwise, choose Settings → Data & privacy → Export backup. Use test accounts and test calendar events while validating OAuth and synchronization. The calendar code does not seed a sample planner or intentionally delete external events.
 
 ## 2. Apply the database migration
 
@@ -75,7 +75,7 @@ The function callback is configured with verify_jwt = false because the provider
 ## 7. End-to-end verification
 
 1. Open the published Weekwise app and sign in to the existing Weekwise account.
-2. Open More → Calendar connections. A provider should show as connectable only after its OAuth credentials and encryption key are configured.
+2. Open Settings → Calendars → Calendar connections. A provider should show as connectable only after its OAuth credentials and encryption key are configured.
 3. Connect a dedicated test Google Calendar or Outlook account and approve the requested access.
 4. Add a scheduled Weekwise activity at least five minutes in the future, press Sync now for that provider, and confirm exactly one event appears in the provider's primary calendar.
 5. Edit that event in Weekwise and sync again; confirm it updates rather than duplicating. Then edit it in the provider and sync again; confirm Weekwise updates it.
@@ -92,3 +92,22 @@ The function callback is configured with verify_jwt = false because the provider
 - Disconnect removes Weekwise's stored encrypted credentials and event-link records. For full provider-consent revocation, remove Weekwise from the account's security/connected-app settings.
 - .ics import/export continues to work separately; it does not establish an OAuth connection.
 - Provider synchronization is not verified until the external credentials/consent and real round-trip tests above pass. SQL and server deployment are complete.
+
+## Registration values ready for the owner
+
+| Setting | Value |
+| --- | --- |
+| App name | Weekwise |
+| Home page | https://zubaerahmed13.github.io/Schedule/ |
+| Privacy page | https://zubaerahmed13.github.io/Schedule/privacy.html |
+| Google client type / Microsoft redirect platform | Web application / Web |
+| Exact callback for both | https://iajkzlsurghfvsmqkmut.supabase.co/functions/v1/weekwise-calendar |
+| Google scopes | `https://www.googleapis.com/auth/calendar.events`, `https://www.googleapis.com/auth/userinfo.email` |
+| Microsoft delegated scopes | `User.Read`, `Calendars.ReadWrite`, `offline_access` |
+| Default Microsoft tenant route | `common`; register compatible organizational + personal account types, or set a matching narrower tenant/account policy deliberately |
+
+Use the account/project/tenant you own. A ChatGPT Calendar connector connection does not register Weekwise or supply its application credentials. In Google’s testing mode, add the intended test account(s); refresh tokens for external testing apps with Calendar scopes can expire after seven days, so testing mode is not a claim of durable production authorization. Review Google’s verification rules before a broader launch. Microsoft tenant policies may require administrator approval. No billing plan or paid service is activated by these instructions.
+
+Store client-secret **values**, not Microsoft secret IDs, directly in the correct Supabase Vault names listed above. Preserve the existing encryption key. Credentials already entered as Edge environment values take precedence over Vault; do not leave an obsolete override. Check the public `weekwise-calendar?health=1` endpoint: Google/Microsoft booleans should become true independently. Presence only indicates supplied values; each provider must still complete real authorization and event create/update/import/conflict/reconnect tests. The client pins calendar operations to a captured Weekwise bearer session, discards stale account responses, preserves operation feedback, and keeps unavailable provider controls disabled.
+
+Official references: [Google web-server OAuth](https://developers.google.com/identity/protocols/oauth2/web-server), [Calendar scopes](https://developers.google.com/workspace/calendar/api/auth), [Microsoft app registration](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app), [Graph permissions](https://learn.microsoft.com/en-us/graph/permissions-reference#calendarsreadwrite).
