@@ -9,26 +9,26 @@ Reviewed against all 1,921 lines / 32 sections of the original `Pasted text(4).t
 | 3 | Repository audit | Baseline audit and current backend/source/release review delivered |
 | 4 | Data protection | Checked transactions, archives, recovery, backups, exact conversion/Undo and account erasure; private-history samples not supplied |
 | 5 | UI and accessibility | Responsive light/dark screens, keyboard controls and axe checks; physical/human accessibility remains |
-| 6 | Navigation | Five main destinations and secondary advanced tools retained; shortcuts covered |
+| 6 | Navigation | Five main destinations, pinned lists and remembered owner-scoped groups; secondary advanced tools and shortcuts retained |
 | 7 | Today | Saved-clock next commitments, unioned capacity, priorities, habits and focus action delivered |
 | 8 | Smart Week Builder | Explainable deterministic constraints, buffer, selected preview/apply and linked splitting checked |
 | 9 | Recover My Week | Past-work/deadline/fixed/completed safeguards, capacity review and Undo checked |
 | 10 | Calendar/time zones | Five modes, Monday display, exact instants, overnight/DST/import and historical conversion checked |
-| 11 | Task management | Editor, NLP review, subtasks, recurrence, archive/trash/restore and stale/unsaved guards checked |
+| 11 | Task management | Editor, guarded inline editing, reviewed bulk actions/Undo, NLP review, subtasks, recurrence, archive/trash/restore and owner-scoped drafts |
 | 12 | Insights | Unioned workload, actual recorded focus, completion/recovery history and weekly review delivered |
 | 13 | Habits | Daily/selected weekdays/flexible weekly targets, skip/pause/history and neutral wording checked |
 | 14 | Focus | Persisted timestamps, pause/resume/reload and task-linked history checked; native suspension remains device QA |
 | 15 | Optional AI | Disabled because no valid service is configured; deterministic planner works without it |
 | 16 | Onboarding | Optional owner-isolated guide, skip/replay and empty-state actions checked |
 | 17 | Settings | Organized planning/account/privacy/notification/zone/week-start/theme controls; English/24-hour presentation retained |
-| 18 | Architecture | 17 controller factories, 607-line startup, explicit state APIs and shared validation/clock/persistence modules delivered |
+| 18 | Architecture | 17 controller factories, 609-line startup, explicit state APIs and shared validation/clock/persistence modules delivered |
 | 19 | Cloud/offline | Live isolation/revision races and fresh-client reload pass; browser offline/reconnect/account races pass; physical devices remain |
 | 20 | Google/Outlook | Deferred by user; source/server encryption retained; no credentials/consent or fake live sync |
 | 21 | Push | VAPID/service/minute scheduler and live owner/opt-out/dedup checks pass; controlled closed-tab API call passes; provider/OS delivery remains unverified |
 | 22 | Security/privacy | Six RLS/cascades, RPC grants, invite enforcement/minimization and public retention controls checked; free-plan leaked-password option and legal review remain |
 | 23 | Performance | Synthetic browser loads/10k records and scheduling profiling recorded; field CWV are not available |
 | 24 | Errors/polish | Quota, damaged data, offline, conflicts, stale ownership and interrupted worker update recovery checked |
-| 25 | Automated tests | 167 Node, 61 built-browser, isolated PostgreSQL, five Deno handlers, 48 live boolean checks and exact Pages gates |
+| 25 | Automated tests | 179 Node and 67 built-browser cases; the productivity PR records fresh results. Isolated PostgreSQL, five Deno handlers, 48 live boolean checks and exact Pages gates |
 | 26 | Quality standards | Core implementation/automation delivered; manual product/security/accessibility acceptance remains scoped evidence |
 | 27 | Roadmap | Phases 0–4 and non-calendar phase-5 engineering delivered; phase-6 automated release gates plus explicit external limits |
 | 28 | Development rules | Existing data retained; checked branches, expected-head merges, no secrets or existing users used as fixtures |

@@ -71,7 +71,7 @@ function renderDays(){
     }).join('');
     const nowTop=(weekwiseRuntime.now.getHours()*60+weekwiseRuntime.now.getMinutes())/60*hourHeight;
     const nowLine=''; // The current-time line is drawn once across the calendar below.
-    return `<div class="day-column ${isToday?'is-today':''} ${singleDay&&i===weekwiseRuntime.mobileDay?'mobile-selected':''}" data-day-index="${i}" style="grid-column:${i+2};grid-row:2"><div class="hour-lines"></div><div class="half-hour-lines"></div><div class="drop-surface" data-day-surface="${i}" data-day-index="${i}" aria-label="${day} calendar; click to add event"></div><div class="event-layer">${evs}${nowLine}</div></div>`;
+    return `<div class="day-column ${isToday?'is-today':''} ${singleDay&&i===weekwiseRuntime.mobileDay?'mobile-selected':''}" data-day-index="${i}" style="grid-column:${i+2};grid-row:2"><div class="hour-lines"></div><div class="half-hour-lines"></div><div class="drop-surface" data-day-surface="${i}" data-day-index="${i}" role="button" tabindex="0" aria-label="Add event on ${day}"></div><div class="event-layer">${evs}${nowLine}</div></div>`;
   }).join('');
   const allDayHTML=allDayTasks.length?'<div class="backlog-strip all-day-strip"><span class="backlog-label">ALL DAY</span>'+allDayTasks.map(t=>'<button class="backlog-event all-day-event" data-edit="'+weekwiseRuntime.escapeHtml(t.id)+'" title="All-day event">'+weekwiseRuntime.escapeHtml(t.title)+' · '+weekwiseRuntime.DAY_NAMES[t.day]+'</button>').join('')+'</div>':'';
   const backlogHTML=backlog.length?'<div class="backlog-strip"><span class="backlog-label">NEEDS A TIME</span>'+backlog.map(t=>'<button class="backlog-event" data-edit="'+weekwiseRuntime.escapeHtml(t.id)+'"><span class="event-grip" data-drag-handle="'+weekwiseRuntime.escapeHtml(t.id)+'">⠿</span>'+weekwiseRuntime.escapeHtml(t.title)+' · '+weekwiseRuntime.DAY_NAMES[t.day]+'</button>').join('')+'<span class="drop-hint">Drag a grip to a day and time</span></div>':'';
@@ -116,6 +116,7 @@ function renderDays(){
     if(t.fixed){weekwiseRuntime.openFixedSettings(t.id);}else weekwiseRuntime.openTaskModal(t.id);
   }));
   grid.querySelectorAll('[data-fixed-open]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();weekwiseRuntime.openFixedSettings(el.dataset.fixedOpen);}));
+  grid.querySelectorAll('[data-day-surface]').forEach(surface=>surface.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();weekwiseRuntime.openTaskModal(null,Number(surface.dataset.daySurface),9*60);}}));
   grid.querySelectorAll('[data-day-surface]').forEach(surface=>surface.addEventListener('click',e=>{if(e.target.closest('.cal-event'))return;const rect=surface.getBoundingClientRect();const px=Math.max(0,Math.min(rect.height,e.clientY-rect.top));let preferred=Math.round((px/hourHeight*60)/15)*15;preferred=Math.max(0,Math.min(1440-15,preferred));weekwiseRuntime.openTaskModal(null,Number(surface.dataset.daySurface),preferred);}));
 }
 

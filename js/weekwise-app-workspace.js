@@ -18,7 +18,7 @@ function renderWorkspaceCustomLists(){
  const counts=new Map();weekwiseRuntime.workspaceRecords().forEach(record=>counts.set(record.listId,(counts.get(record.listId)||0)+1));
  nav.innerHTML=customLists.map(item=>{
   const view='list-'+item.id,active=weekwiseRuntime.workspaceView===view;
-  return '<div class="workspace-custom-list-row"><button type="button" class="workspace-nav-btn '+(active?'active':'')+'" data-workspace-view="'+weekwiseRuntime.escapeHtml(view)+'" aria-current="'+(active?'page':'false')+'"><span class="list-colour-dot custom-list-dot"></span><span title="'+weekwiseRuntime.escapeHtml(item.name)+'">'+weekwiseRuntime.escapeHtml(item.name)+'</span><span class="workspace-nav-count">'+(counts.get(item.id)||0)+'</span></button><button type="button" class="workspace-list-action" data-custom-list-rename="'+weekwiseRuntime.escapeHtml(item.id)+'" title="Rename '+weekwiseRuntime.escapeHtml(item.name)+'" aria-label="Rename '+weekwiseRuntime.escapeHtml(item.name)+'">✎</button><button type="button" class="workspace-list-action" data-custom-list-delete="'+weekwiseRuntime.escapeHtml(item.id)+'" title="Delete '+weekwiseRuntime.escapeHtml(item.name)+'" aria-label="Delete '+weekwiseRuntime.escapeHtml(item.name)+'">×</button></div>';
+  return '<div class="workspace-custom-list-row"><button type="button" class="workspace-nav-btn '+(active?'active':'')+'" data-workspace-view="'+weekwiseRuntime.escapeHtml(view)+'" aria-current="'+(active?'page':'false')+'"><span class="list-colour-dot custom-list-dot"></span><span title="'+weekwiseRuntime.escapeHtml(item.name)+'">'+weekwiseRuntime.escapeHtml(item.name)+'</span><span class="workspace-nav-count">'+(counts.get(item.id)||0)+'</span></button><button type="button" class="workspace-list-action" data-custom-list-rename="'+weekwiseRuntime.escapeHtml(item.id)+'" title="Rename '+weekwiseRuntime.escapeHtml(item.name)+'" aria-label="Rename '+weekwiseRuntime.escapeHtml(item.name)+'">✎</button><button type="button" class="workspace-list-action" data-custom-list-delete="'+weekwiseRuntime.escapeHtml(item.id)+'" title="Delete '+weekwiseRuntime.escapeHtml(item.name)+'" aria-label="Delete '+weekwiseRuntime.escapeHtml(item.name)+'">'+WeekwiseInterface.icon('remove')+'</button><button type="button" class="workspace-pin-button" data-pin-list="'+weekwiseRuntime.escapeHtml(item.id)+'" aria-label="Pin '+weekwiseRuntime.escapeHtml(item.name)+'"></button></div>';
  }).join('');
 }
 
@@ -121,11 +121,11 @@ function workspaceTaskRow(record){
  const organizationHtml='<span class="workspace-meta-pill workspace-folder-pill">'+weekwiseRuntime.escapeHtml(t.folderName||weekwiseRuntime.defaultFolderName(record.listId))+'</span>'+(t.sectionName?'<span class="workspace-meta-pill workspace-section-pill">§ '+weekwiseRuntime.escapeHtml(t.sectionName)+'</span>':'');
  const label=weekwiseRuntime.WORKSPACE_LISTS.find(x=>x.id===record.listId)?.label||'Inbox',attrs=' data-workspace-week="'+weekwiseRuntime.escapeHtml(record.week)+'"';
  const subtasksHtml=subtasks.length?'<details class="workspace-subtasks"><summary>☷ '+completedSubtasks+'/'+subtasks.length+' subtasks</summary><div class="workspace-subtask-list">'+subtasks.map((sub,index)=>{const title=typeof sub==='string'?sub:(sub.title||'Untitled step'),checked=typeof sub==='object'&&!!sub.done;return '<label class="workspace-subtask-row"><input type="checkbox" data-workspace-subtask="'+weekwiseRuntime.escapeHtml(t.id)+'" data-workspace-subtask-index="'+index+'"'+attrs+' '+(checked?'checked':'')+' aria-label="Complete subtask '+weekwiseRuntime.escapeHtml(title)+'"><span class="'+(checked?'is-complete':'')+'">'+weekwiseRuntime.escapeHtml(title)+'</span></label>';}).join('')+'</div></details>':'';
- return '<article class="workspace-task-row '+(t.done?'is-done':'')+'" data-workspace-id="'+weekwiseRuntime.escapeHtml(t.id)+'"'+attrs+'>'+
+ return '<article class="workspace-task-row '+(t.done?'is-done':'')+'" data-workspace-id="'+weekwiseRuntime.escapeHtml(t.id)+'"'+attrs+'>'+WeekwiseProductivity.rowSelection(record)+
   '<input class="workspace-task-check" type="checkbox" data-workspace-done="'+weekwiseRuntime.escapeHtml(t.id)+'"'+attrs+' aria-label="Mark '+weekwiseRuntime.escapeHtml(t.title)+' complete" '+(t.done?'checked':'')+'>'+
   '<div class="workspace-task-main"><button type="button" class="workspace-task-title" data-workspace-edit="'+weekwiseRuntime.escapeHtml(t.id)+'"'+attrs+'>'+weekwiseRuntime.escapeHtml(t.title)+'</button>'+
   '<div class="workspace-task-meta">'+scheduleHtml+'<span class="workspace-meta-pill">'+weekwiseRuntime.escapeHtml(label)+'</span>'+organizationHtml+statusHtml+priorityHtml+dueHtml+reminderHtml+focusEstimateHtml+'</div>'+tagsHtml+attachmentsHtml+subtasksHtml+(t.note?'<div class="workspace-task-subtasks">'+weekwiseRuntime.escapeHtml(t.note)+'</div>':'')+'</div>'+
-  '<div class="workspace-task-actions"><button type="button" title="Edit task" aria-label="Edit '+weekwiseRuntime.escapeHtml(t.title)+'" data-workspace-edit="'+weekwiseRuntime.escapeHtml(t.id)+'"'+attrs+'>✎</button><button type="button" title="Delete task" aria-label="Delete '+weekwiseRuntime.escapeHtml(t.title)+'" data-workspace-delete="'+weekwiseRuntime.escapeHtml(t.id)+'"'+attrs+'>×</button></div></article>';
+  '<div class="workspace-task-actions">'+WeekwiseProductivity.rowActions(record)+'<button type="button" title="Edit task" aria-label="Edit '+weekwiseRuntime.escapeHtml(t.title)+'" data-workspace-edit="'+weekwiseRuntime.escapeHtml(t.id)+'"'+attrs+'>'+WeekwiseInterface.icon('edit')+'</button><button type="button" title="Delete task" aria-label="Delete '+weekwiseRuntime.escapeHtml(t.title)+'" data-workspace-delete="'+weekwiseRuntime.escapeHtml(t.id)+'"'+attrs+'>'+WeekwiseInterface.icon('remove')+'</button></div></article>';
 }
 
 function updateWorkspaceCounts(){
@@ -181,6 +181,7 @@ function renderWorkspaceTasks(){
  const page=weekwiseRuntime.listPage('workspace:'+weekwiseRuntime.workspaceView+'|'+search+'|'+sort,items);const renderedItems=(shouldGroupSections?weekwiseRuntime.renderWorkspaceTaskGroups(page.records):page.records.map(weekwiseRuntime.workspaceTaskRow).join(''))+weekwiseRuntime.listPageFooter(page);
  weekwiseRuntime.renderTodayOverview();
  list.innerHTML=items.length?renderedItems:'<div class="workspace-empty"><div><div class="workspace-empty-icon">✓</div><h3>'+weekwiseRuntime.escapeHtml(search?'No matching tasks':info.emptyTitle)+'</h3><p>'+weekwiseRuntime.escapeHtml(search?'Try another search term.':info.emptyText)+'</p></div></div>';
+ WeekwiseProductivity.render();
 }
 
 function renderWorkspaceView(){
@@ -200,6 +201,7 @@ function renderWorkspaceView(){
  if(isMatrix)weekwiseRuntime.renderPriorityMatrix();
  if(isBoard)weekwiseRuntime.renderKanbanBoard();
  if(isFilters)weekwiseRuntime.renderSavedFilters();
+ WeekwiseInterface.renderPins();
 }
 
 function setWorkspaceView(view){
