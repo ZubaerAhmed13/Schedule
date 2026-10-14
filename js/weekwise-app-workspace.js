@@ -266,7 +266,10 @@ weekwiseRuntime.$('kanbanBoard').addEventListener('change',e=>{const select=e.ta
 weekwiseRuntime.$('kanbanBoard').addEventListener('click',e=>{const edit=e.target.closest('[data-board-edit]');if(edit)weekwiseRuntime.openWorkspaceRecord(edit.dataset.boardEdit,edit.dataset.boardWeek);});
 weekwiseRuntime.$('kanbanAddTaskBtn').addEventListener('click',()=>weekwiseRuntime.openTaskModal(null,weekwiseRuntime.mobileDay,weekwiseRuntime.nextQuarterHour()));
 weekwiseRuntime.$('savedFilterForm').addEventListener('submit',weekwiseRuntime.saveFilterForm);
+weekwiseRuntime.$('savedFilterForm').addEventListener('input',previewFilterDraft);weekwiseRuntime.$('resetFilterBtn').addEventListener('click',resetFilterForm);
+document.querySelectorAll('[data-filter-preset]').forEach(button=>button.addEventListener('click',()=>{resetFilterForm();const kind=button.dataset.filterPreset;weekwiseRuntime.$('filterName').value=kind==='priority'?'High priority':kind==='deadline'?'Upcoming deadlines':'Ready to focus';weekwiseRuntime.$('filterStatus').value='todo';if(kind==='priority'){weekwiseRuntime.$('filterPriority').value='high';weekwiseRuntime.$('filterSort').value='priority';}if(kind==='deadline'){weekwiseRuntime.$('filterDue').value='7days';weekwiseRuntime.$('filterSort').value='due';}if(kind==='focus')weekwiseRuntime.$('filterSchedule').value='unscheduled';previewFilterDraft();}));
 weekwiseRuntime.$('savedFilterList').addEventListener('click',e=>{
+ const edit=e.target.closest('[data-filter-edit]');if(edit){editSavedFilter(edit.dataset.filterEdit);return;}
  const open=e.target.closest('[data-filter-open]');
  if(open){weekwiseRuntime.activeSavedFilterId=open.dataset.filterOpen;weekwiseRuntime.renderSavedFilters();return;}
  const remove=e.target.closest('[data-filter-delete]');if(remove)weekwiseRuntime.deleteSavedFilter(remove.dataset.filterDelete);
@@ -324,6 +327,9 @@ function updateBoardTaskStatus(id,week,status){if(!weekwiseRuntime.dataCanWrite(
 
 function savedFilterMatches(record,filter){
  const t=record.task;
+ if(filter.query&&!([t.title,t.note].join(' ').toLowerCase().includes(filter.query.toLowerCase())))return false;
+ const scheduled=!!t.allDay||t.start!=null&&!t.unscheduled;
+ if(filter.schedule==='scheduled'&&!scheduled||filter.schedule==='unscheduled'&&scheduled)return false;
  if(filter.listId&&filter.listId!=='all'&&record.listId!==filter.listId)return false;
  const priority=t.priority||'none';
  if(filter.priority&&filter.priority!=='all'&&priority!==filter.priority)return false;
@@ -341,14 +347,20 @@ function savedFilterMatches(record,filter){
  return true;
 }
 
+function readFilterDraft(){return {title:weekwiseRuntime.$('filterName').value.trim(),listId:weekwiseRuntime.$('filterList').value,priority:weekwiseRuntime.$('filterPriority').value,status:weekwiseRuntime.$('filterStatus').value,due:weekwiseRuntime.$('filterDue').value,tag:weekwiseRuntime.$('filterTag').value.trim().replace(/^#/,'').toLowerCase(),query:weekwiseRuntime.$('filterQuery').value.trim(),schedule:weekwiseRuntime.$('filterSchedule').value,sort:weekwiseRuntime.$('filterSort').value};}
+function previewFilterDraft(){const draft=readFilterDraft(),count=weekwiseRuntime.workspaceRecords().filter(record=>savedFilterMatches(record,draft)).length;weekwiseRuntime.$('filterLiveCount').textContent=count+' matching '+(count===1?'task':'tasks')+' · preview only';}
+function resetFilterForm(){weekwiseRuntime.$('savedFilterForm').reset();weekwiseRuntime.$('filterEditId').value='';delete weekwiseRuntime.$('savedFilterForm').dataset.base;weekwiseRuntime.$('saveFilterBtn').textContent='Save filter';previewFilterDraft();}
+function editSavedFilter(id){const filter=weekwiseRuntime.savedTaskFilters.find(item=>item.id===id);if(!filter)return;weekwiseRuntime.$('filterEditId').value=id;weekwiseRuntime.$('savedFilterForm').dataset.base=JSON.stringify(filter);for(const [field,value]of Object.entries({filterName:filter.title,filterList:filter.listId||'all',filterPriority:filter.priority||'all',filterStatus:filter.status||'all',filterDue:filter.due||'all',filterTag:filter.tag||'',filterQuery:filter.query||'',filterSchedule:filter.schedule||'all',filterSort:filter.sort||'date'}))weekwiseRuntime.$(field).value=value;weekwiseRuntime.$('saveFilterBtn').textContent='Save changes';previewFilterDraft();weekwiseRuntime.$('filterName').focus();}
+function sortFilterRecords(records,sort){const ranks={high:0,medium:1,low:2,none:3};return records.sort((a,b)=>sort==='title'?a.task.title.localeCompare(b.task.title):sort==='priority'?(ranks[a.task.priority||'none']??3)-(ranks[b.task.priority||'none']??3)||a.date-b.date:sort==='due'?String(a.task.dueDate||'9999-12-31').localeCompare(String(b.task.dueDate||'9999-12-31')):a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));}
 function renderSavedFilters(){
  const list=weekwiseRuntime.$('savedFilterList'),results=weekwiseRuntime.$('savedFilterResults');
  if(!list||!results)return;
+ const form=weekwiseRuntime.$('savedFilterForm');if(form.dataset.owner!==weekwiseRuntime.currentDataOwner){form.dataset.owner=weekwiseRuntime.currentDataOwner;resetFilterForm();}previewFilterDraft();
  const active=weekwiseRuntime.savedTaskFilters.find(filter=>filter.id===weekwiseRuntime.activeSavedFilterId)||null;
  weekwiseRuntime.$('savedFilterCount').textContent=String(weekwiseRuntime.savedTaskFilters.length);
  list.innerHTML=weekwiseRuntime.savedTaskFilters.length?weekwiseRuntime.savedTaskFilters.map(filter=>{
   const count=weekwiseRuntime.workspaceRecords().filter(record=>weekwiseRuntime.savedFilterMatches(record,filter)).length;
-  return '<div class="saved-filter-choice-wrap"><button type="button" class="saved-filter-choice '+(active&&active.id===filter.id?'active':'')+'" data-filter-open="'+weekwiseRuntime.escapeHtml(filter.id)+'"><span>'+weekwiseRuntime.escapeHtml(filter.title)+'</span><span>'+count+'</span></button><button type="button" class="saved-filter-delete" data-filter-delete="'+weekwiseRuntime.escapeHtml(filter.id)+'" aria-label="Delete '+weekwiseRuntime.escapeHtml(filter.title)+'">×</button></div>';
+  return '<div class="saved-filter-choice-wrap"><button type="button" class="saved-filter-choice '+(active&&active.id===filter.id?'active':'')+'" data-filter-open="'+weekwiseRuntime.escapeHtml(filter.id)+'"><span>'+weekwiseRuntime.escapeHtml(filter.title)+'</span><span>'+count+'</span></button><button type="button" class="saved-filter-edit" data-filter-edit="'+weekwiseRuntime.escapeHtml(filter.id)+'" aria-label="Edit '+weekwiseRuntime.escapeHtml(filter.title)+'">Edit</button><button type="button" class="saved-filter-delete" data-filter-delete="'+weekwiseRuntime.escapeHtml(filter.id)+'" aria-label="Delete '+weekwiseRuntime.escapeHtml(filter.title)+'">×</button></div>';
  }).join(''):'<div class="saved-filter-empty">Build your first filter above.</div>';
  if(!active){
   weekwiseRuntime.$('activeFilterTitle').textContent='Choose a filter';
@@ -357,13 +369,13 @@ function renderSavedFilters(){
   results.innerHTML='<div class="workspace-empty"><div><div class="workspace-empty-icon">⏷</div><h3>No filter selected</h3><p>Combine due dates, status, priority, list and tags.</p></div></div>';
   return;
  }
- const records=weekwiseRuntime.workspaceRecords().filter(record=>weekwiseRuntime.savedFilterMatches(record,active)).sort((a,b)=>a.date-b.date||(a.task.start==null?1:b.task.start==null?-1:Number(a.task.start)-Number(b.task.start)));
+ const records=sortFilterRecords(weekwiseRuntime.workspaceRecords().filter(record=>weekwiseRuntime.savedFilterMatches(record,active)),active.sort||'date');
  const description=[];
  if(active.listId!=='all')description.push(active.listId);
  if(active.priority!=='all')description.push(active.priority+' priority');
  if(active.status!=='all')description.push(active.status.replace('-',' '));
  if(active.due!=='all')description.push(active.due);
- if(active.tag)description.push('#'+active.tag);
+ if(active.tag)description.push('#'+active.tag);if(active.query)description.push('Contains '+active.query);if(active.schedule&&active.schedule!=='all')description.push(active.schedule);
  weekwiseRuntime.$('activeFilterTitle').textContent=active.title;
  weekwiseRuntime.$('activeFilterDescription').textContent=description.length?description.join(' · '):'All tasks';
  weekwiseRuntime.$('activeFilterResultCount').textContent=records.length+' task'+(records.length===1?'':'s');
@@ -374,11 +386,12 @@ function saveFilterForm(e){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.pre
  e.preventDefault();
  const title=weekwiseRuntime.$('filterName').value.trim();
  if(!title){weekwiseRuntime.$('filterName').focus();return;}
- const filter={id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),title:title,listId:weekwiseRuntime.$('filterList').value,priority:weekwiseRuntime.$('filterPriority').value,status:weekwiseRuntime.$('filterStatus').value,due:weekwiseRuntime.$('filterDue').value,tag:weekwiseRuntime.$('filterTag').value.trim().replace(/^#/,'').toLowerCase(),createdAt:new Date().toISOString()};
- weekwiseRuntime.savedTaskFilters.push(filter);weekwiseRuntime.activeSavedFilterId=filter.id;
+ const editId=weekwiseRuntime.$('filterEditId').value,existing=weekwiseRuntime.savedTaskFilters.find(filter=>filter.id===editId);
+ if(editId&&(!existing||JSON.stringify(existing)!==weekwiseRuntime.$('savedFilterForm').dataset.base)){weekwiseRuntime.showToast('This filter changed. Choose Edit again before saving.');return;}
+ const filter={...existing,...readFilterDraft(),id:editId||'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ if(existing)weekwiseRuntime.savedTaskFilters=weekwiseRuntime.savedTaskFilters.map(item=>item.id===editId?filter:item);else weekwiseRuntime.savedTaskFilters.push(filter);weekwiseRuntime.activeSavedFilterId=filter.id;
  weekwiseRuntime.checkedCollectionSave(weekwiseRuntime.TASK_FILTERS_KEY,weekwiseRuntime.savedTaskFilters,value=>weekwiseRuntime.savedTaskFilters=value);
- if(!weekwiseRuntime.cloudApplyingRemote)weekwiseRuntime.queueCloudSave();
- weekwiseRuntime.$('filterName').value='';weekwiseRuntime.$('filterList').value='all';weekwiseRuntime.$('filterPriority').value='all';weekwiseRuntime.$('filterStatus').value='all';weekwiseRuntime.$('filterDue').value='all';weekwiseRuntime.$('filterTag').value='';
+ resetFilterForm();
  weekwiseRuntime.renderSavedFilters();weekwiseRuntime.showToast('Filter saved');
 }
 

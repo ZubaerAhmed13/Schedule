@@ -58,11 +58,11 @@ function hideActivitySuggestions(){const list=weekwiseRuntime.$('activitySuggest
 function renderActivitySuggestions(query=''){
  const list=weekwiseRuntime.$('activitySuggestions'),input=weekwiseRuntime.$('modalTitleInput');if(!list||!input)return;
  const q=String(query||'').trim().toLowerCase();
- const options=weekwiseRuntime.ACTIVITY_SUGGESTIONS.filter(x=>!q||x.label.toLowerCase().includes(q)||String(weekwiseRuntime.ACTIVITY_TEMPLATE_PRESETS[x.key]?.title||'').toLowerCase().includes(q));
+ const options=WeekwisePersonal.history(weekwiseRuntime.plannerSnapshot().store,q);
  if(!options.length){weekwiseRuntime.hideActivitySuggestions();return;}
- list.innerHTML=options.map(x=>'<button type="button" class="activity-suggestion" role="option" aria-label="'+weekwiseRuntime.escapeHtml(x.label)+'" data-activity-suggestion="'+x.key+'">'+weekwiseRuntime.escapeHtml(x.label)+'</button>').join('');
+ list.innerHTML=options.map((x,i)=>'<button type="button" class="activity-suggestion" role="option" aria-selected="false" data-activity-history="'+i+'"><span>'+weekwiseRuntime.escapeHtml(x.title)+'</span><small>Previously added · '+x.count+' saved '+(x.count===1?'activity':'activities')+'</small></button>').join('');
  list.hidden=false;input.setAttribute('aria-expanded','true');
- list.querySelectorAll('[data-activity-suggestion]').forEach(button=>{button.addEventListener('pointerdown',e=>e.preventDefault());button.addEventListener('click',()=>weekwiseRuntime.chooseActivityTemplate(button.dataset.activitySuggestion));});
+ list.querySelectorAll('[data-activity-history]').forEach(button=>{button.addEventListener('pointerdown',e=>e.preventDefault());button.addEventListener('click',()=>{input.value=options[Number(button.dataset.activityHistory)].title;weekwiseRuntime.suppressActivitySuggestionFocus=true;input.focus({preventScroll:true});weekwiseRuntime.hideActivitySuggestions();input.dispatchEvent(new Event('input',{bubbles:true}));weekwiseRuntime.hideActivitySuggestions();});});
 }
 
 function clearActivityTemplateSelection(){weekwiseRuntime.selectedActivitySuggestion=null;weekwiseRuntime.hideActivitySuggestions();}
@@ -144,7 +144,7 @@ function openTaskModal(id=null,day=weekwiseRuntime.mobileDay,startAt=null,defaul
   const durationSelect=weekwiseRuntime.$('modalDuration'),duration=String(t?.duration||30);
   if(!Array.from(durationSelect.options).some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=weekwiseRuntime.durationLabel(Number(duration));durationSelect.add(option);}
   durationSelect.value=duration;const chosenStart=t?.start??(Number.isFinite(t?.recurrenceScheduleReview?.preferred)?t.recurrenceScheduleReview.preferred:(startAt===null||startAt===undefined?weekwiseRuntime.nextQuarterHour():startAt));weekwiseRuntime.$('modalTime').value=weekwiseRuntime.minsTime(chosenStart);weekwiseRuntime.updateEndTimeFromDuration();weekwiseRuntime.$('modalNote').value=t?.note||'';
-  weekwiseRuntime.$('saveTaskBtn').textContent=t?'Save changes':'Add task';weekwiseRuntime.$('deleteTaskBtn').style.display=t&&!t.fixed?'inline-flex':'none';weekwiseRuntime.$('archiveTaskBtn').hidden=!t||!!t.fixed;weekwiseRuntime.$('seriesScheduleOpen').hidden=!t?.seriesId||!!t.fixed;
+  weekwiseRuntime.$('copyScheduleBtn').hidden=!t;weekwiseRuntime.$('saveTaskBtn').textContent=t?'Save changes':'Add task';weekwiseRuntime.$('deleteTaskBtn').style.display=t&&!t.fixed?'inline-flex':'none';weekwiseRuntime.$('archiveTaskBtn').hidden=!t||!!t.fixed;weekwiseRuntime.$('seriesScheduleOpen').hidden=!t?.seriesId||!!t.fixed;
   weekwiseRuntime.updateModalScheduleVisibility();
   WeekwiseInterface.prepareEditor();
   weekwiseRuntime.taskModalInitialFingerprint=weekwiseRuntime.taskModalFingerprint();

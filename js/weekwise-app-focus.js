@@ -75,6 +75,7 @@ function updateFocusDisplay(){
  weekwiseRuntime.$('focusProgressBar').style.width=(seconds/state.totalSeconds*100)+'%';
  weekwiseRuntime.$('focusStartBtn').textContent=state.runningSince!==null?'Pause':state.activeMs>0?'Resume':'Start '+(state.mode==='focus'?'focus':'break');
  weekwiseRuntime.$('focusTimerMessage').textContent=state.runningSince!==null?'Your timer continues across reloads. Paused time is excluded.':'Choose one task. Your timer is saved on this device.';
+ document.querySelectorAll('[data-focus-length]').forEach(button=>{button.setAttribute('aria-pressed',String(Number(button.dataset.focusLength)*60===state.totalSeconds));button.disabled=state.runningSince!==null||state.activeMs>0;});
  const selectionLocked=state.runningSince!==null||state.activeMs>0;
  weekwiseRuntime.$('focusTaskSelect').disabled=selectionLocked;weekwiseRuntime.$('focusTaskSearch').disabled=selectionLocked;weekwiseRuntime.$('focusPreset').disabled=selectionLocked;
  if(state.mode==='focus'&&[25,50,90].includes(state.totalSeconds/60))weekwiseRuntime.$('focusPreset').value=String(state.totalSeconds/60);
