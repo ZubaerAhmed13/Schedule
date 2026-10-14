@@ -18,7 +18,7 @@ The user's current scope is to finish Weekwise while **deferring Google and Outl
 
 | Check | Result |
 |---|---|
-| Node | 191 tests pass locally, including 12 atomic task-action contracts. Fresh CI evidence is recorded in the productivity PR. |
+| Node | 191 tests pass locally, including 12 atomic task-action contracts. Fresh CI evidence is recorded in the device-evidence PR. |
 | Built Chromium | Modern-interface release: 63 tests passed on head `40030133370b0e0e900db3d3a4aec41fa3486bcd`, [browser run 38456056588](https://github.com/ZubaerAhmed13/Schedule/actions/runs/38456056588). The productivity follow-up adds four browser cases; its PR owns the fresh results. |
 | Database / functions / release | Isolated PostgreSQL, all five Deno handlers and release/build checks passed on that same head |
 | Live backend | 48 bounded boolean checks passed: invitations and minimized stored/sign-in metadata, own/cross/anonymous reads, direct-write denial, first/competing/stale saves, fresh-client reload, push isolation/opt-out/deduplication, refresh revocation, recovery/password/token replay and erasure |
