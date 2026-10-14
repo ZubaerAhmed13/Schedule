@@ -36,23 +36,25 @@
       <details class="more-actions" id="moreActions">
         <summary class="btn more-trigger" aria-label="More options" title="More options">•••</summary>
         <div class="more-panel" role="menu" aria-label="Weekwise options">
-          <div class="menu-section-label">PLAN YOUR TIME</div>
-          <button class="btn" id="menuQuickAddBtn" role="menuitem"><span class="menu-item-icon">＋</span><span>Quick add activity</span></button>
-          <button class="btn reminders-menu-button" id="remindersMenuBtn" role="menuitem"><span class="menu-item-icon">◷</span><span>Reminders & sticky notes</span><span id="reminderBadge" class="reminder-badge" hidden>0</span></button>
-          <button class="btn" id="menuHabitsBtn" role="menuitem"><span class="menu-item-icon">✦</span><span>Habits & focus tips</span></button>
-          <hr class="menu-divider">
-          <div class="menu-section-label">REVIEW</div>
-          <button class="btn" id="dashboardMenuBtn" role="menuitem"><span class="menu-item-icon">▥</span><span>Weekly effort dashboard</span></button>
-          <hr class="menu-divider">
-          <div class="menu-section-label">ACCOUNT & SETTINGS</div>
-          <button class="btn reminders-menu-button" id="cloudMenuBtn" role="menuitem"><span class="menu-item-icon">☁</span><span>Cloud sync & account</span><span id="cloudMenuBadge" class="reminder-badge">Local</span></button>
-          <button class="btn" id="calendarConnectionsMenuBtn" role="menuitem"><span class="menu-item-icon">↔</span><span>Calendar connections</span></button>
-          <button class="btn" id="menuSettingsBtn" role="menuitem"><span class="menu-item-icon">⚙</span><span>Work day & weekly settings</span></button>
-          <hr class="menu-divider">
-          <div class="menu-section-label">BACKUP & OUTPUT</div>
-          <button class="btn" id="exportBtn" role="menuitem"><span class="menu-item-icon">↓</span><span>Export backup</span></button>
-          <button class="btn" id="importBtn" role="menuitem"><span class="menu-item-icon">↑</span><span>Import backup</span></button>
-          <button class="btn" id="printBtn" role="menuitem"><span class="menu-item-icon">▤</span><span>Print calendar</span></button>
+          <div class="menu-group" role="group" aria-labelledby="morePlanningLabel">
+            <div class="menu-section-label" id="morePlanningLabel">Planning</div>
+            <button class="btn" id="menuQuickAddBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span>Quick add</span></button>
+            <button class="btn reminders-menu-button" id="remindersMenuBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M6 3h12a2 2 0 0 1 2 2v10l-6 6H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM14 21v-6h6M8 8h8M8 12h5"/></svg></span><span>Notes &amp; reminders</span><span id="reminderBadge" class="reminder-badge" hidden>0</span></button>
+            <button class="btn" id="menuHabitsBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3M8 12l3 3 5-6"/></svg></span><span>Habits &amp; focus</span></button>
+            <button class="btn" id="dashboardMenuBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 15v-3m4 3V8m4 7v-5"/></svg></span><span>Weekly summary</span></button>
+          </div>
+          <div class="menu-group" role="group" aria-labelledby="morePreferencesLabel">
+            <div class="menu-section-label" id="morePreferencesLabel">Preferences</div>
+            <button class="btn" id="menuSettingsBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg></span><span>General settings</span></button>
+            <button class="btn reminders-menu-button" id="cloudMenuBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M6 18a4 4 0 0 1-.5-8 6.5 6.5 0 0 1 12.6-1A4.5 4.5 0 0 1 18 18H6Z"/></svg></span><span>Account &amp; sync</span><span id="cloudMenuBadge" class="reminder-badge">Local</span></button>
+            <button class="btn" id="calendarConnectionsMenuBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4m8-4v4M4 11h16m-11 4h2m3 0h2"/></svg></span><span>Calendar files &amp; connections</span></button>
+          </div>
+          <div class="menu-group" role="group" aria-labelledby="moreDataLabel">
+            <div class="menu-section-label" id="moreDataLabel">Data</div>
+            <button class="btn" id="exportBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M5 15v5h14v-5"/></svg></span><span>Export backup</span></button>
+            <button class="btn" id="importBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M12 15V3m-4 4 4-4 4 4M5 15v5h14v-5"/></svg></span><span>Restore backup</span></button>
+            <button class="btn" id="printBtn" type="button" role="menuitem"><span class="menu-item-icon" aria-hidden="true"><svg class="ww-icon" viewBox="0 0 24 24"><path d="M7 8V3h10v5M7 17H4V8h16v9h-3M7 14h10v7H7v-7m10-3h.01"/></svg></span><span>Print calendar</span></button>
+          </div>
           <input type="file" id="importFile" accept="application/json,.json" hidden>
         </div>
       </details>
@@ -443,7 +445,6 @@
       <p class="reminder-storage-note">Saved separately on this device. These notes never occupy calendar time or change your effort totals. Date reminders are highlighted when Weekwise is open.</p>
     </div>
   </details>
-  <div class="footnote">Saved on this device · Export a backup from More</div>
 </div>
 
 
