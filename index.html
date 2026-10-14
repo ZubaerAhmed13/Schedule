@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="./css/weekwise-quality.css">
 <link rel="stylesheet" href="./css/weekwise-help.css">
 <link rel="stylesheet" href="./css/weekwise-entry.css">
+<link rel="stylesheet" href="./css/weekwise-polish.css">
 </head>
 <body>
 <a class="skip-link" href="#workspaceMain">Skip to main content</a>
@@ -91,7 +92,7 @@
 <path d="m128 166 60 172 68-110 68 110 60-172" fill="none" stroke="#fffdf6" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="382" cy="124" r="15" fill="#efc394"/>
 </svg></div><div><h1>Weekwise</h1><p>Your personal planning space</p></div></div>
-    <div class="top-actions"><button class="btn" id="mobileNavigationToggle" type="button" aria-expanded="false" aria-controls="workspaceSidebar">Menu</button><button class="btn primary" id="globalCaptureBtn" type="button">＋ Add task</button>
+    <div class="top-actions"><button class="btn" id="mobileNavigationToggle" type="button" aria-expanded="false" aria-controls="workspaceSidebar">Menu</button><button class="btn primary" id="globalCaptureBtn" type="button"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add task</span></button>
       <details class="more-actions" id="moreActions">
         <summary class="btn more-trigger" aria-label="More options" title="More options">•••</summary>
         <div class="more-panel" role="menu" aria-label="Weekwise options">
@@ -144,7 +145,7 @@
       </details>
       <div class="workspace-nav-divider"></div>
       <details class="nav-group" id="workspaceLists" open><summary>My lists</summary>
-      <button type="button" class="workspace-add-list" id="addCustomListBtn"><span>＋</span> New list</button>
+      <button type="button" class="workspace-add-list" id="addCustomListBtn"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> New list</button>
       <div class="workspace-list-nav-row"><button class="workspace-nav-btn" type="button" data-workspace-view="list-career"><span class="list-colour-dot career-dot"></span><span>Career</span><span class="workspace-nav-count" id="navCountCareer">0</span></button><button type="button" class="workspace-pin-button" data-pin-list="career" aria-label="Pin list" aria-pressed="false"></button></div>
       <div class="workspace-list-nav-row"><button class="workspace-nav-btn" type="button" data-workspace-view="list-study"><span class="list-colour-dot study-dot"></span><span>Study</span><span class="workspace-nav-count" id="navCountStudy">0</span></button><button type="button" class="workspace-pin-button" data-pin-list="study" aria-label="Pin list" aria-pressed="false"></button></div>
       <div class="workspace-list-nav-row"><button class="workspace-nav-btn" type="button" data-workspace-view="list-work"><span class="list-colour-dot work-dot"></span><span>Work</span><span class="workspace-nav-count" id="navCountWork">0</span></button><button type="button" class="workspace-pin-button" data-pin-list="work" aria-label="Pin list" aria-pressed="false"></button></div>
@@ -203,15 +204,15 @@
           <div><div class="workspace-page-eyebrow">YOUR TASKS</div><h2 id="taskWorkspaceTitle">Today</h2><p id="taskWorkspaceDescription">Focus on what matters today.</p></div>
           <div class="workspace-head-actions">
             <details class="list-actions"><summary class="btn">List options</summary><div class="list-actions-menu">            <button class="btn" type="button" id="workspaceExportListBtn" title="Export tasks in the current view as a shareable Weekwise file">↗ Share / export</button>
-            <button class="btn" type="button" id="workspaceImportListBtn" title="Import tasks from another Weekwise list file">＋ Import list</button>
+            <button class="btn" type="button" id="workspaceImportListBtn" title="Import tasks from another Weekwise list file"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Import list</span></button>
             <input id="workspaceImportListFile" type="file" accept="application/json,.json" hidden>
 </div></details>
-            <button class="btn primary" type="button" id="workspaceAddTaskBtn">＋ Add task</button>
+            <button class="btn primary" type="button" id="workspaceAddTaskBtn"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add task</span></button>
           </div>
         </header>
 
         <form class="workspace-capture" id="workspaceCaptureForm">
-          <span class="capture-plus" aria-hidden="true">＋</span>
+          <span class="capture-plus" aria-hidden="true"><svg class="ww-icon action-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
           <input id="workspaceCaptureInput" type="text" maxlength="100" autocomplete="off" placeholder="Add a task to your inbox…" aria-label="Quick capture task">
           <button type="button" class="btn voice-capture-btn" id="voiceCaptureBtn" title="Capture by voice where supported" aria-label="Capture task by voice" aria-pressed="false"><svg class="ww-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></svg></button>
           <button type="submit" class="btn primary">Add</button>
@@ -230,7 +231,7 @@
         <p class="workspace-list-footnote">Tasks stay connected to your calendar. Edit a task here or schedule it from the calendar.</p>
       </section>
       <section class="kanban-workspace" id="kanbanBoard" hidden aria-labelledby="kanbanTitle">
-        <header class="kanban-heading"><div><div class="workspace-page-eyebrow">MOVE WORK FORWARD</div><h2 id="kanbanTitle">Board</h2><p>Change a task’s status here and the same task updates in your lists and calendar.</p></div><button class="btn primary" type="button" id="kanbanAddTaskBtn">＋ Add task</button></header>
+        <header class="kanban-heading"><div><div class="workspace-page-eyebrow">MOVE WORK FORWARD</div><h2 id="kanbanTitle">Board</h2><p>Change a task’s status here and the same task updates in your lists and calendar.</p></div><button class="btn primary" type="button" id="kanbanAddTaskBtn"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add task</span></button></header>
         <div class="kanban-columns">
           <section class="kanban-column"><header><span class="kanban-status-dot todo-dot"></span><h3>To do</h3><span id="kanbanCountTodo">0</span></header><div class="kanban-column-body" id="kanbanListTodo"></div></section>
           <section class="kanban-column"><header><span class="kanban-status-dot progress-dot"></span><h3>In progress</h3><span id="kanbanCountProgress">0</span></header><div class="kanban-column-body" id="kanbanListProgress"></div></section>
@@ -254,7 +255,7 @@
         </div>
       </section>
       <section class="priority-matrix" id="priorityMatrix" hidden aria-labelledby="matrixTitle">
-        <header class="matrix-heading"><div><div class="workspace-page-eyebrow">DECIDE WHAT MATTERS</div><h2 id="matrixTitle">Priority matrix</h2><p>Sort tasks by importance and urgency, then decide what to do first.</p></div><button class="btn" type="button" id="matrixAddTaskBtn">＋ Add task</button></header>
+        <header class="matrix-heading"><div><div class="workspace-page-eyebrow">DECIDE WHAT MATTERS</div><h2 id="matrixTitle">Priority matrix</h2><p>Sort tasks by importance and urgency, then decide what to do first.</p></div><button class="btn" type="button" id="matrixAddTaskBtn"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add task</span></button></header>
         <div class="matrix-grid">
           <section class="matrix-quadrant matrix-do"><header><span class="matrix-number">01</span><div><h3>Do first</h3><p>Important and urgent</p></div></header><div id="matrixDoList" class="matrix-task-list"></div></section>
           <section class="matrix-quadrant matrix-schedule"><header><span class="matrix-number">02</span><div><h3>Schedule</h3><p>Important, not urgent</p></div></header><div id="matrixScheduleList" class="matrix-task-list"></div></section>
@@ -284,7 +285,7 @@
         <button class="btn nav-square" id="nextWeek" aria-label="Next week" title="Next week">›</button>
       </div>
       <strong class="weeklabel" id="weekLabel">Week of …</strong>
-      <div class="calendar-create-actions"><details class="calendar-file-actions" id="calendarFileActions"><summary class="btn">Files & reminders</summary><div class="calendar-file-menu"><button class="btn" id="remindersQuickBtn" type="button">＋ Reminder</button><button class="btn" id="importCalendarBtn" type="button" title="Import an iCalendar file into Weekwise">Import .ics</button><input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden /><button class="btn" id="exportCalendarBtn" type="button" title="Export scheduled tasks and deadlines as an iCalendar file">Export .ics</button></div></details><button class="btn primary" id="addTaskBtn" type="button">＋ New event</button></div>
+      <div class="calendar-create-actions"><details class="calendar-file-actions" id="calendarFileActions"><summary class="btn">Files & reminders</summary><div class="calendar-file-menu"><button class="btn" id="remindersQuickBtn" type="button"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Reminder</span></button><button class="btn" id="importCalendarBtn" type="button" title="Import an iCalendar file into Weekwise">Import .ics</button><input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden /><button class="btn" id="exportCalendarBtn" type="button" title="Export scheduled tasks and deadlines as an iCalendar file">Export .ics</button></div></details><button class="btn primary" id="addTaskBtn" type="button"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New event</span></button></div>
     </div>
   </section>
 
@@ -344,7 +345,7 @@
           <label class="countdown-field"><span>Date</span><input id="countdownDate" type="date" required></label>
           <label class="countdown-field"><span>Icon</span><input id="countdownIcon" maxlength="6" placeholder="🎯" aria-label="Countdown icon"></label>
           <label class="countdown-field countdown-note-field"><span>Note (optional)</span><input id="countdownNote" maxlength="140" placeholder="What do you want to remember?"></label>
-          <div class="countdown-form-actions"><button class="btn primary" type="submit" id="saveCountdownBtn">＋ Add countdown</button><button class="btn" type="button" id="cancelCountdownEdit" hidden>Cancel</button></div>
+          <div class="countdown-form-actions"><button class="btn primary" type="submit" id="saveCountdownBtn"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add countdown</span></button><button class="btn" type="button" id="cancelCountdownEdit" hidden>Cancel</button></div>
         </form>
         <div class="countdown-summary" id="countdownSummary"></div>
         <div class="countdown-list" id="countdownList" aria-live="polite"></div>
@@ -396,7 +397,7 @@
     <div class="field"><label for="quickType">Category</label><select id="quickType"><option value="job">Career</option><option value="study">Coursework</option><option value="language">Language</option><option value="life">Home / personal</option><option value="hobby">Hobby</option><option value="other">Other</option></select></div>
     <div class="field"><label for="quickDuration">Duration</label><select id="quickDuration"><option value="15">15 min</option><option value="30" selected>30 min</option><option value="45">45 min</option><option value="60">1 hour</option><option value="75">1h 15m</option><option value="90">1h 30m</option><option value="120">2 hours</option><option value="180">3 hours</option></select></div>
     <div class="field"><label for="quickTime">Start time</label><input id="quickTime" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="10:00" value="10:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /></div>
-    <button class="btn primary" type="submit">＋ Add</button>
+    <button class="btn primary" type="submit"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add</span></button>
   </form></div>
   </details>
 
@@ -412,7 +413,7 @@
         <label class="habit-create-field habit-name-field"><span>Habit name</span><input id="habitName" required maxlength="70" placeholder="e.g. Practise German"></label>
         <label class="habit-create-field"><span>Goal (optional)</span><input id="habitGoal" maxlength="100" placeholder="e.g. 10 new words"></label>
         <label class="habit-create-field"><span>Habit rhythm</span><select id="habitFrequencyMode"><option value="scheduled-days">On selected weekdays</option><option value="weekly-flexible">Any days — reach weekly target</option></select><small>Any-day targets do not count individual rest days as missed. Existing habits keep their weekday schedule.</small></label><fieldset class="habit-schedule" id="habitScheduleFieldset"><legend>Scheduled days</legend><label><input name="habitDay" type="checkbox" value="0" checked>Sun</label><label><input name="habitDay" type="checkbox" value="1" checked>Mon</label><label><input name="habitDay" type="checkbox" value="2" checked>Tue</label><label><input name="habitDay" type="checkbox" value="3" checked>Wed</label><label><input name="habitDay" type="checkbox" value="4" checked>Thu</label><label><input name="habitDay" type="checkbox" value="5" checked>Fri</label><label><input name="habitDay" type="checkbox" value="6" checked>Sat</label></fieldset><label class="habit-create-field"><span>Foreground reminder time</span><input id="habitReminderTime" type="time"><small>While Weekwise is open</small></label><label><input id="habitPaused" type="checkbox"> Pause this habit</label><label class="habit-create-field habit-target-field"><span>Target per week</span><select id="habitTargetPerWeek"><option value="1">1 time</option><option value="2">2 times</option><option value="3">3 times</option><option value="4">4 times</option><option value="5" selected>5 times</option><option value="6">6 times</option><option value="7">Every day</option></select></label>
-        <div class="habit-create-actions"><button class="btn primary" type="submit" id="saveHabitBtn">＋ Add habit</button><button class="btn" type="button" id="cancelHabitEdit" hidden>Cancel</button></div>
+        <div class="habit-create-actions"><button class="btn primary" type="submit" id="saveHabitBtn"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add habit</span></button><button class="btn" type="button" id="cancelHabitEdit" hidden>Cancel</button></div>
       </form>
       </details>
       <div class="habit-tracker-summary" id="habitTrackerSummary"></div>
@@ -455,7 +456,7 @@
           <div class="field"><label for="reminderColour">Sticky-note colour</label><select id="reminderColour"><option value="yellow">Sunshine yellow</option><option value="purple">Lavender</option><option value="blue">Sky blue</option><option value="green">Mint green</option><option value="pink">Soft pink</option></select></div>
           <label class="reminder-pin-input"><input type="checkbox" id="reminderPinned" /> Pin to the top</label>
         </div>
-        <div class="reminder-editor-actions"><button class="btn" type="button" id="cancelReminderEdit" hidden>Cancel edit</button><button class="btn primary" type="submit" id="saveReminderBtn">＋ Save reminder</button></div>
+        <div class="reminder-editor-actions"><button class="btn" type="button" id="cancelReminderEdit" hidden>Cancel edit</button><button class="btn primary" type="submit" id="saveReminderBtn"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Save reminder</span></button></div>
       </form>
       <div class="reminder-list-head"><div><h3>Your sticky notes</h3><p id="reminderSummary">No reminders yet</p></div><label class="reminder-filter-label" for="reminderFilter">Show<select id="reminderFilter"><option value="open">Open reminders</option><option value="all">All notes</option><option value="due">Due today / overdue</option><option value="done">Completed</option></select></label></div>
       <div id="reminderList" class="reminder-list" aria-live="polite"></div>
@@ -583,6 +584,7 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_jwdzJMi4VxXUHEOVasrcOg_ax0A5scL';
 <script src="./js/weekwise-app-startup.js"></script>
 <script src="./js/weekwise-task-actions.js"></script>
 <script src="./js/weekwise-interface.js"></script>
+<script src="./js/weekwise-motion.js"></script>
 <script src="./js/weekwise-productivity.js"></script>
 <script src="./js/weekwise-app.js"></script>
 <script src="./js/weekwise-update-safety.js"></script>

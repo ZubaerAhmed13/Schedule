@@ -13,8 +13,8 @@ function serve(req,res){
 before(async()=>{if(!{chromium,firefox,webkit}[engine])throw new Error('Unsupported browser engine');fs.mkdirSync(path.join(root,'test-results'),{recursive:true});server=http.createServer(serve);await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port+'/';browser=await {chromium,firefox,webkit}[engine].launch({headless:true});});
 beforeEach(()=>{rows.clear();blocked.clear();seed(owner);});
 after(async()=>{await browser?.close();if(server)await new Promise(r=>server.close(r));});
-async function open({width=390,height=844,worker=false,viewportMock=false}={}){
- const context=await browser.newContext({viewport:{width,height},timezoneId:'UTC',...(engine==='firefox'?{}:{isMobile:width<=430,hasTouch:width<=430}),serviceWorkers:worker?'allow':'block'});
+async function open({width=390,height=844,worker=false,viewportMock=false,reducedMotion='no-preference'}={}){
+ const context=await browser.newContext({viewport:{width,height},timezoneId:'UTC',reducedMotion,...(engine==='firefox'?{}:{isMobile:width<=430,hasTouch:width<=430}),serviceWorkers:worker?'allow':'block'});
  await context.addInitScript(({epoch,mock})=>{const OriginalDate=Date;window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:[epoch]));}static now(){return epoch;}};if(mock){const view=new EventTarget();view.height=844;view.offsetTop=0;view.scale=1;Object.defineProperty(window,'visualViewport',{value:view});window.__viewportFixture=view;}},{epoch,mock:viewportMock});
  await context.route('**/supabase.min.js',r=>r.fulfill({status:200,contentType:'text/javascript',body:sdk}));
  await context.route('**/rest/v1/rpc/weekwise_save',r=>{const req=r.request(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST, OPTIONS'};if(req.method()==='OPTIONS')return r.fulfill({status:204,headers});const id=req.headers().authorization?.split('device-token:')[1];assert.ok(id);if(blocked.has(id))return r.abort();const args=req.postDataJSON(),row=rows.get(id),revision=row?.revision||0;if(args.p_expected_revision!==revision)return r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:false,...row,revision}])});const next={user_id:id,revision:revision+1,updated_at:new Date().toISOString(),data:args.p_data};rows.set(id,next);return r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:true,...next}])});});
@@ -27,6 +27,61 @@ async function quality(page){await navigate(page,'settings');await page.locator(
 async function canonical(page){return page.evaluate(()=>Object.fromEntries(['weekwise-planner-v2','weekwise-reminders-v1','weekwise-focus-sessions-v1','weekwise-habits-v1','weekwise-countdowns-v1','weekwise-saved-filters-v1','weekwise-task-templates-v1'].map(k=>[k,localStorage.getItem(k)])));}
 async function downloadedJSON(download){const file=await download.path();return JSON.parse(fs.readFileSync(file,'utf8'));}
 async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-device-'+name+'.png'),animations:'disabled'});}
+
+test('motion settles after rapid navigation, preserves records and stops when the device preference changes',async()=>{
+ const {context,page}=await open({width:1440,height:1000});const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ try{
+  const before=await canonical(page);await navigate(page,'plan');
+  await page.waitForFunction(()=>document.querySelector('#planWorkspace').getAnimations({subtree:true}).some(a=>a.playState==='running'));
+  const timings=await page.locator('#planWorkspace').evaluate(el=>el.getAnimations({subtree:true}).map(a=>a.effect.getTiming()));
+  assert.ok(timings.length<=5);assert.ok(timings.every(t=>t.iterations===1&&Number(t.duration)+Number(t.delay)<=400));
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.waitForFunction(()=>document.getAnimations().length===0);
+  await page.evaluate(()=>['inbox','plan','insights','settings','calendar','inbox'].forEach(view=>document.querySelector('#workspaceSidebar [data-workspace-view="'+view+'"]').click()));
+  await page.waitForFunction(()=>document.body.dataset.activeView==='inbox');
+  assert.equal(await page.locator('#taskWorkspace').isVisible(),true);assert.equal(await page.locator('#planWorkspace').isVisible(),false);
+  assert.equal(await page.evaluate(()=>document.getAnimations().length),0);
+  const after=await canonical(page);const original=JSON.parse(before['weekwise-planner-v2']).weeks['2030-01-06'].tasks;
+  assert.deepEqual(JSON.parse(after['weekwise-planner-v2']).weeks['2030-01-06'].tasks,original);
+  for(const key of Object.keys(before).filter(k=>k!=='weekwise-planner-v2'))assert.equal(after[key],before[key]);
+  await page.emulateMedia({reducedMotion:'no-preference'});await navigate(page,'settings');
+  await page.waitForFunction(()=>document.querySelector('#settingsWorkspace').getAnimations({subtree:true}).some(a=>a.playState==='running'));
+  await page.waitForFunction(()=>document.getAnimations().length===0);
+  assert.equal(await page.locator('.settings-cards').evaluate(el=>getComputedStyle(el).transform),'none');
+  await page.locator('[data-settings-panel="appearancePanel"]').click();await page.locator('#closeUtility').press('Escape');
+  assert.equal(await page.locator('#utilityModal').isVisible(),false);assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-settings-panel')),true);
+  assert.deepEqual(errors,[]);await snap(page,'motion-desktop-settings');
+ }finally{await context.close();}
+});
+test('reduced motion keeps phone menus, editors and native copy dialogs immediate and usable',async()=>{
+ rows.get(owner).data.store=mobileWeekFixture();const {context,page}=await open({width:390,reducedMotion:'reduce'});
+ try{
+  await navigate(page,'calendar');await page.locator('#weekViewBtn').click();await page.locator('[data-week-jump="2030-01-08"]').click();
+  await page.locator('.mobile-week-copy[data-range-id="original-b"]').click();
+  assert.equal(await page.locator('#copyScheduleDialog').isVisible(),true);
+  assert.equal(await page.locator('#copyScheduleDialog').evaluate(el=>getComputedStyle(el).animationName),'none');
+  await page.locator('#copyScheduleCancel').press('Escape');assert.equal(await page.locator('#copyScheduleDialog').isVisible(),false);
+  await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill('Keyboard-ready capture');
+  assert.equal(await page.locator('.modal').evaluate(el=>getComputedStyle(el).animationName),'none');
+  await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  await page.locator('#moreActions > summary').click();assert.equal(await page.locator('.more-panel').evaluate(el=>getComputedStyle(el).animationName),'none');
+  await page.locator('#moreActions > summary').click();assert.equal(await page.evaluate(()=>document.getAnimations().length),0);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+  await snap(page,'motion-mobile-week');
+ }finally{await context.close();}
+});
+test('calendar completion saves immediately and its brief feedback never replays on navigation',async()=>{
+ rows.get(owner).data.store=mobileWeekFixture();const {context,page}=await open();
+ try{
+  await navigate(page,'calendar');await page.locator('#weekViewBtn').click();await page.locator('[data-week-jump="2030-01-08"]').click();
+  const control='input[data-range-done][data-range-id="original-b"]';await page.locator(control).check();
+  assert.equal(JSON.parse((await canonical(page))['weekwise-planner-v2']).weeks['2030-01-06'].tasks.find(t=>t.id==='original-b').done,true);
+  await page.waitForFunction(selector=>document.querySelector(selector)?.getAnimations().some(a=>a.playState==='running'),control);
+  await page.waitForFunction(()=>document.getAnimations().length===0);
+  await navigate(page,'inbox');await navigate(page,'calendar');await page.locator('#weekViewBtn').click();
+  assert.equal(await page.locator(control).isChecked(),true);assert.equal(await page.locator(control).evaluate(el=>el.getAnimations().length),0);
+ }finally{await context.close();}
+});
 
 function mobileWeekFixture(){
  const store=fixture(),a=store.weeks['2030-01-06'].tasks[0],b=store.weeks['2030-01-06'].tasks[1];
