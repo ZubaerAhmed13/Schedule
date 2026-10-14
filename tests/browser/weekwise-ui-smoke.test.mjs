@@ -148,7 +148,7 @@ test('modern Today and weekly overview use real data, reflow and keep overview n
    await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
    assert.match(await page.locator('.today-next h3').innerText(),/focused learning/);assert.match(await page.locator('.today-date').innerText(),/Tuesday,? 8 January/);
    assert.equal(await page.locator('.today-progress-ring').getAttribute('aria-valuemax'),'1');assert.equal(await page.locator('.today-progress-ring').getAttribute('aria-valuenow'),'0');
-   await page.evaluate(()=>document.fonts.ready);assert.equal(await page.evaluate(()=>Array.from(document.fonts).some(face=>face.family==='Plus Jakarta Sans'&&face.status==='loaded')),true);
+   assert.equal(await page.evaluate(async()=>{const faces=await document.fonts.load('400 16px "Plus Jakarta Sans"');return faces.length>0&&faces.every(face=>face.status==='loaded');}),true);
    assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true);
    await page.evaluate(()=>{scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({path:path.join(root,'test-results','modern-today-'+width+'.png'),animations:'disabled',fullPage:true});
    await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="plan"]')).click();

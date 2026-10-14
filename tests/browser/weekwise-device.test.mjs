@@ -30,9 +30,9 @@ async function snap(page,name){await page.screenshot({path:path.join(root,'test-
 
 test('the design keeps narrow layouts and existing records usable when the local typeface cannot load',async()=>{
  const {context,page}=await open({width:320});try{
-  await page.evaluate(()=>document.fonts.ready);assert.equal(await page.evaluate(()=>Array.from(document.fonts).some(face=>face.family==='Plus Jakarta Sans'&&face.status==='loaded')),true);
+  const fontResult=await page.evaluate(async()=>{try{const faces=await document.fonts.load('400 16px "Plus Jakarta Sans"');return {loaded:faces.length>0&&faces.every(face=>face.status==='loaded'),faces:Array.from(document.fonts).map(face=>({family:face.family,status:face.status}))};}catch(error){return {loaded:false,error:error.message};}});assert.equal(fontResult.loaded,true,JSON.stringify(fontResult));
   const before=await canonical(page);await context.route('**/*.woff2',route=>route.abort());await page.reload();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden);await page.evaluate(()=>document.fonts.ready);
-  assert.equal(await page.evaluate(()=>Array.from(document.fonts).some(face=>face.family==='Plus Jakarta Sans'&&face.status==='loaded')),false);
+  assert.equal(await page.evaluate(async()=>{try{const faces=await document.fonts.load('400 16px "Plus Jakarta Sans"');return faces.length>0&&faces.every(face=>face.status==='loaded');}catch(_){return false;}}),false);
   await navigate(page,'inbox');assert.equal(await page.locator('.workspace-task-row').count(),2);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
   assert.deepEqual(JSON.parse((await canonical(page))['weekwise-planner-v2']).weeks['2030-01-06'].tasks,JSON.parse(before['weekwise-planner-v2']).weeks['2030-01-06'].tasks);
   await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill('Readable fallback draft');assert.equal(await page.locator('#saveTaskBtn').isVisible(),true);await snap(page,'design-font-fallback');
