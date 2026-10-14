@@ -13,12 +13,13 @@ function serve(req,res){
 before(async()=>{if(!{chromium,firefox,webkit}[engine])throw new Error('Unsupported browser engine');fs.mkdirSync(path.join(root,'test-results'),{recursive:true});server=http.createServer(serve);await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port+'/';browser=await {chromium,firefox,webkit}[engine].launch({headless:true});});
 beforeEach(()=>{rows.clear();blocked.clear();seed(owner);});
 after(async()=>{await browser?.close();if(server)await new Promise(r=>server.close(r));});
-async function open({width=390,height=844,worker=false,viewportMock=false,reducedMotion='no-preference'}={}){
+async function open({width=390,height=844,worker=false,viewportMock=false,reducedMotion='no-preference',blockFont=false}={}){
  const context=await browser.newContext({viewport:{width,height},timezoneId:'UTC',reducedMotion,...(engine==='firefox'?{}:{isMobile:width<=430,hasTouch:width<=430}),serviceWorkers:worker?'allow':'block'});
  await context.addInitScript(({epoch,mock})=>{const OriginalDate=Date;window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:[epoch]));}static now(){return epoch;}};if(mock){const view=new EventTarget();view.height=844;view.offsetTop=0;view.scale=1;Object.defineProperty(window,'visualViewport',{value:view});window.__viewportFixture=view;}},{epoch,mock:viewportMock});
  await context.route('**/supabase.min.js',r=>r.fulfill({status:200,contentType:'text/javascript',body:sdk}));
  await context.route('**/rest/v1/rpc/weekwise_save',r=>{const req=r.request(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST, OPTIONS'};if(req.method()==='OPTIONS')return r.fulfill({status:204,headers});const id=req.headers().authorization?.split('device-token:')[1];assert.ok(id);if(blocked.has(id))return r.abort();const args=req.postDataJSON(),row=rows.get(id),revision=row?.revision||0;if(args.p_expected_revision!==revision)return r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:false,...row,revision}])});const next={user_id:id,revision:revision+1,updated_at:new Date().toISOString(),data:args.p_data};rows.set(id,next);return r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:true,...next}])});});
  await context.route('**/functions/v1/**',r=>r.abort());
+ if(blockFont)await context.route('**/*.woff2',route=>route.abort());
  const page=await context.newPage();await page.goto(origin,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');return {context,page};
 }
 async function show(page,selector){const el=page.locator(selector);if(selector.startsWith('#workspaceSidebar')&&!await el.isVisible()&&await page.locator('#mobileNavigationToggle').isVisible()&&!await page.locator('body').evaluate(el=>el.classList.contains('navigation-expanded')))await page.locator('#mobileNavigationToggle').click();const ids=await el.evaluate(el=>{const out=[];for(let p=el.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)out.unshift(p.id);return out;});for(const id of ids)await page.locator('#'+id+' > summary').click();return el;}
@@ -29,14 +30,19 @@ async function downloadedJSON(download){const file=await download.path();return 
 async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-device-'+name+'.png'),animations:'disabled'});}
 
 test('the design keeps narrow layouts and existing records usable when the local typeface cannot load',async()=>{
- const {context,page}=await open({width:320});try{
-  const fontResult=await page.evaluate(async()=>{try{const faces=await document.fonts.load('400 16px "Plus Jakarta Sans"');return {loaded:faces.length>0&&faces.every(face=>face.status==='loaded'),faces:Array.from(document.fonts).map(face=>({family:face.family,status:face.status}))};}catch(error){return {loaded:false,error:error.message};}});assert.equal(fontResult.loaded,true,JSON.stringify(fontResult));
-  const before=await canonical(page);await context.route('**/*.woff2',route=>route.abort());await page.reload();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden);await page.evaluate(()=>document.fonts.ready);
+ const fallback=await open({width:320,blockFont:true});let before;
+ try{
+  const {page}=fallback;await page.evaluate(()=>document.fonts.ready);before=await canonical(page);
   assert.equal(await page.evaluate(async()=>{try{const faces=await document.fonts.load('400 16px "Plus Jakarta Sans"');return faces.length>0&&faces.every(face=>face.status==='loaded');}catch(_){return false;}}),false);
   await navigate(page,'inbox');assert.equal(await page.locator('.workspace-task-row').count(),2);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
   assert.deepEqual(JSON.parse((await canonical(page))['weekwise-planner-v2']).weeks['2030-01-06'].tasks,JSON.parse(before['weekwise-planner-v2']).weeks['2030-01-06'].tasks);
   await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill('Readable fallback draft');assert.equal(await page.locator('#saveTaskBtn').isVisible(),true);await snap(page,'design-font-fallback');
- }finally{await context.close();}
+ }finally{await fallback.context.close();}
+ const loaded=await open({width:320});try{
+  const result=await loaded.page.evaluate(async()=>{try{const faces=await document.fonts.load('400 16px "Plus Jakarta Sans"');return {loaded:faces.length>0&&faces.every(face=>face.status==='loaded'),faces:Array.from(document.fonts).map(face=>({family:face.family,status:face.status}))};}catch(error){return {loaded:false,error:error.message};}});
+  assert.equal(result.loaded,true,JSON.stringify(result));
+  assert.deepEqual(JSON.parse((await canonical(loaded.page))['weekwise-planner-v2']).weeks['2030-01-06'].tasks,JSON.parse(before['weekwise-planner-v2']).weeks['2030-01-06'].tasks);
+ }finally{await loaded.context.close();}
 });
 
 test('motion settles after rapid navigation, preserves records and stops when the device preference changes',async()=>{
