@@ -1,0 +1,13 @@
+# Weekwise brand and sign-in — October 2026
+
+The new mark is a rounded W with one warm accent: recognizable at small sizes, clean in a wordmark, and playful without adding visual noise. Its cream stroke and apricot dot sit on Weekwise's forest palette. The SVG is the source for the inline brand, favicon, 192/512 application icons and 180-pixel Apple touch icon. The glyph and accent stay within the maskable safe circle.
+
+The entry screen now presents the real email/password form immediately, with a desktop brand panel and a compact phone layout. The decorative week is an illustration, not seeded planner data. Sign-in, invite-based account creation, offline account access and device-only planning retain their existing handlers. No social provider or calendar connection has been activated.
+
+One authentication form moves between the entry screen and the signed-in account/recovery dialog. There are no duplicate credential fields or parallel sessions. A signed-out user's account menu returns to the same full entry screen. The account modal retains its owner-scoped sync/conflict controls. Planner data, invitations, session ownership, revision checks and backend settings remain outside the visual redesign.
+
+Stable field IDs and names, username/current-password/new-password autocomplete, password reveal and ordinary paste support follow [W3C's accessible authentication guidance](https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html) and [web.dev's form guidance](https://web.dev/articles/sign-in-form-best-practices). The segmented tabs support arrow, Home and End keys, roving focus and a labelled panel. Busy state disables duplicate submissions and is announced on the form. Feedback remains in a live region; email-confirmation messages are no longer overwritten by the default signed-out status. Switching back to sign-in clears hidden confirmation validity. Recovery does not require an empty email input. Completed sign-in/sign-up clears entered password fields.
+
+Phone layouts retain scrollable entry content, 50-pixel credential inputs, visible focus and the existing visual-viewport keyboard handling. Existing device and offline acceptance remains applicable; automated engine checks do not certify physical password-manager autofill, VoiceOver/TalkBack, OS icon refresh or real mail delivery.
+
+Six additional browser scenarios cover the direct entry form, keyboard tabs/validation, failed and successful sign-in, invite/confirmation/busy feedback, password reset/recovery, and narrow/light/dark accessibility. They use controlled SDK and RPC fixtures; no existing user account is used as a test fixture.

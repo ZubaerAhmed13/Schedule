@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#285d48" />
+<meta name="theme-color" content="#285b43" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -14,24 +14,45 @@
 <link rel="stylesheet" href="./css/weekwise-modern.css">
 <link rel="stylesheet" href="./css/weekwise-productivity.css">
 <link rel="stylesheet" href="./css/weekwise-quality.css">
+<link rel="stylesheet" href="./css/weekwise-entry.css">
 </head>
 <body>
 <a class="skip-link" href="#workspaceMain">Skip to main content</a>
 <div class="signin-landing" id="signinLanding" role="dialog" aria-modal="true" aria-labelledby="signinLandingTitle">
-  <div class="signin-card">
-    <div class="signin-brand"><div class="logo">✦</div><span>Weekwise</span></div>
-    <div class="signin-calendar-icon"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-    <p class="signin-eyebrow">YOUR TIME, YOUR PLAN</p>
-    <h1 id="signinLandingTitle">Your day, at a glance.</h1>
-    <p class="signin-description">Begin on this device, or sign in to keep your planner connected across your devices.</p>
-    <button class="btn primary signin-continue" id="signinLandingContinue" type="button">Sign in to Weekwise <span aria-hidden="true">→</span></button>
-    <button class="btn signin-continue" id="signinOfflineAccount" type="button" hidden>Open saved account planner offline</button><p id="signinOfflineNote" class="signin-local-note" hidden>This device has a saved account copy. Offline edits stay here until you sign in to that same account again.</p>
-    <button class="btn signin-continue" id="signinLocalContinue" type="button">Continue on this device</button><p class="signin-local-note">No account or sample schedule is required.</p>
+  <div class="signin-card entry-shell">
+    <section class="entry-story">
+      <div class="signin-brand"><div class="logo" aria-hidden="true"><svg class="brand-symbol" viewBox="0 0 512 512" aria-hidden="true">
+<rect width="512" height="512" rx="120" fill="#285b43"/>
+<path d="m128 166 60 172 68-110 68 110 60-172" fill="none" stroke="#fffdf6" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="382" cy="124" r="15" fill="#efc394"/>
+</svg></div><span>Weekwise</span></div>
+      <p class="signin-eyebrow">A LITTLE CLARITY. A LITTLE MORE YOU.</p>
+      <h1 id="signinLandingTitle">Your week.<br> <em>A little wiser.</em></h1>
+      <p class="signin-description">Make space for what matters. Bring your tasks, time and everyday plans together in one calm place.</p>
+      <div class="entry-preview" aria-hidden="true">
+        <div class="entry-week"><div class="entry-week-heading"><span>A week with room to breathe</span><svg class="ww-icon" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/></svg></div><div class="entry-week-grid"><div class="entry-week-day"><span>M</span><div class="entry-week-track"><i></i><i></i></div></div><div class="entry-week-day"><span>T</span><div class="entry-week-track"><i></i></div></div><div class="entry-week-day"><span>W</span><div class="entry-week-track"><i></i><i></i></div></div><div class="entry-week-day"><span>T</span><div class="entry-week-track"><i></i></div></div><div class="entry-week-day"><span>F</span><div class="entry-week-track"><i></i><i></i></div></div><div class="entry-week-day"><span>S</span><div class="entry-week-track"><i></i></div></div><div class="entry-week-day"><span>S</span><div class="entry-week-track"></div></div></div></div>
+        <div class="entry-week-note"><svg class="ww-icon" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><span>Small steps. Good things.</span></div>
+      </div>
+      <p class="entry-story-footer">Space for work. Space for life.</p>
+    </section>
+    <section class="entry-access" aria-label="Get started with Weekwise">
+      <div id="signinFormSlot"></div>
+      <div class="entry-divider"><span>or start simple</span></div>
+      <button class="btn signin-continue" id="signinOfflineAccount" type="button" hidden>Open saved account planner offline</button>
+      <p id="signinOfflineNote" class="signin-local-note" hidden>Your saved account copy is here. Offline edits sync when you sign in to that same account.</p>
+      <button class="btn signin-continue" id="signinLocalContinue" type="button">Explore on this device <span aria-hidden="true">→</span></button>
+      <p class="signin-local-note">No account needed. Your planner starts empty.</p>
+      <footer class="entry-footer"><span>Your plans. Your pace.</span><a href="./privacy.html">Data &amp; privacy</a></footer>
+    </section>
   </div>
 </div>
 <div class="wrap">
   <header class="topbar">
-    <div class="brand"><div class="logo">✦</div><div><h1>Weekwise</h1><p>Your personal planning space</p></div></div>
+    <div class="brand"><div class="logo" aria-hidden="true"><svg class="brand-symbol" viewBox="0 0 512 512" aria-hidden="true">
+<rect width="512" height="512" rx="120" fill="#285b43"/>
+<path d="m128 166 60 172 68-110 68 110 60-172" fill="none" stroke="#fffdf6" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="382" cy="124" r="15" fill="#efc394"/>
+</svg></div><div><h1>Weekwise</h1><p>Your personal planning space</p></div></div>
     <div class="top-actions"><button class="btn" id="mobileNavigationToggle" type="button" aria-expanded="false" aria-controls="workspaceSidebar">Menu</button><button class="btn primary" id="globalCaptureBtn" type="button">＋ Add task</button>
       <details class="more-actions" id="moreActions">
         <summary class="btn more-trigger" aria-label="More options" title="More options">•••</summary>
@@ -317,21 +338,23 @@
   <details class="settings secondary-details utility-source" id="cloudPanel">
     <summary>Cloud sync & account <span style="color:var(--muted);font-size:11px;font-weight:500">Use Weekwise across devices</span></summary>
     <div class="inside">
-      <p id="cloudStatus" class="cloud-status" role="status" aria-live="polite">Weekwise is using this browser only.</p>
+      <header class="cloud-panel-heading"><p class="entry-auth-eyebrow">YOUR WEEKWISE ACCOUNT</p><h2 id="cloudAuthTitle">Welcome back.</h2></header>
       <form id="cloudAuthForm" class="cloud-auth-form">
         <div class="cloud-auth-tabs" role="tablist" aria-label="Account access">
-          <button class="cloud-auth-tab active" id="cloudSignInMode" type="button" role="tab" aria-selected="true">Sign in</button>
-          <button class="cloud-auth-tab" id="cloudSignUpBtn" type="button" role="tab" aria-selected="false">Create account</button>
+          <button class="cloud-auth-tab active" id="cloudSignInMode" type="button" role="tab" aria-controls="cloudAuthBody" aria-selected="true" tabindex="0">Sign in</button>
+          <button class="cloud-auth-tab" id="cloudSignUpBtn" type="button" role="tab" aria-controls="cloudAuthBody" aria-selected="false" tabindex="-1">Create account</button>
         </div>
+        <div id="cloudAuthBody" role="tabpanel" aria-labelledby="cloudSignInMode">
         <p class="cloud-auth-intro" id="cloudAuthIntro">Sign in to keep your Weekwise schedule synced across your devices.</p>
         <div class="cloud-auth-fields">
-          <div class="field"><label for="cloudEmail">Email address</label><input id="cloudEmail" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></div>
-          <div class="field"><label for="cloudPassword" id="cloudPasswordLabel">Password</label><div class="cloud-password-wrap"><input id="cloudPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="Enter your password"><button type="button" id="cloudTogglePassword" class="cloud-password-toggle" aria-label="Show password" aria-pressed="false">Show</button></div></div>
-          <div class="field" id="cloudConfirmPasswordWrap" hidden><label for="cloudConfirmPassword">Confirm password</label><input id="cloudConfirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Re-enter your password"></div>
-          <div class="field" id="cloudReferralCodeWrap" hidden><label for="cloudReferralCode">Required referral / invite code</label><input id="cloudReferralCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="64" placeholder="Enter the code you received" aria-describedby="cloudReferralHelp"><small class="cloud-field-note" id="cloudReferralHelp">Ask the Weekwise owner for an invite code before creating an account.</small></div>
+          <div class="field" id="cloudEmailWrap"><label for="cloudEmail">Email address</label><input id="cloudEmail" name="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" placeholder="you@example.com"></div>
+          <div class="field"><label for="cloudPassword" id="cloudPasswordLabel">Password</label><div class="cloud-password-wrap"><input id="cloudPassword" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="Enter your password"><button type="button" id="cloudTogglePassword" class="cloud-password-toggle" aria-label="Show password" aria-pressed="false">Show</button></div></div>
+          <div class="field" id="cloudConfirmPasswordWrap" hidden><label for="cloudConfirmPassword">Confirm password</label><input id="cloudConfirmPassword" name="confirm-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Re-enter your password"></div>
+          <div class="field" id="cloudReferralCodeWrap" hidden><label for="cloudReferralCode">Invite code</label><input id="cloudReferralCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="64" placeholder="Enter your invite code" aria-describedby="cloudReferralHelp"><small class="cloud-field-note" id="cloudReferralHelp">An invite code is required to join Weekwise.</small></div>
         </div>
         <div class="cloud-auth-options"><span id="cloudPasswordHint">Use your Weekwise account details.</span><button type="button" class="cloud-text-button" id="cloudForgotPassword">Forgot password?</button></div>
         <div class="cloud-form-actions"><button class="btn primary cloud-submit" id="cloudSignInBtn" type="submit">Sign in</button></div>
+        </div>
       </form>
       <div id="cloudSignedIn" hidden>
         <p class="cloud-account-line">Signed in as <strong id="cloudUserEmail"></strong></p>
@@ -342,6 +365,7 @@
         <p>Independent changes sync automatically. These changes overlap or have no shared sync history. Export a backup before choosing which complete copy to keep.</p>
         <div class="cloud-form-actions"><button class="btn" id="cloudUseRemote" type="button">Use cloud version</button><button class="btn primary" id="cloudUseLocal" type="button">Keep this device's version</button></div>
       </div>
+      <p id="cloudStatus" class="cloud-status" role="status" aria-live="polite" aria-atomic="true"></p>
       <p class="cloud-footnote">Use the same account on each device. Changes upload automatically, retry when you reconnect, and refresh when you return to Weekwise. While open, updates are checked every 15 seconds. A Synced badge confirms the upload.</p>
     </div>
   </details>
@@ -532,6 +556,7 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_jwdzJMi4VxXUHEOVasrcOg_ax0A5scL';
 <script src="./js/weekwise-today.js"></script>
 <script src="./js/weekwise-experience.js"></script>
 <script src="./js/weekwise-accessibility.js"></script>
+<script src="./js/weekwise-entry.js"></script>
 <script src="./js/weekwise-app-primitives.js"></script>
 <script src="./js/weekwise-app-persistence.js"></script>
 <script src="./js/weekwise-app-settings.js"></script>

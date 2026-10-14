@@ -1,13 +1,13 @@
 {
   "name": "Weekwise Personal Planner",
   "short_name": "Weekwise",
-  "description": "Your personal weekly planner with a 24-hour calendar, activity templates and effort dashboard.",
+  "description": "A calm space for your tasks, calendar, focus and everyday plans.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f7f7f2",
-  "theme_color": "#285d48",
+  "theme_color": "#285b43",
   "icons": [
     {
       "src": "./icons/icon-192.png",

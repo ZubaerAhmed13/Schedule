@@ -1,0 +1,62 @@
+import test,{before,after} from 'node:test';import assert from 'node:assert/strict';import http from 'node:http';import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';import {chromium,firefox,webkit} from 'playwright';import axe from 'axe-core';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),site=path.resolve(root,process.env.WEEKWISE_TEST_SITE_ROOT||'.'),engine=process.env.WEEKWISE_BROWSER||'chromium';
+let server,browser,origin;
+const sdk=String.raw`(()=>{
+ let user=null,listeners=[];const calls=[];const session=()=>user?{access_token:'auth-fixture-token',user}:null;
+ const emit=event=>listeners.forEach(fn=>fn(event,session()));
+ const client={auth:{onAuthStateChange(fn){listeners.push(fn);return {data:{subscription:{unsubscribe(){}}}};},async getSession(){return {data:{session:session()}};},async getUser(){return {data:{user}};},
+ async signInWithPassword(args){calls.push({kind:'signin',...args});if(args.password!=='fixture-password')return {error:new Error('Invalid login credentials')};user={id:'auth-fixture-owner',email:args.email};emit('SIGNED_IN');return {data:{user,session:session()}};},
+ async signUp(args){calls.push({kind:'signup',...args});await new Promise(resolve=>window.WeekwiseAuthFixture.finishSignup=resolve);return {data:{user:{id:'auth-fixture-owner',email:args.email},session:null}};},
+ async resetPasswordForEmail(email){calls.push({kind:'reset',email});return {};},async updateUser(args){calls.push({kind:'update',...args});return {data:{user}};},async signOut(){user=null;emit('SIGNED_OUT');return {};}
+ },from(){return {select(){return {eq(){return {async maybeSingle(){return {data:null,error:null};}};}};}};},functions:{async invoke(){return {error:new Error('Fixture service disabled')};}}};
+ window.WeekwiseAuthFixture={calls,recover(){user={id:'auth-fixture-owner',email:'fixture@example.invalid'};emit('PASSWORD_RECOVERY');}};window.supabase={createClient(){return client;}};
+})();`;
+before(async()=>{
+ fs.mkdirSync(path.join(root,'test-results'),{recursive:true});server=http.createServer((req,res)=>{
+  const u=new URL(req.url,'http://localhost'),file=path.resolve(site,'.'+decodeURIComponent(u.pathname));
+  if(!file.startsWith(site+path.sep)&&file!==site){res.writeHead(403);res.end();return;}
+  const target=fs.existsSync(file)&&fs.statSync(file).isDirectory()?path.join(file,'index.html'):file;
+  fs.readFile(target,(err,data)=>{if(err){res.writeHead(404);res.end();return;}const types={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json'};res.writeHead(200,{'Content-Type':types[path.extname(target)]||'text/plain','Cache-Control':'no-store'});res.end(data);});
+ });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));origin='http://127.0.0.1:'+server.address().port+'/';browser=await {chromium,firefox,webkit}[engine].launch({headless:true});
+});
+after(async()=>{await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));});
+async function open(width=390){
+ const context=await browser.newContext({viewport:{width,height:width<=430?844:900},timezoneId:'UTC',serviceWorkers:'block'});
+ await context.route('**/supabase.min.js',r=>r.fulfill({status:200,contentType:'text/javascript',body:sdk}));
+ await context.route('**/rest/v1/rpc/weekwise_save',r=>{const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST, OPTIONS'};if(r.request().method()==='OPTIONS')return r.fulfill({status:204,headers});const args=r.request().postDataJSON();return r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:true,revision:args.p_expected_revision+1,updated_at:'2030-01-08T12:00:00Z'}])});});
+ await context.route('**/functions/v1/**',r=>r.abort());const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(origin,{waitUntil:'domcontentloaded'});await page.locator('#signinFormSlot #cloudEmail').waitFor({state:'visible'});return {context,page,errors};
+}
+async function credentials(page,password='fixture-password'){await page.locator('#cloudEmail').fill('fixture@example.invalid');await page.locator('#cloudPassword').fill(password);}
+async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-auth-'+name+'.png'),animations:'disabled'});}
+test('the real sign-in form is visible immediately with stable password-manager fields and one form copy',async()=>{
+ const {context,page,errors}=await open(1440);try{
+  assert.equal(await page.locator('#signinLanding').isVisible(),true);assert.equal(await page.locator('#utilityModal').isVisible(),false);assert.equal(await page.locator('#cloudAuthForm').count(),1);assert.equal(await page.locator('#cloudEmail').getAttribute('autocomplete'),'username');assert.equal(await page.locator('#cloudPassword').getAttribute('autocomplete'),'current-password');assert.equal(await page.locator('#signinLanding .brand-symbol').count(),1);
+  const before=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));await credentials(page);await page.locator('#cloudTogglePassword').click();assert.equal(await page.locator('#cloudPassword').getAttribute('type'),'text');await page.locator('#cloudTogglePassword').click();assert.equal(await page.locator('#cloudPassword').getAttribute('type'),'password');assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);await snap(page,'desktop-signin');await page.locator('#signinLocalContinue').click();await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.evaluate(()=>Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2')).weeks).flatMap(w=>w.tasks).length),0);assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+test('keyboard tabs reveal invite sign-up and clear hidden confirmation validation when returning to sign-in',async()=>{
+ const {context,page}=await open();try{
+  await page.locator('#cloudSignInMode').press('ArrowRight');assert.equal(await page.locator('#cloudSignUpBtn').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#cloudReferralCode').isVisible(),true);assert.equal(await page.locator('#cloudReferralCode').getAttribute('required'),'');await credentials(page);await page.locator('#cloudConfirmPassword').fill('different-password');assert.equal(await page.locator('#cloudConfirmPassword').evaluate(el=>el.checkValidity()),false);await page.locator('#cloudSignUpBtn').press('Home');assert.equal(await page.locator('#cloudConfirmPasswordWrap').isVisible(),false);assert.equal(await page.locator('#cloudAuthForm').evaluate(el=>el.checkValidity()),true);assert.equal(await page.locator('#cloudAuthBody').getAttribute('aria-labelledby'),'cloudSignInMode');
+ }finally{await context.close();}
+});
+test('failed sign-in retains the form and successful sign-in reaches the planner without retaining its password',async()=>{
+ const {context,page,errors}=await open();try{
+  await credentials(page,'wrong-password');await page.locator('#cloudSignInBtn').click();await page.waitForFunction(()=>document.querySelector('#cloudStatus').textContent.includes('incorrect'));assert.equal(await page.locator('#cloudStatus').getAttribute('data-tone'),'error');assert.equal(await page.locator('#signinLanding').isVisible(),true);await credentials(page);await page.locator('#cloudSignInBtn').click();await page.locator('#signinLanding').waitFor({state:'hidden'});await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');assert.equal(await page.locator('#cloudPassword').inputValue(),'');assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')).userId),'auth-fixture-owner');assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+test('invite sign-up communicates loading and preserves the email-confirmation result',async()=>{
+ const {context,page}=await open();try{
+  await page.locator('#cloudSignUpBtn').click();await credentials(page);await page.locator('#cloudConfirmPassword').fill('fixture-password');await page.locator('#cloudReferralCode').fill('fixture-invite');await snap(page,'phone-signup');await page.locator('#cloudSignInBtn').click();await page.waitForFunction(()=>typeof window.WeekwiseAuthFixture.finishSignup==='function');assert.equal(await page.locator('#cloudAuthForm').getAttribute('aria-busy'),'true');assert.equal(await page.locator('#cloudSignInBtn').isEnabled(),false);await page.evaluate(()=>WeekwiseAuthFixture.finishSignup());await page.waitForFunction(()=>document.querySelector('#cloudStatus').textContent.includes('confirmation email'));assert.equal(await page.locator('#cloudStatus').getAttribute('data-tone'),'success');assert.equal(await page.locator('#cloudStatus').isVisible(),true);assert.equal(await page.locator('#signinLanding').isVisible(),true);assert.equal(await page.locator('#cloudSignInMode').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#cloudPassword').inputValue(),'');assert.equal(await page.evaluate(()=>WeekwiseAuthFixture.calls.find(c=>c.kind==='signup').options.data.weekwise_referral_code),'FIXTURE-INVITE');assert.equal(await page.locator('#cloudAuthForm').getAttribute('aria-busy'),'false');
+ }finally{await context.close();}
+});
+test('password-reset feedback remains visible and recovery requires only the new password fields',async()=>{
+ const {context,page,errors}=await open();try{
+  await page.locator('#cloudEmail').fill('fixture@example.invalid');await page.locator('#cloudForgotPassword').click();await page.waitForFunction(()=>document.querySelector('#cloudStatus').textContent.includes('Password-reset email sent'));await page.locator('#cloudSignUpBtn').click();await page.locator('#cloudSignInMode').click();assert.equal(await page.locator('#cloudStatus').textContent(),'');await page.locator('#cloudEmail').fill('');await page.evaluate(()=>WeekwiseAuthFixture.recover());await page.locator('#utilityModal').waitFor({state:'visible'});assert.equal(await page.locator('#cloudEmailWrap').isVisible(),false);assert.equal(await page.locator('#cloudEmail').evaluate(el=>el.required),false);assert.equal(await page.locator('#cloudConfirmPassword').isVisible(),true);assert.equal(await page.locator('#cloudPassword').getAttribute('autocomplete'),'new-password');await page.locator('#cloudPassword').fill('fresh-fixture-password');await page.locator('#cloudConfirmPassword').fill('fresh-fixture-password');await snap(page,'phone-recovery');await page.locator('#cloudSignInBtn').click();await page.waitForFunction(()=>document.querySelector('#cloudStatus').textContent.includes('Password updated successfully'));assert.equal(await page.evaluate(()=>WeekwiseAuthFixture.calls.filter(c=>c.kind==='update').length),1);assert.equal(await page.locator('#cloudPassword').inputValue(),'');assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+test('entry layouts fit narrow phones and pass automated accessibility checks in light and dark themes',async()=>{
+ const results=[];for(const width of [320,390,1440]){const {context,page}=await open(width);try{
+  await page.addScriptTag({content:axe.source});for(const theme of ['light','dark']){await page.evaluate(theme=>document.body.setAttribute('data-theme',theme),theme);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);const result=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));results.push({width,theme,violations:result.violations.map(v=>({id:v.id,impact:v.impact,targets:v.nodes.map(n=>n.target)})),incomplete:result.incomplete.map(v=>v.id)});await snap(page,width+'-'+theme);}
+ }finally{await context.close();}}
+ fs.writeFileSync(path.join(root,'test-results','axe-'+engine+'-auth.json'),JSON.stringify(results,null,2));assert.deepEqual(results.flatMap(r=>r.violations.filter(v=>['serious','critical'].includes(v.impact))),[]);
+});

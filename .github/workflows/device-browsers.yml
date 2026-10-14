@@ -30,7 +30,7 @@ jobs:
         env:
           WEEKWISE_TEST_SITE_ROOT: dist
           WEEKWISE_BROWSER: ${{ matrix.browser }}
-        run: node --test tests/browser/weekwise-device.test.mjs
+        run: node --test tests/browser/weekwise-device.test.mjs tests/browser/weekwise-auth.test.mjs
       - name: Save engine screenshots and audit evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -38,5 +38,7 @@ jobs:
           name: weekwise-device-${{ matrix.browser }}
           path: |
             test-results/*-device-*.png
+            test-results/*-auth-*.png
             test-results/axe-*-device.json
+            test-results/axe-*-auth.json
           if-no-files-found: ignore

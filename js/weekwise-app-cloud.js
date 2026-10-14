@@ -11,7 +11,7 @@ function readCloudMeta(){try{const meta=JSON.parse(localStorage.getItem(weekwise
 
 function writeCloudMeta(revision,payload){localStorage.setItem(weekwiseRuntime.CLOUD_META_KEY,JSON.stringify({userId:weekwiseRuntime.cloudUser?.id||'',revision:Number(revision)||0,fingerprint:weekwiseRuntime.cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}
 
-function setCloudStatus(message){const el=weekwiseRuntime.$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=weekwiseRuntime.$('cloudMenuBadge');if(badge){badge.textContent=WeekwiseData.syncLabel(message,!!weekwiseRuntime.cloudUser,!!weekwiseRuntime.cloudConflict);badge.title=message;}}
+function setCloudStatus(message){const el=weekwiseRuntime.$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|incorrect|do not match|unavailable|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=weekwiseRuntime.$('cloudMenuBadge');if(badge){badge.textContent=WeekwiseData.syncLabel(message,!!weekwiseRuntime.cloudUser,!!weekwiseRuntime.cloudConflict);badge.title=message;}}
 
 function offlineAccountSelected(){return !weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&localStorage.getItem('weekwise-offline-owner-v1')===weekwiseRuntime.currentDataOwner;}
 
@@ -25,15 +25,16 @@ function openOfflineAccount(){
 }
 
 function renderCloudPanel(){
+ root.WeekwiseEntry?.refresh();
  weekwiseRuntime.renderOfflineAccountGate();
  const form=weekwiseRuntime.$('cloudAuthForm'),signed=weekwiseRuntime.$('cloudSignedIn'),email=weekwiseRuntime.$('cloudUserEmail'),conflict=weekwiseRuntime.$('cloudConflict');
  const recovery=weekwiseRuntime.cloudAuthMode==='recovery';
+ const title=weekwiseRuntime.$('cloudAuthTitle');if(title)title.textContent=recovery?'Reset your password.':weekwiseRuntime.cloudUser?'Your account.':weekwiseRuntime.cloudAuthMode==='signup'?'Make Weekwise yours.':'Welcome back.';
  if(form)form.hidden=!!weekwiseRuntime.cloudUser&&!recovery;
  if(signed)signed.hidden=!weekwiseRuntime.cloudUser||recovery;
  if(email)email.textContent=weekwiseRuntime.cloudUser?.email||'';
  if(conflict)conflict.hidden=!weekwiseRuntime.cloudConflict;
  if(!weekwiseRuntime.cloudClient)weekwiseRuntime.setCloudStatus('Cloud sign-in is unavailable because the Supabase library did not load. Local planning still works.');
- else if(!weekwiseRuntime.cloudUser)weekwiseRuntime.setCloudStatus('Weekwise is using this browser only. Sign in to sync schedules across devices.');
  if(weekwiseRuntime.cloudConflict)weekwiseRuntime.setCloudStatus('Sync paused to protect both versions. Choose which copy to keep.');
  if(weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.setCloudStatus('Saved account planner open offline. Changes stay on this device until this account is signed in again.');weekwiseRuntime.$('cloudMenuBadge').textContent='Offline';}
 }
@@ -200,7 +201,7 @@ async function initializeCloud(){
    setTimeout(async()=>{
     if(event==='PASSWORD_RECOVERY'&&session?.user){await weekwiseRuntime.startCloudForUser(session.user);weekwiseRuntime.cloudUser=session.user;const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');}weekwiseRuntime.setCloudAuthMode('recovery');weekwiseRuntime.openCloudPanel();return;}
     if(session?.user)weekwiseRuntime.startCloudForUser(session.user).catch(()=>{});
-    else{if(weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.finishSignInLanding();weekwiseRuntime.renderCloudPanel();return;}if(weekwiseRuntime.activeUtilityPanel===weekwiseRuntime.$('cloudPanel'))weekwiseRuntime.closeUtilityPanel(false);try{weekwiseRuntime.isolatePlannerOwner('local');}catch(error){weekwiseRuntime.setCloudStatus('Account data could not be isolated: '+error.message);return;}weekwiseRuntime.cloudUser=null;weekwiseRuntime.cloudReady=false;weekwiseRuntime.cloudRevision=0;weekwiseRuntime.cloudConflict=null;if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.renderCloudPanel();weekwiseRuntime.setCloudStatus('Signed out. Your schedules remain saved on this device.');weekwiseRuntime.$('signinLanding').hidden=false;document.body.classList.add('signin-required');window.signinGateInFlow=false;}
+    else{if(weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.finishSignInLanding();weekwiseRuntime.renderCloudPanel();return;}if(weekwiseRuntime.activeUtilityPanel===weekwiseRuntime.$('cloudPanel'))weekwiseRuntime.closeUtilityPanel(false);try{weekwiseRuntime.isolatePlannerOwner('local');}catch(error){weekwiseRuntime.setCloudStatus('Account data could not be isolated: '+error.message);return;}weekwiseRuntime.cloudUser=null;weekwiseRuntime.cloudReady=false;weekwiseRuntime.cloudRevision=0;weekwiseRuntime.cloudConflict=null;if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.renderCloudPanel();if(event==='SIGNED_OUT')weekwiseRuntime.setCloudStatus('Signed out. Your schedules remain saved on this device.');else if(event==='INITIAL_SESSION')weekwiseRuntime.setCloudStatus('');weekwiseRuntime.$('signinLanding').hidden=false;document.body.classList.add('signin-required');window.signinGateInFlow=false;}
    },0);
   });
   const {data:{session}}=await weekwiseRuntime.cloudClient.auth.getSession();
@@ -212,10 +213,13 @@ function setCloudAuthMode(mode,resetStatus=true){
  weekwiseRuntime.cloudAuthMode=['signin','signup','recovery'].includes(mode)?mode:'signin';
  const signup=weekwiseRuntime.cloudAuthMode==='signup',recovery=weekwiseRuntime.cloudAuthMode==='recovery';
  const signInTab=weekwiseRuntime.$('cloudSignInMode'),signUpTab=weekwiseRuntime.$('cloudSignUpBtn'),tabs=document.querySelector('.cloud-auth-tabs');
- if(signInTab){signInTab.classList.toggle('active',weekwiseRuntime.cloudAuthMode==='signin');signInTab.setAttribute('aria-selected',weekwiseRuntime.cloudAuthMode==='signin'?'true':'false');}
- if(signUpTab){signUpTab.classList.toggle('active',signup);signUpTab.setAttribute('aria-selected',signup?'true':'false');}
+ if(signInTab){signInTab.classList.toggle('active',weekwiseRuntime.cloudAuthMode==='signin');signInTab.setAttribute('aria-selected',weekwiseRuntime.cloudAuthMode==='signin'?'true':'false');signInTab.tabIndex=signup?-1:0;}
+ if(signUpTab){signUpTab.classList.toggle('active',signup);signUpTab.setAttribute('aria-selected',signup?'true':'false');signUpTab.tabIndex=signup?0:-1;}
  if(tabs)tabs.hidden=recovery;
- weekwiseRuntime.$('cloudAuthIntro').textContent=recovery?'Choose a new password for your Weekwise account.':signup?'Create one account to access the same schedules and reminders on all your devices.':'Sign in to keep your Weekwise schedule synced across your devices.';
+ const body=weekwiseRuntime.$('cloudAuthBody');if(body)body.setAttribute('aria-labelledby',recovery?'cloudAuthTitle':signup?'cloudSignUpBtn':'cloudSignInMode');
+ const emailWrap=weekwiseRuntime.$('cloudEmailWrap');if(emailWrap)emailWrap.hidden=recovery;
+ weekwiseRuntime.$('cloudEmail').required=!recovery;
+ weekwiseRuntime.$('cloudAuthIntro').textContent=recovery?'Choose a new password to get back to your plans.':signup?'One account for your plans, on every device. An invite code is required to join.':'Sign in to bring your plans together, wherever you open Weekwise.';
  weekwiseRuntime.$('cloudSignInBtn').textContent=recovery?'Update password':signup?'Create account':'Sign in';
  weekwiseRuntime.$('cloudPasswordLabel').textContent=recovery?'New password':'Password';
  weekwiseRuntime.$('cloudPassword').placeholder=recovery?'Choose a new password':signup?'At least 8 characters':'Enter your password';
@@ -227,14 +231,16 @@ function setCloudAuthMode(mode,resetStatus=true){
  if(!signup)weekwiseRuntime.$('cloudReferralCode').value='';
  weekwiseRuntime.$('cloudConfirmPassword').autocomplete='new-password';
  weekwiseRuntime.$('cloudForgotPassword').hidden=signup||recovery;
- weekwiseRuntime.$('cloudPasswordHint').textContent=recovery?'Use at least 8 characters.':signup?'A referral code and a password of at least 8 characters are required.':'Use your Weekwise account details.';
- if(!signup&&!recovery)weekwiseRuntime.$('cloudConfirmPassword').value='';
- if(resetStatus)weekwiseRuntime.setCloudStatus(recovery?'Enter and confirm your new password.':signup?'Create a Weekwise account with your email.':'Sign in to sync schedules across devices.');
+ weekwiseRuntime.$('cloudPasswordHint').textContent=signup||recovery?'At least 8 characters.':'Your Weekwise password.';
+ if(!signup&&!recovery){weekwiseRuntime.$('cloudConfirmPassword').value='';weekwiseRuntime.$('cloudConfirmPassword').setCustomValidity('');}
+ weekwiseRuntime.$('cloudPassword').type='password';weekwiseRuntime.$('cloudTogglePassword').textContent='Show';weekwiseRuntime.$('cloudTogglePassword').setAttribute('aria-label','Show password');weekwiseRuntime.$('cloudTogglePassword').setAttribute('aria-pressed','false');
+ if(resetStatus)weekwiseRuntime.setCloudStatus('');
  weekwiseRuntime.renderCloudPanel();
 }
 
 function setCloudAuthBusy(busy){
  weekwiseRuntime.cloudAuthBusy=busy;
+ weekwiseRuntime.$('cloudAuthForm')?.setAttribute('aria-busy',String(busy));
  ['cloudEmail','cloudPassword','cloudConfirmPassword','cloudReferralCode','cloudSignInBtn','cloudSignUpBtn','cloudSignInMode','cloudForgotPassword','cloudTogglePassword'].forEach(id=>{const el=weekwiseRuntime.$(id);if(el)el.disabled=busy;});
  const button=weekwiseRuntime.$('cloudSignInBtn');
  if(button&&busy){button.dataset.previousLabel=button.textContent;button.textContent=weekwiseRuntime.cloudAuthMode==='signup'?'Creating account…':weekwiseRuntime.cloudAuthMode==='recovery'?'Updating password…':'Signing in…';}
@@ -262,7 +268,7 @@ async function cloudSignIn(){
    else weekwiseRuntime.setCloudStatus('Sign-in failed: '+message);
    return;
   }
-  if(data?.user){weekwiseRuntime.cloudUser=data.user;await weekwiseRuntime.startCloudForUser(data.user,true);}
+  if(data?.user){weekwiseRuntime.$('cloudPassword').value='';weekwiseRuntime.$('cloudConfirmPassword').value='';weekwiseRuntime.cloudUser=data.user;await weekwiseRuntime.startCloudForUser(data.user,true);}
  }catch(error){weekwiseRuntime.setCloudStatus('Could not sign in: '+(error?.message||'Please try again.'));}
  finally{weekwiseRuntime.setCloudAuthBusy(false);}
 }
@@ -278,10 +284,11 @@ async function cloudSignUp(){
   const {data,error}=await weekwiseRuntime.cloudClient.auth.signUp({email,password:weekwiseRuntime.$('cloudPassword').value,options:{emailRedirectTo:location.origin+location.pathname,data:{weekwise_referral_code:referralCode}}});
   if(error){weekwiseRuntime.setCloudStatus('Account creation failed: '+(error.message||'Check your referral code and try again.'));return;}
   weekwiseRuntime.$('cloudReferralCode').value='';
+  weekwiseRuntime.$('cloudPassword').value='';weekwiseRuntime.$('cloudConfirmPassword').value='';weekwiseRuntime.$('cloudConfirmPassword').setCustomValidity('');
   if(data?.session&&data?.user){
    weekwiseRuntime.cloudUser=data.user;await weekwiseRuntime.startCloudForUser(data.user,true);if(weekwiseRuntime.cloudReady)weekwiseRuntime.setCloudStatus('Account created and cloud sync is ready.');
   }else{
-   weekwiseRuntime.setCloudStatus('Account created. Check your inbox and spam folder for the confirmation link, then return here to sign in. If the link fails, add the Weekwise site address to Supabase Authentication → URL Configuration.');
+   weekwiseRuntime.setCloudStatus('Account created. Check your inbox and spam folder for your confirmation email, then come back to sign in.');
    weekwiseRuntime.setCloudAuthMode('signin',false);
   }
  }catch(error){weekwiseRuntime.setCloudStatus('Could not create your account: '+(error?.message||'Please try again.'));}
@@ -325,6 +332,11 @@ async function submitCloudAuth(){
 function wireCloudAuthControls(){
  weekwiseRuntime.$('cloudSignInMode').addEventListener('click',()=>weekwiseRuntime.setCloudAuthMode('signin'));
  weekwiseRuntime.$('cloudSignUpBtn').addEventListener('click',()=>weekwiseRuntime.setCloudAuthMode('signup'));
+ document.querySelector('.cloud-auth-tabs')?.addEventListener('keydown',event=>{
+  if(weekwiseRuntime.cloudAuthBusy||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+  event.preventDefault();const signup=event.key==='End'||(!['Home'].includes(event.key)&&weekwiseRuntime.cloudAuthMode!=='signup');
+  weekwiseRuntime.setCloudAuthMode(signup?'signup':'signin');weekwiseRuntime.$(signup?'cloudSignUpBtn':'cloudSignInMode').focus();
+ });
  weekwiseRuntime.$('cloudForgotPassword').addEventListener('click',weekwiseRuntime.cloudResetPassword);
  weekwiseRuntime.$('cloudTogglePassword').addEventListener('click',()=>{
   const input=weekwiseRuntime.$('cloudPassword'),show=input.type==='password';input.type=show?'text':'password';
@@ -387,9 +399,16 @@ async function checkCloudForRemoteChanges(force=false){
  try{await reading;}finally{if(cloudReadInFlight===active)cloudReadInFlight=null;}
 }
 
-function openCloudPanel(){weekwiseRuntime.renderCloudPanel();weekwiseRuntime.openUtilityPanel('cloudPanel','Cloud sync & account');}
+function openCloudPanel(){
+ weekwiseRuntime.renderCloudPanel();
+ if(!weekwiseRuntime.cloudUser&&weekwiseRuntime.cloudAuthMode!=='recovery'){
+  if(weekwiseRuntime.activeUtilityPanel)weekwiseRuntime.closeUtilityPanel(false);
+  weekwiseRuntime.openSignInFromLanding();return;
+ }
+ weekwiseRuntime.openUtilityPanel('cloudPanel',weekwiseRuntime.cloudAuthMode==='recovery'?'Reset your password':'Weekwise account');
+}
 
-function openSignInFromLanding(){const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=true;}weekwiseRuntime.openCloudPanel();}
+function openSignInFromLanding(){const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=false;document.body.classList.add('signin-required');}window.signinGateInFlow=false;root.WeekwiseEntry?.refresh();weekwiseRuntime.$('cloudEmail').focus();}
 
 function finishSignInLanding(){const gate=weekwiseRuntime.$('signinLanding');if(!gate)return;if(weekwiseRuntime.activeUtilityPanel===weekwiseRuntime.$('cloudPanel'))weekwiseRuntime.closeUtilityPanel(false);gate.hidden=true;document.body.classList.remove('signin-required');window.signinGateInFlow=false;weekwiseRuntime.now=new Date();weekwiseRuntime.mobileDay=weekwiseRuntime.now.getDay();weekwiseRuntime.currentWeek=weekwiseRuntime.dateKey(weekwiseRuntime.sundayOf(weekwiseRuntime.now));weekwiseRuntime.monthAnchor=new Date(weekwiseRuntime.now.getFullYear(),weekwiseRuntime.now.getMonth(),1);weekwiseRuntime.loadWeek(weekwiseRuntime.currentWeek);weekwiseRuntime.setWorkspaceView('today');weekwiseRuntime.restoreFocusState();weekwiseRuntime.renderReminders();const heading=weekwiseRuntime.$('calendarInstruction');if(heading)heading.hidden=true;weekwiseRuntime.showToast('Welcome to Weekwise. Here is today’s plan.');}
 return Object.freeze({buildCloudPayload,localHasWeekwiseData,readCloudMeta,writeCloudMeta,setCloudStatus,offlineAccountSelected,renderOfflineAccountGate,openOfflineAccount,renderCloudPanel,validateCloudPayload,saveCloudLocalPayload,isolatePlannerOwner,requestCloudSave,applyCloudRow,showCloudConflict,queueCloudSave,saveCloudSnapshot,startCloudForUser,initializeCloud,setCloudAuthMode,setCloudAuthBusy,validateCloudPassword,cloudSignIn,cloudSignUp,cloudResetPassword,cloudUpdatePassword,submitCloudAuth,wireCloudAuthControls,cloudUseRemote,cloudUseLocal,cloudSyncNow,checkCloudForRemoteChanges,openCloudPanel,openSignInFromLanding,finishSignInLanding});
