@@ -66,8 +66,7 @@ async function loadImport(file){
   const count=Object.values(data.weeks).reduce((sum,week)=>sum+week.tasks.length,0);
   if(!confirm('Restore this backup with '+count+' tasks? It replaces the planner on this device and, when synced, your cloud copy. A local recovery checkpoint will be kept. Export a backup first if you need a separate copy.'))return;
   const restored=WeekwiseData.storeFromBackup(data);
-  const collections=[['reminders',weekwiseRuntime.REMINDERS_KEY],['focusSessions',weekwiseRuntime.FOCUS_SESSIONS_KEY],['habits',weekwiseRuntime.HABITS_KEY],['countdowns',weekwiseRuntime.COUNTDOWNS_KEY],['savedTaskFilters',weekwiseRuntime.TASK_FILTERS_KEY],['taskTemplates',weekwiseRuntime.TASK_TEMPLATES_KEY]];
-  const entries=[[weekwiseRuntime.STORE_KEY,JSON.stringify(restored)],...collections.filter(([name])=>Array.isArray(data[name])).map(([name,key])=>[key,JSON.stringify(data[name])])];
+  const entries=WeekwiseRecovery.entries(data);
   WeekwiseData.commitStorage(localStorage,entries,'weekwise-pre-restore-v1');
   WeekwiseData.clearBlocked(entries.map(([key])=>key));weekwiseRuntime.plannerStorageBlocked=false;weekwiseRuntime.plannerStorageError='';weekwiseRuntime.store=restored;weekwiseRuntime.lastSavedStore=JSON.stringify(weekwiseRuntime.store);weekwiseRuntime.lastSavedDisk=localStorage.getItem(weekwiseRuntime.STORE_KEY);
   if(Array.isArray(data.reminders))weekwiseRuntime.reminders=data.reminders;

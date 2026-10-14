@@ -1,0 +1,42 @@
+name: Weekwise cross-browser device checks
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  device:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install pinned browser test runtime
+        run: npm install --no-save --no-audit --no-fund playwright@1.56.1 axe-core@4.14.0
+      - name: Install selected engine
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Build published client
+        run: node scripts/build-weekwise.mjs
+      - name: Verify device and recovery workflows
+        env:
+          WEEKWISE_TEST_SITE_ROOT: dist
+          WEEKWISE_BROWSER: ${{ matrix.browser }}
+        run: node --test tests/browser/weekwise-device.test.mjs
+      - name: Save engine screenshots and audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekwise-device-${{ matrix.browser }}
+          path: |
+            test-results/*-device-*.png
+            test-results/axe-*-device.json
+          if-no-files-found: ignore

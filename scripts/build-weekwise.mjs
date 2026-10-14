@@ -2,7 +2,7 @@
 // Publish only the client. Tests, SQL, docs and backend source stay out of Pages.
 import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),out=path.join(root,'dist');
-const files=['index.html','privacy.html','manifest.webmanifest','sw.js','weekwise-push.js','weekwise-calendar.js','icons/icon.svg',...['css','js'].flatMap(dir=>fs.readdirSync(path.join(root,dir)).filter(f=>/\.(css|js)$/.test(f)).map(f=>dir+'/'+f))];
+const files=['index.html','privacy.html','manifest.webmanifest','sw.js','weekwise-push.js','weekwise-calendar.js','icons/icon.svg','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png','web-vitals-LICENSE.txt',...['css','js'].flatMap(dir=>fs.readdirSync(path.join(root,dir)).filter(f=>/\.(css|js)$/.test(f)).map(f=>dir+'/'+f))];
 const hash=crypto.createHash('sha256');for(const file of files)hash.update(file).update(fs.readFileSync(path.join(root,file)));const version=hash.digest('hex').slice(0,16);
 fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true}); // Only the generated client output is replaced.
 for(const file of files){const target=path.join(out,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,file),target);}

@@ -34,6 +34,17 @@ function productivityRows(){
 }
 const productivityOptions=()=>({now:Date.parse('2030-01-08T12:00:00Z'),rows:productivityRows()});
 
+test('device checks read the actual offline shell and detect a missing cached asset without changing planner records',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844},{serviceWorkers:'allow'});
+ try{
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();const before=await readPlannerStore(page);
+  await page.locator('[data-quality-open]').click();await page.waitForFunction(()=>document.querySelector('#qualityOfflineState').textContent.includes('Offline shell cached'));
+  assert.deepEqual(await readPlannerStore(page),before);assert.equal(await page.locator('[data-quality-check="closed-push"]').isChecked(),false);
+  await page.evaluate(async()=>{const key=(await caches.keys()).find(k=>k.startsWith('weekwise-static-'));const cache=await caches.open(key);await cache.delete(new URL('./web-vitals-LICENSE.txt',location.href).href);});
+  await page.locator('#qualityRefresh').click();await page.waitForFunction(()=>document.querySelector('#qualityOfflineState').textContent.includes('not verified'));assert.deepEqual(await readPlannerStore(page),before);
+ }finally{await context.close();}
+});
+
 test('quick list editing moves a stable task across weeks, retains metadata and supports exact Undo on a phone',async()=>{
  const {context,page}=await openPlanner({width:390,height:844},productivityOptions());
  try{
