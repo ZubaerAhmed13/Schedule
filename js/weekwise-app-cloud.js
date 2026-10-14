@@ -241,7 +241,7 @@ function setCloudAuthMode(mode,resetStatus=true){
 function setCloudAuthBusy(busy){
  weekwiseRuntime.cloudAuthBusy=busy;
  weekwiseRuntime.$('cloudAuthForm')?.setAttribute('aria-busy',String(busy));
- ['cloudEmail','cloudPassword','cloudConfirmPassword','cloudReferralCode','cloudSignInBtn','cloudSignUpBtn','cloudSignInMode','cloudForgotPassword','cloudTogglePassword'].forEach(id=>{const el=weekwiseRuntime.$(id);if(el)el.disabled=busy;});
+ ['cloudEmail','cloudPassword','cloudConfirmPassword','cloudReferralCode','cloudSignInBtn','cloudSignUpBtn','cloudSignInMode','cloudForgotPassword','cloudTogglePassword','signinLocalContinue','signinOfflineAccount'].forEach(id=>{const el=weekwiseRuntime.$(id);if(el)el.disabled=busy;});
  const button=weekwiseRuntime.$('cloudSignInBtn');
  if(button&&busy){button.dataset.previousLabel=button.textContent;button.textContent=weekwiseRuntime.cloudAuthMode==='signup'?'Creating account…':weekwiseRuntime.cloudAuthMode==='recovery'?'Updating password…':'Signing in…';}
  else if(button&&!busy){button.textContent=weekwiseRuntime.cloudAuthMode==='signup'?'Create account':weekwiseRuntime.cloudAuthMode==='recovery'?'Update password':'Sign in';}

@@ -34,6 +34,8 @@
 .cloud-panel-heading {margin:0 0 22px;}
 .cloud-panel-heading .entry-auth-eyebrow {color:var(--ww-muted);font-size:10px;font-weight:600;letter-spacing:1.4px;margin:0 0 10px;}
 .cloud-panel-heading h2 {font-size:30px;line-height:1.2;color:var(--ww-text);letter-spacing:-1px;font-weight:650;margin:0;}
+.cloud-account-line {color:var(--ww-muted);font-size:13px;line-height:1.7;margin:0 0 18px;}
+.cloud-account-line strong {display:block;color:var(--ww-text);font-size:15px;font-weight:600;}
 .cloud-auth-form>fieldset {border:0;min-width:0;margin:0;padding:0;}
 .cloud-auth-tabs {padding:4px;border:1px solid var(--ww-line);border-radius:13px;background:var(--ww-bg);gap:4px;}
 .cloud-auth-tab {padding:11px;color:var(--ww-muted);font-size:13px;font-weight:600;border-radius:9px;min-height:42px;}
@@ -79,3 +81,8 @@ body[data-theme=dark] .cloud-status[data-tone=error] {color:#ffd4c9;background:#
  .entry-footer{margin-top:24px;}.cloud-auth-fields input{font-size:16px;}
 }
 @media(max-width:480px) {.signin-landing{padding:0;}.signin-card.entry-shell{border:0;border-radius:0;box-shadow:none;}.entry-story{padding:22px 24px 20px;}.entry-access{padding:24px;}.cloud-auth-options{flex-wrap:wrap;}.cloud-auth-options #cloudPasswordHint{max-width:none;}.entry-footer{font-size:10px;}}
+@media(max-width:760px) {
+ .keyboard-open .signin-landing {top:var(--ww-visible-top,0px);bottom:auto;height:var(--ww-visible-height,100dvh);padding:0;}
+ .keyboard-open .entry-story,.keyboard-open .entry-footer {display:none;}
+ .keyboard-open .entry-access {padding-top:18px;}
+}

@@ -10,4 +10,4 @@ Stable field IDs and names, username/current-password/new-password autocomplete,
 
 Phone layouts retain scrollable entry content, 50-pixel credential inputs, visible focus and the existing visual-viewport keyboard handling. Existing device and offline acceptance remains applicable; automated engine checks do not certify physical password-manager autofill, VoiceOver/TalkBack, OS icon refresh or real mail delivery.
 
-Seven additional browser scenarios cover SDK-loading submission protection, the direct entry form, keyboard tabs/validation, failed and successful sign-in, invite/confirmation/busy feedback, password reset/recovery, and narrow/light/dark accessibility. They use controlled SDK and RPC fixtures; no existing user account is used as a test fixture.
+Eight additional browser scenarios cover SDK-loading submission protection, the direct entry form, keyboard tabs/validation, failed and successful sign-in, invite/confirmation/busy feedback, password reset/recovery, visible keyboard geometry, and narrow/light/dark accessibility. They use controlled SDK and RPC fixtures; no existing user account is used as a test fixture.
