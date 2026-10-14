@@ -10,6 +10,31 @@
  function records(){return cached;}
  function onDate(date){return records().filter(record=>record.date===date||(record.instant&&record.date<date&&record.endDate>=date&&(record.endDate!==date||record.endMinute>0))||(record.allDay&&record.date<date&&model().ordinal(date)<model().ordinal(record.date)+Math.max(1,Math.ceil(record.duration/1440))));}
  function chip(record){return '<button type="button" class="month-event-chip" data-range-edit'+reference(record)+' title="'+esc(record.task.title+' · '+(record.allDay?'All day':record.zoneError?'Needs zone review':record.start==null?(record.task.recurrenceScheduleReview?.reason||'Unscheduled'):clock(record.start)+'–'+clock(record.endMinute??record.start+record.duration)))+'"><span class="month-event-time">'+(record.allDay?'All day':record.start==null?'—':clock(record.start))+'</span><span class="month-event-title">'+esc(record.task.title)+'</span></button>';}
+ function mobileTime(record,date){
+  if(record.zoneError)return 'Needs time review';
+  if(record.allDay)return 'All day'+(record.date<date?' · continues':'');
+  if(record.start==null)return 'Needs a time';
+  const start=record.date===date?record.start:0;
+  const end=record.endDate>date?1440:(record.endMinute??start+record.duration);
+  return clock(start)+'–'+(end===1440?'24:00':clock(end))+(record.date<date?' · continues':record.endDate>date?' · continues tomorrow':'')+(record.clockChange?' · clock change':'');
+ }
+ function mobileWeek(dates,openNotes){
+  const today=model().parts(Date.now(),zone()).date;
+  const days=dates.map(date=>({date,items:onDate(date).sort((a,b)=>Number(b.allDay)-Number(a.allDay)||(a.start??Infinity)-(b.start??Infinity))}));
+  const index='<nav class="mobile-week-index" aria-label="Days in this week">'+days.map(({date,items})=>
+   '<button type="button" class="mobile-week-date '+(date===today?'is-today':'')+'" data-week-jump="'+date+'" aria-controls="mobile-week-'+date+'" aria-describedby="mobile-week-description-'+date+'"'+(date===today?' aria-current="date"':'')+'><span>'+esc(fmt(date,{weekday:'short'}))+'</span> <strong>'+Number(date.slice(8))+'</strong> <small>'+(items.length||'—')+'</small></button><span id="mobile-week-description-'+date+'" class="mobile-week-description">Jump to '+esc(fmt(date,{weekday:'long',day:'numeric',month:'long'}))+', '+items.length+' '+(items.length===1?'activity':'activities')+'.</span>'
+  ).join('')+'</nav>';
+  const sections=days.map(({date,items})=>{
+   const page=root.WeekwiseListWindow.page(app.account()+'::mobile-week:'+date+':'+zone(),items);
+   const events=page.records.map(record=>{
+    const task=record.task,category=task.fixed?'fixed':['job','study','language','life','hobby'].includes(task.type)?task.type:'other';
+    const complete=!task.fixed||task.workday||task.cityday;
+    return '<article class="mobile-week-event t-'+category+(task.done?' done':'')+'"'+reference(record)+'><div class="mobile-week-event-main"><p class="mobile-week-time">'+esc(mobileTime(record,date))+'</p><h4><button type="button" class="mobile-week-title" data-range-edit'+reference(record)+' aria-label="Edit '+esc(task.title)+'">'+esc(task.title)+'</button></h4>'+(task.note?'<details class="mobile-week-note"'+(openNotes.has(JSON.stringify([date,record.week,task.id]))?' open':'')+'><summary>Notes</summary><p>'+esc(task.note)+'</p></details>':'')+'</div>'+(complete?'<label class="mobile-week-complete"><input type="checkbox" data-range-done'+reference(record)+(task.done?' checked':'')+' aria-label="Mark '+esc(task.title)+(task.done?' incomplete':' complete')+'"></label>':'<span class="mobile-week-fixed">Fixed</span>')+'</article>';
+   }).join('');
+   return '<section class="mobile-week-day '+(date===today?'is-today':'')+'" id="mobile-week-'+date+'" aria-labelledby="mobile-week-heading-'+date+'"><header><div><h3 id="mobile-week-heading-'+date+'" tabindex="-1">'+esc(fmt(date,{weekday:'long'}))+'<time datetime="'+date+'">'+esc(fmt(date,{day:'numeric',month:'short'}))+'</time></h3><p>'+items.filter(r=>r.task.done).length+' of '+items.length+' done</p></div><button type="button" class="mobile-week-add" data-range-add-date="'+date+'" data-range-add-minute="540" aria-label="Add activity on '+esc(fmt(date,{weekday:'long',day:'numeric',month:'long'}))+'">+</button></header>'+ (events||'<p class="mobile-week-empty">Nothing planned. A little room to breathe.</p>')+(page.hasMore?'<button type="button" class="btn mobile-week-more" data-mobile-week-more="'+date+'">Show '+Math.min(100,items.length-page.shown)+' more activities</button>':'')+'</section>';
+  }).join('');
+  return index+'<div class="mobile-week-schedule">'+sections+'</div>';
+ }
  function month(year,month,compact=false){const start=year+'-'+String(month+1).padStart(2,'0')+'-01',first=state.store.settings.calendarGridStartDay===1?1:0,dates=model().range(start,first),begin=dates[0],end=new Date(Date.UTC(year,month+1,0)).getUTCDate(),count=Math.ceil((model().ordinal(start)-model().ordinal(begin)+end)/7)*7;
   let html='<div class="month-calendar '+(compact?'range-year-month':'')+'">'+dates.map(date=>'<div class="month-weekday">'+fmt(date,{weekday:'short'})+'</div>').join('');
   for(let i=0;i<count;i++){const date=model().key(model().ordinal(begin)+i),items=onDate(date).filter(record=>record.allDay||record.start!=null||record.zoneError),page=items.slice(0,compact?1:3);html+='<div class="month-day-cell '+(date.slice(0,7)!==start.slice(0,7)?'outside-month':'')+'"><button class="range-date-button" type="button" data-range-date="'+date+'" aria-label="Open '+esc(fmt(date,{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+'">'+Number(date.slice(8))+'</button><div class="month-event-list">'+page.map(chip).join('')+'</div>'+(items.length>page.length?'<button class="range-more-day" type="button" data-range-date="'+date+'">+'+(items.length-page.length)+' more</button>':'')+'</div>';}
@@ -27,26 +52,57 @@
   return (special.length?'<div class="range-special">'+specialPage.records.map(chip).join('')+(specialPage.hasMore?'<button type="button" class="btn" data-range-more="special:'+dates[0]+'">Show 100 more</button>':'')+'</div>':'')+html+'</div>';
  }
  function render(value){
-  if(!app)return false;state=value;const enabled=state.store.settings.weekStartsOn===1||!!state.store.settings.calendarTimeZone||Object.values(state.store.weeks).some(value=>value.tasks.some(task=>task.start!=null&&task.start+(task.duration||0)>1440||task.allDay&&(task.duration||0)>1440));if(!enabled){$('daysGrid').dataset.rangeActive='false';lastViewportKey=null;return false;}
+  if(!app)return false;state=value;const mobileWeekMode=state.view==='week'&&root.matchMedia('(max-width: 650px)').matches;
+  $('daysGrid').classList.toggle('mobile-week-mode',mobileWeekMode);$('calendarToolbar')?.classList.toggle('mobile-week-toolbar',mobileWeekMode);
+  const enabled=mobileWeekMode||state.store.settings.weekStartsOn===1||!!state.store.settings.calendarTimeZone||Object.values(state.store.weeks).some(value=>value.tasks.some(task=>task.start!=null&&task.start+(task.duration||0)>1440||task.allDay&&(task.duration||0)>1440));if(!enabled){$('daysGrid').dataset.rangeActive='false';lastViewportKey=null;return false;}
   const grid=$('daysGrid');grid.dataset.rangeActive='true';grid.style.minHeight='0';grid.style.height='';grid.style.maxHeight=state.view==='week'||state.view==='day'?'78vh':'none';grid.setAttribute('aria-label',state.view+' calendar in '+zone());
   app.controls();const picker=$('mobileDayPicker'),help=$('mobileHelp');if(picker)picker.hidden=true;if(help)help.hidden=true;
-  const viewportKey=JSON.stringify([state.view,state.anchor,state.year,state.month,state.calendarYear,state.agenda,zone(),app.account()]),sameViewport=viewportKey===lastViewportKey;lastViewportKey=viewportKey;const priorTop=grid.scrollTop,priorLeft=grid.scrollLeft;let html;
+  const viewportKey=JSON.stringify([state.view,state.anchor,state.year,state.month,state.calendarYear,state.agenda,zone(),app.account(),mobileWeekMode]),sameViewport=viewportKey===lastViewportKey;lastViewportKey=viewportKey;const priorTop=grid.scrollTop,priorLeft=grid.scrollLeft;let html;
+  const openNotes=new Set(sameViewport&&mobileWeekMode?[...grid.querySelectorAll('.mobile-week-note[open]')].map(el=>{const card=el.closest('.mobile-week-event');return JSON.stringify([el.closest('.mobile-week-day').id.slice('mobile-week-'.length),card.dataset.rangeWeek,card.dataset.rangeId]);}):[]);
   try{refreshRecords();
    const dates=model().range(state.anchor,state.store.settings.weekStartsOn===1?1:0);
-   if(state.view==='week'||state.view==='day')html=timeline(state.view==='day'?[state.anchor]:dates);
+   if(mobileWeekMode)html=mobileWeek(dates,openNotes);
+   else if(state.view==='week'||state.view==='day')html=timeline(state.view==='day'?[state.anchor]:dates);
    else if(state.view==='month')html=month(state.year,state.month);
    else if(state.view==='year')html='<div class="range-year">'+Array.from({length:12},(_,m)=>'<section><h3>'+fmt(state.calendarYear+'-'+String(m+1).padStart(2,'0')+'-01',{month:'long'})+'</h3>'+month(state.calendarYear,m,true)+'</section>').join('')+'</div>';
    else{const start=state.agenda,items=records().filter(record=>record.date>=start&&record.date<model().key(model().ordinal(start)+30)),page=root.WeekwiseListWindow.page(app.account()+'::agenda:'+start+':'+zone(),items);html='<div class="range-agenda"><p>'+items.length+' tasks · '+esc(zone())+'</p>'+page.records.map(record=>'<article class="history-entry"><div><strong>'+esc(fmt(record.date))+'</strong>'+chip(record)+'</div></article>').join('')+(page.hasMore?'<button type="button" class="btn" data-range-more="agenda">Show 100 more</button>':'')+'</div>';}
    const reviews=records().filter(record=>record.zoneError);if(reviews.length)html='<div class="range-zone-review"><strong>'+reviews.length+' saved times need zone review</strong><p>Ambiguous or nonexistent legacy times remain saved. Open the original activity to review its clock time.</p>'+reviews.slice(0,100).map(chip).join('')+'</div>'+html;
-   grid.innerHTML='<p class="range-zone-label">Calendar: '+esc(zone())+' · task editor: '+esc(state.store.settings.timeZone||zone())+'</p>'+html;
+   grid.innerHTML='<p class="range-zone-label">'+(mobileWeekMode?'Times in '+esc(zone()):'Calendar: '+esc(zone())+' · task editor: '+esc(state.store.settings.timeZone||zone()))+'</p>'+html;
   }catch(error){grid.innerHTML='<p class="range-zone-review">'+esc(error.message)+'. Original records remain saved.</p>';}
-  if(state.view==='week'||state.view==='day'){grid.scrollTop=sameViewport?priorTop:Math.max(0,(model().parts(Date.now(),zone()).minute/60-2)*56);grid.scrollLeft=sameViewport?priorLeft:0;}
+  if(state.view==='week'||state.view==='day'){grid.scrollTop=sameViewport?priorTop:mobileWeekMode?0:Math.max(0,(model().parts(Date.now(),zone()).minute/60-2)*56);grid.scrollLeft=sameViewport?priorLeft:0;}
   return true;
  }
  function label(){if(!state||$('daysGrid').dataset.rangeActive!=='true')return null;const dates=model().range(state.anchor,state.store.settings.weekStartsOn===1?1:0);return (state.view==='week'?fmt(dates[0])+' – '+fmt(dates[6]):state.view==='day'?fmt(state.anchor):state.view==='month'?fmt(state.year+'-'+String(state.month+1).padStart(2,'0')+'-01',{month:'long',year:'numeric'}):state.view==='year'?String(state.calendarYear):'Agenda · '+fmt(state.agenda))+' · '+zone();}
  function init(bridge){app=bridge;const grid=$('daysGrid');
-  grid.addEventListener('click',event=>{if(grid.dataset.rangeActive!=='true')return;const edit=event.target.closest('[data-range-edit]');if(edit){app.edit(edit.dataset.rangeId,edit.dataset.rangeWeek);return;}const date=event.target.closest('[data-range-date]');if(date){app.day(date.dataset.rangeDate);return;}const add=event.target.closest('[data-range-add-date]');if(add){const bounds=add.closest('[data-range-column]').getBoundingClientRect(),minute=event.detail?Math.max(0,Math.min(1425,Math.round((event.clientY-bounds.top)/56*60/15)*15)):540;app.add(add.dataset.rangeAddDate,minute,zone());return;}const more=event.target.closest('[data-range-more]');if(more){const key=more.dataset.rangeMore==='agenda'?app.account()+'::agenda:'+state.agenda+':'+zone():app.account()+'::calendar:'+more.dataset.rangeMore+':'+zone();root.WeekwiseListWindow.more(key);app.render();}});
-  grid.addEventListener('change',event=>{const done=event.target.closest('[data-range-done]');if(done)app.toggle(done.dataset.rangeId,done.dataset.rangeWeek);});
+  grid.addEventListener('click',event=>{
+   if(grid.dataset.rangeActive!=='true')return;
+   const jump=event.target.closest('[data-week-jump]');if(jump){const target=$('mobile-week-'+jump.dataset.weekJump),index=grid.querySelector('.mobile-week-index');if(target&&index){const top=target.getBoundingClientRect().top-grid.getBoundingClientRect().top+grid.scrollTop-index.offsetHeight-12;target.querySelector('h3')?.focus({preventScroll:true});grid.scrollTo({top:Math.max(0,top),behavior:'auto'});rememberScroll();}return;}
+   const mobileMore=event.target.closest('[data-mobile-week-more]');if(mobileMore){const date=mobileMore.dataset.mobileWeekMore;root.WeekwiseListWindow.more(app.account()+'::mobile-week:'+date+':'+zone());app.render();const section=$('mobile-week-'+date);(section?.querySelector('[data-mobile-week-more]')||section?.querySelector('h3'))?.focus({preventScroll:true});return;}
+   const edit=event.target.closest('[data-range-edit]');if(edit){app.edit(edit.dataset.rangeId,edit.dataset.rangeWeek);return;}
+   const date=event.target.closest('[data-range-date]');if(date){app.day(date.dataset.rangeDate);return;}
+   const add=event.target.closest('[data-range-add-date]');if(add){let minute=540;if(add.dataset.rangeAddMinute==='540')minute=540;else if(event.detail){const bounds=add.closest('[data-range-column]').getBoundingClientRect();minute=Math.max(0,Math.min(1425,Math.round((event.clientY-bounds.top)/56*60/15)*15));}app.add(add.dataset.rangeAddDate,minute,zone());return;}
+   const more=event.target.closest('[data-range-more]');if(more){const key=more.dataset.rangeMore==='agenda'?app.account()+'::agenda:'+state.agenda+':'+zone():app.account()+'::calendar:'+more.dataset.rangeMore+':'+zone();root.WeekwiseListWindow.more(key);app.render();}
+  });
+  grid.addEventListener('change',event=>{const done=event.target.closest('[data-range-done]');if(done){const sectionId=done.closest('.mobile-week-day')?.id,id=done.dataset.rangeId,week=done.dataset.rangeWeek;app.toggle(id,week);if(sectionId)[...($(sectionId)?.querySelectorAll('[data-range-done]')||[])].find(el=>el.dataset.rangeId===id&&el.dataset.rangeWeek===week)?.focus({preventScroll:true});}});
+  let responsivePositions={key:null,phone:null,wide:null};
+  const phoneViewport=root.matchMedia('(max-width: 650px)');
+  const positionKey=()=>JSON.stringify([app.account(),model().range(state.anchor,state.store.settings.weekStartsOn===1?1:0)[0],zone()]);
+  function rememberScroll(){
+   if(state?.view!=='week'||grid.hidden)return;
+   const phone=grid.classList.contains('mobile-week-mode');if(phone!==phoneViewport.matches)return;
+   const key=positionKey();if(key!==responsivePositions.key)responsivePositions={key,phone:null,wide:null};
+   responsivePositions[phone?'phone':'wide']={top:grid.scrollTop,left:grid.scrollLeft};
+  }
+  grid.addEventListener('scroll',rememberScroll,{passive:true});
+  phoneViewport.addEventListener('change',event=>{
+   if(state?.view!=='week'||grid.hidden)return;
+   const key=positionKey();
+   if(key!==responsivePositions.key)responsivePositions={key,phone:null,wide:null};
+   const previous=grid.classList.contains('mobile-week-mode')?'phone':'wide';
+   if(!responsivePositions[previous])responsivePositions[previous]={top:grid.scrollTop,left:grid.scrollLeft};
+   if(!event.matches&&!responsivePositions.wide)grid.dataset.hasRendered='false';
+   app.render();const position=responsivePositions[event.matches?'phone':'wide'];if(position){grid.scrollTop=position.top;grid.scrollLeft=position.left;}rememberScroll();
+  });
   grid.addEventListener('keydown',event=>{const handle=event.target.closest('[data-range-drag]');if(!handle||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();const record=records().find(r=>r.week===handle.dataset.rangeWeek&&r.task.id===handle.dataset.rangeId);if(!record)return;const offset=event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:0,start=record.start+(event.key==='ArrowUp'?-15:event.key==='ArrowDown'?15:0);commitMove({week:record.week,id:record.task.id},model().key(model().ordinal(record.date)+offset),start);});
   grid.addEventListener('pointerdown',event=>{const handle=event.target.closest('[data-range-drag]');if(handle&&event.button===0)drag={owner:app.account(),fingerprint:JSON.stringify(app.snapshot()),zone:zone(),week:handle.dataset.rangeWeek,id:handle.dataset.rangeId,x:event.clientX,y:event.clientY,pointer:event.pointerId,active:false};});
   document.addEventListener('pointermove',event=>{if(!drag||drag.pointer!==event.pointerId)return;if(Math.hypot(event.clientX-drag.x,event.clientY-drag.y)>6)drag.active=true;if(drag.active){event.preventDefault();const rect=grid.getBoundingClientRect();if(event.clientY<rect.top+40)grid.scrollTop-=24;if(event.clientY>rect.bottom-40)grid.scrollTop+=24;if(event.clientX>rect.right-40)grid.scrollLeft+=22;if(event.clientX<rect.left+40)grid.scrollLeft-=22;}},{passive:false});

@@ -43,4 +43,5 @@ jobs:
             test-results/axe-*-auth.json
             test-results/axe-*-help.json
             test-results/axe-*-calendar.json
+            test-results/axe-*-mobile-week.json
           if-no-files-found: ignore

@@ -28,6 +28,77 @@ async function canonical(page){return page.evaluate(()=>Object.fromEntries(['wee
 async function downloadedJSON(download){const file=await download.path();return JSON.parse(fs.readFileSync(file,'utf8'));}
 async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-device-'+name+'.png'),animations:'disabled'});}
 
+function mobileWeekFixture(){
+ const store=fixture(),a=store.weeks['2030-01-06'].tasks[0],b=store.weeks['2030-01-06'].tasks[1];
+ Object.assign(a,{title:'Work day',day:1,start:360,duration:600,unscheduled:false,listId:'work',type:'job',note:'Editable one-day work block. Keep the full details available without crowding the week.'});
+ Object.assign(b,{title:'Study session with a longer title that should wrap comfortably',type:'study',listId:'study'});
+ store.weeks['2030-01-06'].tasks.push({id:'week-call',title:'Quick catch-up',day:2,start:855,duration:20,done:false,custom:true,type:'life'});
+ return store;
+}
+test('phone Week view exposes all seven dates, wraps event titles and passes light/dark audits without horizontal scrolling',async()=>{
+ const audits=[];
+ for(const width of [320,390,650]){
+  rows.get(owner).data.store=mobileWeekFixture();const {context,page}=await open({width,height:844});
+  try{
+   await navigate(page,'calendar');await page.locator('#weekViewBtn').click();await page.locator('.mobile-week-index').waitFor();const before=await canonical(page);
+   assert.equal(await page.locator('[data-week-jump]').count(),7);assert.equal(await page.locator('.mobile-week-day').count(),7);
+   for(const button of await page.locator('[data-week-jump]').all()){const rect=await button.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=width+1);assert.ok(rect.width>=24&&rect.height>=44);}
+   if(width===390){await page.evaluate(()=>window.scrollTo(0,0));await snap(page,'mobile-week-overview');}
+   await page.locator('[data-week-jump="2030-01-07"]').click();assert.equal(await page.locator('#mobile-week-heading-2030-01-07').evaluate(el=>el===document.activeElement),true);assert.equal(await page.locator('#weekViewBtn').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('#daysGrid').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+   assert.deepEqual(await canonical(page),before);
+   if(width===390){await page.addScriptTag({content:axe.source});for(const theme of ['light','dark']){
+    await page.evaluate(theme=>document.body.setAttribute('data-theme',theme),theme);
+    await page.waitForTimeout(300);
+    const result=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));
+    audits.push({theme,violations:result.violations.map(v=>({id:v.id,impact:v.impact,targets:v.nodes.map(n=>n.target)})),incomplete:result.incomplete.map(v=>v.id)});await snap(page,'mobile-week-'+theme);
+   }}
+  }finally{await context.close();}
+ }
+ fs.writeFileSync(path.join(root,'test-results','axe-'+engine+'-mobile-week.json'),JSON.stringify(audits,null,2));assert.deepEqual(audits.flatMap(v=>v.violations.filter(r=>['serious','critical'].includes(r.impact))),[]);
+});
+test('mobile weekly edits, completion, note disclosures and day-specific creation retain canonical identities and metadata',async()=>{
+ const store=mobileWeekFixture();store.weeks['2030-01-06'].tasks[0].note+=' <img src=x onerror=alert(1)>';rows.get(owner).data.store=store;
+ const {context,page}=await open();try{
+  await navigate(page,'calendar');await page.locator('#weekViewBtn').click();await page.locator('[data-week-jump="2030-01-07"]').click();
+  const card=page.locator('#mobile-week-2030-01-07 .mobile-week-event[data-range-id="original-a"]');await card.locator('summary').click();assert.equal(await card.locator('img').count(),0);assert.match(await card.locator('.mobile-week-note p').innerText(),/<img src=x/);
+  await card.locator('[data-range-done]').check();await page.waitForFunction(()=>JSON.parse(localStorage.getItem('weekwise-planner-v2')).weeks['2030-01-06'].tasks.find(t=>t.id==='original-a').done);
+  assert.equal(await card.locator('[data-range-done]').evaluate(el=>el===document.activeElement),true);assert.equal(await card.locator('details').getAttribute('open'),'');
+  await page.locator('[data-week-jump="2030-01-08"]').click();await page.locator('.mobile-week-title[data-range-id="original-b"]').click();await page.locator('#modalTitleInput').fill('Updated study session');await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  await page.locator('[data-week-jump="2030-01-12"]').click();await page.locator('#mobile-week-2030-01-12 .mobile-week-add').click();await page.locator('#taskModal').waitFor({state:'visible'});assert.equal(await page.locator('#modalDay').inputValue(),'6');assert.equal(await page.locator('#modalTime').inputValue(),'09:00');await page.locator('#modalTitleInput').fill('Saturday activity');await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const tasks=JSON.parse((await canonical(page))['weekwise-planner-v2']).weeks['2030-01-06'].tasks;
+  assert.deepEqual(tasks.find(t=>t.id==='original-a').unknownField,{keep:true});assert.equal(tasks.filter(t=>t.id==='original-a').length,1);assert.equal(tasks.find(t=>t.id==='original-b').title,'Updated study session');assert.equal(tasks.find(t=>t.title==='Saturday activity').day,6);
+ }finally{await context.close();}
+});
+test('mobile Week preserves Monday ranges, timezone projections, overnight and all-day continuations across source weeks',async()=>{
+ const store=mobileWeekFixture();store.settings.weekStartsOn=1;store.settings.calendarTimeZone='Europe/Berlin';
+ store.weeks['2030-01-06'].tasks=[{id:'overnight-week',title:'Overnight commitment',day:0,start:1380,duration:180,done:false,type:'job',custom:true,unknownField:{keep:'overnight'}},{id:'all-day-week',title:'Multi-day trip',day:0,start:null,allDay:true,allDayDate:'2030-01-06',duration:4320,done:false,custom:true}];
+ store.weeks['2030-01-13']={tasks:[{id:'last-sunday',title:'Sunday from the next stored week',day:0,start:540,duration:30,done:false,custom:true,note:'Source identity retained'}]};rows.get(owner).data.store=store;
+ const {context,page}=await open();try{
+  await navigate(page,'calendar');await page.locator('#weekViewBtn').click();const before=await canonical(page);
+  assert.equal(await page.locator('[data-week-jump]').first().getAttribute('data-week-jump'),'2030-01-07');assert.equal(await page.locator('[data-week-jump]').last().getAttribute('data-week-jump'),'2030-01-13');
+  assert.match(await page.locator('#mobile-week-2030-01-07 [data-range-id="overnight-week"] .mobile-week-time').innerText(),/00:00–03:00/);assert.match(await page.locator('#mobile-week-2030-01-07 [data-range-id="all-day-week"] .mobile-week-time').innerText(),/All day.*continues/);
+  const sunday=page.locator('#mobile-week-2030-01-13 .mobile-week-title[data-range-id="last-sunday"]');assert.equal(await sunday.getAttribute('data-range-week'),'2030-01-13');
+  await page.locator('[data-week-jump="2030-01-13"]').click();await sunday.click();await page.locator('#taskModal').waitFor({state:'visible'});assert.equal(await page.locator('#modalDay').inputValue(),'0');assert.equal(await page.locator('#modalTime').inputValue(),'09:00');await page.locator('#closeModal').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  assert.deepEqual(await canonical(page),before);
+ }finally{await context.close();}
+});
+test('desktop Week markup and scroll position survive phone resizing and other calendar views keep their existing renderers',async()=>{
+ rows.get(owner).data.store=mobileWeekFixture();const {context,page}=await open({width:1440,height:1000});try{
+  await navigate(page,'calendar');await page.locator('#weekViewBtn').click();const before=await canonical(page),html=await page.locator('.calendar-grid').evaluate(el=>el.outerHTML),scroll=await page.locator('#daysGrid').evaluate(el=>({top:el.scrollTop,left:el.scrollLeft}));assert.equal(await page.locator('.calendar-grid .day-column').count(),7);
+  await page.setViewportSize({width:390,height:844});await page.locator('.mobile-week-index').waitFor();await page.locator('[data-week-jump="2030-01-12"]').click();const phoneScroll=await page.locator('#daysGrid').evaluate(el=>({top:el.scrollTop,left:el.scrollLeft}));
+  await page.setViewportSize({width:1440,height:1000});await page.locator('.calendar-grid').waitFor();assert.equal(await page.locator('.calendar-grid').evaluate(el=>el.outerHTML),html);assert.deepEqual(await page.locator('#daysGrid').evaluate(el=>({top:el.scrollTop,left:el.scrollLeft})),scroll);assert.equal(await page.locator('.mobile-week-index').count(),0);
+  await page.setViewportSize({width:390,height:844});await page.locator('.mobile-week-index').waitFor();assert.deepEqual(await page.locator('#daysGrid').evaluate(el=>({top:el.scrollTop,left:el.scrollLeft})),phoneScroll);for(const view of ['day','month','agenda','year']){await page.locator('#'+view+'ViewBtn').click();assert.equal(await page.locator('.mobile-week-index').count(),0);assert.equal(await page.locator('#daysGrid').evaluate(el=>el.classList.contains('mobile-week-mode')),false);}
+  assert.deepEqual(await canonical(page),before);
+ }finally{await context.close();}
+});
+test('busy mobile days render bounded batches and reveal every activity without modifying the planner',async()=>{
+ const store=mobileWeekFixture();store.weeks['2030-01-06'].tasks=Array.from({length:105},(_,i)=>({id:'busy-week-'+i,title:'Activity '+i,day:2,start:i*10,duration:15,done:false,custom:true,type:'other'}));rows.get(owner).data.store=store;
+ const {context,page}=await open();try{
+  await navigate(page,'calendar');await page.locator('#weekViewBtn').click();const before=await canonical(page);assert.equal(await page.locator('#mobile-week-2030-01-08 .mobile-week-event').count(),100);await page.locator('#mobile-week-2030-01-08 [data-mobile-week-more]').click();assert.equal(await page.locator('#mobile-week-2030-01-08 .mobile-week-event').count(),105);assert.deepEqual(await canonical(page),before);
+ }finally{await context.close();}
+});
+
 test('device panel is read-only, reports unknown delivery honestly and keeps confirmations account-scoped',async()=>{
  const {context,page}=await open();try{const before=await canonical(page),revision=rows.get(owner).revision;await quality(page);assert.deepEqual(await canonical(page),before);assert.equal(rows.get(owner).revision,revision);assert.match(await page.locator('#qualityPanel').innerText(),/does not prove delivery/);await (await show(page,'[data-quality-check="phone-keyboard"]')).check();await snap(page,'confirmations');await page.evaluate(id=>WeekwiseTestAuth.setUser(id),other);await page.waitForFunction(id=>document.querySelector('#cloudUserEmail').textContent===id+'@example.invalid',other);assert.equal(await page.locator('[data-quality-check="phone-keyboard"]').isChecked(),false);assert.equal(await page.locator('#qualityBackupResult').innerText(),'');assert.ok(await page.evaluate(()=>localStorage.getItem('weekwise-device-checks-v1:device-test-owner')));}finally{await context.close();}
 });
