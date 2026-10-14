@@ -34,6 +34,21 @@ function productivityRows(){
 }
 const productivityOptions=()=>({now:Date.parse('2030-01-08T12:00:00Z'),rows:productivityRows()});
 
+test('a delayed real import refuses an account switch and a newer same-account planner before confirmation or writes',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000},productivityOptions());
+ try{
+  let confirmations=0;page.on('dialog',dialog=>{confirmations++;dialog.accept();});
+  await page.evaluate(()=>{const text=File.prototype.text;File.prototype.text=function(){if(this.name!=='delayed-backup.json')return text.call(this);window.__backupReaderStarted=true;return new Promise(resolve=>{window.__finishBackupRead=resolve;});};});
+  const backup={app:'Weekwise',version:6,settings:{timeZone:'UTC'},weeks:{'2030-01-06':{tasks:[{id:'restore-old',title:'Older backup data',day:2,start:null,unscheduled:true,duration:30,done:false}]}},recurringTemplates:[],customLists:[]},raw=JSON.stringify(backup);
+  await page.locator('#importFile').setInputFiles({name:'delayed-backup.json',mimeType:'application/json',buffer:Buffer.from(raw)});await page.waitForFunction(()=>window.__backupReaderStarted);
+  await page.evaluate(()=>WeekwiseTestAuth.setUser('new-backup-owner'));await page.waitForFunction(()=>document.querySelector('#cloudUserEmail').textContent==='new-backup-owner@example.invalid');await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');const other=await readPlannerStore(page);
+  await page.evaluate(raw=>window.__finishBackupRead(raw),raw);await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('account changed'));assert.deepEqual(await readPlannerStore(page),other);assert.equal(confirmations,0);
+  await page.evaluate(()=>{window.__backupReaderStarted=false;});await page.locator('#importFile').setInputFiles({name:'delayed-backup.json',mimeType:'application/json',buffer:Buffer.from(raw)});await page.waitForFunction(()=>window.__backupReaderStarted);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('#workspaceCaptureInput').fill('Newer responsibility stays safe');await page.locator('#workspaceCaptureForm button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');const newer=await readPlannerStore(page);
+  await page.evaluate(raw=>window.__finishBackupRead(raw),raw);await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('planner changed while reading'));assert.deepEqual(await readPlannerStore(page),newer);assert.equal(confirmations,0);assert.equal(await countStoredTasksNamed(page,'Newer responsibility stays safe'),1);
+ }finally{await context.close();}
+});
+
 test('device checks read the actual offline shell and detect a missing cached asset without changing planner records',async()=>{
  const {context,page}=await openPlanner({width:390,height:844},{serviceWorkers:'allow'});
  try{

@@ -12,5 +12,5 @@
   const digest=await root.crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw));
   return {kind:'isolated-backup-rehearsal',version:1,backupVersion:data.version??'legacy',sha256:[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,'0')).join(''),bytes:new TextEncoder().encode(raw).byteLength,weeks:Object.keys(store.weeks).length,tasks:Object.values(store.weeks).reduce((n,w)=>n+w.tasks.length,0),history:(store.taskHistory||[]).length,collections:Object.fromEntries(Object.keys(names).map(name=>[name,Array.isArray(data[name])?data[name].length:null])),roundtripEqual:true,scope:'In-memory restore only. Planner, account, cloud and existing checkpoints were not changed.'};
  }
- root.WeekwiseRecovery=Object.freeze({entries,rehearse});
+ root.WeekwiseRecovery=Object.freeze({entries,rehearse,keys:Object.freeze(['weekwise-planner-v2',...Object.values(names)])});
 })(typeof window!=='undefined'?window:globalThis);

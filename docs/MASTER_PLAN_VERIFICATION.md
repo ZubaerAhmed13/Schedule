@@ -28,7 +28,7 @@ Reviewed against all 1,921 lines / 32 sections of the original `Pasted text(4).t
 | 22 | Security/privacy | Six RLS/cascades, RPC grants, invite enforcement/minimization and public retention controls checked; free-plan leaked-password option and legal review remain |
 | 23 | Performance | Synthetic browser loads/10k records and scheduling profiling recorded; field CWV are not available |
 | 24 | Errors/polish | Quota, damaged data, offline, conflicts, stale ownership and interrupted worker update recovery checked |
-| 25 | Automated tests | 191 Node and 68 built-browser cases plus a 24-scenario cross-engine device suite; the device-evidence PR records fresh results. Isolated PostgreSQL, five Deno handlers, 48 live boolean checks and exact Pages gates |
+| 25 | Automated tests | 191 Node and 69 built-browser cases plus a 24-scenario cross-engine device suite; the device-evidence PR records fresh results. Isolated PostgreSQL, five Deno handlers, 48 live boolean checks and exact Pages gates |
 | 26 | Quality standards | Core implementation/automation delivered; manual product/security/accessibility acceptance remains scoped evidence |
 | 27 | Roadmap | Phases 0–4 and non-calendar phase-5 engineering delivered; phase-6 automated release gates plus explicit external limits |
 | 28 | Development rules | Existing data retained; checked branches, expected-head merges, no secrets or existing users used as fixtures |
