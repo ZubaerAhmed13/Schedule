@@ -22,7 +22,7 @@
   const today=model().parts(Date.now(),zone()).date;
   const days=dates.map(date=>({date,items:onDate(date).sort((a,b)=>Number(b.allDay)-Number(a.allDay)||(a.start??Infinity)-(b.start??Infinity))}));
   const index='<nav class="mobile-week-index" aria-label="Days in this week">'+days.map(({date,items})=>
-   '<button type="button" class="mobile-week-date '+(date===today?'is-today':'')+'" data-week-jump="'+date+'" aria-controls="mobile-week-'+date+'"'+(date===today?' aria-current="date"':'')+' aria-label="'+esc(fmt(date,{weekday:'short'})+' '+Number(date.slice(8))+' '+(items.length||'—')+'. Jump to '+fmt(date,{weekday:'long',day:'numeric',month:'long'}))+', '+items.length+' '+(items.length===1?'activity':'activities')+'"><span>'+esc(fmt(date,{weekday:'short'}))+'</span><strong>'+Number(date.slice(8))+'</strong><small aria-hidden="true">'+(items.length||'—')+'</small></button>'
+   '<button type="button" class="mobile-week-date '+(date===today?'is-today':'')+'" data-week-jump="'+date+'" aria-controls="mobile-week-'+date+'" aria-describedby="mobile-week-description-'+date+'"'+(date===today?' aria-current="date"':'')+'><span>'+esc(fmt(date,{weekday:'short'}))+'</span> <strong>'+Number(date.slice(8))+'</strong> <small>'+(items.length||'—')+'</small></button><span id="mobile-week-description-'+date+'" class="mobile-week-description">Jump to '+esc(fmt(date,{weekday:'long',day:'numeric',month:'long'}))+', '+items.length+' '+(items.length===1?'activity':'activities')+'.</span>'
   ).join('')+'</nav>';
   const sections=days.map(({date,items})=>{
    const page=root.WeekwiseListWindow.page(app.account()+'::mobile-week:'+date+':'+zone(),items);
@@ -76,7 +76,7 @@
  function init(bridge){app=bridge;const grid=$('daysGrid');
   grid.addEventListener('click',event=>{
    if(grid.dataset.rangeActive!=='true')return;
-   const jump=event.target.closest('[data-week-jump]');if(jump){const target=$('mobile-week-'+jump.dataset.weekJump),index=grid.querySelector('.mobile-week-index');if(target&&index){const top=target.getBoundingClientRect().top-grid.getBoundingClientRect().top+grid.scrollTop-index.offsetHeight-12;target.querySelector('h3')?.focus({preventScroll:true});grid.scrollTo({top:Math.max(0,top),behavior:'auto'});}return;}
+   const jump=event.target.closest('[data-week-jump]');if(jump){const target=$('mobile-week-'+jump.dataset.weekJump),index=grid.querySelector('.mobile-week-index');if(target&&index){const top=target.getBoundingClientRect().top-grid.getBoundingClientRect().top+grid.scrollTop-index.offsetHeight-12;target.querySelector('h3')?.focus({preventScroll:true});grid.scrollTo({top:Math.max(0,top),behavior:'auto'});rememberScroll();}return;}
    const mobileMore=event.target.closest('[data-mobile-week-more]');if(mobileMore){const date=mobileMore.dataset.mobileWeekMore;root.WeekwiseListWindow.more(app.account()+'::mobile-week:'+date+':'+zone());app.render();const section=$('mobile-week-'+date);(section?.querySelector('[data-mobile-week-more]')||section?.querySelector('h3'))?.focus({preventScroll:true});return;}
    const edit=event.target.closest('[data-range-edit]');if(edit){app.edit(edit.dataset.rangeId,edit.dataset.rangeWeek);return;}
    const date=event.target.closest('[data-range-date]');if(date){app.day(date.dataset.rangeDate);return;}

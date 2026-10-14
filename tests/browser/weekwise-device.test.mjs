@@ -43,6 +43,7 @@ test('phone Week view exposes all seven dates, wraps event titles and passes lig
    await navigate(page,'calendar');await page.locator('#weekViewBtn').click();await page.locator('.mobile-week-index').waitFor();const before=await canonical(page);
    assert.equal(await page.locator('[data-week-jump]').count(),7);assert.equal(await page.locator('.mobile-week-day').count(),7);
    for(const button of await page.locator('[data-week-jump]').all()){const rect=await button.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=width+1);assert.ok(rect.width>=24&&rect.height>=44);}
+   if(width===390){await page.evaluate(()=>window.scrollTo(0,0));await snap(page,'mobile-week-overview');}
    await page.locator('[data-week-jump="2030-01-07"]').click();assert.equal(await page.locator('#mobile-week-heading-2030-01-07').evaluate(el=>el===document.activeElement),true);assert.equal(await page.locator('#weekViewBtn').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#daysGrid').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
    assert.deepEqual(await canonical(page),before);
