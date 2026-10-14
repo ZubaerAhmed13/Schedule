@@ -22,7 +22,7 @@
   const today=model().parts(Date.now(),zone()).date;
   const days=dates.map(date=>({date,items:onDate(date).sort((a,b)=>Number(b.allDay)-Number(a.allDay)||(a.start??Infinity)-(b.start??Infinity))}));
   const index='<nav class="mobile-week-index" aria-label="Days in this week">'+days.map(({date,items})=>
-   '<button type="button" class="mobile-week-date '+(date===today?'is-today':'')+'" data-week-jump="'+date+'" aria-controls="mobile-week-'+date+'"'+(date===today?' aria-current="date"':'')+' aria-label="Jump to '+esc(fmt(date,{weekday:'long',day:'numeric',month:'long'}))+', '+items.length+' '+(items.length===1?'activity':'activities')+'"><span>'+esc(fmt(date,{weekday:'short'}))+'</span><strong>'+Number(date.slice(8))+'</strong><small aria-hidden="true">'+(items.length||'—')+'</small></button>'
+   '<button type="button" class="mobile-week-date '+(date===today?'is-today':'')+'" data-week-jump="'+date+'" aria-controls="mobile-week-'+date+'"'+(date===today?' aria-current="date"':'')+' aria-label="'+esc(fmt(date,{weekday:'short'})+' '+Number(date.slice(8))+' '+(items.length||'—')+'. Jump to '+fmt(date,{weekday:'long',day:'numeric',month:'long'}))+', '+items.length+' '+(items.length===1?'activity':'activities')+'"><span>'+esc(fmt(date,{weekday:'short'}))+'</span><strong>'+Number(date.slice(8))+'</strong><small aria-hidden="true">'+(items.length||'—')+'</small></button>'
   ).join('')+'</nav>';
   const sections=days.map(({date,items})=>{
    const page=root.WeekwiseListWindow.page(app.account()+'::mobile-week:'+date+':'+zone(),items);
@@ -85,13 +85,23 @@
   });
   grid.addEventListener('change',event=>{const done=event.target.closest('[data-range-done]');if(done){const sectionId=done.closest('.mobile-week-day')?.id,id=done.dataset.rangeId,week=done.dataset.rangeWeek;app.toggle(id,week);if(sectionId)[...($(sectionId)?.querySelectorAll('[data-range-done]')||[])].find(el=>el.dataset.rangeId===id&&el.dataset.rangeWeek===week)?.focus({preventScroll:true});}});
   let responsivePositions={key:null,phone:null,wide:null};
-  root.matchMedia('(max-width: 650px)').addEventListener('change',event=>{
+  const phoneViewport=root.matchMedia('(max-width: 650px)');
+  const positionKey=()=>JSON.stringify([app.account(),model().range(state.anchor,state.store.settings.weekStartsOn===1?1:0)[0],zone()]);
+  function rememberScroll(){
    if(state?.view!=='week'||grid.hidden)return;
-   const key=JSON.stringify([app.account(),model().range(state.anchor,state.store.settings.weekStartsOn===1?1:0)[0],zone()]);
+   const phone=grid.classList.contains('mobile-week-mode');if(phone!==phoneViewport.matches)return;
+   const key=positionKey();if(key!==responsivePositions.key)responsivePositions={key,phone:null,wide:null};
+   responsivePositions[phone?'phone':'wide']={top:grid.scrollTop,left:grid.scrollLeft};
+  }
+  grid.addEventListener('scroll',rememberScroll,{passive:true});
+  phoneViewport.addEventListener('change',event=>{
+   if(state?.view!=='week'||grid.hidden)return;
+   const key=positionKey();
    if(key!==responsivePositions.key)responsivePositions={key,phone:null,wide:null};
-   responsivePositions[grid.classList.contains('mobile-week-mode')?'phone':'wide']={top:grid.scrollTop,left:grid.scrollLeft};
+   const previous=grid.classList.contains('mobile-week-mode')?'phone':'wide';
+   if(!responsivePositions[previous])responsivePositions[previous]={top:grid.scrollTop,left:grid.scrollLeft};
    if(!event.matches&&!responsivePositions.wide)grid.dataset.hasRendered='false';
-   app.render();const position=responsivePositions[event.matches?'phone':'wide'];if(position){grid.scrollTop=position.top;grid.scrollLeft=position.left;}
+   app.render();const position=responsivePositions[event.matches?'phone':'wide'];if(position){grid.scrollTop=position.top;grid.scrollLeft=position.left;}rememberScroll();
   });
   grid.addEventListener('keydown',event=>{const handle=event.target.closest('[data-range-drag]');if(!handle||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();const record=records().find(r=>r.week===handle.dataset.rangeWeek&&r.task.id===handle.dataset.rangeId);if(!record)return;const offset=event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:0,start=record.start+(event.key==='ArrowUp'?-15:event.key==='ArrowDown'?15:0);commitMove({week:record.week,id:record.task.id},model().key(model().ordinal(record.date)+offset),start);});
   grid.addEventListener('pointerdown',event=>{const handle=event.target.closest('[data-range-drag]');if(handle&&event.button===0)drag={owner:app.account(),fingerprint:JSON.stringify(app.snapshot()),zone:zone(),week:handle.dataset.rangeWeek,id:handle.dataset.rangeId,x:event.clientX,y:event.clientY,pointer:event.pointerId,active:false};});
