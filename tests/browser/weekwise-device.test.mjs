@@ -49,6 +49,7 @@ test('phone Week view exposes all seven dates, wraps event titles and passes lig
    assert.deepEqual(await canonical(page),before);
    if(width===390){await page.addScriptTag({content:axe.source});for(const theme of ['light','dark']){
     await page.evaluate(theme=>document.body.setAttribute('data-theme',theme),theme);
+    await page.waitForTimeout(300);
     const result=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));
     audits.push({theme,violations:result.violations.map(v=>({id:v.id,impact:v.impact,targets:v.nodes.map(n=>n.target)})),incomplete:result.incomplete.map(v=>v.id)});await snap(page,'mobile-week-'+theme);
    }}
