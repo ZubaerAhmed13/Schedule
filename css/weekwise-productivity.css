@@ -21,3 +21,22 @@
 .task-quick-grid>.plan-field{grid-column:auto}
 @media(max-width:760px){.calendar-toolbar .view-switch{width:100%;flex:1 1 100%}.calendar-scroll{max-height:calc(100dvh - 420px)}.range-event .event-grip{scroll-margin-block:90px}.calendar-toolbar{padding:16px}.calendar-heading h2{font-size:28px}.calendar-actions{margin-top:12px;gap:10px}}
 @media print{.task-action-strip,.task-bulk-toolbar,.task-quick-edit,.workspace-pin-button,.task-selection-check{display:none!important}}
+
+/* Calendar and habit descendants override legacy fixed colors in either theme. */
+#daysGrid .calendar-day-header,#daysGrid .time-axis,#daysGrid .day-column{background:var(--ww-surface);border-color:var(--ww-line)}
+#daysGrid .calendar-day-header .day-number{color:var(--ww-brand)}
+#daysGrid .calendar-day-header .day-name,#daysGrid .calendar-day-header .day-count,#daysGrid .hour-label{color:var(--ww-muted);background:transparent}
+#daysGrid .calendar-day-header.is-today,#daysGrid .calendar-day-header.mobile-selected{background:var(--ww-soft);border-top-color:var(--ww-brand);box-shadow:none}
+#daysGrid .calendar-day-header.is-today .day-number,#daysGrid .calendar-grid.single-day-view .calendar-day-header.mobile-selected .day-number{background:var(--ww-brand);color:var(--ww-bg);box-shadow:none}
+#daysGrid .trip-mark{background:var(--ww-soft);color:var(--ww-brand)}
+#daysGrid .hour-lines{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--hour-height) - 1px),var(--ww-line) calc(var(--hour-height) - 1px),var(--ww-line) var(--hour-height))}
+#daysGrid .half-hour-lines{opacity:.25}
+.utility-dialog .habit-tracker{background:var(--ww-surface);border-color:var(--ww-line);box-shadow:none;padding:0}
+.utility-dialog .habit-tracker h3,.utility-dialog .habit-tracker .habit-track-info h4,.utility-dialog .habit-rhythm-tips>summary{color:var(--ww-text)}
+.utility-dialog .habit-tracker p,.utility-dialog .habit-tracker-summary,.utility-dialog .habit-tracker .habit-track-foot,.utility-dialog .habit-tracker .habit-track-info p{color:var(--ww-muted);border-color:var(--ww-line)}
+.utility-dialog .habit-tracker-summary strong,.utility-dialog .habit-track-progress strong{color:var(--ww-brand)}
+.utility-dialog .habit-week-range,.utility-dialog .habit-track-icon{background:var(--ww-soft);color:var(--ww-brand)}
+.utility-dialog .habit-history-dot{background:var(--ww-line)}.utility-dialog .habit-history-dot.checked{background:var(--ww-brand)}
+.utility-dialog .habit-empty-state{background:var(--ww-bg);border-color:var(--ww-line);color:var(--ww-text)}
+
+.utility-dialog .habit-empty-state strong{color:var(--ww-text)}

@@ -953,7 +953,7 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await page.addScriptTag({content:axe.source});
   const audit=async label=>{
    const result=await page.evaluate(async()=>window.axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));
-   const problems=result.violations.map(v=>({id:v.id,impact:v.impact,description:v.help,targets:v.nodes.slice(0,8).map(n=>n.target.join(' ')),totalNodes:v.nodes.length}));
+   const problems=result.violations.map(v=>({id:v.id,impact:v.impact,description:v.help,targets:v.nodes.map(n=>n.target.join(' ')),totalNodes:v.nodes.length}));
    snapshots.push({view:label,violations:problems,incomplete:result.incomplete.map(v=>({id:v.id,targets:v.nodes.length}))});
   };
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
@@ -962,7 +962,8 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('settings');
   await page.screenshot({animations:'disabled',path:path.join(root,'test-results','settings-polished-desktop.png')});
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="calendar"]')).click();await audit('calendar');
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="habits"]')).click();await audit('habits dialog');await page.locator('#closeUtility').click();
+  const surface=page.locator('[data-day-surface="2"]');await surface.focus();await page.keyboard.press('Enter');await page.locator('#taskModal').waitFor({state:'visible'});assert.equal(await page.locator('#modalDay').inputValue(),'2');await page.locator('#closeModal').click();
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="habits"]')).click();await audit('habits dialog');await (await visibleControl(page,'#habitName')).fill('Read a little each day');await (await visibleControl(page,'#saveHabitBtn')).click();await audit('habits with saved check-ins');await page.locator('#closeUtility').click();
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="plan"]')).click();
   await audit('plan');
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="focus"]')).click();
