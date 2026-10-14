@@ -44,4 +44,5 @@ jobs:
             test-results/axe-*-help.json
             test-results/axe-*-calendar.json
             test-results/axe-*-mobile-week.json
+            test-results/axe-*-personal-themes.json
           if-no-files-found: ignore

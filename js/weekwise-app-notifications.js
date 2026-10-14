@@ -2,9 +2,7 @@
 (function(root){
 'use strict';
 function create(weekwiseRuntime){
-function applySettings(){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.preventDefault?.();return;}try{const zone=weekwiseRuntime.$('calendarTimeZone').value.trim();if(zone)new Intl.DateTimeFormat('en-GB',{timeZone:zone});}catch(_){weekwiseRuntime.showToast('Enter a supported IANA time zone, such as Europe/Berlin.');return;}const timeIds=['tripStart'];for(let i=0;i<7;i++){if(document.querySelector(`[data-shift-enabled="${i}"]`)?.checked)timeIds.push(`shiftstart${i}`,`shiftend${i}`);}if(!weekwiseRuntime.validateTimeFields(timeIds))return;const newWeek=weekwiseRuntime.$('weekStart').value?weekwiseRuntime.dateKey(weekwiseRuntime.sundayOf(weekwiseRuntime.parseKey(weekwiseRuntime.$('weekStart').value))):weekwiseRuntime.currentWeek;weekwiseRuntime.saveCurrent();weekwiseRuntime.store.settings=weekwiseRuntime.settingsFromForm();weekwiseRuntime.applyThemePreference(weekwiseRuntime.store.settings.theme);weekwiseRuntime.saveStore();weekwiseRuntime.loadWeek(newWeek);weekwiseRuntime.closeUtilityPanel();weekwiseRuntime.showToast('Settings saved. Add activities whenever you are ready.');}
 
-function saveTripDestination(){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.preventDefault?.();return;}weekwiseRuntime.store.settings.destination=weekwiseRuntime.$('tripDestination').value.trim();weekwiseRuntime.saveStore();const trip=weekwiseRuntime.tasks.find(t=>t.fixed&&t.duration===540&&t.day===weekwiseRuntime.store.settings.travelDay);if(trip)trip.title=weekwiseRuntime.store.settings.destination?`Explore ${weekwiseRuntime.store.settings.destination}`:'Explore another city';if(trip)trip.note='9-hour city day · travel, explore, eat, and enjoy';weekwiseRuntime.saveCurrent();weekwiseRuntime.renderAll();weekwiseRuntime.showToast('City day updated');}
 
 function reminderTodayKey(){return weekwiseRuntime.dateKey(new Date());}
 
@@ -167,7 +165,7 @@ function parseWeekwiseNaturalCapture(raw,baseDate=new Date()){
  if(!targetDate&&timeMinutes!==null)targetDate=weekwiseRuntime.dateOnly(baseDate);
  return {title:text,date:targetDate,timeMinutes,dateMatched,timeMatched:timeMinutes!==null,recurrence};
 }
-return Object.freeze({applySettings,saveTripDestination,reminderTodayKey,reminderState,reminderDueOpen,updateReminderBadge,reminderFormReset,reminderEdit,reminderSave,reminderToggleDone,reminderTogglePin,reminderDelete,renderReminders,openReminders,nudgeDueReminders,cloudFingerprint,enableTaskNotifications,openReminderTask,checkTaskReminders,parseWeekwiseNaturalCapture});
+return Object.freeze({reminderTodayKey,reminderState,reminderDueOpen,updateReminderBadge,reminderFormReset,reminderEdit,reminderSave,reminderToggleDone,reminderTogglePin,reminderDelete,renderReminders,openReminders,nudgeDueReminders,cloudFingerprint,enableTaskNotifications,openReminderTask,checkTaskReminders,parseWeekwiseNaturalCapture});
 }
 root.WeekwiseAppNotifications=Object.freeze({create});
 })(typeof window!=='undefined'?window:globalThis);

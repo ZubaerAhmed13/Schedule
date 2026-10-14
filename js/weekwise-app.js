@@ -30,7 +30,6 @@ const weekwiseRuntime={
  get analyticsGroup(){return analyticsGroup;}, set analyticsGroup(value){analyticsGroup=value;},
  get applyCloudRow(){return applyCloudRow;}, set applyCloudRow(value){applyCloudRow=value;},
  get applySelectedTaskTemplate(){return applySelectedTaskTemplate;}, set applySelectedTaskTemplate(value){applySelectedTaskTemplate=value;},
- get applySettings(){return applySettings;}, set applySettings(value){applySettings=value;},
  get applyThemePreference(){return applyThemePreference;}, set applyThemePreference(value){applyThemePreference=value;},
  get buildCloudPayload(){return buildCloudPayload;}, set buildCloudPayload(value){buildCloudPayload=value;},
  get calendarView(){return calendarView;}, set calendarView(value){calendarView=value;},
@@ -218,7 +217,6 @@ const weekwiseRuntime={
  get renderPriorityMatrix(){return renderPriorityMatrix;}, set renderPriorityMatrix(value){renderPriorityMatrix=value;},
  get renderReminders(){return renderReminders;}, set renderReminders(value){renderReminders=value;},
  get renderSavedFilters(){return renderSavedFilters;}, set renderSavedFilters(value){renderSavedFilters=value;},
- get renderShiftFields(){return renderShiftFields;}, set renderShiftFields(value){renderShiftFields=value;},
  get renderStats(){return renderStats;}, set renderStats(value){renderStats=value;},
  get renderTaskAttachments(){return renderTaskAttachments;}, set renderTaskAttachments(value){renderTaskAttachments=value;},
  get renderTaskNotificationSettings(){return renderTaskNotificationSettings;}, set renderTaskNotificationSettings(value){renderTaskNotificationSettings=value;},
@@ -247,7 +245,6 @@ const weekwiseRuntime={
  get saveReminders(){return saveReminders;}, set saveReminders(value){saveReminders=value;},
  get saveStore(){return saveStore;}, set saveStore(value){saveStore=value;},
  get saveTemplateEditor(){return saveTemplateEditor;}, set saveTemplateEditor(value){saveTemplateEditor=value;},
- get saveTripDestination(){return saveTripDestination;}, set saveTripDestination(value){saveTripDestination=value;},
  get savedFilterMatches(){return savedFilterMatches;}, set savedFilterMatches(value){savedFilterMatches=value;},
  get savedTaskFilters(){return savedTaskFilters;}, set savedTaskFilters(value){savedTaskFilters=value;},
  get selectedActivitySuggestion(){return selectedActivitySuggestion;}, set selectedActivitySuggestion(value){selectedActivitySuggestion=value;},
@@ -256,7 +253,6 @@ const weekwiseRuntime={
  get setCloudAuthMode(){return setCloudAuthMode;}, set setCloudAuthMode(value){setCloudAuthMode=value;},
  get setCloudStatus(){return setCloudStatus;}, set setCloudStatus(value){setCloudStatus=value;},
  get setWorkspaceView(){return setWorkspaceView;}, set setWorkspaceView(value){setWorkspaceView=value;},
- get settingsFromForm(){return settingsFromForm;}, set settingsFromForm(value){settingsFromForm=value;},
  get setupDragDrop(){return setupDragDrop;}, set setupDragDrop(value){setupDragDrop=value;},
  get setupSystemThemeListener(){return setupSystemThemeListener;}, set setupSystemThemeListener(value){setupSystemThemeListener=value;},
  get shareViewTitle(){return shareViewTitle;}, set shareViewTitle(value){shareViewTitle=value;},
@@ -333,11 +329,11 @@ const weekwiseRuntime={
 };
 let {nextQuarterHour,dateOnly,sundayOf,mondayOf,dateKey,parseKey,fmtDate,dayDate,normalizeTimeField,validateTimeFields,wireTime24Fields,timeMins,minsTime,durationLabel,normalizeEndTimeField,updateEndTimeFromDuration,updateDurationFromEnd,uid,escapeHtml,defaultClassTemplate,defaultSettings}=WeekwiseAppPrimitives.create(weekwiseRuntime);
 let {loadStore,loadReminders,saveReminders,storageSaveError,checkedCollectionSave,saveStore,reconcileSplitTasks,saveCurrent,exportEditorHistory,exportBackup,loadImport,showStorageRecoveryNotice,plannerSnapshot,commitPlannerSnapshot}=WeekwiseAppPersistence.create(weekwiseRuntime);
-let {showToast,populateDaySelects,renderShiftFields,applyThemePreference,setupSystemThemeListener,syncSettingsForm,settingsFromForm,overlap,canPlace,findSlot,createTask,addFlexible,hasShift,loadWeek,setWeekFromInput,formatTime,categoryClass}=WeekwiseAppSettings.create(weekwiseRuntime);
+let {showToast,populateDaySelects,applyThemePreference,setupSystemThemeListener,syncSettingsForm,overlap,canPlace,findSlot,createTask,addFlexible,hasShift,loadWeek,formatTime,categoryClass}=WeekwiseAppSettings.create(weekwiseRuntime);
 let {sortedTasks,taskHTML,renderMobileDayPicker,openFixedSettings,renderDays,openUtilityPanel,closeUtilityPanel,openDashboard,durationText,analyticsGroup,taskEndDate,renderStats,renderUnscheduled,renderHabitSummaries,renderAll,moveTask,swapTasks,setupDragDrop,shiftWeeks,setCalendarView,updateViewControls,shiftPeriod,addQuick,setup,weekwiseTasksOnDate,weekwiseRenderMonth,weekwiseRenderBreaks,weekwiseAnimateCalendar,weekwiseRenderAgenda,addDaysForView,weekwiseRenderYear,countdownDays,countdownWords,renderCountdowns}=WeekwiseAppCalendar.create(weekwiseRuntime);
 let {templateDayChecks,openTemplateEditor,closeTemplateEditor,saveTemplateEditor,updateCalendarVisibility,readModalTaskTemplate,persistTaskTemplates,saveModalAsTaskTemplate,applySelectedTaskTemplate,deleteSelectedTaskTemplate,parseTaskAttachmentInput,renderTaskAttachments,shareViewTitle,recordsForListTransfer}=WeekwiseAppTemplates.create(weekwiseRuntime);
 let {currentDayHasConfiguredShift,updateActivityTemplateStates,chooseActivityTemplate,hideActivitySuggestions,renderActivitySuggestions,clearActivityTemplateSelection,inferredListId,defaultFolderName,taskReminderTimes,updateModalScheduleVisibility,taskModalFingerprint,draftFields,checkpointEditorDraft,renderDraftNotice,retireEditorDraft,restoreEditorDraft,openTaskModal,closeTaskModal,updateRecurringBulkVisibility,saveModalTask}=WeekwiseAppEditor.create(weekwiseRuntime);
-let {applySettings,saveTripDestination,reminderTodayKey,reminderState,reminderDueOpen,updateReminderBadge,reminderFormReset,reminderEdit,reminderSave,reminderToggleDone,reminderTogglePin,reminderDelete,renderReminders,openReminders,nudgeDueReminders,cloudFingerprint,enableTaskNotifications,openReminderTask,checkTaskReminders,parseWeekwiseNaturalCapture}=WeekwiseAppNotifications.create(weekwiseRuntime);
+let {reminderTodayKey,reminderState,reminderDueOpen,updateReminderBadge,reminderFormReset,reminderEdit,reminderSave,reminderToggleDone,reminderTogglePin,reminderDelete,renderReminders,openReminders,nudgeDueReminders,cloudFingerprint,enableTaskNotifications,openReminderTask,checkTaskReminders,parseWeekwiseNaturalCapture}=WeekwiseAppNotifications.create(weekwiseRuntime);
 let {cloudFailure,buildCloudPayload,localHasWeekwiseData,readCloudMeta,writeCloudMeta,setCloudStatus,offlineAccountSelected,renderOfflineAccountGate,openOfflineAccount,renderCloudPanel,validateCloudPayload,saveCloudLocalPayload,isolatePlannerOwner,requestCloudSave,applyCloudRow,showCloudConflict,queueCloudSave,saveCloudSnapshot,startCloudForUser,initializeCloud,setCloudAuthMode,setCloudAuthBusy,validateCloudPassword,cloudSignIn,cloudSignUp,cloudResetPassword,cloudUpdatePassword,submitCloudAuth,wireCloudAuthControls,cloudUseRemote,cloudUseLocal,cloudSyncNow,checkCloudForRemoteChanges,openCloudPanel,openSignInFromLanding,finishSignInLanding}=WeekwiseAppCloud.create(weekwiseRuntime);
 let {syncWorkspaceListOptions,renderWorkspaceCustomLists,syncWorkspaceLists,workspaceRecords,workspaceFolderSummary,renderWorkspaceFolders,workspaceTagSummary,renderWorkspaceTags,workspaceRecordMatches,workspacePriorityValue,workspaceDateLabel,workspaceTaskRow,updateWorkspaceCounts,renderWorkspaceTaskGroups,experienceData,renderExperience,renderTodayOverview,listPage,listPageFooter,renderWorkspaceTasks,renderWorkspaceView,setWorkspaceView,openWorkspaceRecord,updateWorkspaceRecord,wireWorkspaceControls,renderKanbanBoard,updateBoardTaskStatus,savedFilterMatches,renderSavedFilters,saveFilterForm,deleteSavedFilter,renderTaskNotificationSettings,deleteCustomList,renderTaskTemplateOptions}=WeekwiseAppWorkspace.create(weekwiseRuntime);
 let {zoneNeedsReview,renderZoneNotice,dataCanWrite}=WeekwiseAppZone.create(weekwiseRuntime);
@@ -465,27 +461,11 @@ shiftPeriod=function(n){
  const d=dayDate(currentWeek,mobileDay);d.setDate(d.getDate()+n);saveCurrent();mobileDay=d.getDay();loadWeek(dateKey(sundayOf(d)));
 };
 openDashboard=function(){
- dashboardWeekKey=currentWeek;const picker=$('dashboardWeekPicker');if(picker)picker.value=currentWeek;renderStats();openUtilityPanel('dashboard','Effort dashboard');
+ dashboardWeekKey=WeekwiseCalendarRange.range(dateKey(dayDate(currentWeek,mobileDay)),1)[0];const picker=$('dashboardWeekPicker');if(picker)picker.value=dashboardWeekKey;renderStats();openUtilityPanel('dashboard','Weekly summary');
 };
-renderStats=function(){
- const selected=dashboardWeekKey||currentWeek,oldTasks=tasks,oldWeek=currentWeek;
- if(selected!==currentWeek){tasks=Array.isArray(store.weeks[selected]&&store.weeks[selected].tasks)?store.weeks[selected].tasks:[];currentWeek=selected;}
- const measuredTasks=tasks;
- weekwiseOriginalRenderStats();
- const scheduled=measuredTasks.filter(function(t){return t.start!==null&&t.start!==undefined&&!t.unscheduled&&Number(t.duration)>0;});
- const total=scheduled.length,done=scheduled.filter(function(t){return t.done;}).length,planned=scheduled.reduce(function(n,t){return n+Number(t.duration||0);},0),logged=scheduled.filter(function(t){return t.done;}).reduce(function(n,t){return n+Number(t.duration||0);},0);
- const groups=[{key:'job',label:'Career'},{key:'study',label:'Coursework & communication'},{key:'language',label:'Languages'},{key:'life',label:'Home & routines'},{key:'hobby',label:'Hobbies & city trips'},{key:'workday',label:'Work day'},{key:'other',label:'Other'}].map(function(g){g.total=scheduled.filter(function(t){return analyticsGroup(t)===g.key;}).reduce(function(n,t){return n+Number(t.duration||0);},0);return g;}).sort(function(a,b){return b.total-a.total;});
- const days=DAY_NAMES.map(function(_,i){const a=scheduled.filter(function(t){return Number(t.day)===i;});return {label:DAY_SHORT[i],total:a.reduce(function(n,t){return n+Number(t.duration||0);},0)};}).sort(function(a,b){return b.total-a.total;});
- const insight=$('dashboardInsight');
- if(insight){if(!total)insight.textContent='This week has no scheduled activities yet. Add activities to start tracking your effort.';else insight.innerHTML='<strong>'+done+' of '+total+' activities completed.</strong> You logged <strong>'+durationText(logged)+'</strong> of <strong>'+durationText(planned)+'</strong> planned time. Most time is allocated to <strong>'+(groups[0]&&groups[0].total?groups[0].label:'no category yet')+'</strong>'+(days[0]&&days[0].total?'; <strong>'+days[0].label+'</strong> is your busiest day ('+durationText(days[0].total)+' planned)':'')+'.';}
- tasks=oldTasks;currentWeek=oldWeek;
- const picker=$('dashboardWeekPicker');if(picker&&!picker.value)picker.value=selected;
- if(calendarView==='month')$('weekLabel').textContent=monthAnchor.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
- else if(calendarView==='day')$('weekLabel').textContent=DAY_NAMES[mobileDay]+', '+fmtDate(dayDate(currentWeek,mobileDay),{day:'numeric',month:'short',year:'numeric'});
- else $('weekLabel').textContent=fmtDate(parseKey(currentWeek),{day:'numeric',month:'short'})+' – '+fmtDate(dayDate(currentWeek,6),{day:'numeric',month:'short',year:'numeric'});
-};
-$('dashboardWeekPicker').addEventListener('change',function(){if(!$('dashboardWeekPicker').value)return;dashboardWeekKey=dateKey(sundayOf(parseKey($('dashboardWeekPicker').value)));renderStats();});
-$('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);agendaAnchor=dateOnly(now);calendarYear=now.getFullYear();});
+renderStats=function(){WeekwisePersonalUI.renderSummary(weekwiseRuntime,dashboardWeekKey||currentWeek);};
+ $('dashboardWeekPicker').addEventListener('change',function(){if(!$('dashboardWeekPicker').value)return;dashboardWeekKey=WeekwiseCalendarRange.range($('dashboardWeekPicker').value,1)[0];renderStats();});
+ $('thisWeek').addEventListener('click',function(){monthAnchor=new Date(now.getFullYear(),now.getMonth(),1);agendaAnchor=dateOnly(now);calendarYear=now.getFullYear();});
 
 $('thisWeek').addEventListener('click',weekwiseAnimateCalendar);
 $('mobileDayPicker').addEventListener('click',function(e){if(e.target.closest('[data-mobile-day]'))weekwiseAnimateCalendar();});
@@ -603,6 +583,7 @@ WeekwiseAccountUI.init({
  }
 });
 WeekwiseZoneConversionUI.init({...plannerBridge,panel:openUtilityPanel,announce:showToast,commit(expected,account,next,checkpoint){commitPlannerSnapshot(expected,account,next,checkpoint,true);},blocked(){if(plannerStorageBlocked||WeekwiseData.blockedKeys().length)return 'Recover stored data first.';if(cloudConflict)return 'Resolve the cloud conflict first.';if(cloudUser&&cloudUser.id!==currentDataOwner)return 'Wait for your account to finish changing.';if($('taskModal').classList.contains('show')||!$('templateModal').hidden)return 'Save or close the editor first.';if(WeekwiseExperience.hasPendingReview()||$('workspaceCaptureInput').value.trim())return 'Save your unfinished review or capture first.';if(focusState&&(focusState.runningSince!==null||(!focusState.logged&&focusState.activeMs>0)))return 'Finish or reset the current focus session first.';return '';}});
+WeekwisePersonalUI.init({...plannerBridge,panel:openUtilityPanel,announce:showToast,theme:applyThemePreference,closeEditor:closeTaskModal,source(){return {id:$('editTaskId').value,week:currentWeek};},collections(){return {focusSessions,habits};},summaryWeek(week){dashboardWeekKey=week;renderStats();},navigate:setWorkspaceView,reflect(week){closeUtilityPanel();$('insightsWeek').value=week;setWorkspaceView('insights');$('reviewworked').focus();}});
 WeekwisePlanUI.init(plannerBridge);
 WeekwiseTaskHistoryUI.init({...plannerBridge,panel:openUtilityPanel,announce:showToast});
 WeekwiseSeriesScheduleUI.init({...plannerBridge,panel:openUtilityPanel,announce:showToast});

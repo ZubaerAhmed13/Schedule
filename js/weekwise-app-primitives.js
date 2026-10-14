@@ -88,7 +88,7 @@ function escapeHtml(str){return String(str??'').replace(/[&<>"']/g,c=>({'&':'&am
 
 function defaultClassTemplate(){return {title:'Master’s coursework self-study',days:[1,3,5,0],duration:75,start:'13:00'};}
 
-function defaultSettings(){return {timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,calendarGridStartDay:0,travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,theme:'system',shifts:weekwiseRuntime.DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:weekwiseRuntime.defaultClassTemplate()};}
+function defaultSettings(){return {timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,weekStartsOn:1,calendarGridStartDay:1,travelDay:6,travelStart:'09:00',destination:'',cookStartDay:1,showBreaks:true,theme:'system',shifts:weekwiseRuntime.DAY_NAMES.map(()=>({enabled:false,start:'09:00',end:'17:00'})),classTemplate:weekwiseRuntime.defaultClassTemplate()};}
 return Object.freeze({nextQuarterHour,dateOnly,sundayOf,mondayOf,dateKey,parseKey,fmtDate,dayDate,normalizeTimeField,validateTimeFields,wireTime24Fields,timeMins,minsTime,durationLabel,normalizeEndTimeField,updateEndTimeFromDuration,updateDurationFromEnd,uid,escapeHtml,defaultClassTemplate,defaultSettings});
 }
 root.WeekwiseAppPrimitives=Object.freeze({create});
