@@ -1,6 +1,6 @@
 # Weekwise release checklist
 
-Scope: current [CURRENT_STATUS.md](CURRENT_STATUS.md), original 32-section brief, Google/Outlook deferred by the user. Earlier checklists and phase evidence remain in Git history.
+Scope: current [CURRENT_STATUS.md](CURRENT_STATUS.md), original 32-section brief, Google/Outlook activation now requested. Earlier checklists and phase evidence remain in Git history.
 
 ## Checked core gates
 
@@ -23,7 +23,7 @@ Scope: current [CURRENT_STATUS.md](CURRENT_STATUS.md), original 32-section brief
 
 ## Deferred or external acceptance
 
-- [ ] Google/Outlook credentials, consent and real calendar round trips — explicitly deferred.
+- [ ] Google/Outlook provider registrations, secure credentials, consent and real calendar round trips — requested, pending actual provider access.
 - [ ] Physical notification permission/provider delivery with Weekwise closed, actual expired-device cleanup and installed PWA operation.
 - [ ] Human VoiceOver/TalkBack, real browser zoom and phone keyboard/rotation review.
 - [ ] Physical two-device reconnect, actual historical private-backup upgrade and real signed-token waiting/expiry/mail delivery.

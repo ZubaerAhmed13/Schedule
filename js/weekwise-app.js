@@ -528,6 +528,7 @@ const TASK_TEMPLATES_KEY='weekwise-task-templates-v1';
 let taskTemplates=WeekwiseData.readCollection(localStorage,TASK_TEMPLATES_KEY);
 
 window.weekwiseCalendarBridge = {
+  owner() { return cloudUser?.id===currentDataOwner?currentDataOwner:null; },
   isReady() { return !!(cloudClient && cloudUser && cloudReady && !cloudConflict && !plannerStorageBlocked && !WeekwiseData.blockedKeys().length && !zoneNeedsReview()); },
   async prepareSync() {
     const owner=cloudUser?.id,epoch=cloudSessionEpoch;if(!dataCanWrite())throw new Error("Planner changes are paused; resolve recovery or time-zone review first.");

@@ -567,7 +567,7 @@ test("calendar connections panel reports backend-not-configured instead of imply
     await status.waitFor({ state: "visible", timeout: 5000 });
     await page.waitForFunction(() => {
       const text = document.querySelector("#calendarConnectionsStatus")?.textContent || "";
-      return /calendar service is not deployed|calendar backend is reachable|credentials are not configured|not configured/i.test(text);
+      return /calendar service.*unavailable|provider setup|not configured/i.test(text);
     }, null, { timeout: 5000 });
 
     assert.equal(await page.locator("#connectGoogleCalendarBtn").isDisabled(), true,

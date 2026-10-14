@@ -156,3 +156,5 @@ body .field label,body .modal .field label,body .template-form .field label,body
 @media(max-width:760px) {.topbar .more-panel {max-height:calc(100dvh - 100px);}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media print {.plan-overview{break-inside:avoid}.topbar,.workspace-sidebar,.list-actions{display:none!important}.wrap{padding:0}.workspace-shell{display:block}}
+
+.calendar-connection-row>div{min-width:0}.calendar-connection-row p{overflow-wrap:anywhere}.calendar-connection-actions .btn{min-height:44px;font-size:12px}.calendar-owner-setup{margin:18px 0;font-size:13px}.calendar-owner-setup>summary{min-height:44px;font-weight:600;color:var(--ww-text)}.calendar-owner-setup p{line-height:1.6;color:var(--ww-muted)}.calendar-owner-setup a{color:var(--ww-brand);display:inline-flex;align-items:center;min-height:44px}

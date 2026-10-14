@@ -42,4 +42,5 @@ jobs:
             test-results/axe-*-device.json
             test-results/axe-*-auth.json
             test-results/axe-*-help.json
+            test-results/axe-*-calendar.json
           if-no-files-found: ignore

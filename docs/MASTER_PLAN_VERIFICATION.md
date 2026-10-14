@@ -37,7 +37,7 @@ Reviewed against all 1,921 lines / 32 sections of the original `Pasted text(4).t
 | 31 | Final acceptance | Core automation/live backend evidence delivered; full professional certification still requires physical/human/private-history/field evidence |
 | 32 | Implementation | Actual source/backend changes completed incrementally; external limits stay explicit |
 
-No existing account or real planner was a writable test fixture. Temporary tests used reserved-domain confirmed identities without sending mail; all fresh identities/invites were cleaned and test endpoints retired. Provider registrations are intentionally deferred. Retention is explained without unsupported GDPR compliance claims.
+No existing account or real planner was a writable test fixture. Temporary tests used reserved-domain confirmed identities without sending mail; all fresh identities/invites were cleaned and test endpoints retired. Provider registration deferral was lifted on 14 October; actual credentials, consent and round trips remain pending. Retention is explained without unsupported GDPR compliance claims.
 
 The master brief includes suggested/optional features and asks implementation to continue as environment/permissions allow; do not represent unconfigured optional AI, arbitrary localization, physical OS notifications or legal/field certifications as completed features. [Issue #22](https://github.com/ZubaerAhmed13/Schedule/issues/22) tracks the remaining acceptance scope.
 

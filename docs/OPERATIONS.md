@@ -1,10 +1,10 @@
 # Weekwise operations and recovery
 
-This runbook covers the current GitHub Pages client and WeekWise project `iajkzlsurghfvsmqkmut`. Google/Outlook remain deferred. No paid plan, analytics collector, service-role client key or writable production test fixture is introduced.
+This runbook covers the current GitHub Pages client and WeekWise project `iajkzlsurghfvsmqkmut`. Google/Outlook activation is requested; provider credentials and consent are still pending. No paid plan, analytics collector, service-role client key or writable production test fixture is introduced.
 
 ## Monitoring and incident response
 
-`Weekwise public service monitor` runs every six hours and can be run manually in GitHub Actions. `node scripts/probe-services.mjs` makes GET-only, bounded, timed requests with retries. It verifies Auth health, public email-provider availability, anonymous planner-read denial, erasure activation, the push route, and consistency between the public build marker and HTML asset versions. Only fixed check names and outcomes appear in its summary. Failures produce a failed workflow; repository owners must configure their GitHub Actions notifications to receive alerts. A successful probe does not certify signed-in sync, cron dispatch, mail delivery, closed-app push or an availability SLA. Scheduled workflows can be delayed by GitHub and do not replace continuous monitoring for a public launch.
+`Weekwise public service monitor` runs every six hours and can be run manually in GitHub Actions. `node scripts/probe-services.mjs` makes GET-only, bounded, timed requests with retries. It verifies Auth health, public email-provider availability, anonymous planner-read denial, erasure activation, the push route, calendar encryption readiness, and consistency between the public build marker and HTML asset versions. Google/Outlook credential-presence booleans are reported separately; they do not certify consent or real event round trips. Only fixed check names and outcomes appear in its summary. Failures produce a failed workflow; repository owners must configure their GitHub Actions notifications to receive alerts. A successful probe does not certify signed-in sync, cron dispatch, mail delivery, closed-app push or an availability SLA. Scheduled workflows can be delayed by GitHub and do not replace continuous monitoring for a public launch.
 
 For an incident:
 
