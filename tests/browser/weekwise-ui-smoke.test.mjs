@@ -874,7 +874,7 @@ test('optional first-run guide can be skipped, restored from Settings, and navig
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
   const guide=page.locator('#todayOnboarding');
   await guide.waitFor({state:'visible'});
-  assert.match(await guide.locator('#todayOnboardingTitle').innerText(),/Make Weekwise yours/);
+  assert.match(await guide.locator('#todayOnboardingTitle').innerText(),/A little plan/);
   assert.equal(await guide.locator('[data-experience-capture]').count(),1);
   const before=await readPlannerStore(page);
   await guide.locator('[data-experience-guide-dismiss]').click();
@@ -892,6 +892,15 @@ test('optional first-run guide can be skipped, restored from Settings, and navig
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
   await page.locator('#todayOnboarding [data-experience-calendar]').click();
   assert.equal(await page.locator('#calendarToolbar').isVisible(),true);
+ }finally{await context.close();}
+});
+
+test('a first task keeps the guide visible until a reviewed weekly plan is saved',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();await page.locator('#todayOnboarding').waitFor({state:'visible'});assert.match(await page.locator('.today-onboarding-progress').innerText(),/0 of 3/);
+  await createFlexibleTask(page,'My first manageable task','30');await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();await page.locator('#todayOnboarding').waitFor({state:'visible'});assert.match(await page.locator('.today-onboarding-progress').innerText(),/1 of 3/);
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);await page.locator('#todayOnboarding').waitFor({state:'visible'});await page.locator('#todayOnboarding [data-experience-plan]').click();await (await visibleControl(page,'#planSavePreferences')).click();
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();assert.match(await page.locator('.today-onboarding-progress').innerText(),/2 of 3/);const before=await readPlannerStore(page);await openFuturePlan(page);assert.deepEqual(await readPlannerStore(page),before,'preview never changes the planner');await page.locator('#planApply').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();assert.equal(await page.locator('#todayOnboarding').count(),0);assert.ok(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).some(t=>t.title==='My first manageable task'&&t.start!==null));
  }finally{await context.close();}
 });
 

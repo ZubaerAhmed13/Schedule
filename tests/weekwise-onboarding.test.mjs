@@ -29,3 +29,10 @@ test('the optional guide remains usable if local preferences cannot be saved',()
  assert.equal(guide.markup().includes('data-experience-guide-dismiss'),true);
  assert.throws(()=>guide.setMode(storage(),'local','wrong'),/Unsupported/);
 });
+test('a started guide continues after capture and finishes from saved planning evidence',()=>{
+ const s=storage();guide.setMode(s,'a','started');const records=[{task:{start:null,unscheduled:true}}];
+ assert.equal(guide.visible(s,'a',true,false),true);assert.deepEqual(guide.progress(records,{settings:{}}).steps,[true,false,false]);
+ const planned=guide.progress([{task:{start:540,unscheduled:false}}],{settings:{planning:{days:[1]}}});assert.equal(planned.complete,true);assert.equal(guide.visible(s,'a',true,planned.complete),false);
+ assert.equal(guide.visible(s,'b',true,false),false,'existing users do not get a new forced guide');guide.setMode(s,'a','shown');assert.equal(guide.visible(s,'a',true,true),true);
+ assert.equal(guide.progress([{task:{start:540,unscheduled:true}}],{settings:{}}).steps[2],false);assert.equal(guide.progress([{task:{start:null}}],{settings:{}}).steps[2],false);
+});

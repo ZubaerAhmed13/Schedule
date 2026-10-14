@@ -6,7 +6,9 @@ const clock=n=>String(Math.floor(n/60)%24).padStart(2,'0')+':'+String(n%60).padS
 function taskButton(record,focus=false){return '<button type="button" class="btn'+(focus?' primary':'')+'" data-experience-'+(focus?'focus':'edit')+'="'+esc(record.task.id)+'" data-week="'+record.week+'">'+(focus?'Start focus':'View activity')+'</button>';}
 function renderToday(data){
  const panel=$('todayOverview');if(!panel||!data.active)return;onboardingOwner=data.owner||'local';
- const guide=root.WeekwiseOnboarding?.visible(localStorage,onboardingOwner,data.records.length>0)?root.WeekwiseOnboarding.markup():'';
+ const progress=root.WeekwiseOnboarding?.progress(data.records,data.store),showGuide=root.WeekwiseOnboarding?.visible(localStorage,onboardingOwner,data.records.length>0,progress?.complete);
+ if(showGuide&&root.WeekwiseOnboarding.mode(localStorage,onboardingOwner)==='new')root.WeekwiseOnboarding.setMode(localStorage,onboardingOwner,'started');
+ const guide=showGuide?root.WeekwiseOnboarding.markup(progress,data.signedIn):'';
  const {records,today,minute,store}=data,daily=root.WeekwiseToday.daily(records,store,data.epoch),{timed,next,scheduled}=daily;
  const unfinished=records.filter(r=>!r.task.done&&r.task.status!=='done'&&r.task.requiresCompletion!==false),priorities=unfinished.filter(r=>r.task.todayPriority).slice(0,3),overdue=unfinished.filter(r=>r.task.dueDate&&r.task.dueDate<today);
  let capacity=null;

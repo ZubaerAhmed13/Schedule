@@ -125,3 +125,5 @@ In Habits & routines, choose **On selected weekdays** (the unchanged default) or
 ### Performance evidence
 
 The Chromium regression workflow archives **synthetic desktop/mobile laboratory** render metrics alongside the existing 1k/5k/10k task-list navigation measurements and accessibility audit. These help detect regressions but are not actual-user Core Web Vitals or proof of phone performance. Browser RUM collection, real networking conditions and INP percentile verification remain separate work.
+
+Quality and support: [quality roadmap](docs/QUALITY_ROADMAP.md), [operations and recovery](docs/OPERATIONS.md), and [focused security review](docs/SECURITY_QUALITY.md). Help is available in Settings; private troubleshooting recording is optional and device-only. Public service checks run through GitHub Actions without account sessions or planner writes.
