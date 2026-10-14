@@ -25,6 +25,18 @@ CI retains 1440/820/390px screenshots. Light layouts and actual responsive forms
 
 Human screen-reader testing, complete text-zoom review, installed-PWA standalone presentation and real mobile-keyboard acceptance remain separate from automated checks. The screenshot/audit suite is not a WCAG certification. All existing controls and features remain reachable; no planner migration or backend change accompanies the redesign.
 
+## Motion and finishing
+
+The final `css/weekwise-polish.css` layer shares adaptive depth, readable numerical alignment, active navigation markers, selected-theme checks and focus feedback across all five palettes. Hover elevation is limited to fine pointers. Press feedback, wrapping labels, phone safe areas, forced-colour selection and the existing keyboard focus ring remain available. Dialog headers and secondary forms follow the same spacing and surface hierarchy.
+
+`js/weekwise-motion.js` performs presentation only. Explicit navigation reveals up to five existing sections over 260ms with 28ms offsets; calendar period/view changes settle the existing grid without the old forced reflow or blur animation. Only the current entrance survives rapid navigation. Routine sync, timer ticks and re-rendering the current view do not start page entrances. Completion feedback resolves the newly rendered control and runs only after its checked state is confirmed; completed tasks do not pulse again on refresh.
+
+Menus, native dialogs, utility panels, the task editor and the sign-in illustration use finite entrance animations. No action, form submission, focus restoration or dialog close waits for an animation. CSS and JavaScript both follow `prefers-reduced-motion`; changing that preference cancels active JavaScript animations immediately. Hidden pages cancel queued effects. No library, analytics, network call, persisted preference or planner mutation is added by motion. Both assets belong to the versioned offline shell.
+
+Content remains fully opaque throughout entrances so text contrast is retained during motion. Only decorative illustration/backdrop layers fade. Text links and keyboard rings follow the selected palette; primary add actions use the existing local SVG icon system instead of font-dependent full-width symbols.
+
+Browser checks cover rapid navigation, finite animation duration, preference changes during motion, unchanged original records, keyboard Escape/focus restoration, native copy dialogs, phone overflow and reduced-motion task capture. Existing five-theme audits and desktop/phone screenshots remain part of review.
+
 ## Productivity controls
 
 Quick edit stays in the task list and changes only explicit edited fields. A calendar date/time change checks exact availability and refuses collisions; fixed/recurring and linked timing retain their reviewed editors. Selection mode supports up to 500 explicitly chosen tasks, a review dialog for completion/reopening/list moves/tag additions/priority, and guarded exact Undo. Existing descriptive fields and reminder instants remain intact. Linked parent progress follows selected parts. Today offers a searchable, bounded highlight picker capped at three unfinished responsibilities.

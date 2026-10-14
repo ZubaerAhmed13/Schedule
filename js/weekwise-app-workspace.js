@@ -207,8 +207,9 @@ function renderWorkspaceView(){
 function setWorkspaceView(view){
  if(!['search','today','tomorrow','inbox','upcoming','board','filters','plan','insights','settings','calendar','matrix','list-career','list-study','list-work','list-personal','list-language','list-hobbies','list-other'].includes(view)&&!weekwiseRuntime.WORKSPACE_LISTS.some(list=>list.view===view)&&!(typeof view==='string'&&(view.startsWith('folder:')||view.startsWith('tag:'))))return;
  const finishMeasurement=root.WeekwisePerformance?.beginView(view);
+ const changed=weekwiseRuntime.workspaceView!==view;
  if(weekwiseRuntime.workspaceView!==view)weekwiseRuntime.saveCurrent();weekwiseRuntime.workspaceView=view;try{localStorage.setItem('weekwise-workspace-view-v1',view);}catch(_){}
- weekwiseRuntime.renderWorkspaceView();if(view==='calendar')weekwiseRuntime.renderAll();if(view==='search')setTimeout(()=>weekwiseRuntime.$('workspaceSearch')?.focus(),0);finishMeasurement?.();
+ weekwiseRuntime.renderWorkspaceView();if(view==='calendar')weekwiseRuntime.renderAll();if(view==='search')setTimeout(()=>weekwiseRuntime.$('workspaceSearch')?.focus(),0);if(changed)root.WeekwiseMotion?.enter(view);finishMeasurement?.();
 }
 
 function openWorkspaceRecord(id,week){

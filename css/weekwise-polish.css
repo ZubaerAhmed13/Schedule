@@ -1,0 +1,161 @@
+/* Final presentation layer: adaptive surfaces and finite, user-triggered motion. */
+:root {
+  --ww-ease:cubic-bezier(.22,1,.36,1);--ww-fast:150ms;--ww-enter:260ms;
+  --ww-shadow-soft:0 2px 5px #102a1d03,0 8px 24px #102a1d05;
+  --ww-shadow-raised:0 4px 12px #102a1d08,0 16px 40px #102a1d0a;
+  --ww-shadow-dialog:0 8px 24px #07150e12,0 32px 100px #07150e30;
+}
+body[data-theme=dark] {
+  --ww-shadow-soft:0 2px 5px #00000012,0 8px 24px #00000016;
+  --ww-shadow-raised:0 4px 12px #00000020,0 16px 40px #00000024;
+  --ww-shadow-dialog:0 8px 24px #00000030,0 32px 100px #00000055;
+}
+body {text-rendering:optimizeLegibility;}
+::selection {background:var(--ww-soft);color:var(--ww-text);}
+.workspace-main {scroll-margin-top:90px;}
+.workspace-main h2,.utility-dialog-head h2,.modal h3 {text-wrap:balance;}
+.workspace-page-eyebrow,.dashboard-eyebrow {line-height:1.6;}
+.workspace-task-meta,.today-facts,.plan-metric,.summary-highlights,.focus-clock,.weeklabel {font-variant-numeric:tabular-nums;}
+.workspace-task-title,.plan-proposal strong,.settings-cards h3 {line-height:1.5;}
+.topbar {border-bottom-color:var(--ww-line);}
+.action-icon {width:17px;height:17px;vertical-align:middle;}
+.btn:has(>.action-icon) {display:inline-flex;align-items:center;justify-content:center;gap:7px;}
+#globalCaptureBtn::before {content:none;}
+.nav-group>summary::after,.task-option>summary::after,.plan-boundaries>summary::after {
+  content:'';flex:none;width:6px;height:6px;margin-left:auto;margin-right:3px;
+  border:solid var(--ww-muted);border-width:0 1.5px 1.5px 0;transform:rotate(-45deg);
+  transition:transform 180ms var(--ww-ease);
+}
+.nav-group[open]>summary::after,.task-option[open]>summary::after,.plan-boundaries[open]>summary::after {content:'';transform:rotate(45deg);}
+:where(.workspace-main,.utility-content) a:not(.btn) {color:var(--ww-brand);text-underline-offset:3px;}
+body :is(button,input,select,textarea,summary,a,[tabindex]):focus-visible {outline:3px solid var(--ww-brand)!important;outline-offset:3px;}
+body .field input:focus,body .field select:focus,body .field textarea:focus,
+body .cloud-auth-fields input:focus {border-color:var(--ww-brand);box-shadow:0 0 0 3px var(--ww-soft);}
+#focusPanel input:not([type=checkbox]),#focusPanel select {background:var(--ww-surface);color:var(--ww-text);border-color:var(--ww-line);}
+.btn,.workspace-nav-btn,.theme-choice,.view-switch-btn,.mobile-week-date,
+.habit-checkin-day,.utility-close,.cloud-auth-tab,.cloud-password-toggle,
+.workspace-task-actions button,.workspace-pin-button,.mobile-week-add {
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  transition:background-color var(--ww-fast) ease,color var(--ww-fast) ease,
+    border-color var(--ww-fast) ease,box-shadow var(--ww-fast) ease,
+    transform var(--ww-fast) var(--ww-ease);
+}
+.btn.primary {box-shadow:inset 0 1px 0 #ffffff16,0 2px 4px #102a1d0a;}
+.btn:disabled,.btn[aria-disabled=true] {box-shadow:none;transform:none;cursor:not-allowed;}
+.workspace-nav-btn {position:relative;}
+.workspace-nav-btn.active::before {
+  content:'';position:absolute;left:0;top:13px;bottom:13px;width:3px;
+  border-radius:4px;background:var(--ww-brand);pointer-events:none;
+}
+.workspace-nav-icon .ww-icon {transition:transform var(--ww-fast) var(--ww-ease);}
+.workspace-task-row,.plan-overview,.plan-preferences,.plan-preview-card,
+.today-timeline,.habit-track-card,.filter-builder,.calendar-toolbar,.summary-habits,.workspace-empty {
+  border-color:var(--ww-line);box-shadow:var(--ww-shadow-soft);
+}
+.workspace-task-row {transition:background-color var(--ww-fast) ease,border-color var(--ww-fast) ease,box-shadow var(--ww-fast) ease;}
+.workspace-task-row:focus-within {border-color:var(--ww-brand);}
+.today-next {box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ww-brand) 10%,transparent);}
+.today-next::after {width:168px;height:168px;right:-42px;top:-55px;border-width:26px;}
+.workspace-empty {background:var(--ww-surface);border-style:dashed;}
+.workspace-empty-icon {border-radius:14px;}
+.workspace-capture,.workspace-search-wrap {transition:border-color var(--ww-fast) ease,box-shadow var(--ww-fast) ease;}
+.workspace-capture:focus-within,.workspace-search-wrap:focus-within {border-color:var(--ww-brand);box-shadow:0 0 0 3px var(--ww-soft);}
+.field input,.field select,.field textarea,.plan-field input,.plan-field select,
+.plan-field textarea,.habit-create-field input,.habit-create-field select {
+  transition:border-color var(--ww-fast) ease,box-shadow var(--ww-fast) ease;
+}
+.theme-choice {position:relative;}
+.theme-choice[aria-pressed=true] {box-shadow:0 0 0 3px var(--ww-soft);}
+.theme-choice[aria-pressed=true]::after {
+  content:'✓';position:absolute;right:19px;top:19px;width:22px;height:22px;
+  display:grid;place-items:center;border-radius:50%;background:var(--ww-action);
+  color:#fff;font-size:13px;font-weight:750;box-shadow:0 2px 6px #00000012;
+}
+body[data-theme=dark] .theme-choice[aria-pressed=true]::after {color:#203329;}
+.theme-preview {border:1px solid #00000008;}
+.theme-preview i {transition:transform 220ms var(--ww-ease);}
+.plan-readiness article,.summary-highlights article,.insights-metrics article {border:1px solid color-mix(in srgb,var(--ww-brand) 9%,transparent);}
+.focus-clock-wrap {box-shadow:inset 0 1px 0 color-mix(in srgb,var(--ww-surface) 70%,transparent);}
+.focus-progress {height:7px;background:var(--ww-line);}
+.focus-progress span,.habit-track-progress-track span,.plan-load-track span,.insights-load-track span {background:var(--ww-brand);}
+.habit-checkin-day.checked {box-shadow:inset 0 0 0 1px var(--ww-brand);}
+.habit-checkin-day.today {outline-offset:2px;}
+.view-switch {border-color:var(--ww-line);}
+.view-switch-btn.active,.view-switch-btn[aria-pressed=true] {background:var(--ww-surface);color:var(--ww-brand);box-shadow:var(--ww-shadow-soft);}
+.mobile-week-date.is-today {box-shadow:inset 0 0 0 1px var(--ww-brand);}
+.mobile-week-event {box-shadow:0 2px 5px #102a1d03;}
+.more-panel,.list-actions-menu,.calendar-file-menu {box-shadow:var(--ww-shadow-raised)!important;}
+.more-panel .btn,.list-actions-menu .btn,.calendar-file-menu .btn {white-space:normal;}
+.modal,.utility-dialog,.template-dialog,.weekwise-dialog {border:1px solid var(--ww-line);box-shadow:var(--ww-shadow-dialog);}
+.utility-dialog-head,.template-dialog-head {padding-bottom:18px;border-bottom:1px solid var(--ww-line);margin-bottom:20px;}
+.utility-dialog-head h2,.template-dialog-head h2 {line-height:1.3;letter-spacing:-.7px;}
+.utility-close {border-radius:50%;background:var(--ww-soft);color:var(--ww-text);}
+.modalback,.utility-backdrop,.template-backdrop,.weekwise-dialog::backdrop {background:#12231c66;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.toast {
+  display:flex;align-items:center;gap:10px;line-height:1.5;font-weight:550;
+  padding:13px 18px;border-radius:15px;background:var(--ww-text);color:var(--ww-surface);
+  border:1px solid color-mix(in srgb,var(--ww-surface) 20%,transparent);
+  box-shadow:var(--ww-shadow-raised);transform:translate(-50%,10px);
+  transition:transform 220ms var(--ww-ease);
+}
+.toast::before {content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;opacity:.65;}
+.toast:empty::before {display:none;}
+.toast.show {transform:translate(-50%,0);}
+/* Saved completed tasks stay still on refresh; feedback is tied to the action. */
+.workspace-task-check:checked {animation:none;}
+@media(hover:hover) and (pointer:fine) {
+  .btn:not(:disabled):not([aria-disabled=true]):hover {transform:translateY(-1px);box-shadow:var(--ww-shadow-soft);}
+  .topbar .more-panel .btn:hover,.list-actions-menu .btn:hover,.calendar-file-menu .btn:hover {transform:none;box-shadow:none;}
+  .workspace-nav-btn:hover .ww-icon {transform:translateX(1px);}
+  .workspace-task-row:hover {border-color:color-mix(in srgb,var(--ww-brand) 32%,var(--ww-line));box-shadow:var(--ww-shadow-soft);}
+  .theme-choice:hover {transform:translateY(-3px);box-shadow:var(--ww-shadow-raised);}
+  .theme-choice:hover .theme-preview i:nth-child(2) {transform:translateX(2px);}
+  .mobile-week-add:hover,.utility-close:hover {background:var(--ww-line);transform:none;}
+}
+@media(hover:none) {
+  .btn:hover,.view-switch-btn:hover,.calendar-actions>.btn:hover,.more-trigger:hover,.utility-close:hover {transform:none;}
+}
+.btn:not(:disabled):not([aria-disabled=true]):active,.theme-choice:active,
+.mobile-week-date:active,.mobile-week-add:active,.habit-checkin-day:not(:disabled):active {transform:scale(.975);}
+.btn:disabled:hover,.btn[aria-disabled=true]:hover {transform:none;box-shadow:none;}
+@media(prefers-reduced-motion:no-preference) {
+  @keyframes ww-dialog-enter {from {transform:translateY(12px) scale(.985);}to {transform:translateY(0) scale(1);}}
+  @keyframes ww-menu-enter {from {transform:translateY(-5px) scale(.98);}to {transform:translateY(0) scale(1);}}
+  @keyframes ww-backdrop-enter {from {opacity:0;}to {opacity:1;}}
+  @keyframes ww-preview-enter {from {opacity:.3;transform:translateY(12px);}to {opacity:1;transform:translateY(0);}}
+  .modalback.show .modal,.utility-backdrop.show .utility-dialog,
+  .template-backdrop:not([hidden]) .template-dialog,.weekwise-dialog[open] {
+    animation:ww-dialog-enter var(--ww-enter) var(--ww-ease) both;transform-origin:center top;
+  }
+  .weekwise-dialog[open]::backdrop {animation:ww-backdrop-enter 180ms ease both;}
+  .more-actions[open]>.more-panel,.list-actions[open]>.list-actions-menu,.calendar-file-actions[open]>.calendar-file-menu {
+    animation:ww-menu-enter 180ms var(--ww-ease) both;transform-origin:top right;
+  }
+  .signin-card.entry-shell {animation:ww-dialog-enter 380ms var(--ww-ease) both;}
+  .entry-preview {animation:ww-preview-enter 500ms 100ms var(--ww-ease) both;}
+  #daysGrid.weekwise-transition-enter {animation:none;}
+}
+@media(max-width:760px) {
+  #globalCaptureBtn {gap:0;}
+  .topbar {box-shadow:0 2px 12px #102a1d03;}
+  .workspace-sidebar {box-shadow:0 -4px 24px #102a1d06;}
+  .workspace-sidebar>.primary-nav.active::before {left:calc(50% - 8px);right:auto;top:2px;bottom:auto;width:16px;height:3px;}
+  .navigation-expanded .workspace-sidebar>.primary-nav.active::before {left:0;top:13px;bottom:13px;width:3px;height:auto;}
+  .workspace-capture {min-height:54px;}
+  .utility-dialog-head,.template-dialog-head {padding-bottom:14px;margin-bottom:18px;}
+  .utility-dialog-head h2 {font-size:22px;}
+  .toast {max-width:calc(100vw - 32px);width:max-content;font-size:12px;}
+}
+@media(forced-colors:active) {
+  body :is(button,input,select,textarea,summary,a,[tabindex]):focus-visible {outline-color:Highlight!important;}
+  .workspace-nav-btn.active::before {background:Highlight;}
+  .theme-choice[aria-pressed=true] {outline:2px solid Highlight;}
+  .theme-choice[aria-pressed=true]::after {background:Highlight;color:HighlightText;}
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}
+  .btn:hover,.theme-choice:hover,.theme-choice:hover .theme-preview i,
+  .workspace-nav-btn:hover .ww-icon,.btn:active,.theme-choice:active,
+  .mobile-week-date:active,.mobile-week-add:active,.habit-checkin-day:active {transform:none!important;}
+}
+@media print {.workspace-main * {animation:none!important;transition:none!important;box-shadow:none!important;}}

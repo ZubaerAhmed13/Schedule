@@ -376,12 +376,7 @@ function weekwiseRenderBreaks(){
 }
 
 function weekwiseAnimateCalendar(){
- const grid=weekwiseRuntime.$('daysGrid');
- if(!grid||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
- grid.classList.remove('weekwise-transition-enter');
- void grid.offsetWidth;
- grid.classList.add('weekwise-transition-enter');
- setTimeout(function(){grid.classList.remove('weekwise-transition-enter');},380);
+ root.WeekwiseMotion?.calendar();
 }
 
 function weekwiseRenderAgenda(){
