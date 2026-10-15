@@ -26,8 +26,11 @@ function parseICSProperties(text){
 
 async function importCalendarICS(file){
  if(!weekwiseRuntime.dataCanWrite())return;
+ const readingOwner=weekwiseRuntime.currentDataOwner,readingEpoch=weekwiseRuntime.cloudSessionEpoch,readingDisk=localStorage.getItem(weekwiseRuntime.STORE_KEY);
+ const unchanged=()=>readingOwner===weekwiseRuntime.currentDataOwner&&readingEpoch===weekwiseRuntime.cloudSessionEpoch&&readingDisk===localStorage.getItem(weekwiseRuntime.STORE_KEY);
  if(!file||file.size>WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Calendar file must be smaller than 10 MB.');
- const events=weekwiseRuntime.parseICSProperties(await file.text());
+ const text=await file.text();if(!unchanged())throw new Error('Planner changed while reading the calendar file. Choose it again.');
+ const events=weekwiseRuntime.parseICSProperties(text);
  if(events.length>10000)throw new Error('Import up to 10,000 calendar events at a time.');
  if(!events.length){weekwiseRuntime.showToast('No calendar events were found in that .ics file.');return;}
  // Stage the entire import. Never change the live store during parsing or user review.
@@ -70,6 +73,7 @@ async function importCalendarICS(file){
  WeekwiseData.validateStore(next);
  const details=invalid?' '+invalid+' unsupported events will be skipped'+(firstProblem?' (first: '+firstProblem+').':'.'):'';
  if(!confirm('Import '+added+' new calendar '+(added===1?'event':'events')+'?'+(skipped?' '+skipped+' already exist.':'')+details+' Timed events will use your device time zone ('+Intl.DateTimeFormat().resolvedOptions().timeZone+'). Existing records stay unchanged.'))return;
+ if(!unchanged())throw new Error('Planner changed during calendar review. Import the file again.');
  if(!weekwiseRuntime.dataCanWrite())return;
  // saveStore uses checked local transactions and restores the prior in-memory copy on failure.
  weekwiseRuntime.store=next;
@@ -106,7 +110,8 @@ function toggleVoiceCapture(){
 
 function exportCurrentTaskList(){
  if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))return;
- const records=weekwiseRuntime.recordsForListTransfer();
+ const settingsTransfer=weekwiseRuntime.workspaceView==='settings';
+ const records=settingsTransfer?weekwiseRuntime.workspaceRecords():weekwiseRuntime.recordsForListTransfer();
  if(!records.length){weekwiseRuntime.showToast(weekwiseRuntime.workspaceView==='filters'?'Choose a saved filter before exporting it.':'There are no tasks in this view to export.');return;}
  const seriesIds=new Set(records.map(r=>r.task.seriesId).filter(Boolean));
  const templates=(weekwiseRuntime.store.recurringTemplates||[]).filter(template=>seriesIds.has(template.id)).map(template=>({...template,reminderRules:[],reminderOffsetDays:null,reminderTime:null}));
@@ -116,8 +121,8 @@ function exportCurrentTaskList(){
   app:'Weekwise',
   kind:'shared-task-list',
   schemaVersion:1,
-  title:weekwiseRuntime.shareViewTitle(),
-  sourceView:weekwiseRuntime.workspaceView,
+  title:settingsTransfer?'All tasks':weekwiseRuntime.shareViewTitle(),
+  sourceView:settingsTransfer?'all':weekwiseRuntime.workspaceView,
   exportedAt:new Date().toISOString(),
   note:'This is a portable list file. Import it into another Weekwise workspace to copy these tasks; it does not create live collaboration.',
   customLists,
@@ -161,9 +166,9 @@ async function importSharedTaskList(file){if(!root.WeekwiseJsonFiles.allowed(wee
  if(!file)return;
  try{
   if(file.size>12*1024*1024){weekwiseRuntime.showToast('This list file is larger than 12 MB. Ask for a smaller export.');return;}
-  const readingOwner=weekwiseRuntime.currentDataOwner;
+  const readingOwner=weekwiseRuntime.currentDataOwner,readingEpoch=weekwiseRuntime.cloudSessionEpoch;
   const data=JSON.parse(await file.text());
-  if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner)||readingOwner!==weekwiseRuntime.currentDataOwner)return;
+  if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner)||readingOwner!==weekwiseRuntime.currentDataOwner||readingEpoch!==weekwiseRuntime.cloudSessionEpoch)return;
   if(data?.app!=='Weekwise'||data?.kind!=='shared-task-list'||data?.schemaVersion!==1||!Array.isArray(data.tasks)){
    weekwiseRuntime.showToast('That file is not a supported Weekwise list export.');return;
   }

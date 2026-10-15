@@ -1,27 +1,29 @@
-/* One visibility and authorization policy for manual JSON file transfers.
-   Account-owned planners (including offline account copies) never offer these tools.
-   Device-only planner transfers remain available for local backup and portability. */
+/* Manual JSON transfers have exactly one home: Settings.
+   Local and signed-in account planners may use them. Account ownership, confirmation,
+   optimistic storage checks and sync-conflict protection are enforced by import handlers. */
 (function(root){
  'use strict';
- const allowed=owner=>owner==='local';
+ const allowed=owner=>typeof owner==='string'&&owner.trim().length>0;
+ let previousOwner=null;
  function render(owner){
   if(typeof document==='undefined')return;
-  const device=allowed(owner);
+  const available=allowed(owner),device=owner==='local';
   document.body.dataset.weekwiseJsonMode=device?'device':'account';
   document.querySelectorAll('[data-device-only-json]').forEach(control=>{
-   // File inputs are opened by their explicit buttons, never rendered inline.
-   control.hidden=control.tagName==='INPUT'&&control.type==='file'?true:!device;
-   control.inert=!device;
+   // Native file inputs are always opened by their explicit Settings buttons.
+   control.hidden=control.tagName==='INPUT'&&control.type==='file'?true:!available;
+   control.inert=!available;
   });
   document.querySelectorAll('[data-cloud-json-info]').forEach(control=>{
    control.hidden=device;
    control.inert=device;
   });
-  if(!device){
-   for(const id of ['importFile','workspaceImportListFile','qualityBackupFile']){
+  if(previousOwner!==owner){
+   for(const id of ['importFile','workspaceImportListFile','calendarImportFile','qualityBackupFile']){
     const input=document.getElementById(id);
     if(input)input.value='';
    }
+   previousOwner=owner;
   }
  }
  root.WeekwiseJsonFiles=Object.freeze({allowed,render});

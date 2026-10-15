@@ -214,7 +214,7 @@ test('timezone review at 200 percent text size remains keyboard reachable and qu
   await page.addStyleTag({content:'html{font-size:200%} #zoneConversionPanel,#zoneConversionPanel input,#zoneConversionPanel select,#zoneConversionPanel button{font-size:1rem}'});
   const fits=await page.locator('#utilityModal .utility-dialog').evaluate(dialog=>{const bounds=dialog.getBoundingClientRect();return [...dialog.querySelectorAll('input,select,button')].filter(el=>el.getClientRects().length).every(el=>{const rect=el.getBoundingClientRect();return rect.left>=bounds.left-2&&rect.right<=bounds.right+2;});});assert.equal(fits,true,'controls reflow with doubled text');
   await page.locator('#zoneConversionReviewed').focus();assert.equal(await page.locator('#zoneConversionReviewed').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Space');assert.equal(await page.locator('#zoneConversionReviewed').isChecked(),true);
-  await page.keyboard.press('Tab');assert.equal(await page.locator('#zoneConversionFullReview').evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('Tab');assert.equal(await page.locator('#zoneConversionDownload').evaluate(el=>el===document.activeElement),true);
   await page.evaluate(()=>{const original=Storage.prototype.setItem;window.restoreZoneStorage=()=>{Storage.prototype.setItem=original;};Storage.prototype.setItem=function(key,value){if(key==='weekwise-zone-backup-v1:weekwise-browser-test-user')throw new DOMException('Synthetic quota','QuotaExceededError');return original.call(this,key,value);};});
   page.once('dialog',dialog=>dialog.accept());await page.locator('#zoneConversionApply').click();assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),original);assert.match(await page.locator('#zoneConversionStatus').innerText(),/quota|save|storage|write/i);
   await page.evaluate(()=>window.restoreZoneStorage());await page.screenshot({animations:'disabled',path:path.join(root,'test-results','zone-review-text-200.png')});
@@ -1670,33 +1670,56 @@ test('Today greeting escapes user text and removes the old owner name after acco
  }finally{await context.close();}
 });
 
-test('manual JSON controls are absent in cloud and available in device-only mode',async()=>{
+test('Settings is the single file-transfer location in both account and device-only modes',async()=>{
  const {context,page}=await openPlanner({width:390,height:844});
  try{
-  const ids=['exportBtn','importBtn','workspaceExportListBtn','workspaceImportListBtn','exportEditorHistoryBtn','qualityExport','downloadEditorDraft','zoneConversionDownload'];
-  const state=()=>page.evaluate(ids=>Object.fromEntries(ids.map(id=>[id,document.getElementById(id)?.hidden])),ids);
-  assert.equal(await page.locator('body').getAttribute('data-weekwise-json-mode'),'account');
-  assert.ok(Object.values(await state()).every(Boolean));
+  const ids=['exportBtn','importBtn','workspaceExportListBtn','workspaceImportListBtn','exportCalendarBtn','importCalendarBtn','downloadEditorDraft','exportEditorHistoryBtn'];
+  const location=()=>page.evaluate(ids=>Object.fromEntries(ids.map(id=>[id,document.querySelectorAll('#'+id).length===1&&document.getElementById(id).closest('#settingsWorkspace')!==null])),ids);
+  assert.ok(Object.values(await location()).every(Boolean),'every normal JSON or .ics action appears exactly once inside Settings');
+  assert.equal(await page.locator('.workspace-sidebar-footer').count(),0);
+  assert.equal(await page.getByText('Your personal workspace',{exact:true}).count(),0);
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
-  assert.equal(await page.locator('.list-actions').isVisible(),false);
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
-  assert.equal(await page.locator('#qualityBackupDetails').isVisible(),false);
-  assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),true);
+  assert.equal(await page.locator('.list-actions').count(),0);
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="calendar"]')).click();
-  await page.locator('#calendarFileActions > summary').click();
-  assert.equal(await page.locator('#exportCalendarBtn').isVisible(),true);
-  assert.equal(await page.locator('#importCalendarBtn').isVisible(),true);
-  const before=await readPlannerStore(page);
-  await page.locator('#importFile').setInputFiles({name:'attempt.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({app:'Weekwise',version:6,...before}))});
-  assert.deepEqual(await readPlannerStore(page),before,'programmatic file selection cannot overwrite an account');
+  assert.equal(await page.locator('#remindersQuickBtn').isVisible(),true);
+  assert.equal(await page.locator('#calendarFileActions').count(),0);
+  assert.equal(await page.locator('#importCalendarBtn').isVisible(),false);
+  await page.locator('#moreActions > summary').click();
+  assert.equal(await page.locator('#moreActions #exportBtn').count(),0);
+  assert.equal(await page.locator('#moreActions #importBtn').count(),0);
+  assert.equal(await page.locator('#moreActions').getByText('Calendar files & connections').count(),0);
+  await page.locator('#moreActions > summary').click();
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
+  assert.equal(await page.locator('body').getAttribute('data-weekwise-json-mode'),'account');
+  for(const id of ids)assert.equal(await page.locator('#'+id).isVisible(),true,id+' visible in signed-in Settings');
+  assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),true);
   await page.locator('#moreActions > summary').click();
   await page.locator('#cloudMenuBtn').click();
   await page.locator('#cloudSignOut').click();
   await page.locator('#signinLocalContinue').click();
   await page.waitForFunction(()=>document.body.dataset.weekwiseJsonMode==='device');
-  assert.ok(Object.values(await state()).every(x=>x===false));
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
+  for(const id of ids)assert.equal(await page.locator('#'+id).isVisible(),true,id+' visible in local Settings');
   assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),false);
-  assert.equal(await page.locator('#settingsWorkspace [data-settings-action="exportBtn"]').isVisible(),true);
+ }finally{await context.close();}
+});
+
+test('cloud Settings can restore a confirmed JSON backup without affecting other owners',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await createFlexibleTask(page,'Original signed-in record');
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
+  const before=await readPlannerStore(page);
+  const exported={...before,app:'Weekwise',version:6,weeks:{'2030-01-06':{tasks:[{id:'imported-account-task',title:'Restored in signed-in Settings',day:1,start:null,unscheduled:true,duration:30,done:false}]}}};
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('#importFile').setInputFiles({name:'account-safe.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(exported))});
+  await page.waitForFunction(()=>Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2')).weeks).some(week=>week.tasks?.some(task=>task.id==='imported-account-task')));
+  assert.equal(await countStoredTasksNamed(page,'Original signed-in record'),0);
+  assert.equal(await countStoredTasksNamed(page,'Restored in signed-in Settings'),1);
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
+  await page.evaluate(()=>WeekwiseTestAuth.setUser('unrelated-file-owner'));
+  await page.waitForFunction(()=>document.querySelector('#cloudUserEmail').textContent==='unrelated-file-owner@example.invalid');
+  assert.equal(await countStoredTasksNamed(page,'Restored in signed-in Settings'),0);
  }finally{await context.close();}
 });
