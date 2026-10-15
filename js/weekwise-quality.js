@@ -8,7 +8,7 @@
  function renderSync(){
   const s=syncState();let label,description;
   if(s.recovery){label='Saving paused';description='Saved data needs recovery or another tab has newer changes. Keep a backup and resolve the notice before syncing.';}
-  else if(s.conflict){label='Needs review';description='Both copies are preserved. Export a backup of each device before choosing a version in Account & sync.';}
+  else if(s.conflict){label='Needs review';description='Both copies are preserved for review. Check carefully which version to keep in Account & sync.';}
   else if(s.mode==='device'){label='Device planner';description='This planner stays in this browser. Sign in to use your account planner across devices; the two planners stay separate.';}
   else if(s.mode==='offline-account'){label='Saved account copy';description='You are using this account’s saved copy offline. Sign in to the same account again to upload its changes.';}
   else if(!navigator.onLine){label='Offline';description='Your saved changes stay on this device. Weekwise retries when you reconnect and return to the app.';}
