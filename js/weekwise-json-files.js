@@ -9,7 +9,8 @@
   const device=allowed(owner);
   document.body.dataset.weekwiseJsonMode=device?'device':'account';
   document.querySelectorAll('[data-device-only-json]').forEach(control=>{
-   control.hidden=!device;
+   // File inputs are opened by their explicit buttons, never rendered inline.
+   control.hidden=control.tagName==='INPUT'&&control.type==='file'?true:!device;
    control.inert=!device;
   });
   document.querySelectorAll('[data-cloud-json-info]').forEach(control=>{
