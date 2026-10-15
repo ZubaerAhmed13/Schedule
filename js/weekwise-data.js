@@ -36,6 +36,12 @@
     if (!plain(value) || !plain(value.settings) || !plain(value.weeks)) throw new Error('Planner settings and weeks must be objects.');
     assertSafeObject(value);
     if(value.settings.weekStartsOn!==undefined&&![0,1].includes(value.settings.weekStartsOn))throw new Error('Invalid planning week start.');
+    if(value.settings.profile!==undefined){
+      const profile=value.settings.profile;
+      if(!plain(profile))throw new Error('Personal details must be an object.');
+      if(typeof profile.fullName!=='string'||profile.fullName.length>100||/[\u0000-\u001F\u007F]/.test(profile.fullName))throw new Error('Personal name must be text, up to 100 characters.');
+      if(typeof profile.dateOfBirth!=='string'||(profile.dateOfBirth!==''&&(!validDate(profile.dateOfBirth)||profile.dateOfBirth>'9999-12-31')))throw new Error('Date of birth must be a real calendar date.');
+    }
     if(value.settings.calendarTimeZone!==undefined){if(typeof value.settings.calendarTimeZone!=='string'||!value.settings.calendarTimeZone||value.settings.calendarTimeZone.length>128)throw new Error('Invalid calendar time zone.');try{new Intl.DateTimeFormat('en-GB',{timeZone:value.settings.calendarTimeZone});}catch(_){throw new Error('Unsupported calendar time zone.');}}
     if (value.settings.shifts !== undefined && (!Array.isArray(value.settings.shifts) || value.settings.shifts.some(s => !plain(s)))) throw new Error('Invalid work-shift settings.');
     for (const key of ['recurringTemplates', 'customLists']) {

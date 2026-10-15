@@ -1,11 +1,44 @@
 /* Appearance, calendar copies and weekly review use guarded app transactions. */
 (function(root){
- 'use strict';let app=null,copySession=null,lastOwner=null;
+ 'use strict';let app=null,copySession=null,lastOwner=null,profileOwner=null,profileDirty=false;
  const $=id=>document.getElementById(id),esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const duration=value=>{const n=Math.max(0,Math.round(value)),h=Math.floor(n/60),m=n%60;return h?h+'h'+(m?' '+m+'m':''):m+'m';};
  const dayLabel=date=>new Date(date+'T12:00:00Z').toLocaleDateString('en-GB',{timeZone:'UTC',weekday:'short',day:'numeric',month:'short'});
  function renderThemes(){if(!app)return;if(lastOwner!==app.account()){lastOwner=app.account();if(copySession)$('copyScheduleDialog').close();$('calendarViewZoneForm').dataset.dirty='false';$('calendarViewZone').value=app.snapshot().store.settings.calendarTimeZone||'';$('calendarViewZoneStatus').textContent='';$('themeStatus').textContent='';}const mode=app.snapshot().store.settings.theme||'system';document.querySelectorAll('[data-theme-choice]').forEach(button=>button.setAttribute('aria-pressed',String(mode===button.dataset.themeChoice)));$('themeSystem').checked=mode==='system';}
- function saveTheme(mode){try{const snapshot=app.snapshot(),next=JSON.parse(JSON.stringify(snapshot.store));next.settings.theme=mode;app.commit(JSON.stringify(snapshot),app.account(),next);renderThemes();$('themeStatus').textContent='Appearance saved.';}catch(error){$('themeStatus').textContent=error.message;renderThemes();}}
+ function localDateKey(){
+    const now=new Date();
+    return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+  }
+  function renderProfile(force=false){
+    if(!app)return;
+    const owner=app.account(),form=$('personalDetailsForm');
+    if(!form)return;
+    const changedOwner=profileOwner!==owner;
+    if(!force&&!changedOwner&&profileDirty)return;
+    profileOwner=owner;profileDirty=false;
+    const profile=app.snapshot().store.settings.profile||{};
+    $('personalFullName').value=typeof profile.fullName==='string'?profile.fullName:'';
+    $('personalBirthDate').value=typeof profile.dateOfBirth==='string'?profile.dateOfBirth:'';
+    $('personalBirthDate').max=localDateKey();
+    $('personalDetailsStatus').textContent=changedOwner?'':(profile.fullName||profile.dateOfBirth?'Saved for this planner.':'No personal details saved.');
+  }
+  function saveProfile(event){
+    event.preventDefault();
+    const status=$('personalDetailsStatus');
+    if(!app||profileOwner!==app.account()){status.textContent='Your account changed. Review the current planner’s details before saving.';renderProfile(true);return;}
+    const name=$('personalFullName').value.trim().replace(/\s+/g,' ');
+    const dob=$('personalBirthDate').value;
+    if(name.length>100||/[\u0000-\u001F\u007F]/.test(name)){status.textContent='Use a name of up to 100 characters without control characters.';return;}
+    if(dob&&(!root.WeekwiseData.validDate(dob)||dob>localDateKey())){status.textContent='Choose a valid date of birth that is not in the future.';return;}
+    try{
+      const snapshot=app.snapshot(),next=JSON.parse(JSON.stringify(snapshot.store));
+      if(name||dob)next.settings.profile={fullName:name,dateOfBirth:dob};else delete next.settings.profile;
+      app.commit(JSON.stringify(snapshot),profileOwner,next);
+      profileDirty=false;renderProfile(true);
+      status.textContent=name||dob?'Personal details saved for this planner.':'Personal details cleared from this planner.';
+    }catch(error){status.textContent=error.message||'Could not save details. Existing information is unchanged.';}
+  }
+function saveTheme(mode){try{const snapshot=app.snapshot(),next=JSON.parse(JSON.stringify(snapshot.store));next.settings.theme=mode;app.commit(JSON.stringify(snapshot),app.account(),next);renderThemes();$('themeStatus').textContent='Appearance saved.';}catch(error){$('themeStatus').textContent=error.message;renderThemes();}}
  function openCopy(ref){
   try{
    const snapshot=app.snapshot(),zone=snapshot.store.settings.calendarTimeZone||snapshot.store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -22,7 +55,18 @@
   }catch(error){app.announce(error.message);}
  }
  function init(bridge){
-  app=bridge;renderThemes();
+  app=bridge;renderThemes();renderProfile();
+   $('personalDetailsForm').addEventListener('input',()=>{
+     if(profileOwner!==app.account()){renderProfile(true);return;}
+     profileDirty=true;$('personalDetailsStatus').textContent='Unsaved changes.';
+   });
+   $('personalDetailsForm').addEventListener('submit',saveProfile);
+   $('personalDetailsClear').addEventListener('click',()=>{
+     if(profileOwner!==app.account()){renderProfile(true);return;}
+     $('personalFullName').value='';$('personalBirthDate').value='';
+     profileDirty=true;$('personalDetailsStatus').textContent='Fields cleared. Choose Save details to remove saved values.';
+     $('personalFullName').focus();
+   });
   document.addEventListener('click',event=>{
    const theme=event.target.closest('[data-theme-choice]');if(theme)saveTheme(theme.dataset.themeChoice);
    const copy=event.target.closest('[data-calendar-copy]');if(copy)openCopy({id:copy.dataset.rangeId,week:copy.dataset.rangeWeek});
@@ -61,5 +105,5 @@
   $('dashboardNote').textContent='Planned and completed durations describe your calendar, not measured work. Recorded focus is timer-recorded time. Occupied time counts overlaps once. Week runs Monday to Sunday in '+(runtime.store.settings.timeZone||'UTC')+'.';
   renderThemes();
  }
- root.WeekwisePersonalUI=Object.freeze({init,renderSummary});
+ root.WeekwisePersonalUI=Object.freeze({init,renderSummary,renderProfile});
 })(window);
