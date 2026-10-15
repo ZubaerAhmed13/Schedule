@@ -11,7 +11,7 @@ function taskHTML(t){
   const moveOptions=weekwiseRuntime.DAY_NAMES.map((d,i)=>`<option value="${i}" ${i===t.day?'selected':''}>${weekwiseRuntime.DAY_SHORT[i]}</option>`).join('');
   const dragHandle=!t.fixed?`<span class="drag-handle" draggable="true" data-drag-handle="${weekwiseRuntime.escapeHtml(t.id)}" title="Drag to move or swap" aria-label="Drag ${weekwiseRuntime.escapeHtml(t.title)} to another day or activity">⠿</span>`:'';
   return `<div class="task ${cls}" data-task-id="${weekwiseRuntime.escapeHtml(t.id)}"${WeekwiseTaskOptions.attributes(t)}>
-    <div class="tasktop">${dragHandle}<input class="taskcheck" type="checkbox" aria-label="Mark ${weekwiseRuntime.escapeHtml(t.title)} complete" data-done="${weekwiseRuntime.escapeHtml(t.id)}" ${t.done?'checked':''}><div class="taskmain"><div class="task-title">${weekwiseRuntime.escapeHtml(t.title)}</div><div class="taskmeta">${weekwiseRuntime.escapeHtml(weekwiseRuntime.formatTime(t))} · ${weekwiseRuntime.escapeHtml(weekwiseRuntime.durationLabel(t.duration))}${WeekwiseTaskOptions.breakAfter(t.breakAfter)?' · '+WeekwiseTaskOptions.breakAfter(t.breakAfter)+'m break after':''}</div><span class="pill">${weekwiseRuntime.escapeHtml(type)}</span>${t.unscheduled||t.start==null?'<span class="pill" style="background:var(--gold-soft);color:#8b6527">Needs time</span>':''}${t.conflict?'<span class="pill" style="background:var(--red-soft);color:#a3453b">Shift conflict</span>':''}${note}</div></div>
+    <div class="tasktop">${dragHandle}<input class="taskcheck" type="checkbox" aria-label="Mark ${weekwiseRuntime.escapeHtml(t.title)} complete" data-done="${weekwiseRuntime.escapeHtml(t.id)}" ${t.done?'checked':''}><div class="taskmain"><div class="task-title">${weekwiseRuntime.escapeHtml(t.title)}</div><div class="taskmeta">${weekwiseRuntime.escapeHtml(weekwiseRuntime.formatTime(t))} · ${weekwiseRuntime.escapeHtml(weekwiseRuntime.durationLabel(t.duration))}</div><span class="pill">${weekwiseRuntime.escapeHtml(type)}</span>${t.unscheduled||t.start==null?'<span class="pill" style="background:var(--gold-soft);color:#8b6527">Needs time</span>':''}${t.conflict?'<span class="pill" style="background:var(--red-soft);color:#a3453b">Shift conflict</span>':''}${note}</div></div>
     ${t.fixed?`<div class="tasktools"><span style="font-size:9px;color:var(--muted)">Fixed block · edit in Plan settings</span></div>`:`<div class="tasktools"><select aria-label="Move ${weekwiseRuntime.escapeHtml(t.title)} to another day" title="Move to another day" data-move="${weekwiseRuntime.escapeHtml(t.id)}">${moveOptions}</select><button class="iconbtn" aria-label="Edit ${weekwiseRuntime.escapeHtml(t.title)}" title="Edit activity and time (24-hour clock)" data-edit="${weekwiseRuntime.escapeHtml(t.id)}">✎</button><button class="iconbtn" aria-label="Delete ${weekwiseRuntime.escapeHtml(t.title)}" title="Delete activity" data-delete="${weekwiseRuntime.escapeHtml(t.id)}">×</button></div>`}
   </div>`;
 }
@@ -68,7 +68,7 @@ function renderDays(){
     }).join('');
     const nowTop=(weekwiseRuntime.now.getHours()*60+weekwiseRuntime.now.getMinutes())/60*hourHeight;
     const nowLine=''; // The current-time line is drawn once across the calendar below.
-    return `<div class="day-column ${isToday?'is-today':''} ${singleDay&&i===weekwiseRuntime.mobileDay?'mobile-selected':''}" data-day-index="${i}" style="grid-column:${i+2};grid-row:2"><div class="hour-lines"></div><div class="half-hour-lines"></div><div class="drop-surface" data-day-surface="${i}" data-day-index="${i}" role="button" tabindex="0" aria-label="Add event on ${day}"></div><div class="event-layer">${evs}${nowLine}</div>${dayEvents.filter(t=>t.day===i&&t.start!=null&&WeekwiseTaskOptions.breakAfter(t.breakAfter)>0).map(t=>{const from=Number(t.start)+Number(t.duration),length=Math.min(1440-from,WeekwiseTaskOptions.breakAfter(t.breakAfter));return length>0?'<div class="task-break-reservation" title="'+length+' minute recovery after '+weekwiseRuntime.escapeHtml(t.title)+'" style="top:'+(from/60*hourHeight)+'px;height:'+Math.max(6,length/60*hourHeight)+'px;--ww-task-accent:'+(WeekwiseTaskOptions.accent(t.taskColor)||'var(--ww-brand)')+'"><span>'+length+'m rest</span></div>':'';}).join('')}</div>`;
+    return `<div class="day-column ${isToday?'is-today':''} ${singleDay&&i===weekwiseRuntime.mobileDay?'mobile-selected':''}" data-day-index="${i}" style="grid-column:${i+2};grid-row:2"><div class="hour-lines"></div><div class="half-hour-lines"></div><div class="drop-surface" data-day-surface="${i}" data-day-index="${i}" role="button" tabindex="0" aria-label="Add event on ${day}"></div><div class="event-layer">${evs}${nowLine}</div></div>`;
   }).join('');
   const allDayHTML=allDayTasks.length?'<div class="backlog-strip all-day-strip"><span class="backlog-label">ALL DAY</span>'+allDayTasks.map(t=>'<button class="backlog-event all-day-event" data-edit="'+weekwiseRuntime.escapeHtml(t.id)+'" title="All-day event">'+weekwiseRuntime.escapeHtml(t.title)+' · '+weekwiseRuntime.DAY_NAMES[t.day]+'</button>').join('')+'</div>':'';
   const backlogHTML=backlog.length?'<div class="backlog-strip"><span class="backlog-label">NEEDS A TIME</span>'+backlog.map(t=>'<button class="backlog-event" data-edit="'+weekwiseRuntime.escapeHtml(t.id)+'"><span class="event-grip" data-drag-handle="'+weekwiseRuntime.escapeHtml(t.id)+'">⠿</span>'+weekwiseRuntime.escapeHtml(t.title)+' · '+weekwiseRuntime.DAY_NAMES[t.day]+'</button>').join('')+'<span class="drop-hint">Drag a grip to a day and time</span></div>':'';
@@ -212,7 +212,7 @@ function moveTask(id,newDay,preferredTime=null){if(!weekwiseRuntime.dataCanWrite
   const t=weekwiseRuntime.tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
   const blockers=weekwiseRuntime.tasks.filter(x=>x.day===newDay&&x.id!==t.id);
-  const slot=weekwiseRuntime.findSlot(newDay,t.duration+WeekwiseTaskOptions.breakAfter(t.breakAfter),preferred,0,1440,blockers);
+  const slot=weekwiseRuntime.findSlot(newDay,t.duration,preferred,0,1440,blockers);
   t.day=newDay;t.start=slot;t.unscheduled=slot===null;t.conflict=false;
   weekwiseRuntime.saveCurrent();weekwiseRuntime.renderAll();
   if(slot===null)weekwiseRuntime.showToast('No free time that day. Event moved to Needs a time.');
@@ -229,11 +229,11 @@ function swapTasks(idA,idB){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.pr
   let aStart=null,bStart=null;
   if(aOld.day===bOld.day){
     const blockers=remaining.filter(t=>t.day===aOld.day);
-    aStart=weekwiseRuntime.findSlot(aOld.day,a.duration+WeekwiseTaskOptions.breakAfter(a.breakAfter),bOld.start,0,1440,blockers);
-    if(aStart!==null)bStart=weekwiseRuntime.findSlot(bOld.day,b.duration+WeekwiseTaskOptions.breakAfter(b.breakAfter),aOld.start,0,1440,[...blockers,{start:aStart,duration:a.duration,breakAfter:a.breakAfter}]);
+    aStart=weekwiseRuntime.findSlot(aOld.day,a.duration,bOld.start,0,1440,blockers);
+    if(aStart!==null)bStart=weekwiseRuntime.findSlot(bOld.day,b.duration,aOld.start,0,1440,[...blockers,{start:aStart,duration:a.duration}]);
   }else{
-    aStart=weekwiseRuntime.findSlot(bOld.day,a.duration+WeekwiseTaskOptions.breakAfter(a.breakAfter),bOld.start,0,1440,remaining.filter(t=>t.day===bOld.day));
-    bStart=weekwiseRuntime.findSlot(aOld.day,b.duration+WeekwiseTaskOptions.breakAfter(b.breakAfter),aOld.start,0,1440,remaining.filter(t=>t.day===aOld.day));
+    aStart=weekwiseRuntime.findSlot(bOld.day,a.duration,bOld.start,0,1440,remaining.filter(t=>t.day===bOld.day));
+    bStart=weekwiseRuntime.findSlot(aOld.day,b.duration,aOld.start,0,1440,remaining.filter(t=>t.day===aOld.day));
   }
   if(aStart===null||bStart===null){weekwiseRuntime.showToast('Could not swap: there is no available time near one of those slots.');return;}
   a.day=bOld.day;a.start=aStart;a.unscheduled=false;b.day=aOld.day;b.start=bStart;b.unscheduled=false;
@@ -370,7 +370,7 @@ function weekwiseRenderBreaks(){
   items.forEach(function(t){const st=Math.max(0,Number(t.start)),en=Math.min(1440,st+Number(t.duration||0));if(covered!==null&&st-covered>=15)gaps.push({start:covered,end:st});covered=covered===null?en:Math.max(covered,en);});
   if(!gaps.length)return;
   const layer=document.createElement('div');layer.className='break-layer';layer.setAttribute('aria-hidden','true');
-  layer.innerHTML=gaps.map(function(g){const mins=g.end-g.start,top=g.start/60*hourHeight,pixels=mins/60*hourHeight,height=Math.max(10,Math.min(19,pixels-2)),label=mins>=60?(Math.floor(mins/60)+'h'+(mins%60?' '+(mins%60)+'m':'')+' break'):(mins+'m break');return '<span class="break-gap" style="top:'+(top+Math.max(1,(pixels-height)/2))+'px;height:'+height+'px" title="'+label+' between scheduled activities">'+label+'</span>';}).join('');
+  layer.innerHTML=gaps.map(function(g){const mins=g.end-g.start,top=g.start/60*hourHeight,pixels=mins/60*hourHeight,height=Math.max(10,Math.min(19,pixels-2)),label=mins>=60?(Math.floor(mins/60)+'h'+(mins%60?' '+(mins%60)+'m':'')+' gap'):(mins+'m gap');return '<span class="break-gap" style="top:'+(top+Math.max(1,(pixels-height)/2))+'px;height:'+height+'px" title="'+label+' between scheduled activities">'+label+'</span>';}).join('');
   column.appendChild(layer);
  });
 }

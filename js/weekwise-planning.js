@@ -91,7 +91,7 @@
       const t = record.task, offset=(ordinal(record.week)-base)+t.day;
       if (t.allDay) {busy.push([offset*DAY,(offset+Math.max(1,Math.ceil((t.duration||0)/DAY)))*DAY]);protectedRecords.push(record);}
       else if (t.start!=null && !t.unscheduled && t.duration>0) {
-        const a=offset*DAY+t.start, b=a+t.duration;busy.push([a,b]);breaks.push([b,b+Math.max(p.breakMinutes,(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(t.breakAfter))]);protectedRecords.push(record);timedRecords.push({...record,a,b,ref:record.week+'::'+t.id});
+        const a=offset*DAY+t.start, b=a+t.duration;busy.push([a,b]);breaks.push([b,b+p.breakMinutes]);protectedRecords.push(record);timedRecords.push({...record,a,b,ref:record.week+'::'+t.id});
       }
     }
     const conflicts=new Set();

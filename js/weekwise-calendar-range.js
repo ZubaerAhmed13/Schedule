@@ -33,15 +33,15 @@
    const duration=record.instant?(record.instant.end-record.instant.start)/60000:record.task.duration||30;
    return {ref,record,destination:slot(date,start,duration,zone,sourceZone)};
   });
-  const overlaps=(a,b,afterA=0,afterB=0)=>a.start<b.end+afterB*60000&&b.start<a.end+afterA*60000;
+  const overlaps=(a,b)=>a.start<b.end&&b.start<a.end;
   for(let i=0;i<changes.length;i++){
    const span=changes[i].destination.scheduleInstant,begin=parts(span.start,zone).date,end=parts(span.end-1,zone).date;
    for(const other of projected){
     if(selected.has(identity({week:other.week,id:other.task.id})))continue;
     const allDayEnd=ordinal(other.date)+Math.max(1,Math.ceil((other.duration||0)/1440));
-    if((other.instant&&overlaps(span,other.instant,(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(changes[i].record.task.breakAfter),(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(other.task.breakAfter)))||(other.allDay&&ordinal(other.date)<=ordinal(end)&&allDayEnd>ordinal(begin))||(other.zoneError&&ordinal(other.date)>=ordinal(begin)-1&&ordinal(other.date)<=ordinal(end)+1))throw new Error('The destination overlaps another activity or a clock time needing review. Nothing was moved.');
+    if((other.instant&&overlaps(span,other.instant))||(other.allDay&&ordinal(other.date)<=ordinal(end)&&allDayEnd>ordinal(begin))||(other.zoneError&&ordinal(other.date)>=ordinal(begin)-1&&ordinal(other.date)<=ordinal(end)+1))throw new Error('The destination overlaps another activity or a clock time needing review. Nothing was moved.');
    }
-   for(let j=0;j<i;j++)if(overlaps(span,changes[j].destination.scheduleInstant,(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(changes[i].record.task.breakAfter),(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(changes[j].record.task.breakAfter)))throw new Error('The swapped activities would overlap. Nothing was moved.');
+   for(let j=0;j<i;j++)if(overlaps(span,changes[j].destination.scheduleInstant))throw new Error('The swapped activities would overlap. Nothing was moved.');
   }
   const next=copy(store);
   for(const {ref}of changes)next.weeks[ref.week].tasks=next.weeks[ref.week].tasks.filter(task=>task.id!==ref.id);

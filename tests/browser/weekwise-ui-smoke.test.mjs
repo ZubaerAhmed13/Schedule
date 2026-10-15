@@ -1397,21 +1397,20 @@ test('Today, list counts and recorded-focus weeks share the saved clock across a
  }finally{await context.close();}
 });
 
-test('task colour, repeat removal, recovery break and calendar scroll chaining work together',async()=>{
+test('task colour, repeat removal, zone choices and calendar scroll chaining work together',async()=>{
  const {context,page}=await openPlanner({width:1440,height:1000});
  try{
   await page.locator('#addTaskBtn').click();await page.locator('#modalTitleInput').fill('Repeat with recovery');
   await page.locator('#modalDay').selectOption(String(new Date().getDay()));
   await page.locator('#modalTime').fill('17:30');await page.locator('#modalEndTime').fill('18:00');
   await page.locator('#taskAppearanceOptions > summary').click();
-  await page.locator('#modalTaskColor').selectOption('purple');await page.locator('#modalBreakAfter').selectOption('15');
+  await page.locator('#modalTaskColor').selectOption('purple');
   await (await visibleControl(page,'#modalRecurrence')).selectOption('weekly');
   await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
   const before=await readPlannerStore(page),record=Object.values(before.weeks).flatMap(w=>w.tasks).find(t=>t.title==='Repeat with recovery');
-  assert.ok(record?.seriesId);assert.equal(record.taskColor,'purple');assert.equal(record.breakAfter,15);
+  assert.ok(record?.seriesId);assert.equal(record.taskColor,'purple');assert.equal(await page.locator('#modalBreakAfter').count(),0);
   assert.ok(Object.values(before.weeks).flatMap(w=>w.tasks).filter(t=>t.seriesId===record.seriesId).length>=2);
   assert.ok(await page.locator('#daysGrid [data-task-color="purple"]').count()>0);
-  assert.match(await page.locator('#daysGrid .range-event[data-range-id="'+record.id+'"] .event-time').first().innerText(),/15m recovery afterward/);
   assert.ok(await page.locator('#calendarZones option').count()>25);
   assert.equal(await page.locator('#daysGrid').evaluate(el=>getComputedStyle(el).overscrollBehaviorY),'auto');
   await page.locator('#daysGrid [data-range-edit][data-range-id="'+record.id+'"]').first().click();
@@ -1423,5 +1422,29 @@ test('task colour, repeat removal, recovery break and calendar scroll chaining w
   const after=await readPlannerStore(page),left=Object.values(after.weeks).flatMap(w=>w.tasks).filter(t=>t.seriesId===record.seriesId);
   assert.equal(left.length,0);assert.ok(after.recurringTemplates.find(rule=>rule.id===record.seriesId)?.endDate);
   assert.ok(after.taskHistory.some(entry=>entry.items.some(item=>item.task.id===record.id)),'removed tasks remain reversible');
+ }finally{await context.close();}
+});
+
+test('visible weekly and mobile calendars automatically label gaps between actual tasks, without reserving time',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await createScheduledTask(page,'Morning study gap marker');
+  await page.locator('#addTaskBtn').click();await page.locator('#modalTitleInput').fill('Later class gap marker');
+  await page.locator('#modalDay').selectOption(String(new Date().getDay()));
+  await page.locator('#modalTime').fill('19:00');await page.locator('#modalEndTime').fill('19:30');
+  await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const before=await readPlannerStore(page);
+  assert.equal(await page.locator('#modalBreakAfter').count(),0,'no unwanted reserved break setting');
+  await page.locator('#weekViewBtn').click();
+  const markers=page.locator('#daysGrid .range-gap-marker');
+  await markers.first().waitFor({state:'attached'});
+  assert.ok((await markers.allTextContents()).some(t=>t.includes('1h gap')));
+  const annotation=await page.locator('#daysGrid .range-gap-marker').filter({hasText:'1h gap'}).first().getAttribute('aria-label');
+  assert.match(annotation,/18:00 and 19:00/);
+  await page.setViewportSize({width:390,height:844});
+  const mobile=page.locator('#daysGrid .mobile-week-gap');
+  await mobile.first().waitFor({state:'attached'});
+  assert.ok((await mobile.allTextContents()).some(t=>t.includes('1h gap')));
+  assert.deepEqual(await readPlannerStore(page),before,'gap display never alters saved task dates or durations');
  }finally{await context.close();}
 });

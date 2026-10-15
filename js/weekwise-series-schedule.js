@@ -10,7 +10,7 @@
   const first=new Date(Date.UTC(year,month,1)),last=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0)).getUTCDate();
   first.setUTCDate(Math.min(d,last));return first.toISOString().slice(0,10);
  }
- function interval(record){const t=record.task,a=(day(record.week)+t.day)*1440;return t.allDay?[a,a+1440]:t.start!=null&&!t.unscheduled?[a+t.start,a+t.start+(t.duration||0)+(root.WeekwiseTaskOptions?.breakAfter?.(t.breakAfter)||0)]:null;}
+ function interval(record){const t=record.task,a=(day(record.week)+t.day)*1440;return t.allDay?[a,a+1440]:t.start!=null&&!t.unscheduled?[a+t.start,a+t.start+(t.duration||0)]:null;}
  function preview(store,request){
   root.WeekwiseData.validateStore(store);
   const {seriesId,fromDate,newStartDate,frequency,start,duration,endDate=null,allDay=false,zone=store.settings.timeZone||'UTC',createdAt=new Date().toISOString()}=request||{};
