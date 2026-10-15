@@ -41,6 +41,7 @@ test('compact phone calendar controls keep five modes and 44-pixel actions befor
     await page.locator('#'+view+'ViewBtn').click();assert.equal(await page.locator('#'+view+'ViewBtn').getAttribute('aria-pressed'),'true');
     for(const selector of ['#dayViewBtn','#weekViewBtn','#monthViewBtn','#agendaViewBtn','#yearViewBtn','#prevWeek','#thisWeek','#nextWeek','#remindersQuickBtn','#addTaskBtn']){const box=await page.locator(selector).boundingBox();assert.ok(box.width>=43.9&&box.height>=43.9,JSON.stringify({selector,box,width}));assert.ok(box.x>=0&&box.x+box.width<=width+1,JSON.stringify({selector,box,width}));}
     assert.equal(await page.getByRole('button',{name:'New event',exact:true}).isVisible(),true);assert.equal(await page.getByRole('button',{name:'Reminder',exact:true}).isVisible(),true);
+    const navigation=await page.locator('.week-control').boundingBox(),label=await page.locator('#weekLabel').boundingBox();assert.ok(navigation.x+navigation.width<=label.x+1,JSON.stringify({width,view,navigation,label}));
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
    }
    await page.locator('#weekViewBtn').click();assert.deepEqual(await canonical(page),before);
