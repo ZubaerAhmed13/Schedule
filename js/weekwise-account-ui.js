@@ -17,7 +17,7 @@
  async function submit(event){
   event.preventDefault();if(busy||!configured)return;
   if(owner!==app.owner()){configured=false;controls();status('Your account changed. Close this dialog and review the current account.');return;}
-  if($('accountErasePhrase').value!==phrase||!$('accountEraseBackup').checked){status('Type the exact confirmation phrase and acknowledge the backup requirement.');return;}
+  if($('accountErasePhrase').value!==phrase||!$('accountEraseBackup').checked){status('Type the exact confirmation phrase and acknowledge permanent account deletion.');return;}
   if(!confirm('Permanently delete this Weekwise account and its cloud planner? This cannot be undone.'))return;
   const captured=owner,password=$('accountErasePassword').value;let deleted=false;busy=true;controls();status('Reauthenticating and requesting account erasure…');
   try{
