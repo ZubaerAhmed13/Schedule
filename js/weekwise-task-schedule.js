@@ -1,6 +1,26 @@
 /* Editor clock arithmetic and date-aware placement over canonical records. */
 (function(root){
  'use strict';const model=()=>root.WeekwiseCalendarRange;
+ // Dates are presentation; existing Sunday buckets and task IDs stay canonical.
+ function destination(date){
+  if(!root.WeekwiseData.validDate(date))throw new Error('Choose a valid activity date.');
+  const ordinal=model().ordinal(date),day=((ordinal+4)%7+7)%7;
+  return {date,day,week:model().key(ordinal-day)};
+ }
+ function dateChoices(date){return model().range(destination(date).date,1).map(destination);}
+ function relocate(store,sourceWeek,id,date){
+  root.WeekwiseData.validateStore(store);const target=destination(date);
+  const next=JSON.parse(JSON.stringify(store)),source=next.weeks[sourceWeek],task=source?.tasks.find(t=>t.id===id);
+  if(!task)throw new Error('This activity is no longer available.');
+  if(target.week!==sourceWeek){
+   if(next.weeks[target.week]?.tasks.some(t=>t.id===id))throw new Error('This activity already exists on its destination week.');
+   source.tasks=source.tasks.filter(t=>t.id!==id);
+   if(!next.weeks[target.week])next.weeks[target.week]={tasks:[]};
+   next.weeks[target.week].tasks.push(task);
+  }
+  task.day=target.day;
+  return root.WeekwiseData.validateStore(next);
+ }
  function duration(start,end,nextDay=false){
   if(!Number.isInteger(start)||start<0||start>=1440||!Number.isInteger(end)||end<0||end>1440)throw new Error('Enter valid 24-hour start and end times.');
   const result=end+(nextDay?1440:0)-start;
@@ -28,5 +48,5 @@
   for(const candidate of candidates){let slot;try{slot=makeSlot(candidate);}catch(_){continue;}if(free(slot))return slot;}
   return {start:null};
  }
- root.WeekwiseTaskSchedule=Object.freeze({duration,placement});
+ root.WeekwiseTaskSchedule=Object.freeze({duration,placement,destination,dateChoices,relocate});
 })(typeof window!=='undefined'?window:globalThis);

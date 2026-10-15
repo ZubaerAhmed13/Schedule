@@ -3,7 +3,9 @@
 'use strict';
 function create(weekwiseRuntime){
 function currentDayHasConfiguredShift(day){
-  return weekwiseRuntime.tasks.some(t=>Number(t.day)===Number(day)&&(t.workday||/^work day$/i.test(t.title||'')));
+  const option=weekwiseRuntime.$('modalDay')?.selectedOptions?.[0],week=option?.dataset.week||weekwiseRuntime.currentWeek;
+  const rows=week===weekwiseRuntime.currentWeek?weekwiseRuntime.tasks:(weekwiseRuntime.store.weeks[week]?.tasks||[]);
+  return rows.some(t=>Number(t.day)===Number(day)&&(t.workday||/^work day$/i.test(t.title||'')));
 }
 
 function updateActivityTemplateStates(){
@@ -111,7 +113,22 @@ function renderDraftNotice(){const result=WeekwiseDrafts.read(localStorage,weekw
 
 function retireEditorDraft(){const result=WeekwiseDrafts.read(localStorage,weekwiseRuntime.currentDataOwner);if(result?.draft&&result.draft.sessionId===weekwiseRuntime.editorSession?.sessionId){WeekwiseDrafts.discard(localStorage,weekwiseRuntime.currentDataOwner,result.raw);weekwiseRuntime.renderDraftNotice();}}
 
-function restoreEditorDraft(){try{const result=WeekwiseDrafts.read(localStorage,weekwiseRuntime.currentDataOwner);if(!result||result.error)throw new Error(result?.error||'No saved editor draft.');if(weekwiseRuntime.$('taskModal').classList.contains('show')&&weekwiseRuntime.taskModalFingerprint()!==weekwiseRuntime.taskModalInitialFingerprint){weekwiseRuntime.showToast('Save or close your current editor before restoring a draft.');return;}const draft=result.draft,id=draft.fields.editTaskId||'',record=id?weekwiseRuntime.workspaceRecords().find(r=>r.task.id===id&&r.week===draft.week):null,same=record&&draft.base===JSON.stringify(record.task);if(same){weekwiseRuntime.openWorkspaceRecord(id,draft.week);}else weekwiseRuntime.openTaskModal(null,Number(draft.fields.modalDay)||weekwiseRuntime.now.getDay(),null,'inbox');const fields={...draft.fields};if(!same){fields.editTaskId='';fields.modalNoSchedule=true;fields.modalAllDay=false;fields.modalRecurrence='none';fields.modalRecurrenceScope='occurrence';}for(const [name,value]of Object.entries(fields)){const el=weekwiseRuntime.$(name);if(!el||!weekwiseRuntime.$('taskForm').contains(el))continue;if(el.type==='checkbox')el.checked=!!value;else if(el.tagName==='SELECT'){if(![...el.options].some(o=>o.value===value)){if(name!=='modalDuration'||!/^\d+$/.test(value)||Number(value)>1440)continue;const option=document.createElement('option');option.value=value;option.textContent=weekwiseRuntime.durationLabel(Number(value));el.add(option);}el.value=value;}else el.value=value;}weekwiseRuntime.editorSession={owner:weekwiseRuntime.currentDataOwner,sessionId:draft.sessionId,week:weekwiseRuntime.currentWeek,base:same?draft.base:null};weekwiseRuntime.updateModalScheduleVisibility();weekwiseRuntime.updateRecurringBulkVisibility();WeekwiseInterface.prepareEditor();updateTaskColourPreview();weekwiseRuntime.hideActivitySuggestions();weekwiseRuntime.showToast(same?'Draft restored to its original activity. Save when ready.':id?'The original activity changed. Recovered as a new unscheduled draft; review before saving.':'Draft restored. Review and save when ready.');weekwiseRuntime.$('modalTitleInput').focus({preventScroll:true});}catch(error){weekwiseRuntime.showToast(error.message);}}
+function restoreEditorDraft(){try{const result=WeekwiseDrafts.read(localStorage,weekwiseRuntime.currentDataOwner);if(!result||result.error)throw new Error(result?.error||'No saved editor draft.');if(weekwiseRuntime.$('taskModal').classList.contains('show')&&weekwiseRuntime.taskModalFingerprint()!==weekwiseRuntime.taskModalInitialFingerprint){weekwiseRuntime.showToast('Save or close your current editor before restoring a draft.');return;}const draft=result.draft,id=draft.fields.editTaskId||'',record=id?weekwiseRuntime.workspaceRecords().find(r=>r.task.id===id&&r.week===draft.week):null,same=record&&draft.base===JSON.stringify(record.task);if(same){weekwiseRuntime.openWorkspaceRecord(id,draft.week);}else weekwiseRuntime.openTaskModal(null,Number(draft.fields.modalDay)||weekwiseRuntime.now.getDay(),null,'inbox');const fields={...draft.fields};if(!same){fields.editTaskId='';fields.modalNoSchedule=true;fields.modalAllDay=false;fields.modalRecurrence='none';fields.modalRecurrenceScope='occurrence';}for(const [name,value]of Object.entries(fields)){const el=weekwiseRuntime.$(name);if(!el||!weekwiseRuntime.$('taskForm').contains(el))continue;if(el.type==='checkbox')el.checked=!!value;else if(el.tagName==='SELECT'){if(![...el.options].some(o=>o.value===value)){if(name!=='modalDuration'||!/^\d+$/.test(value)||Number(value)>1440)continue;const option=document.createElement('option');option.value=value;option.textContent=weekwiseRuntime.durationLabel(Number(value));el.add(option);}el.value=value;}else el.value=value;}weekwiseRuntime.editorSession={owner:weekwiseRuntime.currentDataOwner,sessionId:draft.sessionId,week:weekwiseRuntime.currentWeek,base:same?draft.base:null};if(WeekwiseData.validDate(fields.modalDate))refreshEditorDates(fields.modalDate);else refreshEditorDates(weekwiseRuntime.dateKey(weekwiseRuntime.dayDate(weekwiseRuntime.currentWeek,Number(weekwiseRuntime.$('modalDay').value))));weekwiseRuntime.updateModalScheduleVisibility();weekwiseRuntime.updateRecurringBulkVisibility();WeekwiseInterface.prepareEditor();updateTaskColourPreview();weekwiseRuntime.hideActivitySuggestions();weekwiseRuntime.showToast(same?'Draft restored to its original activity. Save when ready.':id?'The original activity changed. Recovered as a new unscheduled draft; review before saving.':'Draft restored. Review and save when ready.');weekwiseRuntime.$('modalTitleInput').focus({preventScroll:true});}catch(error){weekwiseRuntime.showToast(error.message);}}
+
+function refreshEditorDates(date){
+ const select=weekwiseRuntime.$('modalDay'),picker=weekwiseRuntime.$('modalDate');
+ const choices=WeekwiseTaskSchedule.dateChoices(date),chosen=WeekwiseTaskSchedule.destination(date);
+ select.innerHTML=choices.map(choice=>'<option value="'+choice.day+'" data-date="'+choice.date+'" data-week="'+choice.week+'">'+weekwiseRuntime.escapeHtml(weekwiseRuntime.fmtDate(weekwiseRuntime.parseKey(choice.date),{weekday:'short',day:'numeric',month:'short',year:'numeric'}))+'</option>').join('');
+ select.value=String(chosen.day);picker.value=date;picker.setCustomValidity('');
+}
+
+function wireEditorDates(){
+ const select=weekwiseRuntime.$('modalDay'),picker=weekwiseRuntime.$('modalDate'),button=weekwiseRuntime.$('modalDatePickerButton'),field=weekwiseRuntime.$('modalDateField');
+ field.hidden=true;picker.disabled=true;button.setAttribute('aria-expanded','false');
+ button.onclick=()=>{field.hidden=!field.hidden;picker.disabled=field.hidden;button.setAttribute('aria-expanded',String(!field.hidden));if(!field.hidden)picker.focus();else refreshEditorDates(select.selectedOptions[0].dataset.date);};
+ picker.onchange=()=>{if(!WeekwiseData.validDate(picker.value)){picker.setCustomValidity('Choose a valid activity date.');return;}refreshEditorDates(picker.value);weekwiseRuntime.pendingCalendarSlot=null;weekwiseRuntime.updateActivityTemplateStates();};
+ select.onchange=()=>{picker.value=select.selectedOptions[0].dataset.date;picker.setCustomValidity('');weekwiseRuntime.pendingCalendarSlot=null;weekwiseRuntime.updateActivityTemplateStates();};
+}
 
 function openTaskModal(id=null,day=weekwiseRuntime.mobileDay,startAt=null,defaultListId=null){
   weekwiseRuntime.pendingCalendarSlot=null;
@@ -120,9 +137,9 @@ function openTaskModal(id=null,day=weekwiseRuntime.mobileDay,startAt=null,defaul
   if(id&&!t){weekwiseRuntime.showToast('This activity is no longer available. It may have been moved or deleted. Refresh the list and try again.');return;}
   weekwiseRuntime.renderTaskTemplateOptions();weekwiseRuntime.$('taskTemplateSelect').value='';weekwiseRuntime.$('deleteTaskTemplateBtn').disabled=true;
   weekwiseRuntime.$('editTaskId').value=t?.id||'';if(!t)weekwiseRuntime.clearActivityTemplateSelection();else weekwiseRuntime.hideActivitySuggestions();weekwiseRuntime.$('modalTitle').textContent=t?'Edit task':'Add a task';
-  weekwiseRuntime.$('modalDescription').textContent=t?'To move this activity, choose a new day and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the day, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
+  weekwiseRuntime.$('modalDescription').textContent=t?'To move this activity, choose a new date and start time, then tap Save changes. If the time is busy, Weekwise will choose the nearest available slot.':'Choose the date, start time, and duration. Enter HH:MM (for example, 17:30), or type 1730 and it will format automatically.';
   weekwiseRuntime.$('modalDescription').textContent+=' Clock fields use '+(weekwiseRuntime.store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone)+'.';if(t?.recurrenceScheduleReview){const review=t.recurrenceScheduleReview;weekwiseRuntime.$('modalDescription').textContent+=' Recurring time needs review: '+(Number.isFinite(review.preferred)?weekwiseRuntime.minsTime(review.preferred)+' on '+review.date+' in '+review.zone+'. ':'')+(review.reason||'Choose reviewed hours.');}
-  weekwiseRuntime.$('modalTitleInput').value=t?.title||'';weekwiseRuntime.$('modalDay').value=String(t?.day??day);weekwiseRuntime.$('modalCategory').value=t?.type||'life';
+  weekwiseRuntime.$('modalTitleInput').value=t?.title||'';wireEditorDates();refreshEditorDates(weekwiseRuntime.dateKey(weekwiseRuntime.dayDate(weekwiseRuntime.currentWeek,t?.day??day)));weekwiseRuntime.$('modalCategory').value=t?.type||'life';
   const folderView=weekwiseRuntime.workspaceView.startsWith('folder:'),selectedFolder=folderView?weekwiseRuntime.workspaceView.slice(7):'';
   const folderExisting=folderView?weekwiseRuntime.workspaceRecords().find(r=>(r.task.folderName||weekwiseRuntime.defaultFolderName(r.listId))===selectedFolder):null;
   weekwiseRuntime.$('modalListId').value=t?weekwiseRuntime.inferredListId(t):(defaultListId||(folderExisting?.listId)||'career');
@@ -138,6 +155,7 @@ function openTaskModal(id=null,day=weekwiseRuntime.mobileDay,startAt=null,defaul
   [2,3,4,5].forEach((n,index)=>{const input=weekwiseRuntime.$('modalReminderAt'+n);if(input)input.value=existingReminderTimes[index+1]?WeekwiseZoneConversion.reminderField(t,existingReminderTimes[index+1],weekwiseRuntime.store.settings.timeZone):'';});
   const extraReminderDetails=document.querySelector('.task-extra-reminders');if(extraReminderDetails)extraReminderDetails.open=existingReminderTimes.length>1;
   weekwiseRuntime.$('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
+  weekwiseRuntime.$('modalAttachments').value=Array.isArray(t?.attachments)?t.attachments.join('\n'):'';
   if(!t&&weekwiseRuntime.workspaceView.startsWith('tag:'))weekwiseRuntime.$('modalTags').value=weekwiseRuntime.workspaceView.slice(4);
   weekwiseRuntime.$('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
   weekwiseRuntime.$('modalAllDay').checked=!!t?.allDay;
@@ -188,6 +206,8 @@ function updateRecurringBulkVisibility(){const field=weekwiseRuntime.$('recurrin
 function saveModalTask(e){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.preventDefault?.();return;}
   e.preventDefault();
   const id=weekwiseRuntime.$('editTaskId').value,title=weekwiseRuntime.$('modalTitleInput').value.trim();if(!title)return;
+  const session=weekwiseRuntime.editorSession;
+  if(!session||session.owner!==weekwiseRuntime.currentDataOwner||session.week!==weekwiseRuntime.currentWeek||(id&&session.base!==JSON.stringify(weekwiseRuntime.tasks.find(t=>t.id===id)))){weekwiseRuntime.showToast('This activity or account changed while editing. Reopen it to review the latest version.');return;}
   if(id){
     const existing=weekwiseRuntime.tasks.find(t=>t.id===id);
     if(!existing){weekwiseRuntime.showToast('This activity is no longer available. Refresh the current view before saving.');return;}
@@ -205,7 +225,9 @@ function saveModalTask(e){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.prev
   }
   const day=Number(weekwiseRuntime.$('modalDay').value),type=weekwiseRuntime.$('modalCategory').value,note=weekwiseRuntime.$('modalNote').value.trim(),recurrence=weekwiseRuntime.$('modalRecurrence').value;
   const taskColor=WeekwiseTaskOptions.colour(weekwiseRuntime.$('modalTaskColor').value);
-  const occurrenceDate=weekwiseRuntime.dateKey(weekwiseRuntime.dayDate(weekwiseRuntime.currentWeek,day));
+  let destination;try{destination=WeekwiseTaskSchedule.destination(weekwiseRuntime.$('modalDay').selectedOptions[0].dataset.date);}catch(error){weekwiseRuntime.showToast(error.message);return;}
+  const occurrenceDate=destination.date;
+  if(id&&destination.week!==weekwiseRuntime.currentWeek&&weekwiseRuntime.store.weeks[destination.week]?.tasks.some(task=>task.id===id)){weekwiseRuntime.showToast('This activity already exists in the destination week. Review it before moving; nothing was changed.');return;}
   const listId=weekwiseRuntime.$('modalListId').value,folderName=weekwiseRuntime.$('modalFolder').value.trim()||weekwiseRuntime.defaultFolderName(weekwiseRuntime.$('modalListId').value),sectionName=weekwiseRuntime.$('modalSection').value.trim(),priority=weekwiseRuntime.$('modalPriority').value,status=weekwiseRuntime.$('modalStatus').value,importance=weekwiseRuntime.$('modalImportance').value,urgency=weekwiseRuntime.$('modalUrgency').value,dueDate=weekwiseRuntime.$('modalDueDate').value||null,reminderInputs=[1,2,3,4,5].map(n=>weekwiseRuntime.$('modalReminderAt'+(n===1?'':n)).value||'');
   let reminderFields;try{reminderFields=WeekwiseZoneConversion.readReminderFields(id?weekwiseRuntime.tasks.find(t=>t.id===id):{},reminderInputs,weekwiseRuntime.store.settings.timeZone);}catch(error){weekwiseRuntime.showToast('Reminder needs review: '+error.message);return;}const reminderTimes=reminderFields.values,reminderAt=reminderTimes[0]||null;
   const focusEstimateRaw=weekwiseRuntime.$('modalFocusEstimate').value.trim();
@@ -218,8 +240,10 @@ function saveModalTask(e){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.prev
   const subtasks=weekwiseRuntime.$('modalSubtasks').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,40).map(title=>({id:weekwiseRuntime.uid(),title,done:false}));
   if(!id&&!noSchedule&&title.toLowerCase()==='work day'&&weekwiseRuntime.currentDayHasConfiguredShift(day)){weekwiseRuntime.showToast(`A Work day block is already scheduled on ${weekwiseRuntime.DAY_NAMES[day]}. Choose another day or use Work day settings.`);weekwiseRuntime.updateActivityTemplateStates();return;}
   let actualStart=null,seriesId=null,templateFields={title,type,schedulingMode,estimatedDurationMinutes,requiresCompletion,duration,start:preferred,allDay,taskColor,note,recurrence,listId,folderName,sectionName,priority,status,focusEstimateMinutes,importance,urgency,dueDate,reminderAt,reminderTimes,tags,subtasks,attachments};
-  const original=id?weekwiseRuntime.tasks.find(t=>t.id===id):null;
-  let editorSlot=null;if(!noSchedule&&!allDay){try{editorSlot=WeekwiseTaskSchedule.placement(weekwiseRuntime.plannerSnapshot().store,{week:weekwiseRuntime.currentWeek,id:id||null,day,start:preferred,duration,exact:weekwiseRuntime.pendingCalendarSlot});}catch(error){weekwiseRuntime.showToast(error.message);return;}}
+  const original=id?weekwiseRuntime.tasks.find(t=>t.id===id):null,originalOccurrenceDate=original?.occurrenceDate;
+  if(original?.seriesId&&occurrenceDate!==weekwiseRuntime.dateKey(weekwiseRuntime.dayDate(weekwiseRuntime.currentWeek,original.day))&&weekwiseRuntime.$('modalRecurrenceScope').value!=='occurrence'){weekwiseRuntime.showToast('Use Review recurring schedule to move future or entire series. Choose Only this occurrence for a single date change.');return;}
+  let savedTaskId=id;
+  let editorSlot=null;if(!noSchedule&&!allDay){try{const placementStore=weekwiseRuntime.plannerSnapshot().store;if(id&&destination.week!==weekwiseRuntime.currentWeek)placementStore.weeks[weekwiseRuntime.currentWeek].tasks=placementStore.weeks[weekwiseRuntime.currentWeek].tasks.filter(t=>t.id!==id);editorSlot=WeekwiseTaskSchedule.placement(placementStore,{week:destination.week,id:id||null,day,start:preferred,duration,exact:weekwiseRuntime.pendingCalendarSlot});}catch(error){weekwiseRuntime.showToast(error.message);return;}}
   if(original?.seriesId&&weekwiseRuntime.$('modalRecurringBulkMetadata').checked&&recurrence!=='none'&&weekwiseRuntime.$('modalRecurrenceScope').value!=='occurrence'){
     const snapshot=JSON.parse(JSON.stringify(weekwiseRuntime.store));
     snapshot.weeks[weekwiseRuntime.currentWeek]={...(snapshot.weeks[weekwiseRuntime.currentWeek]||{}),tasks:JSON.parse(JSON.stringify(weekwiseRuntime.tasks))};
@@ -250,28 +274,33 @@ function saveModalTask(e){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.prev
         if(oldSeriesId){if(weekwiseRuntime.$('modalRecurrenceScope').value==='occurrence'){const rule=weekwiseRuntime.store.recurringTemplates.find(r=>r.id===oldSeriesId);if(rule)rule.excludedDates=[...new Set([...(rule.excludedDates||[]),t.occurrenceDate||occurrenceDate])];t.seriesId=null;t.recurrence='none';t.occurrenceDate=null;}else weekwiseRuntime.stopRecurringSeries(t,occurrenceDate,weekwiseRuntime.$('modalRecurrenceScope').value);}
         else{t.recurrence='none';t.seriesId=null;t.occurrenceDate=null;}
       }else{
-        seriesId=oldSeriesId||weekwiseRuntime.uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
+        seriesId=oldSeriesId||weekwiseRuntime.uid();t.seriesId=seriesId;t.occurrenceDate=oldSeriesId&&weekwiseRuntime.$('modalRecurrenceScope').value==='occurrence'?(originalOccurrenceDate||occurrenceDate):occurrenceDate;t.recurrence=recurrence;
         if(oldSeriesId&&weekwiseRuntime.$('modalRecurrenceScope').value==='occurrence'){t.recurrenceOverride=true;}else{const anchor=weekwiseRuntime.$('modalRecurrenceScope').value==='series'?(weekwiseRuntime.store.recurringTemplates.find(r=>r.id===seriesId)?.startDate||occurrenceDate):occurrenceDate;weekwiseRuntime.upsertRecurringTemplate(seriesId,anchor,templateFields);}
       }
     }
   }else{
     weekwiseRuntime.createTask(day,title,type,duration,null,{min:0,max:1440,custom:true,note});
-    const t=weekwiseRuntime.tasks[weekwiseRuntime.tasks.length-1];t.start=editorSlot?.start??null;t.scheduleInstant=editorSlot?.scheduleInstant;t.taskColor=taskColor;t.schedulingMode=schedulingMode;t.unscheduled=noSchedule||(!allDay&&t.start===null);t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.focusEstimateMinutes=focusEstimateMinutes;t.estimatedDurationMinutes=estimatedDurationMinutes;t.requiresCompletion=requiresCompletion;t.todayPriority=todayPriority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderInstants=reminderFields.instants;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.reminderNotifiedTimes=[];t.tags=tags;t.attachments=attachments;t.subtasks=subtasks;actualStart=t.start;
+    const t=weekwiseRuntime.tasks[weekwiseRuntime.tasks.length-1];savedTaskId=t.id;t.start=editorSlot?.start??null;t.scheduleInstant=editorSlot?.scheduleInstant;t.taskColor=taskColor;t.schedulingMode=schedulingMode;t.unscheduled=noSchedule||(!allDay&&t.start===null);t.allDay=allDay;t.allDayDate=allDay?occurrenceDate:null;t.listId=listId;t.folderName=folderName;t.sectionName=sectionName;t.priority=priority;t.status=status;t.done=status==='done';t.focusEstimateMinutes=focusEstimateMinutes;t.estimatedDurationMinutes=estimatedDurationMinutes;t.requiresCompletion=requiresCompletion;t.todayPriority=todayPriority;t.importance=importance;t.urgency=urgency;t.dueDate=dueDate;t.reminderInstants=reminderFields.instants;t.reminderTimes=reminderTimes;t.reminderAt=reminderAt;t.reminderNotifiedAt=null;t.reminderNotifiedTimes=[];t.tags=tags;t.attachments=attachments;t.subtasks=subtasks;actualStart=t.start;
     if(weekwiseRuntime.pendingCalendarSlot&&weekwiseRuntime.pendingCalendarSlot.week===weekwiseRuntime.currentWeek&&weekwiseRuntime.pendingCalendarSlot.day===day&&weekwiseRuntime.pendingCalendarSlot.start===t.start&&weekwiseRuntime.pendingCalendarSlot.duration===t.duration&&!noSchedule&&!allDay)t.scheduleInstant=weekwiseRuntime.pendingCalendarSlot.scheduleInstant;
     if(recurrence!=='none'){
       seriesId=weekwiseRuntime.uid();t.seriesId=seriesId;t.occurrenceDate=occurrenceDate;t.recurrence=recurrence;
       weekwiseRuntime.upsertRecurringTemplate(seriesId,occurrenceDate,templateFields);
     }else t.recurrence='none';
   }
+  if(destination.week!==weekwiseRuntime.currentWeek){
+    weekwiseRuntime.store.weeks[weekwiseRuntime.currentWeek]={...weekwiseRuntime.store.weeks[weekwiseRuntime.currentWeek],tasks:JSON.parse(JSON.stringify(weekwiseRuntime.tasks))};
+    weekwiseRuntime.store=WeekwiseTaskSchedule.relocate(weekwiseRuntime.store,weekwiseRuntime.currentWeek,savedTaskId,occurrenceDate);
+    weekwiseRuntime.tasks=JSON.parse(JSON.stringify(weekwiseRuntime.store.weeks[weekwiseRuntime.currentWeek].tasks));
+  }
   if(seriesId||recurrence!=='none')weekwiseRuntime.materializeRecurringRange(weekwiseRuntime.parseKey(weekwiseRuntime.currentWeek),weekwiseRuntime.parseKey(weekwiseRuntime.addDaysToKey(weekwiseRuntime.currentWeek,89)));
-  weekwiseRuntime.saveCurrent();let retainedDraftMessage='';try{weekwiseRuntime.retireEditorDraft();}catch(error){retainedDraftMessage='Task saved; its draft is retained: '+error.message;}weekwiseRuntime.closeTaskModal(true);weekwiseRuntime.renderAll();
+  weekwiseRuntime.saveCurrent();let retainedDraftMessage='';try{weekwiseRuntime.retireEditorDraft();}catch(error){retainedDraftMessage='Task saved; its draft is retained: '+error.message;}weekwiseRuntime.closeTaskModal(true);if(destination.week!==weekwiseRuntime.currentWeek){weekwiseRuntime.currentWeek=destination.week;weekwiseRuntime.mobileDay=day;weekwiseRuntime.tasks=JSON.parse(JSON.stringify(weekwiseRuntime.store.weeks[destination.week].tasks));}weekwiseRuntime.renderAll();
   if(retainedDraftMessage){weekwiseRuntime.showToast(retainedDraftMessage);return;}
   if(recurrence!=='none')weekwiseRuntime.showToast('Task saved · repeating '+recurrence+'.');
   else if(allDay)weekwiseRuntime.showToast('All-day event saved for '+weekwiseRuntime.fmtDate(weekwiseRuntime.dayDate(weekwiseRuntime.currentWeek,day),{weekday:'short',day:'numeric',month:'short'})+'.');
   else if(noSchedule)weekwiseRuntime.showToast('Task saved to '+(listId==='inbox'?'Inbox':'your list')+'.');
   else if(actualStart===null)weekwiseRuntime.showToast('No free slot on that day; task is in Needs a time.');
   else if(actualStart!==preferred)weekwiseRuntime.showToast(`That time was busy; scheduled at ${weekwiseRuntime.minsTime(actualStart)} instead.`);
-  else weekwiseRuntime.showToast(id?`Task updated · ${weekwiseRuntime.DAY_SHORT[day]} ${weekwiseRuntime.minsTime(actualStart)}`:`Task added · ${weekwiseRuntime.DAY_SHORT[day]} ${weekwiseRuntime.minsTime(actualStart)}`);
+  else weekwiseRuntime.showToast((id?'Task updated · ':'Task added · ')+weekwiseRuntime.fmtDate(weekwiseRuntime.parseKey(occurrenceDate),{weekday:'short',day:'numeric',month:'short'})+' '+weekwiseRuntime.minsTime(actualStart));
 }
 return Object.freeze({currentDayHasConfiguredShift,updateActivityTemplateStates,chooseActivityTemplate,hideActivitySuggestions,renderActivitySuggestions,clearActivityTemplateSelection,inferredListId,defaultFolderName,taskReminderTimes,updateModalScheduleVisibility,taskModalFingerprint,draftFields,checkpointEditorDraft,renderDraftNotice,retireEditorDraft,restoreEditorDraft,openTaskModal,closeTaskModal,updateRecurringBulkVisibility,updateTaskColourPreview,saveModalTask});
 }

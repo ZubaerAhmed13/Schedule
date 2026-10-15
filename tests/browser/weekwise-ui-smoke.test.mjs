@@ -34,6 +34,57 @@ function productivityRows(){
 }
 const productivityOptions=()=>({now:Date.parse('2030-01-08T12:00:00Z'),rows:productivityRows()});
 
+test('full task editing selects an explicit date across weeks and retains stable identity and metadata',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844},productivityOptions());
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="search"]')).click();
+  await page.locator('#workspaceSearch').fill('Action A');
+  await page.locator('.workspace-task-title[data-workspace-edit="action-a"]').click();
+  assert.equal(await page.locator('#modalDay option').first().getAttribute('data-date'),'2030-01-07');
+  assert.match(await page.locator('#modalDay option:checked').innerText(),/Tue.*8 Jan 2030/);
+  assert.equal(await page.locator('#modalAttachments').inputValue(),'https://example.com/a','the editor loads existing links before saving');
+  const before=await readPlannerStore(page);
+  await page.locator('#modalDatePickerButton').click();await page.locator('#modalDate').fill('2030-01-14');await page.locator('#modalDate').press('Tab');
+  assert.equal(await page.locator('#modalDay option:checked').getAttribute('data-date'),'2030-01-14');
+  assert.deepEqual(await readPlannerStore(page),before,'choosing a date does not save or relocate a task');
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','core-dated-editor-phone.png')});
+  await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const next=await readPlannerStore(page),moved=next.weeks['2030-01-13'].tasks.find(t=>t.id==='action-a');
+  assert.ok(moved);assert.equal(moved.day,1);assert.equal(moved.start,600);assert.equal(moved.note,'Keep note a');assert.deepEqual(moved.customMetadata,{ordinal:0});
+  assert.deepEqual(moved.attachments,['https://example.com/a']);assert.equal(next.weeks['2030-01-06'].notes,'Retain source notes');
+  assert.equal(next.weeks['2030-01-06'].tasks.some(t=>t.id==='action-a'),false);assert.ok(next.weeks['2030-01-06'].tasks.some(t=>t.id==='action-b'));
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);
+  assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).filter(t=>t.id==='action-a').length,1);
+ }finally{await context.close();}
+});
+
+test('Sunday date choices save to the correct canonical week, including new all-day events',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000},productivityOptions());
+ try{
+  await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill('Dated Sunday event');await page.locator('#modalListId').selectOption('personal');await page.locator('#modalNoSchedule').uncheck();await page.locator('#modalAllDay').check();
+  await page.locator('#modalDay').selectOption('0');assert.equal(await page.locator('#modalDay option:checked').getAttribute('data-date'),'2030-01-13');
+  await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const store=await readPlannerStore(page),task=store.weeks['2030-01-13'].tasks.find(t=>t.title==='Dated Sunday event');
+  assert.ok(task);assert.equal(task.day,0);assert.equal(task.allDay,true);assert.equal(task.allDayDate,'2030-01-13');
+  assert.equal(Object.values(store.weeks).flatMap(w=>w.tasks).filter(t=>t.title==='Dated Sunday event').length,1);
+ }finally{await context.close();}
+});
+
+test('a dated recurring occurrence move keeps its original occurrence identity after reload',async()=>{
+ const rows=productivityRows(),store=rows.get('weekwise-browser-test-user').data.store;
+ const task=store.weeks['2030-01-06'].tasks[0];Object.assign(task,{seriesId:'dated-series',occurrenceDate:'2030-01-08',recurrence:'weekly'});
+ store.recurringTemplates=[{id:'dated-series',title:'Action A',type:'life',listId:'inbox',frequency:'weekly',startDate:'2030-01-08',start:600,duration:30,timeZone:'UTC'}];
+ const {context,page}=await openPlanner({width:1440,height:1000},{now:Date.parse('2030-01-08T12:00:00Z'),rows});
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="search"]')).click();await page.locator('#workspaceSearch').fill('Action A');await page.locator('.workspace-task-title[data-workspace-edit="action-a"]').click();
+  await page.locator('#modalDatePickerButton').click();await page.locator('#modalDate').fill('2030-01-14');await page.locator('#modalDate').press('Tab');
+  await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const moved=(await readPlannerStore(page)).weeks['2030-01-13'].tasks.find(t=>t.id==='action-a');assert.equal(moved.occurrenceDate,'2030-01-08');assert.equal(moved.recurrenceOverride,true);assert.equal(moved.day,1);
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);
+  const occurrences=Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).filter(t=>t.seriesId==='dated-series'&&t.occurrenceDate==='2030-01-08');assert.equal(occurrences.length,1);assert.equal(occurrences[0].id,'action-a');
+ }finally{await context.close();}
+});
+
 test('a delayed device-only JSON import cannot overwrite an account after mode switching',async()=>{
  const {context,page}=await openPlanner({width:1440,height:1000},{deviceOnly:true});
  try{
@@ -886,6 +937,9 @@ test('optional first-run guide can be skipped, restored from Settings, and navig
   const guide=page.locator('#todayOnboarding');
   await guide.waitFor({state:'visible'});
   assert.match(await guide.locator('#todayOnboardingTitle').innerText(),/A little plan/);
+  assert.equal(await guide.locator('#todayOnboardingDetails').evaluate(el=>el.open),false);
+  assert.ok((await guide.boundingBox()).height<300,'the initial guide stays compact');
+  await page.screenshot({animations:'disabled',path:path.join(root,'test-results','core-compact-guide-desktop.png')});
   assert.equal(await guide.locator('[data-experience-capture]').count(),1);
   const before=await readPlannerStore(page);
   await guide.locator('[data-experience-guide-dismiss]').click();
@@ -898,9 +952,11 @@ test('optional first-run guide can be skipped, restored from Settings, and navig
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
   await page.locator('[data-experience-guide-show]').click();
   await page.locator('#todayOnboarding').waitFor({state:'visible'});
+  await page.locator('#todayOnboardingDetails > summary').click();
   await page.locator('#todayOnboarding [data-experience-plan]').click();
   assert.equal(await page.locator('#planWorkspace').isVisible(),true);
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
+  await page.locator('#todayOnboardingDetails > summary').click();
   await page.locator('#todayOnboarding [data-experience-calendar]').click();
   assert.equal(await page.locator('#calendarToolbar').isVisible(),true);
  }finally{await context.close();}
@@ -910,7 +966,7 @@ test('a first task keeps the guide visible until a reviewed weekly plan is saved
  const {context,page}=await openPlanner({width:390,height:844});try{
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();await page.locator('#todayOnboarding').waitFor({state:'visible'});assert.match(await page.locator('.today-onboarding-progress').innerText(),/0 of 3/);
   await createFlexibleTask(page,'My first manageable task','30');await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();await page.locator('#todayOnboarding').waitFor({state:'visible'});assert.match(await page.locator('.today-onboarding-progress').innerText(),/1 of 3/);
-  await page.reload();await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);await page.locator('#todayOnboarding').waitFor({state:'visible'});await page.locator('#todayOnboarding [data-experience-plan]').click();await (await visibleControl(page,'#planSavePreferences')).click();
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);await page.locator('#todayOnboarding').waitFor({state:'visible'});await page.locator('#todayOnboarding [data-guide-next]').click();await (await visibleControl(page,'#planSavePreferences')).click();
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();assert.match(await page.locator('.today-onboarding-progress').innerText(),/2 of 3/);const before=await readPlannerStore(page);await openFuturePlan(page);assert.deepEqual(await readPlannerStore(page),before,'preview never changes the planner');await page.locator('#planApply').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();assert.equal(await page.locator('#todayOnboarding').count(),0);assert.ok(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).some(t=>t.title==='My first manageable task'&&t.start!==null));
  }finally{await context.close();}
 });
