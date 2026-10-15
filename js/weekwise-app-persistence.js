@@ -61,16 +61,16 @@ function exportEditorHistory(){
 function exportBackup(){if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))return;if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length){weekwiseRuntime.showToast('Download the original data from the recovery notice before restoring.');return;}const payload={...weekwiseRuntime.store,app:'Weekwise',version:6,exportedAt:new Date().toISOString(),settings:weekwiseRuntime.store.settings,weeks:weekwiseRuntime.store.weeks,recurringTemplates:weekwiseRuntime.store.recurringTemplates||[],customLists:weekwiseRuntime.store.customLists||[],reminders:weekwiseRuntime.reminders,focusSessions:weekwiseRuntime.focusSessions,habits:weekwiseRuntime.habits,countdowns:weekwiseRuntime.countdowns,savedTaskFilters:weekwiseRuntime.savedTaskFilters,taskTemplates:weekwiseRuntime.taskTemplates};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`weekwise-backup-${weekwiseRuntime.currentWeek}.json`;a.click();URL.revokeObjectURL(url);weekwiseRuntime.showToast('Backup exported');}
 
 async function loadImport(file){
-  if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))return;
+  if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner)||!weekwiseRuntime.dataCanWrite())return;
  const readingOwner=weekwiseRuntime.currentDataOwner,readingEpoch=weekwiseRuntime.cloudSessionEpoch,before=new Map(WeekwiseRecovery.keys.map(key=>[key,localStorage.getItem(key)]));
  const ownerChanged=()=>readingOwner!==weekwiseRuntime.currentDataOwner||readingEpoch!==weekwiseRuntime.cloudSessionEpoch||!!(weekwiseRuntime.cloudUser&&weekwiseRuntime.cloudUser.id!==readingOwner);
- const checkOwner=()=>{if(ownerChanged()||!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))throw new Error('This file can only be restored in device-only mode.');};
+ const checkOwner=()=>{if(ownerChanged()||!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))throw new Error('The planner owner changed during the import. Choose the file again.');if(readingOwner!=='local'&&(weekwiseRuntime.cloudBusy||weekwiseRuntime.cloudConflict))throw new Error('Cloud sync is busy or needs conflict review. Resolve sync before restoring a backup.');};
  const checkEntries=entries=>{checkOwner();if(entries.some(([key])=>localStorage.getItem(key)!==before.get(key)))throw new Error('Your planner changed while reading the backup. Choose it again to review the restore.');};
  try{
   if(file.size>WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Backup must be smaller than 10 MB.');
   const raw=await file.text();checkOwner();const data=WeekwiseData.parseBackup(raw),entries=WeekwiseRecovery.entries(data);checkEntries(entries);
   const count=Object.values(data.weeks).reduce((sum,week)=>sum+week.tasks.length,0);
-  if(!confirm('Restore this backup with '+count+' tasks? It replaces the planner on this device and, when synced, your cloud copy. A local recovery checkpoint will be kept. Export a backup first if you need a separate copy.'))return;
+  if(!confirm('Restore this JSON backup with '+count+' tasks to '+(readingOwner==='local'?'the device-only planner':'your signed-in planner and its synced cloud copy')+'? The included records will replace the current ones. A local recovery checkpoint will be kept. Export a backup first if you need a separate copy.'))return;
   checkEntries(entries);
   const restored=WeekwiseData.storeFromBackup(data);
   WeekwiseData.commitStorage(localStorage,entries,'weekwise-pre-restore-v1');
