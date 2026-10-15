@@ -28,7 +28,13 @@ function setCloudStatus(message){const el=weekwiseRuntime.$('cloudStatus');if(el
 
 function offlineAccountSelected(){return !weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&localStorage.getItem('weekwise-offline-owner-v1')===weekwiseRuntime.currentDataOwner&&root.WeekwiseOfflineAccess.canOpenOffline(localStorage,weekwiseRuntime.currentDataOwner,navigator.onLine);}
 
-function renderOfflineAccountGate(){const available=!weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&root.WeekwiseOfflineAccess.canOpenOffline(localStorage,weekwiseRuntime.currentDataOwner,navigator.onLine);weekwiseRuntime.$('signinOfflineAccount').hidden=!available;weekwiseRuntime.$('signinOfflineNote').hidden=!available;}
+function renderOfflineAccountGate(){
+ const available=!weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&root.WeekwiseOfflineAccess.canOpenOffline(localStorage,weekwiseRuntime.currentDataOwner,navigator.onLine);
+ weekwiseRuntime.$('signinOfflineAccount').hidden=!available;weekwiseRuntime.$('signinOfflineNote').hidden=!available;
+ const accountDevice=root.WeekwiseOfflineAccess.isAccountDevice(localStorage);
+ weekwiseRuntime.$('signinLocalContinue').hidden=accountDevice;
+ const note=weekwiseRuntime.$('signinLocalNote');if(note)note.hidden=accountDevice;
+}
 
 function openOfflineAccount(){
  if(weekwiseRuntime.currentDataOwner==='local'||weekwiseRuntime.cloudUser||!root.WeekwiseOfflineAccess.canOpenOffline(localStorage,weekwiseRuntime.currentDataOwner,navigator.onLine))return;
@@ -177,7 +183,6 @@ async function saveCloudSnapshot(){
 }
 
 async function startCloudForUser(user,force=false){
- localStorage.removeItem('weekwise-offline-owner-v1');
  if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length){weekwiseRuntime.setCloudStatus('Cloud sync paused: stored data needs recovery.');return;}
  if(!weekwiseRuntime.cloudClient||!user||root.WeekwiseOfflineAccess.isSignedOut(localStorage))return;
  if(weekwiseRuntime.cloudUser?.id===user.id&&weekwiseRuntime.currentDataOwner===user.id&&weekwiseRuntime.cloudReady&&!force)return;
@@ -192,8 +197,8 @@ async function startCloudForUser(user,force=false){
    const {data:row,error}=await weekwiseRuntime.cloudClient.from('weekwise_cloud_data').select('user_id,data,revision,updated_at').eq('user_id',userId).maybeSingle();
    if(epoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==userId)return;if(error)throw error;
    const payload=weekwiseRuntime.buildCloudPayload(),meta=weekwiseRuntime.readCloudMeta(),localFingerprint=weekwiseRuntime.cloudFingerprint(payload),hasLocal=weekwiseRuntime.localHasWeekwiseData();
-   if(!row){weekwiseRuntime.cloudRevision=0;weekwiseRuntime.cloudReady=true;root.WeekwiseOfflineAccess.grant(localStorage,userId);await weekwiseRuntime.saveCloudSnapshot();return;}
-   weekwiseRuntime.validateCloudPayload(row.data);weekwiseRuntime.cloudReady=true;weekwiseRuntime.cloudRevision=Number(row.revision)||0;root.WeekwiseOfflineAccess.grant(localStorage,userId);
+   if(!row){weekwiseRuntime.cloudRevision=0;weekwiseRuntime.cloudReady=true;root.WeekwiseOfflineAccess.grant(localStorage,userId);localStorage.removeItem('weekwise-offline-owner-v1');await weekwiseRuntime.saveCloudSnapshot();return;}
+   weekwiseRuntime.validateCloudPayload(row.data);weekwiseRuntime.cloudReady=true;weekwiseRuntime.cloudRevision=Number(row.revision)||0;root.WeekwiseOfflineAccess.grant(localStorage,userId);localStorage.removeItem('weekwise-offline-owner-v1');
    if(meta?.userId===userId){
     const localDirty=localFingerprint!==meta.fingerprint,remoteChanged=Number(row.revision)>Number(meta.revision||0);
     if(localDirty&&remoteChanged){if(reconcileCloudRow(row))weekwiseRuntime.queueCloudSave();else weekwiseRuntime.showCloudConflict(row);return;}
@@ -205,7 +210,7 @@ async function startCloudForUser(user,force=false){
  })();
  weekwiseRuntime.cloudInitializationUser=userId;weekwiseRuntime.cloudInitPromise=initializing;
  try{await initializing;}finally{if(weekwiseRuntime.cloudInitPromise===initializing){weekwiseRuntime.cloudInitPromise=null;weekwiseRuntime.cloudInitializationUser=null;}}
- if(needsLanding&&epoch===weekwiseRuntime.cloudSessionEpoch&&weekwiseRuntime.cloudUser?.id===userId&&weekwiseRuntime.currentDataOwner===userId)weekwiseRuntime.finishSignInLanding();
+ if(needsLanding&&epoch===weekwiseRuntime.cloudSessionEpoch&&weekwiseRuntime.cloudUser?.id===userId&&weekwiseRuntime.currentDataOwner===userId&&(weekwiseRuntime.cloudReady||(!navigator.onLine&&root.WeekwiseOfflineAccess.allows(localStorage,userId))))weekwiseRuntime.finishSignInLanding();
 }
 
 async function initializeCloud(){
@@ -286,7 +291,7 @@ async function cloudSignIn(){
    else weekwiseRuntime.setCloudStatus('Sign-in failed: '+message);
    return;
   }
-  if(data?.user){weekwiseRuntime.$('cloudPassword').value='';weekwiseRuntime.$('cloudConfirmPassword').value='';weekwiseRuntime.cloudUser=data.user;await weekwiseRuntime.startCloudForUser(data.user,true);}
+  if(data?.user){root.WeekwiseOfflineAccess.unlockAfterPassword(localStorage);weekwiseRuntime.$('cloudPassword').value='';weekwiseRuntime.$('cloudConfirmPassword').value='';weekwiseRuntime.cloudUser=data.user;await weekwiseRuntime.startCloudForUser(data.user,true);}
  }catch(error){weekwiseRuntime.setCloudStatus('Could not sign in: '+(error?.message||'Please try again.'));}
  finally{weekwiseRuntime.setCloudAuthBusy(false);}
 }
