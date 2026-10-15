@@ -34,18 +34,20 @@ function productivityRows(){
 }
 const productivityOptions=()=>({now:Date.parse('2030-01-08T12:00:00Z'),rows:productivityRows()});
 
-test('a delayed real import refuses an account switch and a newer same-account planner before confirmation or writes',async()=>{
- const {context,page}=await openPlanner({width:1440,height:1000},productivityOptions());
+test('a delayed device-only JSON import cannot overwrite an account after mode switching',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000},{deviceOnly:true});
  try{
   let confirmations=0;page.on('dialog',dialog=>{confirmations++;dialog.accept();});
   await page.evaluate(()=>{const text=File.prototype.text;File.prototype.text=function(){if(this.name!=='delayed-backup.json')return text.call(this);window.__backupReaderStarted=true;return new Promise(resolve=>{window.__finishBackupRead=resolve;});};});
   const backup={app:'Weekwise',version:6,settings:{timeZone:'UTC'},weeks:{'2030-01-06':{tasks:[{id:'restore-old',title:'Older backup data',day:2,start:null,unscheduled:true,duration:30,done:false}]}},recurringTemplates:[],customLists:[]},raw=JSON.stringify(backup);
-  await page.locator('#importFile').setInputFiles({name:'delayed-backup.json',mimeType:'application/json',buffer:Buffer.from(raw)});await page.waitForFunction(()=>window.__backupReaderStarted);
-  await page.evaluate(()=>WeekwiseTestAuth.setUser('new-backup-owner'));await page.waitForFunction(()=>document.querySelector('#cloudUserEmail').textContent==='new-backup-owner@example.invalid');await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');const other=await readPlannerStore(page);
-  await page.evaluate(raw=>window.__finishBackupRead(raw),raw);await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('account changed'));assert.deepEqual(await readPlannerStore(page),other);assert.equal(confirmations,0);
-  await page.evaluate(()=>{window.__backupReaderStarted=false;});await page.locator('#importFile').setInputFiles({name:'delayed-backup.json',mimeType:'application/json',buffer:Buffer.from(raw)});await page.waitForFunction(()=>window.__backupReaderStarted);
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('#workspaceCaptureInput').fill('Newer responsibility stays safe');await page.locator('#workspaceCaptureForm button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');const newer=await readPlannerStore(page);
-  await page.evaluate(raw=>window.__finishBackupRead(raw),raw);await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('planner changed while reading'));assert.deepEqual(await readPlannerStore(page),newer);assert.equal(confirmations,0);assert.equal(await countStoredTasksNamed(page,'Newer responsibility stays safe'),1);
+  await page.locator('#importFile').setInputFiles({name:'delayed-backup.json',mimeType:'application/json',buffer:Buffer.from(raw)});
+  await page.waitForFunction(()=>window.__backupReaderStarted);
+  await page.evaluate(()=>WeekwiseTestAuth.setUser('new-backup-owner'));
+  await page.waitForFunction(()=>document.querySelector('#cloudUserEmail').textContent==='new-backup-owner@example.invalid');
+  const other=await readPlannerStore(page);
+  await page.evaluate(raw=>window.__finishBackupRead(raw),raw);
+  await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('device-only mode'));
+  assert.deepEqual(await readPlannerStore(page),other);assert.equal(confirmations,0);
  }finally{await context.close();}
 });
 
@@ -207,7 +209,7 @@ test('timezone review at 200 percent text size remains keyboard reachable and qu
   await page.addStyleTag({content:'html{font-size:200%} #zoneConversionPanel,#zoneConversionPanel input,#zoneConversionPanel select,#zoneConversionPanel button{font-size:1rem}'});
   const fits=await page.locator('#utilityModal .utility-dialog').evaluate(dialog=>{const bounds=dialog.getBoundingClientRect();return [...dialog.querySelectorAll('input,select,button')].filter(el=>el.getClientRects().length).every(el=>{const rect=el.getBoundingClientRect();return rect.left>=bounds.left-2&&rect.right<=bounds.right+2;});});assert.equal(fits,true,'controls reflow with doubled text');
   await page.locator('#zoneConversionReviewed').focus();assert.equal(await page.locator('#zoneConversionReviewed').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Space');assert.equal(await page.locator('#zoneConversionReviewed').isChecked(),true);
-  await page.keyboard.press('Tab');assert.equal(await page.locator('#zoneConversionDownload').evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('Tab');assert.equal(await page.locator('#zoneConversionFullReview').evaluate(el=>el===document.activeElement),true);
   await page.evaluate(()=>{const original=Storage.prototype.setItem;window.restoreZoneStorage=()=>{Storage.prototype.setItem=original;};Storage.prototype.setItem=function(key,value){if(key==='weekwise-zone-backup-v1:weekwise-browser-test-user')throw new DOMException('Synthetic quota','QuotaExceededError');return original.call(this,key,value);};});
   page.once('dialog',dialog=>dialog.accept());await page.locator('#zoneConversionApply').click();assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),original);assert.match(await page.locator('#zoneConversionStatus').innerText(),/quota|save|storage|write/i);
   await page.evaluate(()=>window.restoreZoneStorage());await page.screenshot({animations:'disabled',path:path.join(root,'test-results','zone-review-text-200.png')});
@@ -324,13 +326,14 @@ async function openPlanner(viewport, options={}) {
   await context.route("**/supabase.min.js", route => route.fulfill({
     status: 200,
     contentType: "application/javascript; charset=utf-8",
-    body: supabaseStub
+    body: options.deviceOnly ? supabaseStub.replace("let user={id:'weekwise-browser-test-user',email:'browser-test@example.invalid'}",'let user=null') : supabaseStub
   }));
   const rows=options.rows||new Map(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST, OPTIONS'};
   await context.route('**/__weekwise_test_cloud?*',route=>{const user=new URL(route.request().url()).searchParams.get('user');return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(rows.get(user)||null)});});
   await context.route('**/rest/v1/rpc/weekwise_save',route=>{const request=route.request();if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});const user=request.headers().authorization?.split('browser-test-access-token:')[1];assert.ok(user,'cloud writes use the captured mock token');const args=request.postDataJSON(),row=rows.get(user),revision=row?.revision||0;if(args.p_expected_revision!==revision)return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:false,...row,revision}])});const next={user_id:user,data:args.p_data,revision:revision+1,updated_at:new Date().toISOString()};rows.set(user,next);return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:true,...next}])});});
   const page = await context.newPage();
   await page.goto(origin, { waitUntil: "domcontentloaded" });
+  if(options.deviceOnly)await page.locator('#signinLocalContinue').click();
   await page.waitForFunction(() => {
     const gate = document.querySelector("#signinLanding");
     return !!gate && gate.hidden === true;
@@ -679,7 +682,7 @@ test('corrupt planner storage stays untouched and exposes a recovery notice',asy
 });
 
 test('invalid backup is rejected before replacing local records',async()=>{
- const {context,page}=await openPlanner({width:1440,height:1000});
+ const {context,page}=await openPlanner({width:1440,height:1000},{deviceOnly:true});
  try{
   await createScheduledTask(page,'Preserve before invalid restore');const before=await readPlannerStore(page);
   await page.locator('#importFile').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({settings:[],weeks:{}}))});
@@ -728,7 +731,7 @@ test('two devices combine independent new tasks without overwriting either plann
 
 test('Recover moves an unfinished recurring occurrence without regenerating the old copy',async()=>{const {context,page}=await openPlanner({width:1440,height:1000});try{await page.evaluate(()=>{const store=JSON.parse(localStorage.getItem('weekwise-planner-v2')),week=Object.keys(store.weeks)[0];store.weeks[week].tasks.push({id:'recover-recurring',title:'Recover occurrence',day:0,start:600,duration:30,estimatedDurationMinutes:30,unscheduled:false,done:false,seriesId:'recovery-series',occurrenceDate:week,recurrence:'weekly',note:'Keep original details'},{id:'recover-fixed',title:'Keep fixed commitment',day:0,start:600,duration:30,unscheduled:false,fixed:true,done:false});store.recurringTemplates=[{id:'recovery-series',title:'Recurring template',frequency:'weekly',startDate:week,duration:30,start:600}];localStorage.setItem('weekwise-planner-v2',JSON.stringify(store));});await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="calendar"]')).click();await openFuturePlan(page);await page.locator('#planRecover').click();assert.equal(await page.locator('[name=planProposal]').count(),1);assert.match(await page.locator('#planRecoveryNote').innerText(),/unfinished past/);await page.locator('#planApply').click();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);const all=Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks);assert.equal(all.filter(t=>t.id==='recover-recurring').length,1);const moved=all.find(t=>t.id==='recover-recurring');assert.equal(moved.note,'Keep original details');assert.equal(moved.reschedulingHistory.length,1);assert.equal(all.find(t=>t.id==='recover-fixed').day,0);assert.equal(all.filter(t=>t.seriesId==='recovery-series'&&t.occurrenceDate===moved.occurrenceDate).length,1);}finally{await context.close();}});
 
-test('a valid confirmed restore replaces included collections and preserves omitted ones',async()=>{const {context,page}=await openPlanner({width:1440,height:1000});try{await createFlexibleTask(page,'Existing task');const before=await readPlannerStore(page),week=Object.keys(before.weeks)[0],restored={...before,app:'Weekwise',version:6,weeks:{[week]:{metadata:'Retain backup metadata',tasks:[{id:'restored-task',title:'Restored safely',day:1,start:null,duration:30,unscheduled:true,done:true}]}},habits:[{id:'restored-habit',title:'Restored habit',checkIns:['2026-10-12'],targetPerWeek:3}]};page.once('dialog',d=>d.accept());await page.locator('#importFile').setInputFiles({name:'valid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(restored))});await page.waitForFunction(()=>Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2')).weeks).some(w=>w.tasks.some(t=>t.id==='restored-task')));assert.equal(await countStoredTasksNamed(page,'Restored safely'),1);assert.equal(await countStoredTasksNamed(page,'Existing task'),0);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1'))[0].title),'Restored habit');assert.ok(await page.evaluate(()=>localStorage.getItem('weekwise-pre-restore-v1')));}finally{await context.close();}});
+test('a valid confirmed restore replaces included collections and preserves omitted ones',async()=>{const {context,page}=await openPlanner({width:1440,height:1000},{deviceOnly:true});try{await createFlexibleTask(page,'Existing task');const before=await readPlannerStore(page),week=Object.keys(before.weeks)[0],restored={...before,app:'Weekwise',version:6,weeks:{[week]:{metadata:'Retain backup metadata',tasks:[{id:'restored-task',title:'Restored safely',day:1,start:null,duration:30,unscheduled:true,done:true}]}},habits:[{id:'restored-habit',title:'Restored habit',checkIns:['2026-10-12'],targetPerWeek:3}]};page.once('dialog',d=>d.accept());await page.locator('#importFile').setInputFiles({name:'valid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(restored))});await page.waitForFunction(()=>Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2')).weeks).some(w=>w.tasks.some(t=>t.id==='restored-task')));assert.equal(await countStoredTasksNamed(page,'Restored safely'),1);assert.equal(await countStoredTasksNamed(page,'Existing task'),0);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1'))[0].title),'Restored habit');assert.ok(await page.evaluate(()=>localStorage.getItem('weekwise-pre-restore-v1')));}finally{await context.close();}});
 
 test('light and dark daily, planning and insights views fit phones and retain readable focus',async()=>{for(const width of [390,820,1440]){const {context,page}=await openPlanner({width,height:width===390?844:1000});try{await createFlexibleTask(page,'A meaningful priority');if(width===390)await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-panel="appearancePanel"]').click();await page.locator('[data-theme-choice="dark"]').click();await page.locator('#closeUtility').click();for(const view of ['today','plan','insights']){await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="'+view+'"]')).click();assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true);await page.evaluate(()=>{scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({animations:'disabled',path:path.join(root,'test-results',view+'-dark-'+width+'.png'),fullPage:true});}assert.equal(await page.locator('body').getAttribute('data-theme'),'dark');}finally{await context.close();}}});
 
@@ -742,7 +745,7 @@ test('10,000-record lists keep bounded DOM, search all records and preserve full
 
 
 test('privacy settings download owner-scoped editor history without deleting drafts',async()=>{
- const {context,page}=await openPlanner({width:1440,height:1000});
+ const {context,page}=await openPlanner({width:1440,height:1000},{deviceOnly:true});
  try{
   await page.locator('#globalCaptureBtn').click();
   await page.locator('#modalTitleInput').fill('Private unfinished export test');
@@ -1659,5 +1662,34 @@ test('Today greeting escapes user text and removes the old owner name after acco
   await visit('today');
   await page.waitForFunction(()=>document.querySelector('.today-greeting h3')?.textContent?.includes('Owner One'));
   assert.doesNotMatch(await page.locator('.today-greeting h3').innerText(),/Owner Two/);
+ }finally{await context.close();}
+});
+
+test('manual JSON controls are absent in cloud and available in device-only mode',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  const ids=['exportBtn','importBtn','workspaceExportListBtn','workspaceImportListBtn','exportEditorHistoryBtn','qualityExport','downloadEditorDraft','zoneConversionDownload'];
+  const state=()=>page.evaluate(ids=>Object.fromEntries(ids.map(id=>[id,document.getElementById(id)?.hidden])),ids);
+  assert.equal(await page.locator('body').getAttribute('data-weekwise-json-mode'),'account');
+  assert.ok(Object.values(await state()).every(Boolean));
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
+  assert.equal(await page.locator('.list-actions').isVisible(),false);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
+  assert.equal(await page.locator('#qualityBackupDetails').isVisible(),false);
+  assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),true);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="calendar"]')).click();
+  assert.equal(await page.locator('#exportCalendarBtn').isVisible(),true);
+  assert.equal(await page.locator('#importCalendarBtn').isVisible(),true);
+  const before=await readPlannerStore(page);
+  await page.locator('#importFile').setInputFiles({name:'attempt.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({app:'Weekwise',version:6,...before}))});
+  assert.deepEqual(await readPlannerStore(page),before,'programmatic file selection cannot overwrite an account');
+  await page.locator('#cloudMenuBtn').click();
+  await page.locator('#cloudSignOut').click();
+  await page.locator('#signinLocalContinue').click();
+  await page.waitForFunction(()=>document.body.dataset.weekwiseJsonMode==='device');
+  assert.ok(Object.values(await state()).every(x=>x===false));
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
+  assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),false);
+  assert.equal(await page.locator('#settingsWorkspace [data-settings-action="exportBtn"]').isVisible(),true);
  }finally{await context.close();}
 });
