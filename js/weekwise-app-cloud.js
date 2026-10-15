@@ -206,7 +206,10 @@ async function startCloudForUser(user,force=false){
     weekwiseRuntime.applyCloudRow(row);return;
    }
    if(!hasLocal){weekwiseRuntime.applyCloudRow(row);return;}weekwiseRuntime.showCloudConflict(row);
-  }catch(error){if(epoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==userId)return;weekwiseRuntime.cloudReady=false;weekwiseRuntime.setCloudStatus('Cloud sync could not be initialized. Your data is preserved on this device. '+error.message);weekwiseRuntime.renderCloudPanel();}
+  }catch(error){
+    if(epoch!==weekwiseRuntime.cloudSessionEpoch||weekwiseRuntime.cloudUser?.id!==userId)return;
+    weekwiseRuntime.cloudReady=false;weekwiseRuntime.setCloudStatus('Cloud sync could not be initialized. Your data is preserved on this device. '+error.message);weekwiseRuntime.renderCloudPanel();
+  }
  })();
  weekwiseRuntime.cloudInitializationUser=userId;weekwiseRuntime.cloudInitPromise=initializing;
  try{await initializing;}finally{if(weekwiseRuntime.cloudInitPromise===initializing){weekwiseRuntime.cloudInitPromise=null;weekwiseRuntime.cloudInitializationUser=null;}}
@@ -235,7 +238,13 @@ async function initializeCloud(){
   });
   const {data:{session}}=await weekwiseRuntime.cloudClient.auth.getSession();
   if(session?.user&&!root.WeekwiseOfflineAccess.isSignedOut(localStorage))await weekwiseRuntime.startCloudForUser(session.user);else if((localStorage.getItem('weekwise-local-mode-v1')==='true'&&weekwiseRuntime.currentDataOwner==='local'&&!root.WeekwiseOfflineAccess.isAccountDevice(localStorage))||weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.finishSignInLanding();weekwiseRuntime.renderCloudPanel();}else weekwiseRuntime.renderOfflineAccountGate();
- }catch(error){console.error(error);weekwiseRuntime.setCloudStatus('Could not check cloud sign-in. Local planning still works.');}
+ }catch(error){
+  console.warn('Account session could not be checked.');
+  if(!navigator.onLine&&root.WeekwiseOfflineAccess.allows(localStorage,weekwiseRuntime.currentDataOwner)){
+    weekwiseRuntime.renderOfflineAccountGate();
+    weekwiseRuntime.setCloudStatus('Your verified account is saved here. Open the account planner offline to continue.');
+  }else weekwiseRuntime.setCloudStatus('Could not check sign-in. Reconnect and sign in to continue.');
+ }
 }
 
 function setCloudAuthMode(mode,resetStatus=true){
