@@ -29,6 +29,49 @@ async function open(width=390,{viewportMock=false}={}){
 }
 async function credentials(page,password='fixture-password'){await page.locator('#cloudEmail').fill('fixture@example.invalid');await page.locator('#cloudPassword').fill(password);}
 async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-auth-'+name+'.png'),animations:'disabled'});}
+
+test('public homepage introduces Weekwise before login and offers a real path to existing sign-in',async()=>{
+ for(const width of [390,1440]){
+  const {context,page,errors}=await open(width);
+  try{
+   assert.equal(await page.locator('#signinLanding').isVisible(),true);
+   assert.equal(await page.locator('#wwHomeMain h1').count(),1);
+   assert.match(await page.locator('#wwLandingTitle').innerText(),/Make room for what matters/);
+   assert.equal(await page.locator('#signinLanding .brand-symbol').count(),1,'the existing account brand and form are preserved');
+   assert.equal(await page.locator('#cloudAuthForm').count(),1);
+   assert.equal(await page.locator('#cloudSignUpBtn').count(),1);
+   assert.equal(await page.locator('.ww-public-feature').count(),8);
+   assert.equal(await page.locator('.ww-public-faq-items details').count(),5);
+   assert.equal(await page.locator('.ww-public-sample-label').innerText().then(text=>text.includes('ILLUSTRATIVE')),true);
+   assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true,'app remains gated and unavailable to signed-out visitors');
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'marketing does not overflow phone viewport');
+   const previous=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
+   await page.locator('.ww-public-nav-cta').click();
+   await page.waitForFunction(()=>document.querySelector('#signinLanding').scrollTop>200);
+   assert.equal(await page.locator('#cloudEmail').isVisible(),true);
+   assert.equal(await page.locator('#signinLanding').isVisible(),true,'opening the sign-in section does not enter planner');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),previous,'viewing marketing and account panel never alters planner data');
+   await page.locator('#signinLocalContinue').click();await page.locator('#signinLanding').waitFor({state:'hidden'});
+   assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),false,'device-only option opens original app');
+   assert.deepEqual(errors,[]);
+  }finally{await context.close();}
+ }
+});
+test('homepage feature and FAQ navigation preserves focus and respects reduced motion',async()=>{
+ const {context,page,errors}=await open(390);
+ try{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.locator('#signinLanding .ww-public-hero-actions a[href="#wwHow"]').click();
+  await page.waitForFunction(()=>document.querySelector('#signinLanding').scrollTop>200);
+  assert.equal(await page.locator('#wwHowHeading').isVisible(),true);
+  assert.equal(await page.locator('#signinLanding').evaluate(el=>getComputedStyle(el).scrollBehavior),'auto');
+  await page.locator('#wwFaq summary').first().click();
+  assert.equal(await page.locator('#wwFaq details').first().getAttribute('open'),'');
+  assert.match(await page.locator('#wwFaq details').first().innerText(),/device/);
+  assert.equal(await page.locator('#signinLanding').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
 test('the initial form remains visible and refuses credentials until its submit handler is attached',async()=>{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});let resume,requestedResolve;const requested=new Promise(resolve=>requestedResolve=resolve);
  await context.route('**/supabase.min.js',route=>new Promise(resolve=>{resume=async()=>{await route.fulfill({status:200,contentType:'text/javascript',body:sdk});resolve();};requestedResolve();}));
@@ -64,7 +107,7 @@ test('password-reset feedback remains visible and recovery requires only the new
 });
 test('the visible keyboard viewport keeps the last credential field and submit action reachable',async()=>{
  const {context,page}=await open(390,{viewportMock:true});try{
-  await credentials(page);await page.evaluate(()=>{window.__authViewportFixture.height=460;window.__authViewportFixture.dispatchEvent(new Event('resize'));});await page.waitForFunction(()=>document.body.classList.contains('keyboard-open'));await page.waitForTimeout(100);const geometry=await page.evaluate(()=>Object.fromEntries(['cloudPassword','cloudSignInBtn'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [id,{top:r.top,bottom:r.bottom}];})));await snap(page,'keyboard-signin');for(const [id,r]of Object.entries(geometry)){assert.ok(r.top>=0&&r.bottom<=460,id+' remains inside the visible keyboard viewport: '+JSON.stringify(r));}await page.locator('#cloudSignUpBtn').click();await credentials(page);await page.locator('#cloudConfirmPassword').fill('fixture-password');await page.locator('#cloudReferralCode').fill('fixture-invite');await page.waitForTimeout(100);const r=await page.locator('#cloudSignInBtn').boundingBox();await snap(page,'keyboard-signup');assert.ok(r.y>=0&&r.y+r.height<=460,'Create account remains reachable after invite input: '+JSON.stringify(r));
+  await credentials(page);await page.evaluate(()=>{window.__authViewportFixture.height=460;window.__authViewportFixture.dispatchEvent(new Event('resize'));});await page.waitForFunction(()=>document.body.classList.contains('keyboard-open'));assert.equal(await page.locator('#weekwiseHome').isVisible(),false,'marketing content yields to the account form while the software keyboard is open');await page.waitForTimeout(100);const geometry=await page.evaluate(()=>Object.fromEntries(['cloudPassword','cloudSignInBtn'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [id,{top:r.top,bottom:r.bottom}];})));await snap(page,'keyboard-signin');for(const [id,r]of Object.entries(geometry)){assert.ok(r.top>=0&&r.bottom<=460,id+' remains inside the visible keyboard viewport: '+JSON.stringify(r));}await page.locator('#cloudSignUpBtn').click();await credentials(page);await page.locator('#cloudConfirmPassword').fill('fixture-password');await page.locator('#cloudReferralCode').fill('fixture-invite');await page.waitForTimeout(100);const r=await page.locator('#cloudSignInBtn').boundingBox();await snap(page,'keyboard-signup');assert.ok(r.y>=0&&r.y+r.height<=460,'Create account remains reachable after invite input: '+JSON.stringify(r));
  }finally{await context.close();}
 });
 test('entry layouts fit narrow phones and pass automated accessibility checks in light and dark themes',async()=>{
