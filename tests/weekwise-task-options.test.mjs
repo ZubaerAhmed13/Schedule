@@ -23,20 +23,19 @@ test('task palettes are a strict allowlist, and time-zone choices are real IANA 
  assert.equal(WeekwiseTaskOptions.zones().includes('Asia/Dhaka'),true);
 });
 
-test('editor respects an existing recovery buffer and never silently moves an unchanged task when adding a conflicting buffer',()=>{
- const value=fixture();value.weeks[week].tasks.push({id:'first',title:'Focus',day:1,start:600,duration:30,breakAfter:15});
+test('legacy break metadata remains intact but no longer blocks the actual available gap',()=>{
+ const value=fixture(),first={id:'first',title:'Focus',day:1,start:600,duration:30,breakAfter:20};
+ value.weeks[week].tasks.push(first);
  const before=JSON.stringify(value);
- const slot=WeekwiseTaskSchedule.placement(value,{week,day:1,start:630,duration:15});
- assert.equal(slot.start,645);assert.equal(JSON.stringify(value),before);
- value.weeks[week].tasks.push({id:'second',title:'Appointment',day:1,start:650,duration:30},{id:'third',title:'Next call',day:1,start:685,duration:30});
- assert.throws(()=>WeekwiseTaskSchedule.placement(value,{week,id:'second',day:1,start:650,duration:30,breakAfter:20}),/recovery break/);
+ assert.equal(WeekwiseTaskSchedule.placement(value,{week,day:1,start:630,duration:15}).start,630);
+ assert.equal(JSON.stringify(value),before);
+ assert.equal(value.weeks[week].tasks[0].breakAfter,20);
 });
-test('recurring placement reserves next slots for its recovery break',()=>{
+test('recurring placement no longer reserves arbitrary time beyond a task end',()=>{
  const value=fixture(),index=WeekwiseRecurringPlacement.create(value);
- const slot=index.place('2030-01-07',600,30,20);
- assert.equal(slot.start,600);
+ const slot=index.place('2030-01-07',600,30);
  index.add({week:slot.week,task:{id:'first',day:1,title:'Repeat',start:600,duration:30,breakAfter:20}});
- assert.equal(index.place('2030-01-07',630,15).start,660);
+ assert.equal(index.place('2030-01-07',630,15).start,630);
 });
 test('removing this and future repeat tasks preserves completed future records, stops generation, and restores original series',()=>{
  const value=fixture(),past={id:'rec_rule_20300107',title:'Workout',day:1,start:600,duration:30,seriesId:'rule',recurrence:'weekly',occurrenceDate:'2030-01-07',done:true},
