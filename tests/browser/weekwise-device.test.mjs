@@ -71,7 +71,7 @@ test('Today puts next commitment and highlights first and reviews the original p
    await page.evaluate(()=>document.body.setAttribute('data-theme','light'));await page.locator('#todayReviewSummary').click();await page.evaluate(()=>scrollTo(0,0));if(width===390)await snap(page,'release2-today-first-screen');
    await page.locator('#todayReviewSummary').click();await page.locator('[data-today-review-ref="2029-12-30::past-review"]').click();assert.equal(await page.locator('#modalNote').inputValue(),'Keep the original note');
    await page.locator('#taskPriorityOptions > summary').click();await page.locator('#modalStatus').selectOption('done');await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
-   const after=JSON.parse((await canonical(page))['weekwise-planner-v2']),task=after.weeks['2029-12-30'].tasks.find(t=>t.id==='past-review');assert.equal(task.done,true);assert.deepEqual(task.unknownField,{retained:true});assert.equal(task.note,'Keep the original note');assert.equal(after.weeks['2029-12-30'].notes,'Keep earlier week notes');assert.equal(await page.locator('[data-today-review-ref="2029-12-30::past-review"]').count(),0);
+   const after=JSON.parse((await canonical(page))['weekwise-planner-v2']),task=after.weeks['2029-12-30'].tasks.find(t=>t.id==='past-review');assert.equal(task.done,true);assert.deepEqual(task.unknownField,{retained:true});assert.equal(task.note,'Keep the original note');assert.equal(after.weeks['2029-12-30'].notes,'Keep earlier week notes');assert.equal(await page.locator('[data-today-review-ref="2029-12-30::past-review"]').count(),0);assert.equal(await page.locator('#todayReviewSummary').evaluate(el=>el===document.activeElement),true,'a completed review returns keyboard focus to the remaining review');assert.equal(await page.locator('#todayReviewDetails [data-experience-recover]').count(),0);assert.equal(await page.locator('#todayReviewDetails [data-experience-plan]').isVisible(),true,'due-only work uses planning rather than a recovery preview with no past block');
    assert.deepEqual(after.weeks['2030-01-06'],JSON.parse(before['weekwise-planner-v2']).weeks['2030-01-06']);
   }finally{await context.close();}
  }
@@ -79,7 +79,7 @@ test('Today puts next commitment and highlights first and reviews the original p
 
 test('unfinished review paginates, retains keyboard position on clock refresh and opens a read-only current-week recovery preview',async()=>{
  const store=fixture();store.settings.planning={days:[1,2,3,4,5],start:540,end:1020,buffer:0,breakMinutes:0,maxDailyMinutes:480};
- for(let i=0;i<7;i++)store.weeks['2030-01-06'].tasks.push({id:'decision-'+i,title:'Decision '+i,day:2,start:null,duration:30,estimatedDurationMinutes:30,done:false,unscheduled:true,custom:true,listId:'inbox',type:'life',dueDate:'2030-01-08'});
+ for(let i=0;i<7;i++)store.weeks['2030-01-06'].tasks.push({id:'decision-'+i,title:'Decision '+i,day:2,start:540+i*15,duration:15,estimatedDurationMinutes:15,done:false,unscheduled:false,custom:true,listId:'inbox',type:'life',dueDate:'2030-01-08'});
  rows.get(owner).data.store=store;seed(other);const {context,page}=await open();
  try{
   await navigate(page,'plan');await (await show(page,'#planWeek')).fill('2030-02-04');await page.locator('#planWeek').press('Tab');await navigate(page,'today');const before=await canonical(page);

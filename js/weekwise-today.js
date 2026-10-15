@@ -14,7 +14,7 @@
     if(task.allDay)elapsed=root.WeekwisePlanning.dateAt(date,Math.max(1,Math.ceil((task.duration||0)/1440)))<=current.date;
     else if(!task.unscheduled&&task.start!=null&&task.duration>0){try{elapsed=root.WeekwiseCalendarRange.instant(record,current.zone).end<=current.epoch;}catch(_){/* Unresolved clock times stay in the existing time-review flow. */}}
    }
-   if(due||elapsed)items.set(record.week+'::'+task.id,{...record,decision:due?'due':'elapsed',decisionDate:due?task.dueDate:date});
+   if(due||elapsed)items.set(record.week+'::'+task.id,{...record,decision:due?'due':'elapsed',decisionDate:due?task.dueDate:date,pastCommitment:elapsed});
   }
   return [...items.values()].sort((a,b)=>Number(b.decision==='due')-Number(a.decision==='due')||a.decisionDate.localeCompare(b.decisionDate)||String(a.task.id).localeCompare(String(b.task.id)));
  }

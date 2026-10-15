@@ -19,7 +19,7 @@
   if(next===active)return;
   const prior=active,launcher=document.activeElement;
   // Save the opener BEFORE applying inert; otherwise browsers may move focus to body.
-  if(next&&!prior)returnTo=(lastLauncher?.isConnected?lastLauncher:null)||(lastOutsideFocus?.isConnected?lastOutsideFocus:null)||(launcher instanceof HTMLElement?launcher:null);
+  if(next&&!prior)returnTo=(lastLauncher?.isConnected||lastLauncher?.dataset?.todayReviewRef?lastLauncher:null)||(lastOutsideFocus?.isConnected?lastOutsideFocus:null)||(launcher instanceof HTMLElement?launcher:null);
   active=next;
   if(active){
    const dialog=active.matches('[role="dialog"]')?active:(active.querySelector('[role="dialog"],.modal')||active);
@@ -27,6 +27,13 @@
    focusWithin();
   }else{
    let target=returnTo;returnTo=null;
+   // Today rebuilds its read-only review after an edit. Match its replacement
+   // launcher, or return to the review summary when the task no longer needs it.
+   const reviewRef=target?.dataset?.todayReviewRef;
+   if(reviewRef&&!target.isConnected){
+    target=[...document.querySelectorAll('[data-today-review-ref]')].find(el=>el.dataset.todayReviewRef===reviewRef)||document.getElementById('todayReviewSummary')||document.getElementById('globalCaptureBtn');
+    target?.scrollIntoView({block:'nearest'});
+   }
    // Phone tool launchers live in a menu that closes when a tool is selected.
    // Restore a visible control instead of leaving keyboard focus on the page body.
    if(target?.isConnected&&!target.getClientRects().length){
