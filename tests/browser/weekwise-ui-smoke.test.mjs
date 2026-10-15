@@ -1742,8 +1742,9 @@ test('authenticated mobile planner queues offline edits, displays status and syn
 });
 
 test('explicit account sign-out locks cached mobile planner even while offline',async()=>{
- const {context,page}=await openPlanner({width:390,height:844});
+ const {context,page}=await openPlanner({width:390,height:844},{serviceWorkers:'allow'});
  try{
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await createFlexibleTask(page,'Private account appointment');
   await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
   await page.locator('#moreActions > summary').click();
