@@ -19,16 +19,13 @@ function fmtDate(d,opts={day:'numeric',month:'short'}){return d.toLocaleDateStri
 function dayDate(week,idx){const d=weekwiseRuntime.parseKey(week);d.setDate(d.getDate()+idx);return d;}
 
 function normalizeTimeField(el){
-  if(!el)return true;
-  let value=String(el.value||'').trim();
-  if(!value){el.setCustomValidity(el.required?'Enter a time in 24-hour format, such as 17:30.':'');return !el.required;}
-  let match=value.match(/^(\d{1,2}):([0-5]\d)$/);
-  if(match){const hour=Number(match[1]);if(hour>=0&&hour<=23)value=`${String(hour).padStart(2,'0')}:${match[2]}`;}
-  else if(/^\d{3,4}$/.test(value)){const digits=value;const hour=Number(digits.slice(0,-2)),minute=Number(digits.slice(-2));if(hour>=0&&hour<=23&&minute>=0&&minute<=59)value=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;}
-  const valid=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
-  if(valid)el.value=value;
-  el.setCustomValidity(valid?'':'Use 24-hour HH:MM, e.g. 09:30. You can also type 0930.');
-  return valid;
+ if(!el)return true;
+ const input=String(el.value||'').trim();
+ if(!input){el.setCustomValidity(el.required?'Enter a start time, for example 9, 930 or 17:30.':'');return !el.required;}
+ const value=root.WeekwiseTimeEntry.parse(input);
+ if(value!==null)el.value=value;
+ el.setCustomValidity(value!==null?'':'Enter a valid start time, such as 9, 930 or 17:30.');
+ return value!==null;
 }
 
 function validateTimeFields(ids){
@@ -51,16 +48,11 @@ function minsTime(n){n=((Math.trunc(Number(n)||0)%1440)+1440)%1440;return `${Str
 function durationLabel(n){if(n<60)return n+' min';const h=Math.floor(n/60),m=n%60;return m?h+'h '+m+'m':h+'h'}
 
 function normalizeEndTimeField(el){
-  if(!el)return false;
-  let value=String(el.value||'').trim();
-  if(value==='2400'||value==='24:00'){el.value='24:00';el.setCustomValidity('');return true;}
-  let match=value.match(/^(\d{1,2}):([0-5]\d)$/);
-  if(match){const hour=Number(match[1]);if(hour>=0&&hour<=23)value=String(hour).padStart(2,'0')+':'+match[2];}
-  else if(/^\d{3,4}$/.test(value)){const hour=Number(value.slice(0,-2)),minute=Number(value.slice(-2));if(hour>=0&&hour<=23&&minute>=0&&minute<=59)value=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');}
-  const valid=/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
-  if(valid)el.value=value;
-  el.setCustomValidity(valid?'':'Enter a 24-hour end time, e.g. 14:30 or 24:00.');
-  return valid;
+ if(!el)return false;
+ const value=root.WeekwiseTimeEntry.parse(el.value,{end:true});
+ if(value!==null)el.value=value;
+ el.setCustomValidity(value!==null?'':'Enter a valid end time, such as 11, 1130, 18:00 or 24:00.');
+ return value!==null;
 }
 
 function updateEndTimeFromDuration(){
