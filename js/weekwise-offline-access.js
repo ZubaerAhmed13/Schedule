@@ -20,6 +20,7 @@
   const marker=read(storage,KEY);
   return marker?.owner===owner&&Number.isFinite(marker.verifiedAt)&&marker.verifiedAt<=now&&now-marker.verifiedAt<=WINDOW_MS;
  }
+ function unlockAfterPassword(storage){try{storage.removeItem(SIGNED_OUT);}catch(_){}}
  function isSignedOut(storage){try{return storage.getItem(SIGNED_OUT)==='true';}catch(_){return true;}}
  function isAccountDevice(storage){try{return storage.getItem(LOCK)==='true';}catch(_){return false;}}
  function revoke(storage){
@@ -36,5 +37,5 @@
   if(!ready||dirty)return {label:dirty?'Waiting to sync':'Connecting',tone:'progress'};
   return {label:'Synced',tone:'success'};
  }
- root.WeekwiseOfflineAccess=Object.freeze({grant,allows,revoke,isSignedOut,isAccountDevice,canOpenOffline,display,WINDOW_MS});
+ root.WeekwiseOfflineAccess=Object.freeze({grant,allows,revoke,unlockAfterPassword,isSignedOut,isAccountDevice,canOpenOffline,display,WINDOW_MS});
 })(typeof window!=='undefined'?window:globalThis);
