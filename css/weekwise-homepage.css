@@ -315,3 +315,13 @@ body[data-theme=dark] .ww-public-screen .ww-public-comparison-card strong{color:
 body[data-theme=dark] .ww-public-screen .ww-public-comparison-card>span,
 body[data-theme=dark] .ww-public-screen .ww-public-comparison-card small{color:#48684d}
 body[data-theme=dark] .ww-public-screen .ww-public-comparison-arrow span{color:#d2e5d3}
+
+@media(max-width:760px){
+ body.keyboard-open .ww-public-screen .entry-access{padding:10px 20px 14px}
+ body.keyboard-open .ww-public-screen .cloud-panel-heading{margin-bottom:9px}
+ body.keyboard-open .ww-public-screen .cloud-auth-intro{margin:7px 0 10px}
+ body.keyboard-open .ww-public-screen .cloud-auth-fields{gap:9px}
+ body.keyboard-open .ww-public-screen .cloud-auth-options{margin-top:6px}
+ body.keyboard-open .ww-public-screen .entry-divider{margin:9px 0 7px}
+ body.keyboard-open .ww-public-screen .cloud-form-actions .cloud-submit{margin-top:3px}
+}
