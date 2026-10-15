@@ -1411,6 +1411,7 @@ test('task colour, repeat removal, recovery break and calendar scroll chaining w
   assert.ok(record?.seriesId);assert.equal(record.taskColor,'purple');assert.equal(record.breakAfter,15);
   assert.ok(Object.values(before.weeks).flatMap(w=>w.tasks).filter(t=>t.seriesId===record.seriesId).length>=2);
   assert.ok(await page.locator('#daysGrid [data-task-color="purple"]').count()>0);
+  assert.match(await page.locator('#daysGrid .range-event[data-range-id="'+record.id+'"] .event-time').first().innerText(),/15m recovery afterward/);
   assert.ok(await page.locator('#calendarZones option').count()>25);
   assert.equal(await page.locator('#daysGrid').evaluate(el=>getComputedStyle(el).overscrollBehaviorY),'auto');
   await page.locator('#daysGrid [data-range-edit][data-range-id="'+record.id+'"]').first().click();
