@@ -5,15 +5,15 @@
   const model=root.WeekwiseCalendarRange,zone=store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone,days=new Map();
   function index(record){
    if(!record.allDay&&!record.zoneError&&(!record.instant||record.instant.end<=record.instant.start))return;
-   const first=model.ordinal(record.date)-(record.zoneError?1:0),last=record.zoneError?first+2:record.allDay?first+Math.max(1,Math.ceil((record.duration||0)/1440))-1:model.ordinal(model.parts(record.instant.end+root.WeekwiseTaskOptions.breakAfter(record.task.breakAfter)*60000-1,zone).date);
+   const first=model.ordinal(record.date)-(record.zoneError?1:0),last=record.zoneError?first+2:record.allDay?first+Math.max(1,Math.ceil((record.duration||0)/1440))-1:model.ordinal(model.parts(record.instant.end+(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(record.task.breakAfter)*60000-1,zone).date);
    for(let day=first;day<=last;day++){const key=model.key(day);if(!days.has(key))days.set(key,new Set());days.get(key).add(record);}
   }
   model.project(store,zone).forEach(index);
   function add({week,task}){model.project({settings:store.settings,weeks:{[week]:{tasks:[task]}}},zone).forEach(index);}
   function free(slot,breakAfter=0){
-    const span=slot.scheduleInstant,buffer=root.WeekwiseTaskOptions.breakAfter(breakAfter)*60000,first=model.ordinal(model.parts(span.start,zone).date),last=model.ordinal(model.parts(span.end+buffer-1,zone).date),records=new Set();
+    const span=slot.scheduleInstant,buffer=(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(breakAfter)*60000,first=model.ordinal(model.parts(span.start,zone).date),last=model.ordinal(model.parts(span.end+buffer-1,zone).date),records=new Set();
     for(let day=first;day<=last;day++)for(const item of days.get(model.key(day))||[])records.add(item);
-    return ![...records].some(other=>other.allDay||other.zoneError||other.instant&&span.start<other.instant.end+root.WeekwiseTaskOptions.breakAfter(other.task.breakAfter)*60000&&other.instant.start<span.end+buffer);
+    return ![...records].some(other=>other.allDay||other.zoneError||other.instant&&span.start<other.instant.end+(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(other.task.breakAfter)*60000&&other.instant.start<span.end+buffer);
   }
   function place(date,preferred,duration,breakAfter=0){
    if(preferred==null)return {start:null};
@@ -27,7 +27,7 @@
    return review('No free slot fits this recurring occurrence. Choose its hours explicitly.');
   }
   function placeRule(template,date){
-   const preferred=template.start==null?null:Number(template.start),duration=Math.max(10,Number(template.duration)||30),breakAfter=root.WeekwiseTaskOptions.breakAfter(template.breakAfter),sourceZone=template.timeZone||zone;
+   const preferred=template.start==null?null:Number(template.start),duration=Math.max(10,Number(template.duration)||30),breakAfter=(root.WeekwiseTaskOptions?.breakAfter||(()=>0))(template.breakAfter),sourceZone=template.timeZone||zone;
       if(sourceZone===zone||template.allDay||preferred===null)return {...place(date,template.allDay?null:preferred,duration,breakAfter),week:model.range(date)[0],day:new Date(date+'T00:00:00Z').getUTCDay(),duration};
    try{
     const start=model.wall(date,preferred,sourceZone),end=model.wall(date,preferred+duration,sourceZone);
