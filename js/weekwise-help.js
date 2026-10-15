@@ -13,8 +13,8 @@
    if(action.dataset.helpAction==='plan')leave('plan','workspaceMain');
    if(action.dataset.helpAction==='calendar')leave('calendar','workspaceMain');
    if(action.dataset.helpAction==='sync')app.account();
-   if(action.dataset.helpAction==='device'){$('closeUtility').click();document.querySelector('[data-quality-open]').click();}
-   if(action.dataset.helpAction==='backup')$('exportBtn').click();
+   if(action.dataset.helpAction==='device')leave('settings','settingsTitle');
+   if(action.dataset.helpAction==='backup')leave('settings','exportBtn');
   });
  }
  root.WeekwiseHelp=Object.freeze({init,open});
