@@ -19,9 +19,9 @@
   confirmWrap.hidden=scope!=='all';if(scope!=='all')confirmInput.checked=false;
   try{
    const data=root.WeekwiseTaskHistory.seriesPreview(app.snapshot().store,{...pendingSeries,scope});
-   const history=data.retained.length;
+   const history=data.retainedCompleted||0,personalised=data.retainedCustomized||0;
    view.textContent=scope==='single'?'One occurrence will be moved to Recently removed. Other repeats continue.':
-     scope==='future'?data.items.length+' current and future occurrence'+(data.items.length===1?'':'s')+' will be removed; '+history+' completed or in-progress occurrence'+(history===1?'':'s')+' retained. The repeating rule will stop before '+data.anchor+'.':
+     scope==='future'?data.items.length+' current and future occurrence'+(data.items.length===1?'':'s')+' will be removed; '+history+' completed or in-progress and '+personalised+' individually edited future occurrence'+(personalised===1?'':'s')+' retained. The repeating rule will stop before '+data.anchor+'.':
      data.items.length+' saved occurrence'+(data.items.length===1?'':'s')+' (including past and completed records) will be removed. The entire recurring rule will stop.';
    $('recurringRemoveApply').disabled=scope==='all'&&!confirmInput.checked;
   }catch(error){view.textContent=error.message;$('recurringRemoveApply').disabled=true;}
