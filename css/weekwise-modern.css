@@ -70,7 +70,7 @@ body[data-active-view=today] #workspaceAddTaskBtn {display:none}
 .capture-plus {background:var(--ww-soft);border-radius:10px}.workspace-capture input {font-size:14px}
 .workspace-capture-hint {margin:9px 0 24px;font-size:11px;line-height:1.6}.workspace-capture-hint kbd {padding:2px 5px}
 .today-overview {margin-bottom:28px}.today-greeting {display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin:0 0 18px}
-.today-greeting h3 {font-size:21px;font-weight:600;letter-spacing:-.6px}.today-date {font-size:12px;color:var(--ww-muted)}
+.today-greeting h3 {font-size:21px;font-weight:600;letter-spacing:-.6px;overflow-wrap:anywhere;min-width:0}.today-date {font-size:12px;color:var(--ww-muted)}
 .today-greeting p {flex:1 1 100%;margin:0;font-size:13px}
 .today-next {background:var(--ww-soft);border:0;border-radius:22px;padding:25px 28px;position:relative;overflow:hidden;box-shadow:none}
 .today-next::after {content:'';position:absolute;right:-32px;top:-42px;width:150px;height:150px;border:24px solid var(--ww-surface);border-radius:50%;opacity:.45;pointer-events:none}
@@ -262,6 +262,12 @@ body .field label,body .modal .field label,body .template-form .field label,body
 .personal-details-fields input{width:100%;min-height:47px;font-size:16px;padding:10px 13px;border:1px solid var(--ww-line);border-radius:11px;background:var(--ww-surface);color:var(--ww-text)}
 .personal-details-fields input:focus-visible{outline:3px solid var(--ww-brand);outline-offset:2px}
 .personal-details-fields small{font-size:11px;color:var(--ww-muted);line-height:1.55}
+.personal-greeting-option{display:flex;align-items:flex-start;gap:12px;padding:14px 15px;margin:18px 0 0;border:1px solid var(--ww-line);border-radius:12px;background:var(--ww-surface);cursor:pointer;max-width:100%}
+.personal-greeting-option input{flex:0 0 auto;width:19px;height:19px;margin:2px 0 0;accent-color:var(--ww-brand)}
+.personal-greeting-option input:focus-visible{outline:3px solid var(--ww-brand);outline-offset:3px}
+.personal-greeting-option span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.personal-greeting-option strong{font-size:13px;font-weight:700;color:var(--ww-text)}
+.personal-greeting-option small{font-size:12px;color:var(--ww-muted);line-height:1.55}
 .personal-details-privacy{font-size:12px;color:var(--ww-muted);line-height:1.7;padding:12px 13px;margin:18px 0 15px;border-radius:11px;background:var(--ww-soft)}
 .personal-details-privacy a{color:var(--ww-brand);text-decoration:underline;text-underline-offset:3px}
 .personal-details-actions{display:flex;flex-wrap:wrap;gap:9px}
