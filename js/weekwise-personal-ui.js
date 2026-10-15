@@ -26,9 +26,9 @@
     event.preventDefault();
     const status=$('personalDetailsStatus');
     if(!app||profileOwner!==app.account()){status.textContent='Your account changed. Review the current planner’s details before saving.';renderProfile(true);return;}
-    const name=$('personalFullName').value.trim().replace(/\\s+/g,' ');
+    const name=$('personalFullName').value.trim().replace(/\s+/g,' ');
     const dob=$('personalBirthDate').value;
-    if(name.length>100||/[\\u0000-\\u001F\\u007F]/.test(name)){status.textContent='Use a name of up to 100 characters without control characters.';return;}
+    if(name.length>100||/[\u0000-\u001F\u007F]/.test(name)){status.textContent='Use a name of up to 100 characters without control characters.';return;}
     if(dob&&(!root.WeekwiseData.validDate(dob)||dob>localDateKey())){status.textContent='Choose a valid date of birth that is not in the future.';return;}
     try{
       const snapshot=app.snapshot(),next=JSON.parse(JSON.stringify(snapshot.store));
