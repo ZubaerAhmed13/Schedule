@@ -30,7 +30,7 @@ function syncSettingsForm(){weekwiseRuntime.store.settings.weekStartsOn=1;weekwi
 
 function overlap(a,b){return a.start < b.start+b.duration && b.start < a.start+a.duration;}
 
-function canPlace(dayTasks,start,duration){const candidate={start,duration};return !dayTasks.some(t=>t.start!=null && weekwiseRuntime.overlap(candidate,{...t,duration:(t.duration||0)+WeekwiseTaskOptions.breakAfter(t.breakAfter)}));}
+function canPlace(dayTasks,start,duration){const candidate={start,duration};return !dayTasks.some(t=>t.start!=null && weekwiseRuntime.overlap(candidate,t));}
 
 function findSlot(dayIndex,duration,preferred=600,min=420,max=1320,dayTasks=null){const occupied=dayTasks||weekwiseRuntime.tasks.filter(t=>t.day===dayIndex);const candidates=[];for(let start=min;start+duration<=max;start+=15)candidates.push(start);candidates.sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred));return candidates.find(start=>weekwiseRuntime.canPlace(occupied,start,duration))??null;}
 
