@@ -107,8 +107,9 @@
   }
   function recoverToday(){
     render();const clock=root.WeekwisePlanning.planningClock(app.snapshot().store);
-    $('planWeek').value=root.WeekwiseCalendarRange.range(clock.date,1)[0];mode='recover';overrides={};buildPreview();
-    $('planStatus').setAttribute('tabindex','-1');$('planStatus').focus();
+    $('planWeek').value=root.WeekwiseCalendarRange.range(clock.date,1)[0];mode='recover';overrides={};renderOverview();buildPreview();
+    const target=$('planResults').hidden?$('planStatus'):$('planPreviewTitle');
+    target.setAttribute('tabindex','-1');target.focus();target.scrollIntoView({block:'center',behavior:'auto'});
   }
   root.WeekwisePlanUI=Object.freeze({init,render,recoverToday});
 })(window);
