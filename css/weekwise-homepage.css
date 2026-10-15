@@ -297,3 +297,21 @@ body[data-theme=dark] .ww-public-screen .ww-public-button-secondary{color:#23493
  body.keyboard-open .ww-public-screen .ww-public-access-intro{display:none!important}
  body.keyboard-open .ww-public-screen .signin-card.entry-shell{margin:0 auto!important;max-width:520px;border-radius:0}
 }
+
+/* The illustrated cards retain legible foregrounds in dark theme, too. */
+.ww-public-screen .ww-public-step-num{color:#496c52}
+.ww-public-screen .ww-public-sample-label span{color:#486951}
+.ww-public-screen .ww-public-preview-week,
+.ww-public-screen .ww-public-preview-bottom{color:#4d6b56}
+.ww-public-screen .ww-public-float-card{color:#254733}
+.ww-public-screen .ww-public-comparison-card strong{color:#244a32}
+.ww-public-screen .ww-public-comparison-card>span{color:#48684d}
+.ww-public-screen .ww-public-comparison-card small{color:#4c6951}
+.ww-public-screen .ww-public-comparison-arrow span{color:#435f49}
+body[data-theme=dark] .ww-public-screen .ww-public-step-num{color:#c1d5c2}
+body[data-theme=dark] .ww-public-screen .ww-public-comparison-card{background:#fffcf8;border-color:#cadcc9}
+body[data-theme=dark] .ww-public-screen .ww-public-comparison-card.planned{background:#e5f1e1}
+body[data-theme=dark] .ww-public-screen .ww-public-comparison-card strong{color:#244a32}
+body[data-theme=dark] .ww-public-screen .ww-public-comparison-card>span,
+body[data-theme=dark] .ww-public-screen .ww-public-comparison-card small{color:#48684d}
+body[data-theme=dark] .ww-public-screen .ww-public-comparison-arrow span{color:#d2e5d3}
