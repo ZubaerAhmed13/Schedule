@@ -18,6 +18,7 @@
     profileOwner=owner;profileDirty=false;
     const profile=app.snapshot().store.settings.profile||{};
     $('personalFullName').value=typeof profile.fullName==='string'?profile.fullName:'';
+     $('personalGreetingEnabled').checked=profile.showNameInGreeting!==false;
     $('personalBirthDate').value=typeof profile.dateOfBirth==='string'?profile.dateOfBirth:'';
     $('personalBirthDate').max=localDateKey();
     $('personalDetailsStatus').textContent=changedOwner?'':(profile.fullName||profile.dateOfBirth?'Saved for this planner.':'No personal details saved.');
@@ -28,11 +29,12 @@
     if(!app||profileOwner!==app.account()){status.textContent='Your account changed. Review the current planner’s details before saving.';renderProfile(true);return;}
     const name=$('personalFullName').value.trim().replace(/\s+/g,' ');
     const dob=$('personalBirthDate').value;
+     const showNameInGreeting=$('personalGreetingEnabled').checked;
     if(name.length>100||/[\u0000-\u001F\u007F]/.test(name)){status.textContent='Use a name of up to 100 characters without control characters.';return;}
     if(dob&&(!root.WeekwiseData.validDate(dob)||dob>localDateKey())){status.textContent='Choose a valid date of birth that is not in the future.';return;}
     try{
       const snapshot=app.snapshot(),next=JSON.parse(JSON.stringify(snapshot.store));
-      if(name||dob)next.settings.profile={fullName:name,dateOfBirth:dob};else delete next.settings.profile;
+      if(name||dob)next.settings.profile={fullName:name,dateOfBirth:dob,...(!showNameInGreeting?{showNameInGreeting:false}:{})};else delete next.settings.profile;
       app.commit(JSON.stringify(snapshot),profileOwner,next);
       profileDirty=false;renderProfile(true);
       status.textContent=name||dob?'Personal details saved for this planner.':'Personal details cleared from this planner.';
@@ -63,7 +65,7 @@ function saveTheme(mode){try{const snapshot=app.snapshot(),next=JSON.parse(JSON.
    $('personalDetailsForm').addEventListener('submit',saveProfile);
    $('personalDetailsClear').addEventListener('click',()=>{
      if(profileOwner!==app.account()){renderProfile(true);return;}
-     $('personalFullName').value='';$('personalBirthDate').value='';
+     $('personalFullName').value='';$('personalBirthDate').value='';$('personalGreetingEnabled').checked=true;
      profileDirty=true;$('personalDetailsStatus').textContent='Fields cleared. Choose Save details to remove saved values.';
      $('personalFullName').focus();
    });
