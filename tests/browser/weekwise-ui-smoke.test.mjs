@@ -1584,12 +1584,14 @@ test('personal details do not transfer to another signed-in planner account',asy
   await page.evaluate(()=>window.WeekwiseTestAuth.setUser('second-profile-owner'));
   await page.waitForFunction(()=>document.querySelector('#cloudUserEmail')?.textContent==='second-profile-owner@example.invalid');
   await page.waitForFunction(()=>document.querySelector('#personalFullName')?.value==='');
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
   assert.equal((await readPlannerStore(page)).settings.profile,undefined);
   await page.locator('#personalFullName').fill('Second account');
   await page.locator('#personalDetailsSave').click();
   assert.equal((await readPlannerStore(page)).settings.profile.fullName,'Second account');
   await page.evaluate(()=>window.WeekwiseTestAuth.setUser('weekwise-browser-test-user'));
   await page.waitForFunction(()=>document.querySelector('#personalFullName')?.value==='First account');
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
   assert.equal((await readPlannerStore(page)).settings.profile.dateOfBirth,'1994-03-04');
  }finally{await context.close();}
 });
