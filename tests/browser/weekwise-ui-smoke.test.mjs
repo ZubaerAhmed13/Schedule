@@ -1767,3 +1767,29 @@ test('explicit account sign-out locks cached mobile planner even while offline',
   assert.equal(Object.values(retained?.payload?.store?.weeks||{}).flatMap(w=>w.tasks||[]).some(t=>t.title==='Private account appointment'),true,'the account owner-scoped cache is preserved behind the sign-in gate');
  }finally{await context.close();}
 });
+
+test('offline account can be locked locally without a live auth session',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844},{serviceWorkers:'allow'});
+ try{
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge')?.textContent==='Synced');
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await context.unroute('**/supabase.min.js');
+  await context.setOffline(true);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#signinOfflineAccount').waitFor({state:'visible'});
+  await page.locator('#signinOfflineAccount').click();
+  await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);
+  await page.locator('#moreActions > summary').click();
+  await page.locator('#cloudMenuBtn').click();
+  assert.equal(await page.locator('#cloudOfflineLock').isVisible(),true);
+  page.on('dialog',d=>d.accept());
+  await page.locator('#cloudOfflineLock').click();
+  assert.equal(await page.locator('#signinLanding').isVisible(),true);
+  assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
+  await page.reload({waitUntil:'domcontentloaded'});
+  assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
+  assert.equal(await page.locator('#signinLanding').isVisible(),true);
+ }finally{await context.close();}
+});
