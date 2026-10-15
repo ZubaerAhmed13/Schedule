@@ -240,3 +240,12 @@ body .field label,body .modal .field label,body .template-form .field label,body
 .mobile-week-gap small{font-size:11px;color:var(--ww-muted);font-variant-numeric:tabular-nums}
 @media(max-width:390px){.mobile-week-gap{flex-wrap:wrap;gap:5px;padding:9px}.mobile-week-gap small{flex-basis:100%}}
 @media print{.range-gap-marker,.mobile-week-gap{print-color-adjust:exact}}
+
+/* Explain scope in daily and weekly progress without visually inflating counters. */
+.today-count-explainer{font-size:11px;color:var(--ww-muted);line-height:1.6;margin:10px 0}
+.today-unplanned-due,.insights-deadline-note{font-size:12px;line-height:1.6;padding:10px 12px;border:1px solid var(--ww-line);border-radius:12px;background:var(--ww-soft);color:var(--ww-text)}
+.today-unplanned-due strong{font-variant-numeric:tabular-nums}
+.today-facts [data-experience-inbox]{border:1px solid var(--ww-line);background:var(--ww-soft);color:var(--ww-text);font-size:12px;min-height:40px}
+.plan-readiness{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1100px){.plan-readiness{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.plan-readiness{grid-template-columns:1fr}}

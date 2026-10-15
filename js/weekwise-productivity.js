@@ -69,10 +69,16 @@
  function renderHighlights(){
   if(!$('todayHighlightDialog').open)return;
   const active=document.activeElement?.dataset.taskHighlight,query=$('todayHighlightSearch').value.trim().toLowerCase(),store=app.snapshot().store;
-  const rows=Object.entries(store.weeks).flatMap(([week,value])=>value.tasks.map(task=>({week,task}))).filter(r=>root.WeekwiseTaskActions.eligible(r.task)&&!r.task.done&&r.task.status!=='done'&&r.task.requiresCompletion!==false&&(!query||r.task.title.toLowerCase().includes(query)));
-  rows.sort((a,b)=>Number(!!b.task.todayPriority)-Number(!!a.task.todayPriority)||a.task.title.localeCompare(b.task.title));
-  $('todayHighlightCount').textContent=rows.filter(r=>r.task.todayPriority).length+' chosen in this search · '+Math.min(100,rows.length)+' of '+rows.length+' matching tasks shown';
-  $('todayHighlightList').innerHTML=rows.slice(0,100).map(r=>'<article><div><strong>'+esc(r.task.title)+'</strong><small>'+esc(r.task.listId||'Task')+'</small></div><button class="btn" type="button" data-task-highlight="'+esc(r.task.id)+'" data-task-week="'+esc(r.week)+'" aria-pressed="'+String(!!r.task.todayPriority)+'">'+(r.task.todayPriority?'Remove highlight':'Choose highlight')+'</button></article>').join('')||'<p>No unfinished tasks match. Capture a task in Inbox to begin.</p>';
+  const eligible=Object.entries(store.weeks).flatMap(([week,value])=>value.tasks.map(task=>({week,task}))).filter(r=>root.WeekwiseTaskActions.eligible(r.task)&&!r.task.done&&r.task.status!=='done'&&r.task.requiresCompletion!==false);
+  const selected=eligible.filter(r=>r.task.todayPriority).length,today=root.WeekwiseToday.clock(store).date;
+  const rows=eligible.filter(r=>!query||r.task.title.toLowerCase().includes(query));
+  rows.sort((a,b)=>Number(!!b.task.todayPriority)-Number(!!a.task.todayPriority)||Number(!!a.task.unscheduled)-Number(!!b.task.unscheduled)||a.task.title.localeCompare(b.task.title));
+  $('todayHighlightCount').textContent=selected+' / 3 highlights chosen · '+Math.min(100,rows.length)+' of '+rows.length+' matching tasks shown';
+  $('todayHighlightList').innerHTML=rows.slice(0,100).map(r=>{
+   const t=r.task,scheduled=!!t.allDay||(!t.unscheduled&&t.start!=null),label=scheduled?'On calendar':(t.dueDate&&t.dueDate<today?'Overdue · not scheduled':t.dueDate===today?'Due today · not scheduled':(t.listId==='inbox'?'Inbox · not scheduled':'Not scheduled'));
+   const disabled=!t.todayPriority&&selected>=3;
+   return '<article><div><strong>'+esc(t.title)+'</strong><small>'+esc(label)+(t.dueDate&&scheduled?' · Due '+esc(t.dueDate):'')+'</small></div><button class="btn" type="button" data-task-highlight="'+esc(t.id)+'" data-task-week="'+esc(r.week)+'" aria-pressed="'+String(!!t.todayPriority)+'"'+(disabled?' disabled title="Remove a highlight first"':'')+'>'+(t.todayPriority?'Remove highlight':'Choose highlight')+'</button></article>';
+  }).join('')||'<p>No unfinished tasks match. Capture a task in Inbox to begin.</p>';
   if(active)[...$('todayHighlightList').querySelectorAll('[data-task-highlight]')].find(el=>el.dataset.taskHighlight===active)?.focus({preventScroll:true});
  }
  function openBulk(){

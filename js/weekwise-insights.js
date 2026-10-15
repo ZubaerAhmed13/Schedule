@@ -11,7 +11,7 @@
   if(!Array.isArray(records)||!Array.isArray(focusSessions))throw new Error('Invalid Weekwise Insights history.');
   const dates=Array.from({length:7},(_,i)=>dateAt(week,i));
   const windows=new Map(dates.map(date=>[date,[]])),end=dateAt(week,7);
-  const uniqueMoves=new Set(),movedTasks=new Set(),seenTaskIds=new Set(),recordedTasks=new Map();
+  const uniqueMoves=new Set(),movedTasks=new Set(),seenTaskIds=new Set(),recordedTasks=new Map(),plannedIds=new Set();let committedTotal=0,committedDone=0,dueOnly=0;
   for(const record of records){
    const task=record?.task;if(!task||typeof task!=='object')continue;
    const date=record.dateKey||record.date;
@@ -19,6 +19,12 @@
     seenTaskIds.add(task.id);recordedTasks.set(task.id,task);
    }
    const start=task.start==null?NaN:Number(task.start),duration=Number(task.duration);
+   const scheduled=task.allDay||(!task.unscheduled&&Number.isFinite(start)&&Number.isFinite(duration)&&start>=0&&start<1440&&duration>0&&duration<=1440);
+   const ref=(record.week||'')+'::'+String(task.id||'');
+   if(typeof date==='string'&&date>=week&&date<end&&scheduled&&task.requiresCompletion!==false&&!plannedIds.has(ref)){
+    plannedIds.add(ref);committedTotal++;if(task.done||task.status==='done')committedDone++;
+   }
+   if(task.requiresCompletion!==false&&!task.allDay&&!scheduled&&!task.done&&task.status!=='done'&&typeof task.dueDate==='string'&&task.dueDate>=week&&task.dueDate<end)dueOnly++;
    if(!task.allDay&&!task.unscheduled&&Number.isFinite(start)&&Number.isFinite(duration)&&start>=0&&start<1440&&duration>0&&duration<=1440&&typeof date==='string'){
     const stop=start+duration;
     if(windows.has(date))windows.get(date).push([start,Math.min(1440,stop)]);
@@ -53,7 +59,7 @@
    if(!Number.isFinite(Number(estimate))||Number(estimate)<=0)continue;
    estimateMinutes+=Number(estimate);linkedFocusMinutes+=actual;comparedTasks++;
   }
-  return {week,days,totalMinutes,recordedMoves:uniqueMoves.size,movedTasks:movedTasks.size,comparedTasks,linkedFocusMinutes,estimateMinutes};
+  return {week,days,totalMinutes,completion:{total:committedTotal,completed:committedDone},unplannedDue:dueOnly,recordedMoves:uniqueMoves.size,movedTasks:movedTasks.size,comparedTasks,linkedFocusMinutes,estimateMinutes};
  }
  root.WeekwiseInsights=Object.freeze({weekly,localDay});
 })(typeof window!=='undefined'?window:globalThis);

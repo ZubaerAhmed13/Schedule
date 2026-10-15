@@ -40,3 +40,18 @@ test('missing actual work stays missing rather than inferred from scheduled or e
  assert.equal(result.estimateMinutes,0);
  assert.throws(()=>insights.weekly([], '2026-02-30'),/date/i);
 });
+
+test('weekly completion excludes unplanned Inbox, while due-only deadlines remain separately visible',()=>{
+ const values=[
+  record('meeting','2026-10-12',540,60,{done:true,listId:'work'}),
+  record('class','2026-10-13',600,90,{done:false,listId:'study'}),
+  record('highlighted-inbox','2026-10-12',null,45,{unscheduled:true,listId:'inbox',todayPriority:true}),
+  record('due-only','2026-10-10',null,45,{unscheduled:true,listId:'inbox',dueDate:'2026-10-13'}),
+  record('optional','2026-10-13',720,30,{done:true,requiresCompletion:false}),
+  record('all-day','2026-10-14',null,1440,{allDay:true,done:true})
+ ];
+ const before=JSON.stringify(values),result=insights.weekly(values,week);
+ assert.deepEqual(result.completion,{total:3,completed:2});
+ assert.equal(result.unplannedDue,1);
+ assert.equal(JSON.stringify(values),before);
+});

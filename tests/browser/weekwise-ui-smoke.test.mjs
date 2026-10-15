@@ -92,7 +92,7 @@ test('Today highlights cap at three, pinned lists sync and navigation groups rem
  const {context,page}=await openPlanner({width:1440,height:1000},productivityOptions());
  try{
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();await page.locator('[data-choose-highlights]').click();
-  for(const id of ['action-a','action-b','action-c'])await page.locator('#todayHighlightList [data-task-highlight="'+id+'"]').click();await page.locator('#todayHighlightList [data-task-highlight="action-d"]').click();assert.match(await page.locator('#todayHighlightStatus').innerText(),/Three highlights/);assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).filter(t=>t.todayPriority).length,3);
+  for(const id of ['action-a','action-b','action-c'])await page.locator('#todayHighlightList [data-task-highlight="'+id+'"]').click();assert.equal(await page.locator('#todayHighlightList [data-task-highlight="action-d"]').isDisabled(),true);assert.match(await page.locator('#todayHighlightCount').innerText(),/3 \/ 3 highlights chosen/);assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).filter(t=>t.todayPriority).length,3);
   await page.locator('#todayHighlightList [data-task-highlight="action-b"]').click();await page.locator('#todayHighlightList [data-task-highlight="action-d"]').click();await page.locator('#todayHighlightClose').click();assert.equal(await page.locator('.today-priorities article').count(),3);
   await page.locator('#workspaceLists [data-pin-list="study"]').click();assert.equal(await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').isVisible(),true);await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
   await page.locator('#workspaceLists > summary').click();assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),false);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await page.locator('#workspaceLists').evaluate(el=>el.open),false);await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').waitFor({state:'visible'});assert.equal(await page.locator('#workspacePinnedListsNav [data-workspace-view="list-study"]').isVisible(),true);
@@ -1446,5 +1446,33 @@ test('visible weekly and mobile calendars automatically label gaps between actua
   await mobile.first().waitFor({state:'attached'});
   assert.ok((await mobile.allTextContents()).some(t=>t.includes('1h gap')));
   assert.deepEqual(await readPlannerStore(page),before,'gap display never alters saved task dates or durations');
+ }finally{await context.close();}
+});
+
+test('Today, Insights and Plan keep Inbox backlog out of scheduled commitments, even when highlighted',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000},productivityOptions());
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
+  const before=await readPlannerStore(page);
+  assert.match(await page.locator('.today-progress-ring').innerText(),/0\s*\/\s*1/);
+  assert.match(await page.locator('#todayOverview').innerText(),/3 unscheduled Inbox tasks/);
+  await page.locator('[data-choose-highlights]').click();
+  assert.match(await page.locator('#todayHighlightList').innerText(),/Inbox · not scheduled/);
+  await page.locator('#todayHighlightList [data-task-highlight="action-b"]').click();
+  assert.match(await page.locator('#todayHighlightCount').innerText(),/1 \/ 3 highlights chosen/);
+  await page.locator('#todayHighlightClose').click();
+  assert.match(await page.locator('.today-priorities').innerText(),/Not scheduled · Inbox/);
+  assert.match(await page.locator('.today-progress-ring').innerText(),/0\s*\/\s*1/);
+  const afterHighlight=await readPlannerStore(page);
+  assert.equal(afterHighlight.weeks['2030-01-06'].tasks.find(t=>t.id==='action-b').start,null);
+  assert.equal(afterHighlight.weeks['2030-01-06'].tasks.find(t=>t.id==='action-b').todayPriority,true);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="insights"]')).click();
+  assert.match(await page.locator('#insightsSummary').innerText(),/Scheduled tasks done\s+0 \/ 1/);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="plan"]')).click();
+  assert.match(await page.locator('#planReadiness').innerText(),/Already scheduled\s+1/);
+  assert.match(await page.locator('#planReadiness').innerText(),/Highlighted, unplanned\s+1/);
+  assert.match(await page.locator('#planOverviewNote').innerText(),/including Inbox/);
+  assert.deepEqual(await readPlannerStore(page),afterHighlight,'Today, Insights and Plan must be read-only');
+  assert.notDeepEqual(afterHighlight,before,'only explicitly chosen highlight can modify the task');
  }finally{await context.close();}
 });

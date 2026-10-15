@@ -20,9 +20,19 @@
   timed.sort((a,b)=>a.instant.start-b.instant.start);
   const next=timed.find(r=>!r.task.done&&r.task.status!=='done'&&r.instant.end>epoch);
   const scheduled=root.WeekwisePlanning.merge(timed.map(r=>[Math.max(dayStart,r.instant.start),Math.min(dayEnd,r.instant.end)])).reduce((total,[a,b])=>total+(b-a)/60000,0);
-  const completion=records.filter(r=>r.task.requiresCompletion!==false&&(occursOn(r,current.date)||r.task.dueDate===current.date));
-  const completed=completion.filter(r=>r.task.done||r.task.status==='done').length;
-  return {...current,timed,review,next,scheduled,completion:{total:completion.length,completed}};
+  // A dated Inbox item is not an appointment. Daily completion reflects only
+  // actual timed and all-day commitments; due-only tasks receive their own count.
+  const reference=r=>r.week+'::'+r.task.id;
+  const timedIds=new Set(timed.map(reference));
+  const calendarTasks=records.filter(r=>
+   r.task.requiresCompletion!==false&&
+   (timedIds.has(reference(r))||(r.task.allDay&&occursOn(r,current.date))));
+  const uniqueCalendar=[...new Map(calendarTasks.map(r=>[reference(r),r])).values()];
+  const completion={total:uniqueCalendar.length,completed:uniqueCalendar.filter(r=>r.task.done||r.task.status==='done').length};
+  const due=records.filter(r=>r.task.requiresCompletion!==false&&!r.task.done&&r.task.status!=='done'&&r.task.dueDate&&r.task.dueDate<=current.date);
+  const dueOnly=due.filter(r=>!timedIds.has(reference(r))&&!(r.task.allDay&&occursOn(r,current.date)));
+  const inbox=records.filter(r=>(r.listId||r.task.listId)==='inbox'&&(r.task.unscheduled||r.task.start==null)&&!r.task.allDay&&!r.task.done&&r.task.status!=='done');
+  return {...current,timed,review,next,scheduled,completion,due:{total:due.length,unplanned:dueOnly.length,overdue:due.filter(r=>r.task.dueDate<current.date).length},inboxCount:inbox.length};
  }
  root.WeekwiseToday=Object.freeze({clock,daily,occursOn});
 })(typeof window!=='undefined'?window:globalThis);
