@@ -45,7 +45,7 @@ function readModalTaskTemplate(){
  return {title:weekwiseRuntime.$('modalTitleInput').value.trim(),type:weekwiseRuntime.$('modalCategory').value,listId:weekwiseRuntime.$('modalListId').value,
   folderName:weekwiseRuntime.$('modalFolder').value.trim(),sectionName:weekwiseRuntime.$('modalSection').value.trim(),priority:weekwiseRuntime.$('modalPriority').value,status:weekwiseRuntime.$('modalStatus').value,
   schedulingMode:weekwiseRuntime.$('modalSchedulingMode').value,importance:weekwiseRuntime.$('modalImportance').value,urgency:weekwiseRuntime.$('modalUrgency').value,duration:Math.max(10,Number(weekwiseRuntime.$('modalDuration').value)||30),focusEstimateMinutes:weekwiseRuntime.$('modalFocusEstimate').value.trim()?Math.max(5,Math.min(1440,Math.round(Number(weekwiseRuntime.$('modalFocusEstimate').value)/5)*5)):null,note:weekwiseRuntime.$('modalNote').value.trim(),
-  recurrence:weekwiseRuntime.$('modalRecurrence').value,tags:[...new Set(weekwiseRuntime.$('modalTags').value.split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))],
+  recurrence:weekwiseRuntime.$('modalRecurrence').value,taskColor:WeekwiseTaskOptions.colour(weekwiseRuntime.$('modalTaskColor').value),breakAfter:WeekwiseTaskOptions.breakAfter(weekwiseRuntime.$('modalBreakAfter').value),tags:[...new Set(weekwiseRuntime.$('modalTags').value.split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean).slice(0,20))],
   subtasks:weekwiseRuntime.$('modalSubtasks').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,40).map(title=>({id:weekwiseRuntime.uid(),title,done:false})),
   attachments:weekwiseRuntime.parseTaskAttachmentInput(weekwiseRuntime.$('modalAttachments').value).valid,
   noSchedule:!!weekwiseRuntime.$('modalNoSchedule').checked,allDay:!!weekwiseRuntime.$('modalAllDay').checked,createdAt:new Date().toISOString()};
@@ -73,7 +73,8 @@ function applySelectedTaskTemplate(){
  weekwiseRuntime.$('modalPriority').value=template.priority||'none';weekwiseRuntime.$('modalStatus').value=template.status||'todo';
  weekwiseRuntime.$('modalSchedulingMode').value=template.schedulingMode||'flexible';
  weekwiseRuntime.$('modalImportance').value=template.importance||'unclassified';weekwiseRuntime.$('modalUrgency').value=template.urgency||'unclassified';weekwiseRuntime.$('modalFocusEstimate').value=template.focusEstimateMinutes?String(template.focusEstimateMinutes):'';
- weekwiseRuntime.$('modalRecurrence').value=['none','daily','weekly','monthly','yearly'].includes(template.recurrence)?template.recurrence:'none';
+ weekwiseRuntime.$('modalTaskColor').value=WeekwiseTaskOptions.colour(template.taskColor);weekwiseRuntime.$('modalBreakAfter').value=String(WeekwiseTaskOptions.breakAfter(template.breakAfter));weekwiseRuntime.updateTaskColourPreview();
+  weekwiseRuntime.$('modalRecurrence').value=['none','daily','weekly','monthly','yearly'].includes(template.recurrence)?template.recurrence:'none';
  const duration=String(template.duration||30);
  if(![...weekwiseRuntime.$('modalDuration').options].some(o=>o.value===duration)){const option=document.createElement('option');option.value=duration;option.textContent=weekwiseRuntime.durationLabel(Number(duration));weekwiseRuntime.$('modalDuration').add(option);}
  weekwiseRuntime.$('modalDuration').value=duration;weekwiseRuntime.updateEndTimeFromDuration();weekwiseRuntime.$('modalNote').value=template.note||'';

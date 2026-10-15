@@ -2,10 +2,11 @@
    Only descriptive metadata is propagated; dates, times, reminders, statuses,
    completion and scheduling history must never be overwritten. */
 (function(root){'use strict';
- const FIELDS=Object.freeze(['title','note','type','listId','folderName','sectionName','priority','importance','urgency','estimatedDurationMinutes','focusEstimateMinutes','requiresCompletion','tags','attachments']);
+ const FIELDS=Object.freeze(['title','note','type','listId','folderName','sectionName','priority','importance','urgency','estimatedDurationMinutes','focusEstimateMinutes','requiresCompletion','taskColor','tags','attachments']);
  const COPY=x=>JSON.parse(JSON.stringify(x));
  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
  function normalize(field,value){
+  if(field==='taskColor'){if(!root.WeekwiseTaskOptions||root.WeekwiseTaskOptions.colour(value)!==value)throw new Error('Invalid task accent.');return value;}
   if(['tags','attachments'].includes(field)){
    if(!Array.isArray(value)||value.length>100||value.some(x=>typeof x!=='string'||x.length>2000))throw new Error('Invalid recurring metadata list.');
    return COPY(value);

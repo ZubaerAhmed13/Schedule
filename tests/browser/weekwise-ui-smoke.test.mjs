@@ -1396,3 +1396,32 @@ test('Today, list counts and recorded-focus weeks share the saved clock across a
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-action="focus"]')).click();assert.match(await page.locator('#focusSummary').innerText(),/Focus time today\s+20m/);assert.match(await page.locator('#focusSummary').innerText(),/Recorded sessions\s+1/);const retained=await readPlannerStore(page);assert.deepEqual(retained.weeks['2030-01-06'].tasks,tasks,'clock-aware read views do not migrate canonical records');
  }finally{await context.close();}
 });
+
+test('task colour, repeat removal, recovery break and calendar scroll chaining work together',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await page.locator('#addTaskBtn').click();await page.locator('#modalTitleInput').fill('Repeat with recovery');
+  await page.locator('#modalDay').selectOption(String(new Date().getDay()));
+  await page.locator('#modalTime').fill('17:30');await page.locator('#modalEndTime').fill('18:00');
+  await page.locator('#taskAppearanceOptions > summary').click();
+  await page.locator('#modalTaskColor').selectOption('purple');await page.locator('#modalBreakAfter').selectOption('15');
+  await (await visibleControl(page,'#modalRecurrence')).selectOption('weekly');
+  await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+  const before=await readPlannerStore(page),record=Object.values(before.weeks).flatMap(w=>w.tasks).find(t=>t.title==='Repeat with recovery');
+  assert.ok(record?.seriesId);assert.equal(record.taskColor,'purple');assert.equal(record.breakAfter,15);
+  assert.ok(Object.values(before.weeks).flatMap(w=>w.tasks).filter(t=>t.seriesId===record.seriesId).length>=2);
+  assert.ok(await page.locator('#daysGrid [data-task-color="purple"]').count()>0);
+  assert.match(await page.locator('#daysGrid .range-event[data-range-id="'+record.id+'"] .event-time').first().innerText(),/15m recovery afterward/);
+  assert.ok(await page.locator('#calendarZones option').count()>25);
+  assert.equal(await page.locator('#daysGrid').evaluate(el=>getComputedStyle(el).overscrollBehaviorY),'auto');
+  await page.locator('#daysGrid [data-range-edit][data-range-id="'+record.id+'"]').first().click();
+  await page.locator('#deleteTaskBtn').click();
+  await page.locator('#recurringRemoveDialog').waitFor({state:'visible'});
+  assert.match(await page.locator('#recurringRemovePreview').innerText(),/future occurrence/);
+  await page.locator('#recurringRemoveApply').click();
+  await page.locator('#recurringRemoveDialog').waitFor({state:'hidden'});
+  const after=await readPlannerStore(page),left=Object.values(after.weeks).flatMap(w=>w.tasks).filter(t=>t.seriesId===record.seriesId);
+  assert.equal(left.length,0);assert.ok(after.recurringTemplates.find(rule=>rule.id===record.seriesId)?.endDate);
+  assert.ok(after.taskHistory.some(entry=>entry.items.some(item=>item.task.id===record.id)),'removed tasks remain reversible');
+ }finally{await context.close();}
+});
