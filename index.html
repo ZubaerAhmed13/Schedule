@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="./css/weekwise-help.css">
 <link rel="stylesheet" href="./css/weekwise-entry.css">
 <link rel="stylesheet" href="./css/weekwise-polish.css">
+<link rel="stylesheet" href="./css/weekwise-time-motion.css">
 </head>
 <body>
 <a class="skip-link" href="#workspaceMain">Skip to main content</a>
@@ -495,8 +496,8 @@
 <div class="field" style="grid-column:1/-1"><label class="schedule-toggle-label" for="modalNoSchedule"><input id="modalNoSchedule" type="checkbox"><span><strong>Keep in Inbox — no scheduled time</strong><small>Use this for tasks you have captured but have not planned yet.</small></span></label></div>
 <div class="field" style="grid-column:1/-1"><label class="schedule-toggle-label" for="modalAllDay"><input id="modalAllDay" type="checkbox"><span><strong>All-day event</strong><small>Show on the selected date without creating a time block.</small></span></label></div>
 <div id="taskSchedulingFields" class="task-scheduling-fields">
-    <div class="field"><label for="modalTime">Start time</label><input id="modalTime" class="time24" data-time24 type="text" inputmode="numeric" maxlength="5" placeholder="10:00" value="10:00" required title="Use 24-hour HH:MM, e.g. 17:30 or type 1730" /></div>
-    <div class="field"><label for="modalEndTime">End time</label><input id="modalEndTime" class="time24" data-time24-end type="text" inputmode="numeric" maxlength="5" placeholder="11:00" value="10:30" required title="Use 24-hour end time. Use 24:00 for midnight." /><div class="hint">24-hour time; use 24:00 for midnight.</div><label><input id="modalEndNextDay" type="checkbox"> Ends next day</label></div>
+    <div class="field"><label for="modalTime">Start time</label><input id="modalTime" class="time24" data-time24 type="text" inputmode="text" maxlength="8" autocomplete="off" placeholder="9:30" value="10:00" required title="Type 9, 930, 17:30 or choose a time" aria-describedby="modalTimeHelp" /><div class="hint time-entry-help" id="modalTimeHelp">Type 9, 930 or 17:30 — or press Choose.</div></div>
+    <div class="field"><label for="modalEndTime">End time</label><input id="modalEndTime" class="time24" data-time24-end type="text" inputmode="text" maxlength="8" autocomplete="off" placeholder="11:00" value="10:30" required title="Type 11, 1130, 18:00, or 24:00 for midnight" aria-describedby="modalEndTimeHelp" /><div class="hint time-entry-help" id="modalEndTimeHelp">Type 11, 1130 or 18:00 — or press Choose. Midnight: 24:00.</div><label><input id="modalEndNextDay" type="checkbox"> Ends next day</label></div>
     <div class="field duration-field"><label for="modalDuration">Duration</label><select id="modalDuration"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30" selected>30 minutes</option><option value="35">35 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option><option value="75">1 hour 15 minutes</option><option value="90">1 hour 30 minutes</option><option value="120">2 hours</option><option value="180">3 hours</option><option value="540">9 hours</option></select><div class="hint">Duration updates automatically when you change the end time.</div></div>
   </div>
 <div class="field" style="grid-column:1/-1"><label for="modalNote">Note (optional)</label><input id="modalNote" maxlength="180" placeholder="A small reminder or desired outcome" /></div>
@@ -585,6 +586,7 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_jwdzJMi4VxXUHEOVasrcOg_ax0A5scL';
 <script src="./js/weekwise-experience.js"></script>
 <script src="./js/weekwise-accessibility.js"></script>
 <script src="./js/weekwise-entry.js"></script>
+<script src="./js/weekwise-time-entry.js"></script>
 <script src="./js/weekwise-app-primitives.js"></script>
 <script src="./js/weekwise-app-persistence.js"></script>
 <script src="./js/weekwise-app-settings.js"></script>
