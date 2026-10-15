@@ -224,14 +224,14 @@ function saveModalTask(e){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.prev
   if(original?.seriesId&&weekwiseRuntime.$('modalRecurringBulkMetadata').checked&&recurrence!=='none'&&weekwiseRuntime.$('modalRecurrenceScope').value!=='occurrence'){
     const snapshot=JSON.parse(JSON.stringify(weekwiseRuntime.store));
     snapshot.weeks[weekwiseRuntime.currentWeek]={...(snapshot.weeks[weekwiseRuntime.currentWeek]||{}),tasks:JSON.parse(JSON.stringify(weekwiseRuntime.tasks))};
-    const metadata={title,note,type,listId,folderName,sectionName,priority,importance,urgency,estimatedDurationMinutes,focusEstimateMinutes,requiresCompletion,tags,attachments};
+    const metadata={taskColor,title,note,type,listId,folderName,sectionName,priority,importance,urgency,estimatedDurationMinutes,focusEstimateMinutes,requiresCompletion,tags,attachments};
     const fromDate=original.occurrenceDate||weekwiseRuntime.dateKey(weekwiseRuntime.dayDate(weekwiseRuntime.currentWeek,original.day));
     let preview;
     try{preview=WeekwiseRecurringBulk.preview(snapshot,{seriesId:original.seriesId,fromDate,excludeId:id,fields:metadata});}
     catch(error){weekwiseRuntime.showToast(error.message);return;}
     if(preview.changes.length){
       const skipped=preview.skipped.completed+preview.skipped.customized+preview.skipped.other;
-      if(!confirm('Update descriptive details on '+preview.changes.length+' unchanged future recurring '+(preview.changes.length===1?'activity':'activities')+'? '+skipped+' protected or completed occurrences will be left untouched. Existing scheduled times, due dates, reminders, IDs and completion history will not change. Cancel keeps the editor open.'))return;
+      if(!confirm('Update task colour and descriptive details on '+preview.changes.length+' unchanged future recurring '+(preview.changes.length===1?'activity':'activities')+'? '+skipped+' protected or completed occurrences will be left untouched. Existing scheduled times, due dates, reminders, IDs and completion history will not change. Cancel keeps the editor open.'))return;
       try{
         const staged=WeekwiseRecurringBulk.apply(snapshot,preview);
         weekwiseRuntime.store=staged;
