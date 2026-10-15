@@ -43,12 +43,12 @@
   }
   function prepareEditor(){
     const groups={
-      taskPriorityOptions:['modalTodayPriority','modalPriority','modalStatus','modalSchedulingMode','modalFocusEstimate','modalDurationEstimate','modalImportance','modalUrgency'],
-      taskRepeatOptions:['modalRecurrence','modalReminderAt','modalReminderAt2','modalReminderAt3','modalReminderAt4','modalReminderAt5','modalDueDate'],
+      taskAppearanceOptions:['modalTaskColor','modalBreakAfter'],\n       taskPriorityOptions:['modalTodayPriority','modalPriority','modalStatus','modalSchedulingMode','modalFocusEstimate','modalDurationEstimate','modalImportance','modalUrgency'],
+      taskRepeatOptions:['modalRecurrence','modalRepeatEndMode','modalRepeatUntil','modalRepeatCount','modalReminderAt','modalReminderAt2','modalReminderAt3','modalReminderAt4','modalReminderAt5','modalDueDate'],
       taskOrganizeOptions:['modalSection','modalTags'],
       taskNotesOptions:['modalSubtasks','modalAttachments']
     };
-    const defaults={modalPriority:'none',modalStatus:'todo',modalSchedulingMode:'flexible',modalRecurrence:'none',modalImportance:'unclassified',modalUrgency:'unclassified'};
+    const defaults={modalPriority:'none',modalStatus:'todo',modalSchedulingMode:'flexible',modalRecurrence:'none',modalRepeatEndMode:'never',modalRepeatCount:'10',modalTaskColor:'auto',modalBreakAfter:'0',modalImportance:'unclassified',modalUrgency:'unclassified'};
     for(const [id,fields] of Object.entries(groups)){
       $(id).open=fields.some(name=>{const el=$(name);return el.type==='checkbox'?el.checked:!!el.value&&el.value!==(defaults[name]||'');});
     }
