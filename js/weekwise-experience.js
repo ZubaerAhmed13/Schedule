@@ -24,7 +24,7 @@ function renderToday(data){
  const guide=showGuide?root.WeekwiseOnboarding.markup(progress,data.signedIn):'';
  const {records,today,minute,store}=data,daily=root.WeekwiseToday.daily(records,store,data.epoch),{timed,next,scheduled}=daily;
  const scope=onboardingOwner+'::'+today,sameScope=todayScope===scope;
- const openDetails=sameScope?[...panel.querySelectorAll('details[open][id]')].map(el=>el.id):[];
+ const openDetails=sameScope&&$('todayReviewDetails')?.open?['todayReviewDetails']:[];
  const active=panel.contains(document.activeElement)?document.activeElement:null,focusId=sameScope?active?.id:null,reviewRef=sameScope?active?.dataset.todayReviewRef:null;
  if(!sameScope){todayScope=scope;reviewLimit=5;}
  const publish=markup=>{panel.innerHTML=markup;for(const id of openDetails){const el=$(id);if(el&&panel.contains(el))el.open=true;}const target=reviewRef?[...panel.querySelectorAll('[data-today-review-ref]')].find(el=>el.dataset.todayReviewRef===reviewRef):focusId?$(focusId):null;if(target&&panel.contains(target))target.focus({preventScroll:true});};
