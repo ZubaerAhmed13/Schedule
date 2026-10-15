@@ -1,0 +1,46 @@
+/* Time entry: type freely, or opt into familiar native hour/minute selects.
+   All decoration is presentational and respects the user's motion preference. */
+#taskSchedulingFields .time-entry-wrap{position:relative;display:flex;align-items:stretch;gap:8px;min-width:0}
+#taskSchedulingFields .time-entry-wrap>.time24{flex:1;min-width:0;font-variant-numeric:tabular-nums;font-size:16px;letter-spacing:.035em}
+#taskSchedulingFields .time-pick-trigger{flex:none;min-width:78px;min-height:46px;padding:0 12px;background:var(--ww-soft);border:1px solid var(--ww-line);border-radius:11px;color:var(--ww-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+#taskSchedulingFields .time-pick-trigger:hover{border-color:var(--ww-brand)}
+#taskSchedulingFields .time-pick-trigger[aria-expanded=true]{border-color:var(--ww-brand);box-shadow:0 0 0 2px var(--ww-soft)}
+#taskSchedulingFields .time-pick-trigger:focus-visible{outline:3px solid var(--ww-brand);outline-offset:2px}
+#taskSchedulingFields .time-pick-panel{position:absolute;z-index:90;top:calc(100% + 8px);left:0;min-width:min(310px,90vw);max-width:100%;padding:17px;border:1px solid var(--ww-line);border-radius:16px;background:var(--ww-surface);color:var(--ww-text);box-shadow:var(--ww-shadow-raised,0 12px 36px #0002)}
+#taskSchedulingFields .time-pick-panel[hidden]{display:none!important}
+.time-pick-heading{font-size:14px;font-weight:750;line-height:1.4;margin-bottom:13px}
+.time-pick-selects{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.time-pick-selects label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650}
+.time-pick-selects select{min-height:46px;width:100%;padding:9px;border-radius:10px;border:1px solid var(--ww-line);background:var(--ww-surface);color:var(--ww-text);font-size:16px;font-variant-numeric:tabular-nums}
+.time-pick-note{font-size:11px;line-height:1.5;color:var(--ww-muted);margin:11px 0 14px}
+.time-pick-actions{display:flex;justify-content:flex-end;gap:8px}.time-pick-actions>.btn{min-height:42px;flex:1;font-size:12px}
+.time-entry-help{line-height:1.55}
+@media(max-width:760px){
+ #taskSchedulingFields .time-entry-wrap{flex-wrap:wrap;gap:7px}
+ #taskSchedulingFields .time-entry-wrap>.time24{flex:1 1 100px}
+ #taskSchedulingFields .time-pick-trigger{min-width:82px}
+ #taskSchedulingFields .time-pick-panel{position:relative;top:auto;left:auto;flex:1 1 100%;max-width:none;min-width:0;box-shadow:var(--ww-shadow-soft);margin-top:3px}
+}
+@media(prefers-reduced-motion:no-preference){
+ @keyframes ww-field-pop{from{opacity:.2;transform:translateY(-5px) scale(.988)}to{opacity:1;transform:translateY(0) scale(1)}}
+ @keyframes ww-disclosure-enter{from{opacity:.2;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+ #taskSchedulingFields .time-pick-panel:not([hidden]){animation:ww-field-pop 165ms var(--ww-ease) both;transform-origin:top left}
+ #taskModal .task-option[open]>.task-option-grid,
+ #taskModal .task-template-tools[open]>.task-template-tool-row,
+ #taskModal .task-extra-reminders[open]>.task-extra-reminder-fields,
+ #taskModal .activity-suggestions:not([hidden]){animation:ww-disclosure-enter 175ms var(--ww-ease) both}
+ .nav-group[open]>.nav-group-links,.nav-group[open]>.nav-children,
+ .plan-boundaries[open]>.plan-boundaries-body{animation:ww-disclosure-enter 160ms var(--ww-ease) both}
+ #taskModal .task-option>summary{transition:background-color 150ms ease,border-color 150ms ease}
+ #taskModal .task-option>summary:hover{background:var(--ww-soft)}
+ #taskModal .time-pick-trigger:not(:disabled):active{transform:scale(.985)}
+}
+@media(prefers-reduced-motion:reduce){
+ #taskSchedulingFields .time-pick-panel,#taskModal .task-option-grid,
+ #taskModal .task-template-tool-row,#taskModal .task-extra-reminder-fields,
+ #taskModal .activity-suggestions{animation:none!important;transition:none!important;transform:none!important}
+}
+@media(forced-colors:active){
+ #taskSchedulingFields .time-pick-panel,#taskSchedulingFields .time-pick-trigger{border:1px solid CanvasText}
+ #taskSchedulingFields .time-pick-trigger[aria-expanded=true]{outline:2px solid Highlight}
+}
