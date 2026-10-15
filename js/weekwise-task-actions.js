@@ -53,7 +53,7 @@
   if(!schedule.unscheduled&&!task.allDay){
    if(!store.settings.timeZone)throw new Error('Review the planner time zone before changing timing.');
    const check=copy(store);check.weeks[ref.week].tasks=check.weeks[ref.week].tasks.filter(row=>row.id!==task.id);
-   slot=root.WeekwiseTaskSchedule.placement(check,{week,day,start:schedule.start,duration:schedule.duration});
+   slot=root.WeekwiseTaskSchedule.placement(check,{week,day,start:schedule.start,duration:schedule.duration,breakAfter:task.breakAfter||0});
    if(slot.start!==schedule.start)throw new Error('That time overlaps another activity. Choose a free time or use the calendar; nothing was changed.');
   }
   store.weeks[ref.week].tasks=store.weeks[ref.week].tasks.filter(row=>row.id!==task.id);
