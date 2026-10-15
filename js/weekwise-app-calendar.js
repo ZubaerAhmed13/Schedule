@@ -212,7 +212,7 @@ function moveTask(id,newDay,preferredTime=null){if(!weekwiseRuntime.dataCanWrite
   const t=weekwiseRuntime.tasks.find(t=>t.id===id);if(!t||t.fixed)return;
   const preferred=preferredTime??t.start??10*60;
   const blockers=weekwiseRuntime.tasks.filter(x=>x.day===newDay&&x.id!==t.id);
-  const slot=weekwiseRuntime.findSlot(newDay,t.duration,preferred,0,1440,blockers);
+  const slot=weekwiseRuntime.findSlot(newDay,t.duration+WeekwiseTaskOptions.breakAfter(t.breakAfter),preferred,0,1440,blockers);
   t.day=newDay;t.start=slot;t.unscheduled=slot===null;t.conflict=false;
   weekwiseRuntime.saveCurrent();weekwiseRuntime.renderAll();
   if(slot===null)weekwiseRuntime.showToast('No free time that day. Event moved to Needs a time.');
@@ -229,11 +229,11 @@ function swapTasks(idA,idB){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.pr
   let aStart=null,bStart=null;
   if(aOld.day===bOld.day){
     const blockers=remaining.filter(t=>t.day===aOld.day);
-    aStart=weekwiseRuntime.findSlot(aOld.day,a.duration,bOld.start,0,1440,blockers);
-    if(aStart!==null)bStart=weekwiseRuntime.findSlot(bOld.day,b.duration,aOld.start,0,1440,[...blockers,{start:aStart,duration:a.duration}]);
+    aStart=weekwiseRuntime.findSlot(aOld.day,a.duration+WeekwiseTaskOptions.breakAfter(a.breakAfter),bOld.start,0,1440,blockers);
+    if(aStart!==null)bStart=weekwiseRuntime.findSlot(bOld.day,b.duration+WeekwiseTaskOptions.breakAfter(b.breakAfter),aOld.start,0,1440,[...blockers,{start:aStart,duration:a.duration,breakAfter:a.breakAfter}]);
   }else{
-    aStart=weekwiseRuntime.findSlot(bOld.day,a.duration,bOld.start,0,1440,remaining.filter(t=>t.day===bOld.day));
-    bStart=weekwiseRuntime.findSlot(aOld.day,b.duration,aOld.start,0,1440,remaining.filter(t=>t.day===aOld.day));
+    aStart=weekwiseRuntime.findSlot(bOld.day,a.duration+WeekwiseTaskOptions.breakAfter(a.breakAfter),bOld.start,0,1440,remaining.filter(t=>t.day===bOld.day));
+    bStart=weekwiseRuntime.findSlot(aOld.day,b.duration+WeekwiseTaskOptions.breakAfter(b.breakAfter),aOld.start,0,1440,remaining.filter(t=>t.day===aOld.day));
   }
   if(aStart===null||bStart===null){weekwiseRuntime.showToast('Could not swap: there is no available time near one of those slots.');return;}
   a.day=bOld.day;a.start=aStart;a.unscheduled=false;b.day=aOld.day;b.start=bStart;b.unscheduled=false;
