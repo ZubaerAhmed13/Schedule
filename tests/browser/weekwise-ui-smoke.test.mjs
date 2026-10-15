@@ -352,7 +352,10 @@ async function createScheduledTask(page, title) {
   if(page.viewportSize().width<=430){const fits=await page.locator('#taskModal .modal').evaluate(dialog=>{const bounds=dialog.getBoundingClientRect();return [...dialog.querySelectorAll('input,select,textarea')].filter(el=>el.getClientRects().length).every(el=>{const r=el.getBoundingClientRect();return r.left>=bounds.left-1&&r.right<=bounds.right+1;});});assert.equal(fits,true,'mobile editor controls fit inside the dialog');}
   if(title==="Cross-view regression activity"||title==="Mobile regression activity")await page.screenshot({animations:'disabled',path:path.join(root,"test-results","editor-"+page.viewportSize().width+".png")});
   await page.locator("#saveTaskBtn").click();
-  await page.locator("#taskModal").waitFor({ state: "hidden" });
+  await page.locator("#taskModal").waitFor({ state: "hidden", timeout: 4500 }).catch(async()=>{
+    const diagnostic=await page.evaluate(()=>({state:{start:document.querySelector('#modalTime')?.value,end:document.querySelector('#modalEndTime')?.value,duration:document.querySelector('#modalDuration')?.value,noSchedule:document.querySelector('#modalNoSchedule')?.checked},invalid:[...document.querySelectorAll('#taskForm input,#taskForm select,#taskForm textarea')].filter(el=>!el.validity.valid).map(el=>({id:el.id,value:el.value,required:el.required,validation:el.validationMessage})),toast:document.querySelector('#toast')?.textContent}));
+    throw new Error('Scheduled task save blocked: '+JSON.stringify(diagnostic));
+  });
   await page.waitForFunction(
     taskTitle => document.querySelector("#daysGrid")?.innerText.includes(taskTitle),
     title,
