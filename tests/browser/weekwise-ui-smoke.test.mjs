@@ -1728,6 +1728,7 @@ test('authenticated mobile planner queues offline edits, displays status and syn
  const {context,page}=await openPlanner({width:390,height:844});
  try{
   await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge')?.textContent==='Synced');
+  await page.waitForFunction(()=>WeekwiseOfflineAccess.allows(localStorage,'weekwise-browser-test-user'));
   assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.allows(localStorage,'weekwise-browser-test-user')),true);
   assert.equal(await page.locator('#mobileSyncBadge').isVisible(),true);
   await context.setOffline(true);
@@ -1736,7 +1737,7 @@ test('authenticated mobile planner queues offline edits, displays status and syn
   assert.equal(await countStoredTasksNamed(page,'Created without internet'),1);
   assert.equal(await page.locator('#mobileSyncBadge').innerText(),'Saved offline');
   await context.setOffline(false);
-  await page.waitForFunction(()=>document.querySelector('#mobileSyncBadge').textContent==='Synced',{timeout:20000});
+  await page.waitForFunction(()=>document.querySelector('#mobileSyncBadge').textContent==='Synced',null,{timeout:20000});
   assert.equal(await countStoredTasksNamed(page,'Created without internet'),1);
  }finally{await context.close();}
 });
