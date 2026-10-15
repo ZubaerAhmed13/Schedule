@@ -37,7 +37,7 @@
   if(!rule)throw new Error('The recurring rule is no longer available.');
   const matching=all(store).filter(({task})=>task.seriesId===source.seriesId&&task.occurrenceDate);
   const intended=scope==='single'?matching.filter(item=>item.week===week&&item.task.id===id):scope==='all'?matching:matching.filter(({task})=>task.occurrenceDate>=source.occurrenceDate);
-  if(intended.some(({task})=>Array.isArray(task.planningChildren)&&task.planningChildren.length))throw new Error('This recurring series includes linked planning parts. Review and remove those tasks individually so their children are not orphaned. Nothing changed.');
+  if(scope!=='single'&&intended.some(({task})=>Array.isArray(task.planningChildren)&&task.planningChildren.length))throw new Error('This recurring series includes linked planning parts. Review and remove those tasks individually so their children are not orphaned. Nothing changed.');
   const retained=scope==='future'?intended.filter(({task})=>task.done||task.status==='done'||task.status==='in-progress'||task.subtasks?.some(part=>part.done)):[];
   const retainedIds=new Set(retained.map(item=>item.week+'::'+item.task.id));
   const removable=intended.filter(item=>!retainedIds.has(item.week+'::'+item.task.id));
