@@ -56,7 +56,7 @@ function mount(doc=document){
   const wrap=doc.createElement('div');wrap.className='time-entry-wrap';
   const trigger=doc.createElement('button');trigger.type='button';trigger.id=id+'PickButton';
   trigger.className='time-pick-trigger';trigger.setAttribute('aria-controls',id+'PickPanel');
-  trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-haspopup','true');
+  trigger.setAttribute('aria-expanded','false');
   trigger.setAttribute('aria-label','Choose '+(id==='modalTime'?'start':'end')+' time');
   trigger.textContent='Choose';
   const panel=doc.createElement('div');panel.className='time-pick-panel';panel.id=id+'PickPanel';
