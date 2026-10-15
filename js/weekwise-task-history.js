@@ -38,11 +38,15 @@
   const matching=all(store).filter(({task})=>task.seriesId===source.seriesId&&task.occurrenceDate);
   const intended=scope==='single'?matching.filter(item=>item.week===week&&item.task.id===id):scope==='all'?matching:matching.filter(({task})=>task.occurrenceDate>=source.occurrenceDate);
   if(scope!=='single'&&intended.some(({task})=>Array.isArray(task.planningChildren)&&task.planningChildren.length))throw new Error('This recurring series includes linked planning parts. Review and remove those tasks individually so their children are not orphaned. Nothing changed.');
-  const retained=scope==='future'?intended.filter(({task})=>task.done||task.status==='done'||task.status==='in-progress'||task.subtasks?.some(part=>part.done)):[];
+  const isCompleted=task=>task.done||task.status==='done'||task.status==='in-progress'||task.subtasks?.some(part=>part.done);
+  const isPersonalised=task=>task.recurrenceOverride||task.reschedulingHistory?.length||task.recurrenceScheduleReview||task.parentTaskId||(task.reminderNotifiedTimes||[]).length||task.reminderNotifiedAt;
+  const retainedCompleted=scope==='future'?intended.filter(({task})=>isCompleted(task)):[];
+  const retainedCustomized=scope==='future'?intended.filter(({task})=>!isCompleted(task)&&isPersonalised(task)):[];
+  const retained=[...retainedCompleted,...retainedCustomized];
   const retainedIds=new Set(retained.map(item=>item.week+'::'+item.task.id));
   const removable=intended.filter(item=>!retainedIds.has(item.week+'::'+item.task.id));
   if(removable.some(({task})=>task.fixed||task.workday||task.cityday))throw new Error('Fixed commitments are protected.');
-  return {scope,seriesId:source.seriesId,title:source.title,anchor:source.occurrenceDate,items:removable.map(item=>({week:item.week,id:item.task.id})),retained:retained.map(item=>({week:item.week,id:item.task.id})),total:matching.length};
+  return {scope,seriesId:source.seriesId,title:source.title,anchor:source.occurrenceDate,items:removable.map(item=>({week:item.week,id:item.task.id})),retained:retained.map(item=>({week:item.week,id:item.task.id})),retainedCompleted:retainedCompleted.length,retainedCustomized:retainedCustomized.length,total:matching.length};
  }
  function moveSeries(store,{week,id,scope='future',historyId,at=new Date().toISOString()}){
   root.WeekwiseData.validateStore(store);
