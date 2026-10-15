@@ -287,3 +287,13 @@ body[data-theme=dark] .ww-public-faq-items details p{color:#c2d6c6}
 body[data-theme=dark] .ww-public-screen .ww-public-kicker,body[data-theme=dark] .ww-public-screen .ww-public-section-label{color:#c0dcb7}
 body[data-theme=dark] .ww-public-screen .ww-public-quiet-inner{color:#c0d8c1}
 body[data-theme=dark] .ww-public-screen .ww-public-button-secondary{color:#234936!important}
+
+/* When the software keyboard occupies the visual viewport, the visitor is
+   interacting with the account form. Remove the long marketing scroll range
+   temporarily so every credential and submit control remains reachable. */
+@media(max-width:760px){
+ body.keyboard-open .ww-public-screen{scroll-padding-top:0!important;padding:0!important}
+ body.keyboard-open .ww-public-screen .ww-public-home,
+ body.keyboard-open .ww-public-screen .ww-public-access-intro{display:none!important}
+ body.keyboard-open .ww-public-screen .signin-card.entry-shell{margin:0 auto!important;max-width:520px;border-radius:0}
+}
