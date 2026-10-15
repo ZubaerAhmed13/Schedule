@@ -32,7 +32,7 @@
    const reviewRef=target?.dataset?.todayReviewRef;
    if(reviewRef&&!target.isConnected){
     target=[...document.querySelectorAll('[data-today-review-ref]')].find(el=>el.dataset.todayReviewRef===reviewRef)||document.getElementById('todayReviewSummary')||document.getElementById('globalCaptureBtn');
-    target?.scrollIntoView({block:'nearest'});
+    target?.scrollIntoView({block:'nearest',behavior:'instant'});
    }
    // Phone tool launchers live in a menu that closes when a tool is selected.
    // Restore a visible control instead of leaving keyboard focus on the page body.
