@@ -1595,3 +1595,69 @@ test('personal details do not transfer to another signed-in planner account',asy
   assert.equal((await readPlannerStore(page)).settings.profile.dateOfBirth,'1994-03-04');
  }finally{await context.close();}
 });
+
+test('Today greets by saved preferred name, even on an empty planner, with a private opt-out',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ const visit=async view=>(await visibleControl(page,'#workspaceSidebar [data-workspace-view="'+view+'"]')).click();
+ try{
+  await visit('today');
+  await page.locator('.today-greeting h3').waitFor();
+  assert.match(await page.locator('.today-greeting h3').innerText(),/^Good (morning|afternoon|evening)\.$/);
+  await visit('settings');
+  await page.locator('#personalFullName').fill('  Ada   Lovelace  ');
+  assert.equal(await page.locator('#personalGreetingEnabled').isChecked(),true);
+  await page.locator('#personalDetailsSave').click();
+  await visit('today');
+  assert.match(await page.locator('.today-greeting h3').innerText(),/^Good (morning|afternoon|evening), Ada Lovelace\.$/);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  await visit('today');
+  assert.match(await page.locator('.today-greeting h3').innerText(),/Ada Lovelace\.$/);
+  await visit('settings');
+  await page.locator('#personalGreetingEnabled').uncheck();
+  await page.locator('#personalDetailsSave').click();
+  assert.equal((await readPlannerStore(page)).settings.profile.fullName,'Ada Lovelace','opt-out retains the preferred name');
+  assert.equal((await readPlannerStore(page)).settings.profile.showNameInGreeting,false);
+  await visit('today');
+  assert.match(await page.locator('.today-greeting h3').innerText(),/^Good (morning|afternoon|evening)\.$/);
+  await visit('settings');
+  assert.equal(await page.locator('#personalGreetingEnabled').isChecked(),false,'preference survives navigation');
+  await page.locator('#personalGreetingEnabled').check();
+  await page.locator('#personalDetailsSave').click();
+  await visit('today');
+  assert.match(await page.locator('.today-greeting h3').innerText(),/Ada Lovelace\.$/);
+ }finally{await context.close();}
+});
+
+test('Today greeting escapes user text and removes the old owner name after account changes',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ const visit=async view=>(await visibleControl(page,'#workspaceSidebar [data-workspace-view="'+view+'"]')).click();
+ try{
+  await visit('settings');
+  await page.locator('#personalFullName').fill('<img src=x onerror=alert(1)>');
+  await page.locator('#personalDetailsSave').click();
+  await visit('today');
+  assert.match(await page.locator('.today-greeting h3').innerText(),/<img src=x onerror=alert\(1\)>/);
+  assert.equal(await page.locator('.today-greeting img').count(),0,'preferred name must be plain text');
+  await visit('settings');
+  await page.locator('#personalFullName').fill('Owner One');
+  await page.locator('#personalDetailsSave').click();
+  await visit('today');
+  assert.match(await page.locator('.today-greeting h3').innerText(),/Owner One/);
+  await page.evaluate(()=>window.WeekwiseTestAuth.setUser('second-greeting-owner'));
+  await page.waitForFunction(()=>document.querySelector('#cloudUserEmail')?.textContent==='second-greeting-owner@example.invalid');
+  await visit('today');
+  await page.waitForFunction(()=>!document.querySelector('.today-greeting h3')?.textContent?.includes('Owner One'));
+  assert.match(await page.locator('.today-greeting h3').innerText(),/^Good (morning|afternoon|evening)\.$/);
+  await visit('settings');
+  await page.locator('#personalFullName').fill('Owner Two');
+  await page.locator('#personalDetailsSave').click();
+  await visit('today');
+  assert.match(await page.locator('.today-greeting h3').innerText(),/Owner Two\.$/);
+  await page.evaluate(()=>window.WeekwiseTestAuth.setUser('weekwise-browser-test-user'));
+  await page.waitForFunction(()=>document.querySelector('#cloudUserEmail')?.textContent==='weekwise-browser-test-user@example.invalid');
+  await visit('today');
+  await page.waitForFunction(()=>document.querySelector('.today-greeting h3')?.textContent?.includes('Owner One'));
+  assert.doesNotMatch(await page.locator('.today-greeting h3').innerText(),/Owner Two/);
+ }finally{await context.close();}
+});

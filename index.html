@@ -271,9 +271,10 @@
     <div class="personal-details-head"><div><h3 id="personalDetailsHeading">Personal details</h3><p>A little space for the person behind the plans.</p></div><span class="personal-details-optional">Optional</span></div>
     <form id="personalDetailsForm" novalidate>
       <div class="personal-details-fields">
-        <div class="field"><label for="personalFullName">Your name</label><input id="personalFullName" name="fullName" type="text" autocomplete="name" maxlength="100" placeholder="How would you like to be known?" aria-describedby="personalNameHelp"><small id="personalNameHelp">Your preferred name or full name, up to 100 characters.</small></div>
+        <div class="field"><label for="personalFullName">Your name</label><input id="personalFullName" name="fullName" type="text" autocomplete="name" maxlength="100" placeholder="How would you like to be known?" aria-describedby="personalNameHelp"><small id="personalNameHelp">Your preferred name or full name, up to 100 characters. Used for your private Today greeting when enabled.</small></div>
         <div class="field"><label for="personalBirthDate">Date of birth</label><input id="personalBirthDate" name="dateOfBirth" type="date" autocomplete="bday" aria-describedby="personalBirthHelp"><small id="personalBirthHelp">Optional. Only used to remember your details—not for age-based features.</small></div>
       </div>
+      <label class="personal-greeting-option" for="personalGreetingEnabled"><input id="personalGreetingEnabled" type="checkbox" checked aria-describedby="personalGreetingHelp"><span><strong>Greet me by name on Today</strong><small id="personalGreetingHelp">Use my saved name in the morning, afternoon and evening welcome. Turn this off without removing my name.</small></span></label>
       <p class="personal-details-privacy">Device-only mode saves this information in this browser. With a Weekwise account, it is included in your synced planner and backups. It is not shown publicly. You can review this in Data &amp; privacy below.</p>
       <div class="personal-details-actions"><button class="btn primary" type="submit" id="personalDetailsSave">Save details</button><button class="btn" type="button" id="personalDetailsClear">Clear fields</button></div>
       <p class="personal-details-status" id="personalDetailsStatus" role="status" aria-live="polite"></p>
