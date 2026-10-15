@@ -82,7 +82,7 @@ test('unfinished review paginates, retains keyboard position on clock refresh an
  for(let i=0;i<7;i++)store.weeks['2030-01-06'].tasks.push({id:'decision-'+i,title:'Decision '+i,day:2,start:null,duration:30,estimatedDurationMinutes:30,done:false,unscheduled:true,custom:true,listId:'inbox',type:'life',dueDate:'2030-01-08'});
  rows.get(owner).data.store=store;seed(other);const {context,page}=await open();
  try{
-  await navigate(page,'plan');await page.locator('#planWeek').fill('2030-02-04');await page.locator('#planWeek').press('Tab');await navigate(page,'today');const before=await canonical(page);
+  await navigate(page,'plan');await (await show(page,'#planWeek')).fill('2030-02-04');await page.locator('#planWeek').press('Tab');await navigate(page,'today');const before=await canonical(page);
   await page.locator('#todayReviewSummary').click();assert.equal(await page.locator('#todayReviewDetails li').count(),5);await page.locator('#todayReviewMore').click();assert.equal(await page.locator('#todayReviewDetails li').count(),7);
   await page.locator('[data-today-review-ref="2030-01-06::decision-2"]').focus();
   await page.evaluate(()=>{const OriginalDate=Date,now=Date.now()+60000;window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}};window.dispatchEvent(new Event('focus'));});
