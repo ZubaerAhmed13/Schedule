@@ -16,13 +16,17 @@ test('personal name and birth date remain part of planner settings and backup ro
  const backup={...planner,app:'Weekwise',version:6};
  assert.deepEqual(data.storeFromBackup(data.parseBackup(JSON.stringify(backup))).settings.profile,planner.settings.profile);
  assert.deepEqual(data.parseStore(JSON.stringify(planner)).settings.profile,planner.settings.profile);
+  planner.settings.profile.showNameInGreeting=false;
+  assert.deepEqual(data.storeFromBackup(data.parseBackup(JSON.stringify({...planner,app:'Weekwise',version:6}))).settings.profile,planner.settings.profile);
+  planner.settings.profile.showNameInGreeting=true;
+  assert.equal(data.parseStore(JSON.stringify(planner)).settings.profile.showNameInGreeting,true);
 });
 test('reject invalid profile objects, overflowing names, invalid DOB and control characters',()=>{
  const planner=store();
  for(const profile of [
   null,{fullName:12,dateOfBirth:''},{fullName:'x'.repeat(101),dateOfBirth:''},
   {fullName:'Secret\u0000Name',dateOfBirth:''},{fullName:'Valid',dateOfBirth:'2001-02-29'},
-  {fullName:'Valid',dateOfBirth:'2000-13-01'},{fullName:'Valid',dateOfBirth:'not a date'}
+  {fullName:'Valid',dateOfBirth:'2000-13-01'},{fullName:'Valid',dateOfBirth:'not a date'},{fullName:'Valid',dateOfBirth:'',showNameInGreeting:'false'}
  ]){
   planner.settings.profile=profile;
   assert.throws(()=>data.validateStore(planner),/Personal|Date of birth/);
