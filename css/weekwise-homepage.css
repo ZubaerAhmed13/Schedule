@@ -280,3 +280,10 @@ body[data-theme=dark] .ww-public-faq-items details p{color:#c2d6c6}
 @media(prefers-reduced-motion:reduce){
  .ww-public-screen,.ww-public-screen *{animation:none!important;scroll-behavior:auto!important;transition:none!important;transform:none!important}
 }
+
+/* Accessibility contrast refinements: semantic colours in both appearance modes. */
+.ww-public-screen .ww-public-kicker,.ww-public-screen .ww-public-section-label{color:#4a6948}
+.ww-public-screen .ww-public-quiet-inner{color:#46654d}
+body[data-theme=dark] .ww-public-screen .ww-public-kicker,body[data-theme=dark] .ww-public-screen .ww-public-section-label{color:#c0dcb7}
+body[data-theme=dark] .ww-public-screen .ww-public-quiet-inner{color:#c0d8c1}
+body[data-theme=dark] .ww-public-screen .ww-public-button-secondary{color:#234936!important}
