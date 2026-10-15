@@ -105,6 +105,7 @@ function toggleVoiceCapture(){
 }
 
 function exportCurrentTaskList(){
+ if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))return;
  const records=weekwiseRuntime.recordsForListTransfer();
  if(!records.length){weekwiseRuntime.showToast(weekwiseRuntime.workspaceView==='filters'?'Choose a saved filter before exporting it.':'There are no tasks in this view to export.');return;}
  const seriesIds=new Set(records.map(r=>r.task.seriesId).filter(Boolean));
@@ -156,11 +157,13 @@ function transferDestinationList(){
  return null;
 }
 
-async function importSharedTaskList(file){if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.preventDefault?.();return;}
+async function importSharedTaskList(file){if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))return;if(!weekwiseRuntime.dataCanWrite()){arguments[0]?.preventDefault?.();return;}
  if(!file)return;
  try{
   if(file.size>12*1024*1024){weekwiseRuntime.showToast('This list file is larger than 12 MB. Ask for a smaller export.');return;}
+  const readingOwner=weekwiseRuntime.currentDataOwner;
   const data=JSON.parse(await file.text());
+  if(!root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner)||readingOwner!==weekwiseRuntime.currentDataOwner)return;
   if(data?.app!=='Weekwise'||data?.kind!=='shared-task-list'||data?.schemaVersion!==1||!Array.isArray(data.tasks)){
    weekwiseRuntime.showToast('That file is not a supported Weekwise list export.');return;
   }
