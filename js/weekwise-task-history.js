@@ -50,7 +50,7 @@
   if(scope==='single')return move(store,{week,id,kind:'trash',historyId,at});
   const next=clone(store),rule=next.recurringTemplates.find(item=>item.id===preview.seriesId);
   const entry={id:historyId,kind:'trash',createdAt:at,items:[],rules:[]};
-  const beforeRule=clone(rule),boundary=scope==='all'?root.WeekwiseCalendarRange.key(ordinal(rule.startDate)-1):root.WeekwiseCalendarRange.key(ordinal(preview.anchor)-1);
+  const beforeRule=clone(rule),boundary=scope==='all'?new Date((ordinal(rule.startDate)-1)*86400000).toISOString().slice(0,10):new Date((ordinal(preview.anchor)-1)*86400000).toISOString().slice(0,10);
   rule.endDate=rule.endDate&&rule.endDate<boundary?rule.endDate:boundary;
   rule.updatedAt=at;
   entry.rules.push({id:rule.id,before:beforeRule,after:clone(rule)});
