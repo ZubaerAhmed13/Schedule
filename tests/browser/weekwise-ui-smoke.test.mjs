@@ -1541,3 +1541,55 @@ test('editing end time immediately after start never duplicates or corrupts eith
   assert.ok(task);assert.equal(task.start,1050);assert.equal(task.duration,30);
  }finally{await context.close();}
 });
+
+test('personal name and date of birth save as optional planner settings, survive reload and clear without touching tasks',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
+  assert.equal(await page.locator('#personalDetailsForm').isVisible(),true);
+  const original=await readPlannerStore(page);
+  await page.locator('#personalFullName').fill('  Sam   Example ');
+  await page.locator('#personalBirthDate').fill('2000-02-29');
+  await page.locator('#personalDetailsSave').click();
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('weekwise-planner-v2')).settings.profile?.fullName==='Sam Example');
+  let next=await readPlannerStore(page);
+  assert.deepEqual(next.settings.profile,{fullName:'Sam Example',dateOfBirth:'2000-02-29'});
+  assert.deepEqual(next.weeks,original.weeks,'adding personal details leaves all tasks unchanged');
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
+  assert.equal(await page.locator('#personalFullName').inputValue(),'Sam Example');
+  assert.equal(await page.locator('#personalBirthDate').inputValue(),'2000-02-29');
+  await page.locator('#personalBirthDate').fill('2099-01-01');
+  await page.locator('#personalDetailsSave').click();
+  assert.match(await page.locator('#personalDetailsStatus').innerText(),/not in the future/);
+  assert.equal((await readPlannerStore(page)).settings.profile.dateOfBirth,'2000-02-29');
+  await page.locator('#personalDetailsClear').click();
+  assert.equal(await page.locator('#personalFullName').inputValue(),'');
+  assert.equal((await readPlannerStore(page)).settings.profile.fullName,'Sam Example','clear fields alone must not delete records');
+  await page.locator('#personalDetailsSave').click();
+  next=await readPlannerStore(page);
+  assert.equal(next.settings.profile,undefined);
+  assert.deepEqual(next.weeks,original.weeks);
+ }finally{await context.close();}
+});
+test('personal details do not transfer to another signed-in planner account',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
+  await page.locator('#personalFullName').fill('First account');
+  await page.locator('#personalBirthDate').fill('1994-03-04');
+  await page.locator('#personalDetailsSave').click();
+  assert.equal((await readPlannerStore(page)).settings.profile.fullName,'First account');
+  await page.evaluate(()=>window.WeekwiseTestAuth.setUser('second-profile-owner'));
+  await page.waitForFunction(()=>document.querySelector('#cloudUserEmail')?.textContent==='second-profile-owner@example.invalid');
+  await page.waitForFunction(()=>document.querySelector('#personalFullName')?.value==='');
+  assert.equal((await readPlannerStore(page)).settings.profile,undefined);
+  await page.locator('#personalFullName').fill('Second account');
+  await page.locator('#personalDetailsSave').click();
+  assert.equal((await readPlannerStore(page)).settings.profile.fullName,'Second account');
+  await page.evaluate(()=>window.WeekwiseTestAuth.setUser('weekwise-browser-test-user'));
+  await page.waitForFunction(()=>document.querySelector('#personalFullName')?.value==='First account');
+  assert.equal((await readPlannerStore(page)).settings.profile.dateOfBirth,'1994-03-04');
+ }finally{await context.close();}
+});
