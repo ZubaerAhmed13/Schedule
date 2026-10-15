@@ -450,4 +450,4 @@ input::placeholder,textarea::placeholder {color:var(--ww-muted);opacity:.85;}
 .guide-all-steps>summary{min-height:36px;display:flex;align-items:center;cursor:pointer;font-size:12px;font-weight:650;color:var(--ww-muted);gap:8px}
 .guide-all-steps>summary::before{content:'+';font-size:16px}.guide-all-steps[open]>summary::before{content:'−'}
 .compact-onboarding .today-onboarding-steps{margin-top:8px}
-@media(max-width:650px){.compact-onboarding{padding:14px}.compact-onboarding .today-onboarding-head h3{font-size:17px}.guide-next-step{align-items:stretch;flex-direction:column;gap:8px}.guide-next-step .btn{align-self:flex-start}.guide-all-steps>summary{min-height:44px}}
+@media(max-width:650px){.task-date-controls select{font-size:16px}.compact-onboarding{padding:14px}.compact-onboarding .today-onboarding-head h3{font-size:17px}.guide-next-step{align-items:stretch;flex-direction:column;gap:8px}.guide-next-step .btn{align-self:flex-start}.guide-all-steps>summary{min-height:44px}}
