@@ -1528,3 +1528,16 @@ test('time picker respects reduced motion and is usable with exact saved minutes
   assert.equal(await page.locator('#modalTime').getAttribute('inputmode'),'numeric');
  }finally{await context.close();}
 });
+
+test('editing end time immediately after start never duplicates or corrupts either clock',async()=>{
+ const {context,page}=await openPlanner({width:1440,height:1000});
+ try{
+  await page.locator('#addTaskBtn').click();await page.locator('#modalTitleInput').fill('Clean time transition');
+  await page.locator('#modalListId').selectOption('personal');await page.locator('#modalNoSchedule').uncheck();
+  await page.locator('#modalTime').fill('17:30');await page.locator('#modalEndTime').fill('18:00');
+  assert.equal(await page.locator('#modalEndTime').inputValue(),'18:00','start blur must never append into focused end entry');
+  await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden',timeout:5000});
+  const data=await readPlannerStore(page),task=Object.values(data.weeks).flatMap(w=>w.tasks).find(t=>t.title==='Clean time transition');
+  assert.ok(task);assert.equal(task.start,1050);assert.equal(task.duration,30);
+ }finally{await context.close();}
+});
