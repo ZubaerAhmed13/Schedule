@@ -1764,6 +1764,6 @@ test('explicit account sign-out locks cached mobile planner even while offline',
   assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);
   assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
   const retained=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-account-cache-v1:weekwise-browser-test-user')||'null'));
-  assert.equal(Object.values(retained?.payload?.store?.weeks||{}).flatMap(w=>w.tasks||[]).some(t=>t.title==='Private account appointment'),true,'the account's owner-scoped cache is preserved behind the sign-in gate');
+  assert.equal(Object.values(retained?.payload?.store?.weeks||{}).flatMap(w=>w.tasks||[]).some(t=>t.title==='Private account appointment'),true,'the account owner-scoped cache is preserved behind the sign-in gate');
  }finally{await context.close();}
 });
