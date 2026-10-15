@@ -1476,3 +1476,52 @@ test('Today, Insights and Plan keep Inbox backlog out of scheduled commitments, 
   assert.notDeepEqual(afterHighlight,before,'only explicitly chosen highlight can modify the task');
  }finally{await context.close();}
 });
+
+test('easy Add Task times do not rewrite typing, optional chooser updates duration, and saving preserves canonical minutes',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  const original=await readPlannerStore(page);
+  await page.locator('#globalCaptureBtn').click();
+  await page.locator('#modalTitleInput').fill('Accessible time test');
+  await page.locator('#modalListId').selectOption('personal');
+  await page.locator('#modalNoSchedule').uncheck();
+  await page.locator('#modalTime').fill('930');
+  assert.equal(await page.locator('#modalTime').inputValue(),'930','typing 930 must not be reformatted before editing is finished');
+  await page.locator('#modalTime').press('Tab');
+  assert.equal(await page.locator('#modalTime').inputValue(),'09:30');
+  assert.equal(await page.locator('#modalEndTime').inputValue(),'10:00','start change updates end using selected duration');
+  await page.locator('#modalEndTimePickButton').click();
+  await page.locator('#modalEndTimePickPanel').waitFor({state:'visible'});
+  assert.equal(await page.locator('#modalEndTimePickButton').getAttribute('aria-expanded'),'true');
+  await page.locator('#modalEndTimePickHours').selectOption('10');
+  await page.locator('#modalEndTimePickMinutes').selectOption('15');
+  await page.locator('#modalEndTimePickPanel .time-pick-actions .primary').click();
+  assert.equal(await page.locator('#modalEndTime').inputValue(),'10:15');
+  assert.equal(await page.locator('#modalDuration').inputValue(),'45');
+  await page.locator('#modalTimePickButton').click();
+  await page.locator('#modalTimePickPanel').waitFor({state:'visible'});
+  await page.locator('#modalTimePickHours').press('Escape');
+  assert.equal(await page.locator('#modalTimePickPanel').isVisible(),false);
+  assert.equal(await page.locator('#modalTimePickButton').getAttribute('aria-expanded'),'false');
+  assert.deepEqual(await readPlannerStore(page),original,'time editing remains draft-only');
+  await page.locator('#saveTaskBtn').click();
+  await page.locator('#taskModal').waitFor({state:'hidden'});
+  const stored=await readPlannerStore(page),task=Object.values(stored.weeks).flatMap(w=>w.tasks).find(t=>t.title==='Accessible time test');
+  assert.ok(task);assert.equal(task.start,570);assert.equal(task.duration,45);
+ }finally{await context.close();}
+});
+test('time picker respects reduced motion and is usable with exact saved minutes',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.locator('#globalCaptureBtn').click();
+  await page.locator('#modalListId').selectOption('personal');await page.locator('#modalNoSchedule').uncheck();
+  await page.locator('#modalTime').fill('9:37');await page.locator('#modalTime').press('Tab');
+  await page.locator('#modalTimePickButton').click();
+  assert.equal(await page.locator('#modalTimePickMinutes').inputValue(),'37','exact values remain selectable even between five-minute suggestions');
+  assert.equal(await page.locator('#modalTimePickPanel').evaluate(el=>getComputedStyle(el).animationName),'none');
+  await page.locator('#modalTimePickPanel .time-pick-actions button').first().click();
+  assert.equal(await page.locator('#modalTime').inputValue(),'09:37');
+  assert.equal(await page.locator('#modalTime').getAttribute('inputmode'),'numeric');
+ }finally{await context.close();}
+});
