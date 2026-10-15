@@ -7,6 +7,7 @@ import '../js/weekwise-calendar-range.js';
 import '../js/weekwise-task-schedule.js';
 import '../js/weekwise-recurring-placement.js';
 import '../js/weekwise-task-history.js';
+import '../js/weekwise-recurring-bulk.js';
 
 const week='2030-01-06',nextWeek='2030-01-13';
 const fixture=()=>({settings:{timeZone:'UTC'},weeks:{[week]:{tasks:[]},[nextWeek]:{tasks:[]}},recurringTemplates:[],customLists:[]});
@@ -66,4 +67,17 @@ test('entire series removal is reversible and includes completed occurrences aft
  assert.equal(removed.weeks[week].tasks.length,0);
  assert.equal(removed.taskHistory[0].items[0].task.done,true);
  assert.deepEqual(WeekwiseTaskHistory.restore(removed,'full').weeks,value.weeks);
+});
+
+test('series colour updates only untouched future occurrences; personalised and completed tasks stay intact',()=>{
+ const value=fixture();value.recurringTemplates=[{id:'colour',startDate:'2030-01-07',frequency:'weekly',title:'Classes',type:'study',taskColor:'auto'}];
+ const item=(id,date,done=false)=>({id,title:'Classes',type:'study',day:1,start:600,duration:30,done,seriesId:'colour',occurrenceDate:date,taskColor:'auto'});
+ value.weeks[week].tasks=[item('first','2030-01-07')];value.weeks[nextWeek].tasks=[item('second','2030-01-14'),{...item('edited','2030-01-21'),recurrenceOverride:true},{...item('done','2030-01-28',true)}];
+ const plan=WeekwiseRecurringBulk.preview(value,{seriesId:'colour',fromDate:'2030-01-07',fields:{taskColor:'teal'}});
+ assert.equal(plan.changes.length,2);assert.equal(plan.skipped.completed,1);assert.equal(plan.skipped.customized,1);
+ const next=WeekwiseRecurringBulk.apply(value,plan);
+ assert.deepEqual(next.weeks[week].tasks.map(t=>t.taskColor),['teal']);
+ assert.deepEqual(next.weeks[nextWeek].tasks.map(t=>t.taskColor),['teal','auto','auto']);
+ assert.equal(value.weeks[week].tasks[0].taskColor,'auto');
+ assert.throws(()=>WeekwiseRecurringBulk.preview(value,{seriesId:'colour',fromDate:'2030-01-07',fields:{taskColor:'<script>'}}),/Invalid task accent/);
 });
