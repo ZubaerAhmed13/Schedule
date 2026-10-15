@@ -1328,6 +1328,7 @@ test('projected Calendar keyboard movement retains focus on phones and guards st
   before.settings.calendarTimeZone='UTC';before.settings.timeZone='UTC';await page.evaluate(value=>localStorage.setItem('weekwise-planner-v2',JSON.stringify(value)),before);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="calendar"]')).click();await page.locator('#dayViewBtn').click();
   const grip=page.locator('[data-range-drag][data-range-id="'+source.task.id+'"]');await grip.focus();await page.keyboard.press('ArrowUp');assert.equal((await readPlannerStore(page)).weeks[source.week].tasks.find(t=>t.id===source.task.id).start,source.task.start-15);assert.equal(await grip.evaluate(el=>el===document.activeElement),true);
   await page.keyboard.press('ArrowDown');assert.equal((await readPlannerStore(page)).weeks[source.week].tasks.find(t=>t.id===source.task.id).start,source.task.start);
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced'); // settle prior async keyboard edits before injecting a competing tab write
   await grip.scrollIntoViewIfNeeded();await page.locator("#daysGrid").evaluate((el,start)=>el.scrollTop=Math.max(0,start/60*56-el.clientHeight/2),source.task.start);const original=await readPlannerStore(page),bounds=await grip.boundingBox();assert.equal(await page.evaluate(({x,y,id})=>document.elementFromPoint(x,y)?.closest("[data-range-drag]")?.dataset.rangeId===id,{x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2,id:source.task.id}),true,"the stale-drag test starts on the visible handle");await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);await page.mouse.down();await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2+30);
   await page.evaluate(()=>{const value=JSON.parse(localStorage.getItem('weekwise-planner-v2'));value.weeks[Object.keys(value.weeks)[0]].notes='Changed in another tab';localStorage.setItem('weekwise-planner-v2',JSON.stringify(value));});await page.mouse.up();assert.match(await page.locator('#toast').innerText(),/Another tab|planner changed/i);assert.deepEqual(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks),Object.values(original.weeks).flatMap(w=>w.tasks));
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);await page.screenshot({animations:'disabled',path:path.join(root,'test-results','calendar-zone-mobile-keyboard.png')});
@@ -1695,12 +1696,12 @@ test('Settings is the single file-transfer location in both account and device-o
   assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),true);
   await page.locator('#moreActions > summary').click();
   await page.locator('#cloudMenuBtn').click();
+  page.on('dialog',dialog=>dialog.accept());
   await page.locator('#cloudSignOut').click();
-  await page.locator('#signinLocalContinue').click();
-  await page.waitForFunction(()=>document.body.dataset.weekwiseJsonMode==='device');
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
-  for(const id of ids)assert.equal(await page.locator('#'+id).isVisible(),true,id+' visible in local Settings');
-  assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),false);
+  await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden===false);
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false,'a signed-out account device cannot bypass sign-in via guest mode');
+  assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false,'explicit sign-out revokes cached offline access');
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
  }finally{await context.close();}
 });
 
@@ -1721,5 +1722,74 @@ test('cloud Settings can restore a confirmed JSON backup without affecting other
   await page.evaluate(()=>WeekwiseTestAuth.setUser('unrelated-file-owner'));
   await page.waitForFunction(()=>document.querySelector('#cloudUserEmail').textContent==='unrelated-file-owner@example.invalid');
   assert.equal(await countStoredTasksNamed(page,'Restored in signed-in Settings'),0);
+ }finally{await context.close();}
+});
+
+test('authenticated mobile planner queues offline edits, displays status and syncs on reconnect',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844});
+ try{
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge')?.textContent==='Synced');
+  await page.waitForFunction(()=>WeekwiseOfflineAccess.allows(localStorage,'weekwise-browser-test-user'));
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.allows(localStorage,'weekwise-browser-test-user')),true);
+  assert.equal(await page.locator('#mobileSyncBadge').isVisible(),true);
+  await context.setOffline(true);
+  await page.waitForFunction(()=>document.querySelector('#mobileSyncBadge').textContent==='Offline ready');
+  await createFlexibleTask(page,'Created without internet');
+  assert.equal(await countStoredTasksNamed(page,'Created without internet'),1);
+  assert.equal(await page.locator('#mobileSyncBadge').innerText(),'Saved offline');
+  await context.setOffline(false);
+  await page.waitForFunction(()=>document.querySelector('#mobileSyncBadge').textContent==='Synced',null,{timeout:20000});
+  assert.equal(await countStoredTasksNamed(page,'Created without internet'),1);
+ }finally{await context.close();}
+});
+
+test('explicit account sign-out locks cached mobile planner even while offline',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844},{serviceWorkers:'allow'});
+ try{
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await createFlexibleTask(page,'Private account appointment');
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
+  await page.locator('#moreActions > summary').click();
+  await page.locator('#cloudMenuBtn').click();
+  page.on('dialog',d=>d.accept());
+  await page.locator('#cloudSignOut').click();
+  await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden===false);
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);
+  assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
+  assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true);
+  await context.setOffline(true);
+  await page.reload({waitUntil:'domcontentloaded'});
+  assert.equal(await page.locator('#signinLanding').isVisible(),true);
+  assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
+  const retained=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-account-cache-v1:weekwise-browser-test-user')||'null'));
+  assert.equal(Object.values(retained?.payload?.store?.weeks||{}).flatMap(w=>w.tasks||[]).some(t=>t.title==='Private account appointment'),true,'the account owner-scoped cache is preserved behind the sign-in gate');
+ }finally{await context.close();}
+});
+
+test('offline account can be locked locally without a live auth session',async()=>{
+ const {context,page}=await openPlanner({width:390,height:844},{serviceWorkers:'allow'});
+ try{
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge')?.textContent==='Synced');
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await context.unroute('**/supabase.min.js');
+  await context.setOffline(true);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#signinOfflineAccount').waitFor({state:'visible'});
+  await page.locator('#signinOfflineAccount').click();
+  await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden);
+  await page.locator('#moreActions > summary').click();
+  await page.locator('#cloudMenuBtn').click();
+  assert.equal(await page.locator('#cloudOfflineLock').isVisible(),true);
+  page.on('dialog',d=>d.accept());
+  await page.locator('#cloudOfflineLock').click();
+  assert.equal(await page.locator('#signinLanding').isVisible(),true);
+  assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
+  await page.reload({waitUntil:'domcontentloaded'});
+  assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
+  assert.equal(await page.locator('#signinLanding').isVisible(),true);
  }finally{await context.close();}
 });

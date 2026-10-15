@@ -164,21 +164,22 @@
         <p class="cloud-account-line">Signed in as <strong id="cloudUserEmail"></strong></p>
         <div class="cloud-form-actions"><button class="btn" id="cloudSyncNow" type="button">Sync now</button><button class="btn" id="cloudSignOut" type="button">Sign out</button></div>
       </div>
+      <button class="btn" id="cloudOfflineLock" type="button" hidden>Lock offline planner · Require sign-in</button>
       <div id="cloudConflict" class="cloud-conflict" hidden>
         <strong>There are different changes on this device and in the cloud.</strong>
         <p>Independent changes sync automatically. These changes overlap or have no shared sync history. Choose carefully which complete copy to keep; the other version will be replaced.</p>
         <div class="cloud-form-actions"><button class="btn" id="cloudUseRemote" type="button">Use cloud version</button><button class="btn primary" id="cloudUseLocal" type="button">Keep this device's version</button></div>
       </div>
       <p id="cloudStatus" class="cloud-status" role="status" aria-live="polite" aria-atomic="true"></p>
-      <p class="cloud-footnote">Use the same account on each device. Changes upload automatically, retry when you reconnect, and refresh when you return to Weekwise. While open, updates are checked every 15 seconds. A Synced badge confirms the upload.</p>
+      <p class="cloud-footnote">Offline changes save on this device and retry on reconnection or reopening Weekwise. <strong>Synced</strong> confirms an upload to your account; upload while the mobile app is closed cannot be guaranteed. Signing out locks the cached account planner until you sign in again.</p>
     </div>
   </details>
       </div>
       <div class="entry-divider"><span>or start simple</span></div>
       <button class="btn signin-continue" id="signinOfflineAccount" type="button" hidden>Open saved account planner offline</button>
-      <p id="signinOfflineNote" class="signin-local-note" hidden>Your saved account copy is here. Offline edits sync when you sign in to that same account.</p>
+      <p id="signinOfflineNote" class="signin-local-note" hidden>Open your previously verified account while offline. Changes stay on this device until you sign in again and sync.</p>
       <button class="btn signin-continue" id="signinLocalContinue" type="button">Explore on this device <span aria-hidden="true">→</span></button>
-      <p class="signin-local-note">No account needed. Your planner starts empty.</p>
+      <p class="signin-local-note" id="signinLocalNote">Device-only planning is separate from your account and does not sync.</p>
       <footer class="entry-footer"><span>Your plans. Your pace.</span><a href="./privacy.html">Data &amp; privacy</a></footer>
     </section>
   </div>
@@ -190,7 +191,7 @@
 <path d="m128 166 60 172 68-110 68 110 60-172" fill="none" stroke="#fffdf6" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="382" cy="124" r="15" fill="#efc394"/>
 </svg></div><div><h1>Weekwise</h1><p>Your personal planning space</p></div></div>
-    <div class="top-actions"><button class="btn" id="mobileNavigationToggle" type="button" aria-expanded="false" aria-controls="workspaceSidebar">Menu</button><button class="btn primary" id="globalCaptureBtn" type="button"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add task</span></button>
+    <div class="top-actions"><button class="mobile-sync-badge" id="mobileSyncBadge" type="button" data-tone="neutral" hidden>Connecting</button><button class="btn" id="mobileNavigationToggle" type="button" aria-expanded="false" aria-controls="workspaceSidebar">Menu</button><button class="btn primary" id="globalCaptureBtn" type="button"><svg class="ww-icon action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add task</span></button>
       <details class="more-actions" id="moreActions">
         <summary class="btn more-trigger" aria-label="More options" title="More options">•••</summary>
         <div class="more-panel" role="menu" aria-label="Weekwise options">
@@ -655,6 +656,7 @@
 <script src="./js/weekwise-evidence.js"></script>
 <script src="./js/weekwise-diagnostics.js"></script>
 <script src="./js/weekwise-json-files.js"></script>
+<script src="./js/weekwise-offline-access.js"></script>
 <script src="./js/weekwise-help.js"></script>
 <script src="./js/weekwise-recovery.js"></script>
 <script src="./js/weekwise-vitals.js"></script>
