@@ -27,7 +27,7 @@ test('editor respects an existing recovery buffer and never silently moves an un
  const before=JSON.stringify(value);
  const slot=WeekwiseTaskSchedule.placement(value,{week,day:1,start:630,duration:15});
  assert.equal(slot.start,645);assert.equal(JSON.stringify(value),before);
- value.weeks[week].tasks.push({id:'second',title:'Appointment',day:1,start:650,duration:30});
+ value.weeks[week].tasks.push({id:'second',title:'Appointment',day:1,start:650,duration:30},{id:'third',title:'Next call',day:1,start:685,duration:30});
  assert.throws(()=>WeekwiseTaskSchedule.placement(value,{week,id:'second',day:1,start:650,duration:30,breakAfter:20}),/recovery break/);
 });
 test('recurring placement reserves next slots for its recovery break',()=>{
