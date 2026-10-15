@@ -8,7 +8,12 @@
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
-<title>Weekwise — Personal Weekly Planner</title>
+<title>Weekwise — Make room for what matters | Personal weekly planner</title>
+<meta name="description" content="Bring your calendar, tasks, habits and focus time together. Weekwise helps you make a realistic plan, see free gaps and find breathing room in your week." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Weekwise — Make room for what matters" />
+<meta property="og:description" content="A calmer way to plan your days, protect your focus and find breathing room in a busy week." />
+<meta name="color-scheme" content="light dark" />
 <link rel="stylesheet" href="./css/weekwise-legacy.css">
 <link rel="stylesheet" href="./css/weekwise-plan.css">
 <link rel="stylesheet" href="./css/weekwise.css">
@@ -17,12 +22,103 @@
 <link rel="stylesheet" href="./css/weekwise-quality.css">
 <link rel="stylesheet" href="./css/weekwise-help.css">
 <link rel="stylesheet" href="./css/weekwise-entry.css">
+<link rel="stylesheet" href="./css/weekwise-homepage.css">
 <link rel="stylesheet" href="./css/weekwise-polish.css">
 <link rel="stylesheet" href="./css/weekwise-time-motion.css">
 </head>
 <body>
 <a class="skip-link" href="#workspaceMain">Skip to main content</a>
-<div class="signin-landing" id="signinLanding" role="dialog" aria-modal="true" aria-labelledby="signinLandingTitle">
+<div class="signin-landing ww-public-screen" id="signinLanding" role="dialog" aria-modal="true" aria-labelledby="wwLandingTitle">
+
+  <div class="ww-public-home" id="weekwiseHome">
+    <a class="ww-public-skip" href="#wwHomeMain">Skip to homepage content</a>
+    <header class="ww-public-header">
+      <nav class="ww-public-nav ww-public-container" aria-label="Weekwise homepage">
+        <a class="ww-public-brand" href="#wwHomeTop" aria-label="Weekwise homepage"><span class="ww-public-monogram" aria-hidden="true">W<span>·</span></span><span>weekwise<span class="ww-public-brand-dot">.</span></span></a>
+        <div class="ww-public-links">
+          <a href="#wwFeatures">Features</a><a href="#wwHow">How it works</a><a href="#wwWhy">Why Weekwise</a>
+        </div>
+        <a class="ww-public-nav-cta" href="#weekwiseAccess">Sign in <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+    <main id="wwHomeMain">
+      <section class="ww-public-hero ww-public-container" id="wwHomeTop" aria-labelledby="wwLandingTitle">
+        <div class="ww-public-hero-copy">
+          <div class="ww-public-kicker"><span class="ww-public-kicker-dot" aria-hidden="true"></span> YOUR TIME, A LITTLE MORE INTENTIONALLY</div>
+          <h1 id="wwLandingTitle">Make room for <em>what matters.</em></h1>
+          <p class="ww-public-lead">A calmer way to plan your days, protect your focus and find breathing room in a busy week. Bring your tasks, calendar and habits together—without turning life into another checklist.</p>
+          <div class="ww-public-hero-actions"><a class="ww-public-button ww-public-button-primary" href="#weekwiseAccess">Start planning <span aria-hidden="true">↗</span></a><a class="ww-public-button ww-public-button-secondary" href="#wwHow">Take a look <span aria-hidden="true">↓</span></a></div>
+          <div class="ww-public-proof"><span class="ww-public-proof-icon" aria-hidden="true">✓</span> Plan on this device, or sign in to use your account <span class="ww-public-proof-sep" aria-hidden="true">·</span> No new app to install</div>
+        </div>
+        <div class="ww-public-showcase" aria-label="Illustrative preview of the Weekwise weekly planner">
+          <div class="ww-public-sample-label">A glimpse of a more balanced week <span>ILLUSTRATIVE</span></div>
+          <div class="ww-public-app-preview">
+            <div class="ww-public-preview-top"><div class="ww-public-window-dots" aria-hidden="true"><i></i><i></i><i></i></div><span class="ww-public-preview-title">My week</span><span class="ww-public-preview-week">October · Week 42</span></div>
+            <div class="ww-public-preview-toolbar"><span class="ww-public-preview-label">A little structure. A lot more space.</span><span class="ww-public-preview-toggle">Week view</span></div>
+            <div class="ww-public-preview-calendar">
+              <div class="ww-public-preview-days" aria-hidden="true"><span><strong>MON</strong>12</span><span><strong>TUE</strong>13</span><span class="is-current"><strong>WED</strong>14</span><span><strong>THU</strong>15</span><span><strong>FRI</strong>16</span></div>
+              <div class="ww-public-preview-grid" aria-hidden="true">
+                <div class="ww-public-preview-hours"><span>09:00</span><span>11:00</span><span>13:00</span><span>15:00</span><span>17:00</span></div>
+                <div class="ww-public-preview-day"><span class="ww-public-preview-event mint" style="--from:6%;--until:24%"><b>Deep work</b><small>09:30–11:00</small></span><span class="ww-public-preview-event peach" style="--from:49%;--until:66%"><b>Study time</b><small>13:00–14:30</small></span></div>
+                <div class="ww-public-preview-day"><span class="ww-public-preview-event lavender" style="--from:19%;--until:33%"><b>Project check-in</b><small>10:30–11:30</small></span><span class="ww-public-preview-event mint" style="--from:57%;--until:76%"><b>Focus block</b><small>14:00–15:30</small></span></div>
+                <div class="ww-public-preview-day current"><span class="ww-public-preview-event peach" style="--from:8%;--until:28%"><b>University</b><small>09:45–11:15</small></span><span class="ww-public-preview-event mint" style="--from:52%;--until:69%"><b>My priorities</b><small>13:30–15:00</small></span></div>
+                <div class="ww-public-preview-day"><span class="ww-public-preview-event lavender" style="--from:11%;--until:26%"><b>Planning</b><small>10:00–11:00</small></span><span class="ww-public-preview-event peach" style="--from:59%;--until:74%"><b>Personal time</b><small>14:30–15:30</small></span></div>
+                <div class="ww-public-preview-day"><span class="ww-public-preview-event mint" style="--from:17%;--until:31%"><b>Weekly review</b><small>10:30–11:30</small></span><span class="ww-public-preview-event lavender" style="--from:53%;--until:70%"><b>Learn & grow</b><small>13:30–15:00</small></span></div>
+              </div>
+            </div>
+            <div class="ww-public-preview-bottom"><span><i class="ww-public-legend-dot"></i> Work, life and everything between</span><span>There’s room to breathe.</span></div>
+          </div>
+          <div class="ww-public-float-card"><span class="ww-public-float-icon" aria-hidden="true">◷</span><span><strong>Breathing room</strong><small>See free gaps between plans</small></span></div>
+        </div>
+      </section>
+      <div class="ww-public-quiet-bar"><div class="ww-public-container ww-public-quiet-inner"><span>LESS JUGGLING</span><span class="ww-public-quiet-line" aria-hidden="true"></span><span>MORE CLARITY</span><span class="ww-public-quiet-line" aria-hidden="true"></span><span>A WEEK THAT FITS REAL LIFE</span></div></div>
+      <section class="ww-public-section ww-public-container" id="wwHow" aria-labelledby="wwHowHeading">
+        <div class="ww-public-heading"><span class="ww-public-section-label">A GENTLER WAY TO GET THINGS DONE</span><h2 id="wwHowHeading">From a busy mind to <em>a clearer week.</em></h2><p>Simple when you need it. Thoughtful when your plans get complicated.</p></div>
+        <div class="ww-public-steps">
+          <article><span class="ww-public-step-num">01 <span aria-hidden="true">↗</span></span><span class="ww-public-step-glyph" aria-hidden="true">✎</span><h3>Capture the thought</h3><p>Drop tasks into your Inbox so you don’t have to carry everything in your head.</p></article>
+          <article><span class="ww-public-step-num">02 <span aria-hidden="true">↗</span></span><span class="ww-public-step-glyph" aria-hidden="true">▦</span><h3>Give it a place</h3><p>Turn the important things into real calendar blocks, with time for the rest of life.</p></article>
+          <article><span class="ww-public-step-num">03 <span aria-hidden="true">↗</span></span><span class="ww-public-step-glyph" aria-hidden="true">◷</span><h3>Find your focus</h3><p>Choose up to three highlights, work with a focus timer and adjust as plans change.</p></article>
+          <article><span class="ww-public-step-num">04 <span aria-hidden="true">✓</span></span><span class="ww-public-step-glyph" aria-hidden="true">↗</span><h3>Reflect & grow</h3><p>Review what was scheduled, what was done and where you’d like to make space next.</p></article>
+        </div>
+      </section>
+      <section class="ww-public-section ww-public-features" id="wwFeatures" aria-labelledby="wwFeaturesHeading">
+        <div class="ww-public-container">
+          <div class="ww-public-heading"><span class="ww-public-section-label">THE TOOLS, WITHOUT THE NOISE</span><h2 id="wwFeaturesHeading">Everything your week needs. <em>Nothing it doesn’t.</em></h2><p>One connected planning space for the practical and personal parts of your day.</p></div>
+          <div class="ww-public-feature-grid">
+            <article class="ww-public-feature ww-public-feature-big"><div class="ww-public-feature-symbol" aria-hidden="true">▦</div><div><h3>A calendar that shows real life</h3><p>Move between day, week, month, agenda and year. See your scheduled commitments—and the free gaps between them.</p></div><div class="ww-public-feature-graphic" aria-hidden="true"><span>09:00 &nbsp; Project work</span><i>45m gap · 10:30–11:15</i><span>11:15 &nbsp; Lecture</span></div></article>
+            <article class="ww-public-feature"><div class="ww-public-feature-symbol warm" aria-hidden="true">✓</div><h3>Today, with intention</h3><p>See what’s actually scheduled, what’s due and your three chosen highlights—without counting Inbox tasks as appointments.</p></article>
+            <article class="ww-public-feature"><div class="ww-public-feature-symbol lilac" aria-hidden="true">◷</div><h3>Focus when it counts</h3><p>Pair tasks with focused work sessions. Recorded focus time stays distinct from what you planned.</p></article>
+            <article class="ww-public-feature"><div class="ww-public-feature-symbol" aria-hidden="true">↻</div><h3>Habits & recurring routines</h3><p>Make room for things you want to repeat. Track habits and manage recurring tasks, including their end rules.</p></article>
+            <article class="ww-public-feature ww-public-feature-big ww-public-feature-plan"><div class="ww-public-feature-symbol warm" aria-hidden="true">✳</div><div><h3>Plan within your capacity</h3><p>Review a proposed week for flexible tasks, protect existing commitments and decide what fits before applying changes.</p></div><div class="ww-public-capacity" aria-hidden="true"><span>YOUR WEEK AT A GLANCE</span><div><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><small>Review the plan. Keep control.</small></div></article>
+            <article class="ww-public-feature"><div class="ww-public-feature-symbol lilac" aria-hidden="true">☷</div><h3>Inbox, lists & priorities</h3><p>Collect loose ideas, organise tasks into lists and folders, then use filters or the priority matrix to decide what’s next.</p></article>
+            <article class="ww-public-feature"><div class="ww-public-feature-symbol" aria-hidden="true">↗</div><h3>Insights that mean something</h3><p>Review scheduled completion, planned hours, your focus sessions and your weekly patterns—with honest labels.</p></article>
+            <article class="ww-public-feature"><div class="ww-public-feature-symbol warm" aria-hidden="true">◈</div><h3>Your space, your rhythm</h3><p>Pick a theme and task colours, use multiple time zones and access your planner on smaller screens.</p></article>
+          </div>
+        </div>
+      </section>
+      <section class="ww-public-section ww-public-container ww-public-perspective" id="wwWhy" aria-labelledby="wwWhyHeading">
+        <div class="ww-public-perspective-copy"><span class="ww-public-section-label">PLANNING FOR HUMAN BEINGS</span><h2 id="wwWhyHeading">Productive, without <em>being packed.</em></h2><p>A long task list isn’t a plan. Weekwise separates ideas in your Inbox from actual time on the calendar, so you can see what’s committed and what still needs a decision.</p><ul><li><span aria-hidden="true">✓</span> Deadlines are not the same as scheduled time.</li><li><span aria-hidden="true">✓</span> Highlights are intentions—not hidden appointments.</li><li><span aria-hidden="true">✓</span> Free gaps are visible without blocking your time.</li><li><span aria-hidden="true">✓</span> Existing commitments stay in your control.</li></ul></div>
+        <div class="ww-public-comparison" aria-label="Example of converting an Inbox item to a scheduled commitment">
+          <div class="ww-public-comparison-card"><span>INBOX · NOT SCHEDULED</span><strong>Prepare next week’s presentation</strong><small>Captured, not yet on the calendar</small></div>
+          <div class="ww-public-comparison-arrow" aria-hidden="true">↓ <span>Choose when it fits</span></div>
+          <div class="ww-public-comparison-card planned"><span>THURSDAY · ON THE CALENDAR</span><strong>Presentation preparation</strong><small>14:00–15:00 · A real time commitment</small></div>
+        </div>
+      </section>
+      <section class="ww-public-section ww-public-privacy" aria-labelledby="wwPrivacyHeading">
+        <div class="ww-public-container ww-public-privacy-inner"><div class="ww-public-privacy-icon" aria-hidden="true">◇</div><div><span class="ww-public-section-label">YOUR PLANS STAY YOURS</span><h2 id="wwPrivacyHeading">A more personal kind of planner.</h2><p>Start on this device without an account. Your device-only planner stays in this browser’s local storage. If you use a Weekwise account, you can sync through the configured cloud service. Export and restore backups from inside the planner.</p><a href="./privacy.html">How Weekwise handles your data <span aria-hidden="true">↗</span></a></div><div class="ww-public-privacy-points"><span>✓ &nbsp; Device-only planning</span><span>✓ &nbsp; Optional account sync</span><span>✓ &nbsp; Backup and restore</span><span>✓ &nbsp; Offline support after loading</span></div></div>
+      </section>
+      <section class="ww-public-section ww-public-container ww-public-faq" id="wwFaq" aria-labelledby="wwFaqHeading"><div class="ww-public-heading"><span class="ww-public-section-label">GOOD TO KNOW</span><h2 id="wwFaqHeading">A few questions, <em>answered.</em></h2></div><div class="ww-public-faq-items">
+        <details><summary>Do I need an account to use Weekwise?<span aria-hidden="true">+</span></summary><p>No. Choose “Explore on this device” to use a local planner. Your changes stay in this browser. You can also sign in to an existing account to use account-based sync.</p></details>
+        <details><summary>Can I use Weekwise on my phone?<span aria-hidden="true">+</span></summary><p>Yes. Weekwise has responsive calendar, task and planning views. It is also installable as a web app on supported browsers.</p></details>
+        <details><summary>Does Weekwise automatically schedule everything?<span aria-hidden="true">+</span></summary><p>No. You choose what to put on the calendar. The week planner offers suggestions for review, and applying a plan is a deliberate step. Tasks in your Inbox do not become appointments on their own.</p></details>
+        <details><summary>Can I create a cloud account?<span aria-hidden="true">+</span></summary><p>Weekwise supports sign-in and account creation with an invite code. Cloud features depend on the configured backend and your connection; device-only planning works separately.</p></details>
+        <details><summary>Does it connect to Google or Outlook calendars?<span aria-hidden="true">+</span></summary><p>Calendar connection controls are available, but connecting external providers requires their separate account and backend configuration. Weekwise does not claim those connections are active before they are configured.</p></details>
+      </div></section>
+      <section class="ww-public-final ww-public-container" aria-labelledby="wwFinalHeading"><div><span class="ww-public-section-label">IT'S YOUR WEEK</span><h2 id="wwFinalHeading">A little less overwhelm.<br><em>A lot more you.</em></h2><p>Give your plans somewhere thoughtful to live.</p></div><a class="ww-public-button ww-public-button-light" href="#weekwiseAccess">Your week starts here <span aria-hidden="true">↗</span></a></section>
+    </main>
+    <footer class="ww-public-footer ww-public-container"><a class="ww-public-brand" href="#wwHomeTop"><span class="ww-public-monogram" aria-hidden="true">W<span>·</span></span><span>weekwise<span class="ww-public-brand-dot">.</span></span></a><p>Make room for what matters.</p><div><a href="./privacy.html">Privacy</a><a href="#wwFaq">FAQs</a><a href="#weekwiseAccess">Sign in</a></div></footer>
+  </div>
+  <div class="ww-public-access-intro ww-public-container" id="weekwiseAccess" tabindex="-1"><span class="ww-public-section-label">WELCOME TO YOUR SPACE</span><h2>Ready when you are.</h2><p>Sign in to your Weekwise account, join with an invite, or start privately on this device.</p></div>
   <div class="signin-card entry-shell">
     <section class="entry-story">
       <div class="signin-brand"><div class="logo" aria-hidden="true"><svg class="brand-symbol" viewBox="0 0 512 512" aria-hidden="true">
