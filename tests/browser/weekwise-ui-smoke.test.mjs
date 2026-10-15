@@ -46,7 +46,7 @@ test('a delayed device-only JSON import cannot overwrite an account after mode s
   await page.waitForFunction(()=>document.querySelector('#cloudUserEmail').textContent==='new-backup-owner@example.invalid');
   const other=await readPlannerStore(page);
   await page.evaluate(raw=>window.__finishBackupRead(raw),raw);
-  await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('device-only mode'));
+  await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('Your account changed'));
   assert.deepEqual(await readPlannerStore(page),other);assert.equal(confirmations,0);
  }finally{await context.close();}
 });
@@ -1678,6 +1678,7 @@ test('manual JSON controls are absent in cloud and available in device-only mode
   assert.equal(await page.locator('#qualityBackupDetails').isVisible(),false);
   assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),true);
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="calendar"]')).click();
+  await page.locator('#calendarFileActions > summary').click();
   assert.equal(await page.locator('#exportCalendarBtn').isVisible(),true);
   assert.equal(await page.locator('#importCalendarBtn').isVisible(),true);
   const before=await readPlannerStore(page);
