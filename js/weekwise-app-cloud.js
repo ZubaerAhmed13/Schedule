@@ -54,6 +54,7 @@ function renderCloudPanel(){
  if(signed)signed.hidden=!weekwiseRuntime.cloudUser||recovery;
  if(email)email.textContent=weekwiseRuntime.cloudUser?.email||'';
  if(conflict)conflict.hidden=!weekwiseRuntime.cloudConflict;
+ const lock=weekwiseRuntime.$('cloudOfflineLock');if(lock)lock.hidden=!weekwiseRuntime.offlineAccountSelected();
  if(!weekwiseRuntime.cloudClient)weekwiseRuntime.setCloudStatus('Cloud sign-in is unavailable because the Supabase library did not load. Local planning still works.');
  if(weekwiseRuntime.cloudConflict)weekwiseRuntime.setCloudStatus('Sync paused to protect both versions. Choose which copy to keep.');
  if(weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.setCloudStatus('Saved account planner open offline. Changes stay on this device until this account is signed in again.');weekwiseRuntime.$('cloudMenuBadge').textContent='Offline';}
