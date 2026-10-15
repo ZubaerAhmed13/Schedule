@@ -46,8 +46,12 @@ test('a delayed device-only JSON import cannot overwrite an account after mode s
   await page.waitForFunction(()=>document.querySelector('#cloudUserEmail').textContent==='new-backup-owner@example.invalid');
   const other=await readPlannerStore(page);
   await page.evaluate(raw=>window.__finishBackupRead(raw),raw);
-  await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('Your account changed'));
-  assert.deepEqual(await readPlannerStore(page),other);assert.equal(confirmations,0);
+  // Allow the resumed file read to finish; assert the protected result, not transient toast timing.
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
+  await page.waitForTimeout(250);
+  assert.deepEqual(await readPlannerStore(page),other,'a delayed local JSON import cannot replace an account-owned planner');
+  assert.equal(confirmations,0,'account JSON import must never ask to replace data');
+  assert.equal(await countStoredTasksNamed(page,'Older backup data'),0);
  }finally{await context.close();}
 });
 
