@@ -185,6 +185,7 @@ function renderWorkspaceTasks(){
 }
 
 function renderWorkspaceView(){
+  root.WeekwiseJsonFiles.render(weekwiseRuntime.currentDataOwner);
  WeekwiseInterface.navigation(weekwiseRuntime.workspaceView);
  const isInsights=weekwiseRuntime.workspaceView==='insights',isSettings=weekwiseRuntime.workspaceView==='settings',isPlan=weekwiseRuntime.workspaceView==='plan',isCalendar=weekwiseRuntime.workspaceView==='calendar',isMatrix=weekwiseRuntime.workspaceView==='matrix',isBoard=weekwiseRuntime.workspaceView==='board',isFilters=weekwiseRuntime.workspaceView==='filters';
  const taskWorkspace=weekwiseRuntime.$('taskWorkspace'),matrix=weekwiseRuntime.$('priorityMatrix'),board=weekwiseRuntime.$('kanbanBoard'),filters=weekwiseRuntime.$('filtersWorkspace');
@@ -254,8 +255,8 @@ function wireWorkspaceControls(){
  });
  weekwiseRuntime.$('workspaceCaptureForm').addEventListener('submit',e=>{e.preventDefault();weekwiseRuntime.quickCaptureWorkspaceTask();});
  weekwiseRuntime.$('workspaceExportListBtn').addEventListener('click',weekwiseRuntime.exportCurrentTaskList);
- weekwiseRuntime.$('workspaceImportListBtn').addEventListener('click',()=>weekwiseRuntime.$('workspaceImportListFile').click());
- weekwiseRuntime.$('workspaceImportListFile').addEventListener('change',async e=>{const file=e.target.files?.[0];e.target.value='';if(file)await weekwiseRuntime.importSharedTaskList(file);});
+ weekwiseRuntime.$('workspaceImportListBtn').addEventListener('click',()=>{if(root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))weekwiseRuntime.$('workspaceImportListFile').click();});
+ weekwiseRuntime.$('workspaceImportListFile').addEventListener('change',async e=>{const file=e.target.files?.[0];e.target.value='';if(file&&root.WeekwiseJsonFiles.allowed(weekwiseRuntime.currentDataOwner))await weekwiseRuntime.importSharedTaskList(file);});
  weekwiseRuntime.$('copyTaskPlanningPromptBtn').addEventListener('click',weekwiseRuntime.copyTaskPlanningPrompt);
  weekwiseRuntime.$('voiceCaptureBtn').addEventListener('click',weekwiseRuntime.toggleVoiceCapture);
  weekwiseRuntime.$('workspaceAddTaskBtn').addEventListener('click',()=>{const def=weekwiseRuntime.workspaceView==='inbox'?'inbox':weekwiseRuntime.workspaceView.startsWith('list-')?weekwiseRuntime.workspaceView.slice(5):weekwiseRuntime.workspaceView.startsWith('folder:')?(weekwiseRuntime.workspaceRecords().find(r=>(r.task.folderName||weekwiseRuntime.defaultFolderName(r.listId))===weekwiseRuntime.workspaceView.slice(7))?.listId||'other'):weekwiseRuntime.workspaceView.startsWith('tag:')?(weekwiseRuntime.workspaceRecords().find(r=>(Array.isArray(r.task.tags)?r.task.tags:[]).some(tag=>String(tag).replace(/^#/,'').toLowerCase()===weekwiseRuntime.workspaceView.slice(4).toLowerCase()))?.listId||'other'):null;const tomorrow=weekwiseRuntime.workspaceView==='tomorrow';const targetDay=tomorrow?weekwiseRuntime.addDaysForView(weekwiseRuntime.now,1).getDay():weekwiseRuntime.workspaceView==='today'?weekwiseRuntime.now.getDay():weekwiseRuntime.mobileDay;const targetStart=weekwiseRuntime.workspaceView==='inbox'?null:tomorrow?10*60:weekwiseRuntime.nextQuarterHour();weekwiseRuntime.openTaskModal(null,targetDay,targetStart,def);});
