@@ -105,5 +105,10 @@
     $('planCancelSplit').onclick=()=>$('planSplitDialog').close();$('planAddPart').onclick=()=>addPart();$('planSplitForm').onsubmit=e=>{e.preventDefault();try{if(splitSnapshot.account!==app.account()||splitSnapshot.fingerprint!==fingerprint())throw new Error('Your planner changed. Close this dialog and start splitting again.');const snapshot=app.snapshot(),parts=[...$('planSplitParts').children].map(row=>({title:row.querySelector('input[type="text"]').value,minutes:Number(row.querySelector('input[type="number"]').value)}));const next=root.WeekwisePlanning.splitTask(snapshot.store,splitRef,parts,()=>root.crypto.randomUUID());app.commit(JSON.stringify(snapshot),app.account(),next,'weekwise-pre-split-v1');$('planSplitDialog').close();overrides={};buildPreview();announce('Linked parts saved. Review their placements before applying.');}catch(error){$('planSplitStatus').textContent=error.message;}};
     render();
   }
-  root.WeekwisePlanUI=Object.freeze({init,render});
+  function recoverToday(){
+    render();const clock=root.WeekwisePlanning.planningClock(app.snapshot().store);
+    $('planWeek').value=root.WeekwiseCalendarRange.range(clock.date,1)[0];mode='recover';overrides={};buildPreview();
+    $('planStatus').setAttribute('tabindex','-1');$('planStatus').focus();
+  }
+  root.WeekwisePlanUI=Object.freeze({init,render,recoverToday});
 })(window);

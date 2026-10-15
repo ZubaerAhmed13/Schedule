@@ -1,5 +1,9 @@
 # Weekwise current status — 15 October 2026
 
+## Phone and daily execution follow-up
+
+Release 2 compacts phone calendar controls while retaining five modes and accessible creation actions. Today puts the next commitment and highlights before secondary totals, with a bounded unfinished-work review and a read-only current-week recovery preview. See [MOBILE_TODAY_RELEASE.md](MOBILE_TODAY_RELEASE.md) for scope, clock semantics, preservation and remaining physical acceptance. The release PR owns final CI and deployment evidence. Google and Outlook activation remain excluded.
+
 ## Core usability follow-up
 
 The current follow-up adds explicit Monday–Sunday task-date choices and a native date picker with preserved cross-week identity; Monday habit totals and check-in rows; a corrected Insights week label; compact optional onboarding; visible workspace search; and consolidated help/focus controls. See [CORE_USABILITY_RELEASE.md](CORE_USABILITY_RELEASE.md) for semantics, preservation checks and remaining acceptance. The release PR records exact source and CI evidence. The user's current scope excludes Google and Outlook activation; provider requests in the dated history below are historical.

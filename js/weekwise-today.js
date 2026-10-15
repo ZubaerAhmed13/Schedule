@@ -3,6 +3,21 @@
  'use strict';
  function clock(store,epoch=Date.now()){return {...root.WeekwisePlanning.planningClock(store,epoch),epoch};}
  function occursOn(record,date){const task=record.task,source=record.dateKey||root.WeekwisePlanning.dateAt(record.week,task.day);if(source===date)return true;if(task.allDay)return source<date&&root.WeekwisePlanning.dateAt(source,Math.max(1,Math.ceil((task.duration||0)/1440)))>date;return !task.unscheduled&&task.start!=null&&source===root.WeekwisePlanning.dateAt(date,-1)&&Number(task.start)+Number(task.duration)>1440;}
+ function decisions(records,current){
+  const items=new Map();
+  for(const record of records){
+   const task=record.task,date=record.dateKey||root.WeekwisePlanning.dateAt(record.week,task.day);
+   if(task.done||['done','skipped'].includes(task.status)||task.requiresCompletion===false||task.archived||task.deleted)continue;
+   const due=task.dueDate&&task.dueDate<=current.date;
+   let elapsed=false;
+   if(date<=current.date){
+    if(task.allDay)elapsed=root.WeekwisePlanning.dateAt(date,Math.max(1,Math.ceil((task.duration||0)/1440)))<=current.date;
+    else if(!task.unscheduled&&task.start!=null&&task.duration>0){try{elapsed=root.WeekwiseCalendarRange.instant(record,current.zone).end<=current.epoch;}catch(_){/* Unresolved clock times stay in the existing time-review flow. */}}
+   }
+   if(due||elapsed)items.set(record.week+'::'+task.id,{...record,decision:due?'due':'elapsed',decisionDate:due?task.dueDate:date});
+  }
+  return [...items.values()].sort((a,b)=>Number(b.decision==='due')-Number(a.decision==='due')||a.decisionDate.localeCompare(b.decisionDate)||String(a.task.id).localeCompare(String(b.task.id)));
+ }
  function daily(records,store,epoch=Date.now()){
   const current=clock(store,epoch),priorDate=root.WeekwisePlanning.dateAt(current.date,-1),timed=[],review=[];let dayStart,dayEnd,boundaryError;try{dayStart=root.WeekwiseCalendarRange.wall(current.date,0,current.zone);dayEnd=root.WeekwiseCalendarRange.wall(current.date,1440,current.zone);}catch(error){boundaryError=error.message;}
   for(const record of records){
@@ -32,7 +47,7 @@
   const due=records.filter(r=>r.task.requiresCompletion!==false&&!r.task.done&&r.task.status!=='done'&&r.task.dueDate&&r.task.dueDate<=current.date);
   const dueOnly=due.filter(r=>!timedIds.has(reference(r))&&!(r.task.allDay&&occursOn(r,current.date)));
   const inbox=records.filter(r=>(r.listId||r.task.listId)==='inbox'&&(r.task.unscheduled||r.task.start==null)&&!r.task.allDay&&!r.task.done&&r.task.status!=='done');
-  return {...current,timed,review,next,scheduled,completion,due:{total:due.length,unplanned:dueOnly.length,overdue:due.filter(r=>r.task.dueDate<current.date).length},inboxCount:inbox.length};
+  return {...current,timed,review,next,scheduled,completion,decisions:decisions(records,current),due:{total:due.length,unplanned:dueOnly.length,overdue:due.filter(r=>r.task.dueDate<current.date).length},inboxCount:inbox.length};
  }
  root.WeekwiseToday=Object.freeze({clock,daily,occursOn});
 })(typeof window!=='undefined'?window:globalThis);
