@@ -1683,6 +1683,7 @@ test('manual JSON controls are absent in cloud and available in device-only mode
   const before=await readPlannerStore(page);
   await page.locator('#importFile').setInputFiles({name:'attempt.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({app:'Weekwise',version:6,...before}))});
   assert.deepEqual(await readPlannerStore(page),before,'programmatic file selection cannot overwrite an account');
+  await page.locator('#moreActions > summary').click();
   await page.locator('#cloudMenuBtn').click();
   await page.locator('#cloudSignOut').click();
   await page.locator('#signinLocalContinue').click();
