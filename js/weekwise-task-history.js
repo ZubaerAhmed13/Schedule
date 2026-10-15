@@ -26,6 +26,45 @@
   }
   next.taskHistory=[...(next.taskHistory||[]),entry];root.WeekwiseData.validateStore(next);return next;
  }
+
+ // Review is side-effect-free; completed future history is intentionally protected.
+ function seriesPreview(store,{week,id,scope='future'}){
+  root.WeekwiseData.validateStore(store);
+  if(!['single','future','all'].includes(scope))throw new Error('Choose which recurring tasks to remove.');
+  const source=store.weeks?.[week]?.tasks.find(task=>task.id===id);
+  if(!source?.seriesId||!source.occurrenceDate)throw new Error('This task no longer belongs to a recurring series.');
+  const rule=store.recurringTemplates?.find(item=>item.id===source.seriesId);
+  if(!rule)throw new Error('The recurring rule is no longer available.');
+  const matching=all(store).filter(({task})=>task.seriesId===source.seriesId&&task.occurrenceDate);
+  const intended=scope==='single'?matching.filter(item=>item.week===week&&item.task.id===id):scope==='all'?matching:matching.filter(({task})=>task.occurrenceDate>=source.occurrenceDate);
+  const retained=scope==='future'?intended.filter(({task})=>task.done||task.status==='done'||task.status==='in-progress'||task.subtasks?.some(part=>part.done)):[];
+  const retainedIds=new Set(retained.map(item=>item.week+'::'+item.task.id));
+  const removable=intended.filter(item=>!retainedIds.has(item.week+'::'+item.task.id));
+  if(removable.some(({task})=>task.fixed||task.workday||task.cityday))throw new Error('Fixed commitments are protected.');
+  return {scope,seriesId:source.seriesId,title:source.title,anchor:source.occurrenceDate,items:removable.map(item=>({week:item.week,id:item.task.id})),retained:retained.map(item=>({week:item.week,id:item.task.id})),total:matching.length};
+ }
+ function moveSeries(store,{week,id,scope='future',historyId,at=new Date().toISOString()}){
+  root.WeekwiseData.validateStore(store);
+  if(typeof historyId!=='string'||!historyId||!Number.isFinite(Date.parse(at))||(store.taskHistory||[]).some(entry=>entry.id===historyId))throw new Error('Invalid repeating removal request.');
+  const preview=seriesPreview(store,{week,id,scope});
+  if(scope==='single')return move(store,{week,id,kind:'trash',historyId,at});
+  const next=clone(store),rule=next.recurringTemplates.find(item=>item.id===preview.seriesId);
+  const entry={id:historyId,kind:'trash',createdAt:at,items:[],rules:[]};
+  const beforeRule=clone(rule),boundary=scope==='all'?root.WeekwiseCalendarRange.key(ordinal(rule.startDate)-1):root.WeekwiseCalendarRange.key(ordinal(preview.anchor)-1);
+  rule.endDate=rule.endDate&&rule.endDate<boundary?rule.endDate:boundary;
+  rule.updatedAt=at;
+  entry.rules.push({id:rule.id,before:beforeRule,after:clone(rule)});
+  for(const ref of preview.items){
+   const task=next.weeks[ref.week]?.tasks.find(item=>item.id===ref.id);
+   if(!task)throw new Error('Recurring tasks changed before removal. Nothing changed.');
+   entry.items.push({week:ref.week,task:clone(task)});
+   next.weeks[ref.week].tasks=next.weeks[ref.week].tasks.filter(item=>item.id!==ref.id);
+  }
+  // Retained completed records remain in the calendar and keep their identity,
+  // even though the rule can no longer generate further occurrences.
+  next.taskHistory=[...(next.taskHistory||[]),entry];
+  return root.WeekwiseData.validateStore(next);
+ }
  function restore(store,historyId,{unscheduled=false}={}){
   root.WeekwiseData.validateStore(store);const entry=store.taskHistory?.find(entry=>entry.id===historyId);
   if(!entry)throw new Error('This history entry is no longer available.');
@@ -44,5 +83,5 @@
   for(const saved of entry.rules){const index=next.recurringTemplates?.findIndex(rule=>rule.id===saved.id);if(index>=0&&JSON.stringify(next.recurringTemplates[index])===JSON.stringify(saved.after))next.recurringTemplates[index]=clone(saved.before);}
   next.taskHistory=next.taskHistory.filter(item=>item.id!==historyId);root.WeekwiseData.validateStore(next);return next;
  }
- root.WeekwiseTaskHistory=Object.freeze({move,restore});
+ root.WeekwiseTaskHistory=Object.freeze({move,seriesPreview,moveSeries,restore});
 })(typeof window!=='undefined'?window:globalThis);
