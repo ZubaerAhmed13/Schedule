@@ -20,7 +20,7 @@ Offline operations save to existing checked local transactions and are not repre
 
 ## Mobile experience
 
-A small status control visible while the account planner is open distinguishes **Synced**, **Saved offline**, **Offline ready**, **Syncing**, **Review sync**, and **Sign in to sync**. It opens Account & sync and never asserts delivery unless the server confirmed a write. It uses a touch-friendly 36px target and a separate row on narrow phones to avoid crowding the calendar controls.
+Keep the mobile top bar focused on navigation and adding tasks: no permanent sync badge or extra status row. A user can find **Synced**, **Saved offline**, **Syncing**, conflict review, and offline/account information under the three-dot menu → **Account & sync**. Never assert an upload succeeded until the server confirms it.
 
 ## Limitations and residual risk
 

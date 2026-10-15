@@ -16,14 +16,6 @@ function readCloudMeta(){try{const meta=JSON.parse(localStorage.getItem(weekwise
 function writeCloudMeta(revision,payload){localStorage.setItem(weekwiseRuntime.CLOUD_META_KEY,JSON.stringify({userId:weekwiseRuntime.cloudUser?.id||'',revision:Number(revision)||0,fingerprint:weekwiseRuntime.cloudFingerprint(payload),syncedAt:new Date().toISOString()}));}
 
 function setCloudStatus(message){const el=weekwiseRuntime.$('cloudStatus');if(el){el.textContent=message;const m=String(message||'').toLowerCase();el.dataset.tone=/fail|error|invalid|incorrect|do not match|unavailable|not confirmed|could not|rejected|unable/.test(m)?'error':/synced|success|sent|created|updated|signed out/.test(m)?'success':/signing|creating|sending|checking|syncing|saving|loading/.test(m)?'loading':'';}const badge=weekwiseRuntime.$('cloudMenuBadge');if(badge){badge.textContent=weekwiseRuntime.offlineAccountSelected()?'Offline':weekwiseRuntime.cloudUser&&!weekwiseRuntime.cloudReady?'Connecting':WeekwiseData.syncLabel(message,!!weekwiseRuntime.cloudUser,!!weekwiseRuntime.cloudConflict);badge.title=message;}
- const pill=weekwiseRuntime.$('mobileSyncBadge');
- if(pill){
-  const owner=weekwiseRuntime.currentDataOwner,meta=weekwiseRuntime.readCloudMeta();
-  const dirty=owner!=='local'&&!!meta?.fingerprint&&meta.userId===owner&&meta.fingerprint!==weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload());
-  const state=root.WeekwiseOfflineAccess.display({owner,online:navigator.onLine,signedIn:weekwiseRuntime.cloudUser?.id===owner,offlineCopy:weekwiseRuntime.offlineAccountSelected(),dirty,busy:weekwiseRuntime.cloudBusy,conflict:weekwiseRuntime.cloudConflict,ready:weekwiseRuntime.cloudReady,message});
-  pill.textContent=state.label;pill.dataset.tone=state.tone;pill.hidden=owner==='local'||!!weekwiseRuntime.$('signinLanding')&&!weekwiseRuntime.$('signinLanding').hidden;
-  pill.title=message||state.label;
- }
  notifySync();}
 
 function offlineAccountSelected(){return !weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&localStorage.getItem('weekwise-offline-owner-v1')===weekwiseRuntime.currentDataOwner&&root.WeekwiseOfflineAccess.canOpenOffline(localStorage,weekwiseRuntime.currentDataOwner,navigator.onLine);}
