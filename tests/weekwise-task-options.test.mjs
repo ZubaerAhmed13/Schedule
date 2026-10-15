@@ -81,3 +81,17 @@ test('series colour updates only untouched future occurrences; personalised and 
  assert.equal(value.weeks[week].tasks[0].taskColor,'auto');
  assert.throws(()=>WeekwiseRecurringBulk.preview(value,{seriesId:'colour',fromDate:'2030-01-07',fields:{taskColor:'<script>'}}),/Invalid task accent/);
 });
+
+test('future series deletion retains independent edits and explicitly separates their preview count',()=>{
+ const value=fixture();
+ const original={id:'first',title:'Careful series',day:1,start:600,duration:30,done:false,seriesId:'careful',occurrenceDate:'2030-01-07'};
+ const altered={id:'second',title:'One-time variation',day:1,start:660,duration:45,done:false,seriesId:'careful',occurrenceDate:'2030-01-14',recurrenceOverride:true};
+ value.weeks[week].tasks.push(original);value.weeks[nextWeek].tasks.push(altered);
+ value.recurringTemplates=[{id:'careful',startDate:'2030-01-07',frequency:'weekly',title:'Careful series'}];
+ const preview=WeekwiseTaskHistory.seriesPreview(value,{week,id:'first',scope:'future'});
+ assert.equal(preview.items.length,1);
+ assert.equal(preview.retainedCustomized,1);
+ const next=WeekwiseTaskHistory.moveSeries(value,{week,id:'first',scope:'future',historyId:'safe',at:'2030-01-07T07:00:00.000Z'});
+ assert.deepEqual(next.weeks[nextWeek].tasks[0],altered);
+ assert.equal(next.recurringTemplates[0].endDate,'2030-01-06');
+});
