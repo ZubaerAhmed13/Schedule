@@ -451,3 +451,11 @@ input::placeholder,textarea::placeholder {color:var(--ww-muted);opacity:.85;}
 .guide-all-steps>summary::before{content:'+';font-size:16px}.guide-all-steps[open]>summary::before{content:'−'}
 .compact-onboarding .today-onboarding-steps{margin-top:8px}
 @media(max-width:650px){.task-date-controls select{font-size:16px}.compact-onboarding{padding:14px}.compact-onboarding .today-onboarding-head h3{font-size:17px}.guide-next-step{align-items:stretch;flex-direction:column;gap:8px}.guide-next-step .btn{align-self:flex-start}.guide-all-steps>summary{min-height:44px}}
+
+/* Scroll the editor body independently so footer actions cannot cover fields. */
+#taskModal .modal{display:flex;flex-direction:column;overflow:hidden}
+#taskModal .modal>h3{flex-shrink:0}
+#taskForm{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#taskForm>.modalgrid{min-height:0;overflow:auto;overscroll-behavior:contain;padding:4px;scroll-padding-block:12px}
+#taskForm>.modalbuttons{position:static;bottom:auto;flex-shrink:0;margin-top:12px;padding:12px 0 0;border-top:1px solid var(--ww-line)}
+@media(max-width:650px){#taskForm .task-date-field{grid-column:1/-1}#taskForm .field:has(>#modalListId){grid-column:1/-1}}

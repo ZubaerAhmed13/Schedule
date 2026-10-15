@@ -42,6 +42,7 @@ test('full task editing selects an explicit date across weeks and retains stable
   await page.locator('.workspace-task-title[data-workspace-edit="action-a"]').click();
   assert.equal(await page.locator('#modalDay option').first().getAttribute('data-date'),'2030-01-07');
   assert.match(await page.locator('#modalDay option:checked').innerText(),/Tue.*8 Jan 2030/);
+  assert.equal(await page.locator('#modalAttachments').inputValue(),'https://example.com/a','the editor loads existing links before saving');
   const before=await readPlannerStore(page);
   await page.locator('#modalDatePickerButton').click();await page.locator('#modalDate').fill('2030-01-14');await page.locator('#modalDate').press('Tab');
   assert.equal(await page.locator('#modalDay option:checked').getAttribute('data-date'),'2030-01-14');

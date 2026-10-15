@@ -155,6 +155,7 @@ function openTaskModal(id=null,day=weekwiseRuntime.mobileDay,startAt=null,defaul
   [2,3,4,5].forEach((n,index)=>{const input=weekwiseRuntime.$('modalReminderAt'+n);if(input)input.value=existingReminderTimes[index+1]?WeekwiseZoneConversion.reminderField(t,existingReminderTimes[index+1],weekwiseRuntime.store.settings.timeZone):'';});
   const extraReminderDetails=document.querySelector('.task-extra-reminders');if(extraReminderDetails)extraReminderDetails.open=existingReminderTimes.length>1;
   weekwiseRuntime.$('modalTags').value=Array.isArray(t?.tags)?t.tags.join(', '):String(t?.tags||'');
+  weekwiseRuntime.$('modalAttachments').value=Array.isArray(t?.attachments)?t.attachments.join('\n'):'';
   if(!t&&weekwiseRuntime.workspaceView.startsWith('tag:'))weekwiseRuntime.$('modalTags').value=weekwiseRuntime.workspaceView.slice(4);
   weekwiseRuntime.$('modalSubtasks').value=Array.isArray(t?.subtasks)?t.subtasks.map(s=>typeof s==='string'?s:s.title||'').join('\n'):'';
   weekwiseRuntime.$('modalAllDay').checked=!!t?.allDay;

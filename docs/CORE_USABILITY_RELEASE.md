@@ -13,7 +13,7 @@ This release follows the current product review: make everyday actions clearer a
 
 ## Data and compatibility
 
-Sunday-keyed storage buckets remain unchanged. Date projection translates visible dates into the correct existing bucket/day, including the Sunday at the end of a displayed week. Selecting a date never changes records; Save uses the existing checked persistence and cloud queue. Metadata-only edits preserve retained schedule instants. The editor refuses stale record/account sessions. Draft recovery retains an explicitly chosen date and accepts older drafts without the new field.
+Sunday-keyed storage buckets remain unchanged. Date projection translates visible dates into the correct existing bucket/day, including the Sunday at the end of a displayed week. Selecting a date never changes records; Save uses the existing checked persistence and cloud queue. Metadata-only edits preserve retained schedule instants. The editor refuses stale record/account sessions and duplicate destination identities. Existing attachment links are loaded into the full editor instead of being replaced by an empty field. The editor body scrolls separately from its footer so actions cannot cover the fields. Draft recovery retains an explicitly chosen date and accepts older drafts without the new field.
 
 No production backend schema, credentials, provider configuration, account settings or paid plan are changed. JSON/.ics management remains in Settings, offline access and conflict handling remain, and no permanent top-bar sync badge is added.
 
