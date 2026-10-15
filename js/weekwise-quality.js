@@ -8,7 +8,7 @@
  function renderSync(){
   const s=syncState();let label,description;
   if(s.recovery){label='Saving paused';description='Saved data needs recovery or another tab has newer changes. Keep a backup and resolve the notice before syncing.';}
-  else if(s.conflict){label='Needs review';description='Both copies are preserved. Export a backup of each device before choosing a version in Account & sync.';}
+  else if(s.conflict){label='Needs review';description='Both copies are preserved for review. Check carefully which version to keep in Account & sync.';}
   else if(s.mode==='device'){label='Device planner';description='This planner stays in this browser. Sign in to use your account planner across devices; the two planners stay separate.';}
   else if(s.mode==='offline-account'){label='Saved account copy';description='You are using this account’s saved copy offline. Sign in to the same account again to upload its changes.';}
   else if(!navigator.onLine){label='Offline';description='Your saved changes stay on this device. Weekwise retries when you reconnect and return to the app.';}
@@ -55,7 +55,7 @@
   $('qualityOfflineState').textContent=device.offlineShell?'Offline shell cached ('+device.cachedAssets+' assets)':'Offline shell not verified; open online and reload, then check again.';
   $('qualityPushState').textContent=subscription?'A local push subscription exists. Closed-app delivery still needs your confirmation.':device.pushSupported?'No local push subscription. Open reminder settings to enable this device.':'Background push is unavailable here; check another supported browser or an installed app.';
  }
- function download(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+ function download(value,name){if(!root.WeekwiseJsonFiles.allowed(owner))return;const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  function init(bridge){
   app=bridge;owner=app.account();root.WeekwisePerformance.init({account:app.account});
   document.addEventListener('click',event=>{if(event.target.closest('[data-quality-open]')){ownerChanged();app.open('qualityPanel','Device, speed & recovery');refresh();}});
@@ -72,11 +72,12 @@
   $('qualityBackupFile').onchange=async()=>{
    if(selectionOwner!==null&&selectionOwner!==owner){$('qualityBackupFile').value='';selectionOwner=null;status('Your account changed while choosing the backup. Select it again for this account.');return;}selectionOwner=null;
    const file=$('qualityBackupFile').files[0],captured=owner,id=++fileSequence;report=null;$('qualityBackupReport').hidden=true;if(!file)return;
+   if(!root.WeekwiseJsonFiles.allowed(captured)){status('JSON backup rehearsal is available only in device-only mode.');return;}
    $('qualityBackupResult').textContent='Checking an isolated copy…';
-   try{if(file.size>root.WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Too large');const next=await root.WeekwiseRecovery.rehearse(await file.text());if(owner!==captured||app.account()!==captured||fileSequence!==id)return;report=next;$('qualityBackupResult').textContent='Rehearsal passed: '+next.tasks+' tasks across '+next.weeks+' weeks; complete restored entries retained. SHA-256: '+next.sha256+'. Your planner and cloud copy were not changed.';$('qualityBackupReport').hidden=false;}
+   try{if(file.size>root.WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Too large');const next=await root.WeekwiseRecovery.rehearse(await file.text());if(owner!==captured||app.account()!==captured||fileSequence!==id||!root.WeekwiseJsonFiles.allowed(owner))return;report=next;$('qualityBackupResult').textContent='Rehearsal passed: '+next.tasks+' tasks across '+next.weeks+' weeks; complete restored entries retained. SHA-256: '+next.sha256+'. Your planner and cloud copy were not changed.';$('qualityBackupReport').hidden=false;}
    catch(_){if(owner===captured&&app.account()===captured&&fileSequence===id)$('qualityBackupResult').textContent='This backup could not be rehearsed. Choose a supported Weekwise JSON backup under 10 MB. Your original file and planner were not changed.';}
   };
-  $('qualityBackupReport').onclick=()=>{if(report)download(report,'weekwise-backup-rehearsal.json');};
+  $('qualityBackupReport').onclick=()=>{if(report&&root.WeekwiseJsonFiles.allowed(owner))download(report,'weekwise-backup-rehearsal.json');};
   root.addEventListener('weekwise-performance-change',()=>{if(visible())render();});
   root.addEventListener('weekwise-sync-status',()=>{if(visible())render();});
   root.addEventListener('weekwise-diagnostics-change',()=>{if(visible())renderDiagnostics();});

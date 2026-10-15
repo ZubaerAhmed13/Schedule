@@ -29,6 +29,7 @@ function openOfflineAccount(){
 }
 
 function renderCloudPanel(){
+  root.WeekwiseJsonFiles.render(weekwiseRuntime.currentDataOwner);
  root.WeekwiseEntry?.refresh();
  weekwiseRuntime.renderOfflineAccountGate();
  const form=weekwiseRuntime.$('cloudAuthForm'),signed=weekwiseRuntime.$('cloudSignedIn'),email=weekwiseRuntime.$('cloudUserEmail'),conflict=weekwiseRuntime.$('cloudConflict');
@@ -370,7 +371,7 @@ async function cloudUseRemote(){
 
 async function cloudUseLocal(){
  if(!weekwiseRuntime.cloudConflict||!weekwiseRuntime.cloudUser)return;
- if(!confirm('Replace the cloud copy with the planner saved on this device? This cannot be automatically undone. Export a backup first if you need both versions.'))return;
+ if(!confirm('Replace the cloud copy with the planner saved on this device? This cannot be automatically undone. Make sure you want to keep this version.'))return;
  const row=weekwiseRuntime.cloudConflict;weekwiseRuntime.cloudConflict=null;weekwiseRuntime.cloudRevision=Number(row.revision)||0;weekwiseRuntime.cloudReady=true;
  await weekwiseRuntime.saveCloudSnapshot();weekwiseRuntime.renderCloudPanel();
 }
