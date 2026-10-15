@@ -27,3 +27,12 @@ test('older scheduled weekday records stay unchanged and flexible targets are bo
  assert.equal(WeekwiseHabits.target({targetPerWeek:99}),7);
  assert.equal(WeekwiseHabits.target({targetPerWeek:-3}),1);
 });
+test('Sunday finishes the Monday habit week without rewriting dated check-ins or skip history',()=>{
+ const h={frequencyMode:'weekly-flexible',targetPerWeek:2,checkIns:['2026-10-11','2026-10-12','2026-10-18'],skippedDates:['2026-10-13']},before=JSON.stringify(h);
+ assert.equal(WeekwiseHabits.weekCount(h,'2026-10-12'),2);
+ assert.equal(WeekwiseHabits.weekCount(h,'2026-10-18'),2);
+ assert.equal(WeekwiseHabits.weekCount(h,'2026-10-19'),0);
+ assert.equal(WeekwiseHabits.due(h,'2026-10-18'),false);
+ assert.deepEqual(WeekwiseHabits.consistency(h,'2026-10-12','2026-10-18'),{expected:2,done:2});
+ assert.equal(JSON.stringify(h),before);
+});

@@ -1,4 +1,8 @@
-# Weekwise current status — 14 October 2026
+# Weekwise current status — 15 October 2026
+
+## Core usability follow-up
+
+The current follow-up adds explicit Monday–Sunday task-date choices and a native date picker with preserved cross-week identity; Monday habit totals and check-in rows; a corrected Insights week label; compact optional onboarding; visible workspace search; and consolidated help/focus controls. See [CORE_USABILITY_RELEASE.md](CORE_USABILITY_RELEASE.md) for semantics, preservation checks and remaining acceptance. The release PR records exact source and CI evidence. The user's current scope excludes Google and Outlook activation; provider requests in the dated history below are historical.
 
 The user's 14 October scope now includes completing Google and Outlook activation. The provider backend and encryption are deployed; the live health check still reports both provider credential sets absent, so real authorization and round trips remain pending. PR #44 is released at `163c75b604bfdb4c549d480be376af809c6d9429`, Pages run `38440755667`, assets `7a12f650c28ece2e`. PR #45 completed the non-calendar backend, browser recovery and privacy follow-up. PR #46 released the modern interface. PR #47 is live at `668743ad5c89913f7e11c95942f1bed847269c07`, Pages `38498395018`, assets `824d9de8e398f510`. The productivity follow-up adds guarded inline/bulk task actions, pinned lists, remembered navigation, direct Today highlights and secondary-tool polish; its PR records the exact checked head and release workflows. Releases require a reviewed head, fresh CI checks and an independently matched Pages marker. [Live build identity](https://zubaerahmed13.github.io/Schedule/build-info.json) always identifies the deployed client.
 

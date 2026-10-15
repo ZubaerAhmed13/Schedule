@@ -498,6 +498,13 @@ let activeSavedFilterId='';
 let activeVoiceRecognition=null;
 
 document.addEventListener('keydown',e=>{
+ if((e.metaKey||e.ctrlKey)&&e.shiftKey&&!e.altKey&&String(e.key).toLowerCase()==='f'){
+  if(document.body.classList.contains('signin-required')||$('taskModal')?.classList.contains('show')||activeUtilityPanel||e.target?.closest('input,textarea,select,[contenteditable="true"]'))return;
+  e.preventDefault();setWorkspaceView('search');$('workspaceSearch').focus();
+ }
+});
+
+document.addEventListener('keydown',e=>{
  if(!(e.metaKey||e.ctrlKey)||String(e.key).toLowerCase()!=='k'||e.altKey)return;
  if(document.body.classList.contains('signin-required')||$('taskModal')?.classList.contains('show'))return;
  const target=e.target;
