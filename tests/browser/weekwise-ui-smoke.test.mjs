@@ -44,6 +44,7 @@ test('a delayed device-only JSON import cannot overwrite an account after mode s
   await page.waitForFunction(()=>window.__backupReaderStarted);
   await page.evaluate(()=>WeekwiseTestAuth.setUser('new-backup-owner'));
   await page.waitForFunction(()=>document.querySelector('#cloudUserEmail').textContent==='new-backup-owner@example.invalid');
+  await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
   const other=await readPlannerStore(page);
   await page.evaluate(raw=>window.__finishBackupRead(raw),raw);
   // Allow the resumed file read to finish; assert the protected result, not transient toast timing.
