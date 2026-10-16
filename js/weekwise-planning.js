@@ -61,6 +61,24 @@
   function records(store) {
     return Object.entries(store.weeks).flatMap(([week,value]) => value.tasks.map(task => ({week,task})));
   }
+  const unfinished=t=>!t.done&&t.status!=='done'&&t.status!=='skipped'&&!t.archived&&!t.deleted;
+  const estimate=t=>t.estimatedDurationMinutes??t.focusEstimateMinutes;
+  const knownEstimate=n=>Number.isInteger(n)&&n>0&&n<=DAY;
+  const flexible=t=>unfinished(t)&&!isProtected(t)&&(t.start==null||t.unscheduled);
+  function readiness(store,weekStart){
+    root.WeekwiseData.validateStore(store);const base=ordinal(weekStart),end=base+6,all=records(store);
+    const eligible=all.filter(r=>flexible(r.task)&&ordinal(r.week)+r.task.day<=end);
+    const ready=eligible.filter(r=>knownEstimate(estimate(r.task))),missing=eligible.filter(r=>!knownEstimate(estimate(r.task)));
+    return {ready,missing,highlighted:eligible.filter(r=>r.task.todayPriority),future:all.filter(r=>flexible(r.task)&&ordinal(r.week)+r.task.day>end).length,
+      scheduled:all.filter(r=>{const day=ordinal(r.week)+r.task.day;return unfinished(r.task)&&day>=base&&day<=end&&(r.task.allDay||(!r.task.unscheduled&&r.task.start!=null));}).length};
+  }
+  function review(plan,selectedIds){
+    const refs=new Set(selectedIds),selected=plan.proposals.filter(p=>refs.has(p.week+'::'+p.id));
+    const taskMinutes=selected.reduce((n,p)=>n+p.duration,0),breakMinutes=selected.length*plan.preferences.breakMinutes;
+    return {count:selected.length,unchanged:plan.proposals.length-selected.length,taskMinutes,breakMinutes,remaining:Math.max(0,plan.capacity-taskMinutes-breakMinutes),
+      days:plan.days.map(day=>{const items=selected.filter(p=>p.date===day.date),minutes=items.reduce((n,p)=>n+p.duration,0),breaks=items.length*plan.preferences.breakMinutes;
+        return {...day,selectedMinutes:minutes,selectedBreaks:breaks,remaining:Math.max(0,day.capacity-minutes-breaks),lastFinish:items.length?Math.max(...items.map(p=>p.start+p.duration)):null};})};
+  }
   const clockBlockCache=new Map();
   function clockBlocks(date,zone){
     if(!zone)return [];if(!root.WeekwiseCalendarRange)throw new Error('The planner clock utility is unavailable. Reload before planning.');
@@ -112,7 +130,7 @@
     const beforeWeeklyBuffer=sum(free);free=reserveTail(free,p.weeklyBuffer);const weeklyBufferReserved=beforeWeeklyBuffer-sum(free);
     for(const day of days)day.capacity=sum(free.filter(([a])=>Math.floor(a/DAY)===day.day));
     const candidates=all.filter(({week,task:t}) => {
-      if(t.done||t.status==='done'||t.status==='skipped'||isFixed(t)||ordinal(week)+t.day>base+6)return false;
+      if(!unfinished(t)||isFixed(t)||ordinal(week)+t.day>base+6)return false;
       if(mode==='recover'){
         if(t.start==null||t.unscheduled)return false;
         const end=(ordinal(week)-base+t.day)*DAY+t.start+(t.duration||0);
@@ -126,16 +144,16 @@
     const initialCapacity=sum(free);
     for (const record of candidates) {
       const t=record.task, duration=t.estimatedDurationMinutes??(mode==='recover'?t.duration:t.focusEstimateMinutes);
-      const fail=reason=>unscheduled.push({week:record.week,id:t.id,title:t.title,estimate:duration,reason});
-      if (!Number.isInteger(duration) || duration<=0 || duration>DAY) {unknown++;fail('Duration unknown. Set Estimated duration (or your existing focus estimate) in the task editor.');continue;}
+      const fail=(code,reason,details={})=>unscheduled.push({week:record.week,id:t.id,title:t.title,estimate:duration,code,reason,...details});
+      if (!knownEstimate(duration)) {unknown++;fail('estimate','Duration unknown. Set Estimated duration (or your existing focus estimate) in the task editor.');continue;}
       requested+=duration;
-      if (t.dueDate && !root.WeekwiseData.validDate(t.dueDate)) {fail('Deadline needs a valid date.');continue;}
+      if (t.dueDate && !root.WeekwiseData.validDate(t.dueDate)) {fail('deadline-invalid','Deadline needs a valid date.');continue;}
       const deadline=t.dueDate?(ordinal(t.dueDate)-base+1)*DAY:7*DAY;
-      let slot=null;const validClock=value=>{if(!store.settings.timeZone)return true;try{planningSlot(store,{date:dateAt(weekStart,Math.floor(value/DAY)),start:value%DAY,duration});return true;}catch(_){return false;}};const ref=record.week+'::'+t.id,override=overrides[ref],options=[];
+      let slot=null,preferred=false;const validClock=value=>{if(!store.settings.timeZone)return true;try{planningSlot(store,{date:dateAt(weekStart,Math.floor(value/DAY)),start:value%DAY,duration});return true;}catch(_){return false;}};const ref=record.week+'::'+t.id,override=overrides[ref],options=[];
       for (const [a,b] of free) {
         const day=Math.floor(a/DAY),earliestStart=Math.ceil(a/15)*15;
         options.push({start:earliestStart,preferred:false,end:b});
-        if(p.focusStart!==null){const start=Math.ceil(Math.max(a,day*DAY+p.focusStart)/15)*15;if(start+duration<=day*DAY+p.focusEnd)options.push({start,preferred:true,end:b});}
+        if(p.focusStart!==null){const start=Math.ceil(Math.max(a,day*DAY+p.focusStart)/15)*15;if(start+duration<=day*DAY+p.focusEnd)options.push({start,preferred:true,end:b,taskEnd:day*DAY+p.focusEnd});}
       }
       options.sort((a,b)=>Number(b.preferred)-Number(a.preferred)||a.start-b.start);
       if(override){
@@ -143,10 +161,19 @@
           const requestedSlot=(ordinal(override.date)-base)*DAY+override.start;
           if(validClock(requestedSlot)&&requestedSlot>=earliest&&requestedSlot>=0&&requestedSlot+duration<=deadline&&free.some(([a,b])=>requestedSlot>=a&&requestedSlot+duration+p.breakMinutes<=b))slot=requestedSlot;
         }
-      }else for(const option of options){for(let candidate=option.start;candidate+duration<=Math.min(option.end,deadline)&&candidate+duration+p.breakMinutes<=option.end;candidate+=15){if(validClock(candidate)){slot=candidate;break;}}if(slot!==null)break;}
-      if (slot===null) {fail(override?'Your requested time is outside availability, overlaps another block, or misses the deadline. Clear it and try another slot.':deadline<=earliest?'Deadline has passed. Review the deadline before planning.':'No continuous slot fits before the deadline with your breaks and buffer.');continue;}
+      }else for(const option of options){for(let candidate=option.start;candidate+duration<=Math.min(option.end,deadline,option.taskEnd??Infinity)&&candidate+duration+p.breakMinutes<=option.end;candidate+=15){if(validClock(candidate)){slot=candidate;preferred=option.preferred;break;}}if(slot!==null)break;}
+      if (slot===null) {
+        const largestSlotMinutes=Math.max(0,...free.map(([a,b])=>Math.min(b-p.breakMinutes,deadline)-Math.ceil(a/15)*15));
+        if(override)fail('placement','Your requested time is outside availability, overlaps another block, or misses the deadline. Use the suggested time or check another slot.');
+        else if(deadline<=earliest)fail('deadline-passed','Deadline has passed. Review the deadline before planning.');
+        else if(deadline<=0)fail('deadline-week','Deadline is before this planning week. Choose an earlier week or review the deadline.');
+        else if(!windows.length)fail('availability','No planning hours remain in this week. Choose another week or review your available days and hours.');
+        else if(!free.length)fail('capacity','No flexible time remains after commitments, breaks, buffers, daily limits and earlier suggestions. Review your hours or plan fewer tasks.');
+        else fail(t.dueDate?'deadline-slot':'continuous-slot','No continuous slot fits'+(t.dueDate?' by '+t.dueDate:' in this week')+'. The largest remaining task slot is '+largestSlotMinutes+' min after allowing for breaks; this task needs '+duration+' min. Review your hours, split the task or choose another week.',{largestSlotMinutes});
+        continue;
+      }
       const day=Math.floor(slot/DAY),start=slot%DAY;
-      proposals.push({week:record.week,id:t.id,title:t.title,day:new Date((base+day)*86400000).getUTCDay(),start,duration,date:dateAt(weekStart,day),recovery:mode==='recover',from:{day:t.day,start:t.start,duration:t.duration,unscheduled:!!t.unscheduled},reason:(mode==='recover'?'Move unfinished or conflicting work. ':'')+(override?'Your chosen slot. ':'')+(t.dueDate?'Before the '+t.dueDate+' deadline. ':'')+'Earliest free slot; existing commitments, breaks and buffer are protected.'});
+      proposals.push({week:record.week,id:t.id,title:t.title,day:new Date((base+day)*86400000).getUTCDay(),start,duration,date:dateAt(weekStart,day),recovery:mode==='recover',placement:override?'chosen':preferred?'preferred':'earliest',from:{day:t.day,start:t.start,duration:t.duration,unscheduled:!!t.unscheduled},reason:(mode==='recover'?'Move unfinished or conflicting work. ':'')+(override?'Your chosen slot. ':preferred?'Earliest fitting slot in your preferred focus hours. ':'Earliest fitting free slot. ')+(t.dueDate?'Finishes by the '+t.dueDate+' deadline. ':'')+'Existing commitments, breaks and buffer are protected.'});
       free=subtract(free,[[slot,slot+duration+p.breakMinutes]]);consumedBreaks+=p.breakMinutes;
     }
     const overlaps=[];
@@ -195,5 +222,5 @@
     task.planningOriginalEstimate=task.estimatedDurationMinutes??task.focusEstimateMinutes??null;task.estimatedDurationMinutes=parts.reduce((n,p)=>n+p.minutes,0);
     return root.WeekwiseData.validateStore(next);
   }
-  root.WeekwisePlanning=Object.freeze({merge,subtract,preferences,ordinal,dateAt,planningClock,planningSlot,build,apply,isProtected,isFixed,splitTask});
+  root.WeekwisePlanning=Object.freeze({merge,subtract,preferences,ordinal,dateAt,planningClock,planningSlot,readiness,review,build,apply,isProtected,isFixed,splitTask});
 })(typeof window !== 'undefined' ? window : globalThis);

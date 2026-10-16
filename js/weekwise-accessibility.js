@@ -19,7 +19,7 @@
   if(next===active)return;
   const prior=active,launcher=document.activeElement;
   // Save the opener BEFORE applying inert; otherwise browsers may move focus to body.
-  if(next&&!prior)returnTo=(lastLauncher?.isConnected||lastLauncher?.dataset?.todayReviewRef?lastLauncher:null)||(lastOutsideFocus?.isConnected?lastOutsideFocus:null)||(launcher instanceof HTMLElement?launcher:null);
+  if(next&&!prior)returnTo=(lastLauncher?.isConnected||(lastLauncher?.dataset?.todayReviewRef||lastLauncher?.dataset?.planEditRef)?lastLauncher:null)||(lastOutsideFocus?.isConnected?lastOutsideFocus:null)||(launcher instanceof HTMLElement?launcher:null);
   active=next;
   if(active){
    const dialog=active.matches('[role="dialog"]')?active:(active.querySelector('[role="dialog"],.modal')||active);
@@ -32,6 +32,13 @@
    const reviewRef=target?.dataset?.todayReviewRef;
    if(reviewRef&&!target.isConnected){
     target=[...document.querySelectorAll('[data-today-review-ref]')].find(el=>el.dataset.todayReviewRef===reviewRef)||document.getElementById('todayReviewSummary')||document.getElementById('globalCaptureBtn');
+    target?.scrollIntoView({block:'nearest',behavior:'instant'});
+   }
+   const planRef=target?.dataset?.planEditRef;
+   if(planRef&&!target.isConnected){
+    const missing=document.getElementById('planMissingEstimates'),results=document.getElementById('planResults');
+    target=[...document.querySelectorAll('[data-plan-edit-ref]')].find(el=>el.dataset.planEditRef===planRef)||(!missing?.hidden?document.getElementById('planMissingSummary'):null)||(!results?.hidden?document.getElementById('planPreviewTitle'):null)||document.getElementById('planCapture');
+    if(target&&!/^(BUTTON|SUMMARY)$/.test(target.tagName))target.setAttribute('tabindex','-1');
     target?.scrollIntoView({block:'nearest',behavior:'instant'});
    }
    // Phone tool launchers live in a menu that closes when a tool is selected.
