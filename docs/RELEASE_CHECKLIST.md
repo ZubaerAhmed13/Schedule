@@ -1,6 +1,6 @@
 # Weekwise release checklist
 
-Scope: current [CURRENT_STATUS.md](CURRENT_STATUS.md), original 32-section brief, Google/Outlook activation now requested. Earlier checklists and phase evidence remain in Git history.
+Scope: current [CURRENT_STATUS.md](CURRENT_STATUS.md), original 32-section brief, Google/Outlook activation excluded. Older completed counts below are historical; current evidence belongs to the release PR. Earlier checklists and phase evidence remain in Git history.
 
 ## Checked core gates
 
@@ -23,7 +23,7 @@ Scope: current [CURRENT_STATUS.md](CURRENT_STATUS.md), original 32-section brief
 
 ## Deferred or external acceptance
 
-- [ ] Google/Outlook provider registrations, secure credentials, consent and real calendar round trips — requested, pending actual provider access.
+- Google/Outlook activation remains outside the current release scope.
 - [ ] Physical notification permission/provider delivery with Weekwise closed, actual expired-device cleanup and installed PWA operation.
 - [ ] Human VoiceOver/TalkBack, real browser zoom and phone keyboard/rotation review.
 - [ ] Physical two-device reconnect, actual historical private-backup upgrade and real signed-token waiting/expiry/mail delivery.
@@ -39,3 +39,10 @@ Optional generative AI stays disabled without safe valid service configuration. 
 - Audit help and device panels in phone light/dark layouts; inspect actual final screenshots and retain incomplete manual checks.
 - Check public probes with denial, timeout/failure and mismatched-build fixtures, then run the GET-only live checks. Configure owner Actions notifications separately.
 - Retain physical/device/mail/historical-backup/field-performance evidence and server-backup/SMTP setup as unresolved until observed.
+
+## Release 4 recovery evidence gates
+
+- Import legacy and version 1–6 generated backups through the production confirmation/checkpoint path, reload, export and compare original values in each browser engine.
+- Check original/restored differences, additions, corrupt files, file clearing and in-flight owner isolation without planner writes or private text in reports.
+- Resolve overlapping controlled client edits with each explicit choice; verify convergence and preserved IDs/notes/metadata on both clients after reload.
+- Keep earlier-build confirmations dated and unchecked until repeated; never infer physical acceptance from capabilities or CI.

@@ -1,6 +1,6 @@
 # Weekwise operations and recovery
 
-This runbook covers the current GitHub Pages client and WeekWise project `iajkzlsurghfvsmqkmut`. Google/Outlook activation is requested; provider credentials and consent are still pending. No paid plan, analytics collector, service-role client key or writable production test fixture is introduced.
+This runbook covers the current GitHub Pages client and WeekWise project `iajkzlsurghfvsmqkmut`. Google/Outlook activation is excluded from the current scope. No paid plan, analytics collector, service-role client key or writable production test fixture is introduced.
 
 ## Monitoring and incident response
 
@@ -19,7 +19,7 @@ For an incident:
 
 ## Backups and recovery objectives
 
-The cloud snapshot is the latest revision; local checkpoints and device copies are separate recovery mechanisms. A JSON export is a private user backup, not a complete server disaster-recovery backup. Rehearsal uses isolated memory and is followed by a full import/reload/export in an isolated browser profile with representative historical files.
+The cloud snapshot is the latest revision; local checkpoints and device copies are separate recovery mechanisms. A JSON export is a private user backup, not a complete server disaster-recovery backup. Rehearsal uses isolated memory and is followed by a full import/reload/export in an isolated browser profile with representative historical files. Settings → Device, speed & recovery can compare the original and restored export, including original values and separately reported additions. Preserve both checksums, record observed restore duration and the backup timestamp privately; file comparison alone does not establish an RPO/RTO or prove server recovery.
 
 The organization is currently on Supabase Free. Downloadable managed database backups and PITR are not assumed available. Before claiming server disaster recovery, the owner must choose either private scheduled logical exports with scoped database credentials, or a supported managed-backup plan. Store encrypted backups outside the production account, record retention and recovery objectives, and rehearse restoring schema, ownership/cascades, Auth dependencies, configuration and records to an isolated project. No credentials or private exports belong in this public repository or Pages. This release neither creates an offsite backup service nor claims an RPO/RTO that has not been measured.
 
