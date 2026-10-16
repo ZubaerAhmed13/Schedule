@@ -1,5 +1,9 @@
 # Weekwise current status — 16 October 2026
 
+## Weekly review follow-up
+
+Release 5 protects unfinished weekly reflections with account/week-scoped local drafts, guarded saves against newer reviews, explicit previous/current/next navigation, a previous-week comparison and the prior intention. Focus comparisons now use saved task week plus ID and disclose ambiguous legacy links. See [WEEKLY_REVIEW_RELEASE.md](WEEKLY_REVIEW_RELEASE.md) for recovery/export/privacy semantics and verification limits. The release PR owns final CI and deployment evidence. Google/Outlook remain excluded.
+
 ## Recovery evidence follow-up
 
 Release 4 adds private original/restored-export comparison, current-build device confirmation counts and full production restore/reload/export coverage for legacy and version 1–6 backups. Controlled two-client tests cover both explicit conflict-resolution choices and convergence after reload. See [RECOVERY_EVIDENCE_RELEASE.md](RECOVERY_EVIDENCE_RELEASE.md) for exact comparison semantics and limits. The release PR records final checks and public identity. Physical device, notification, mailbox, offsite server restore and field-speed acceptance remain open. Google/Outlook activation remains excluded; earlier requests below are historical.

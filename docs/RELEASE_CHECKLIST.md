@@ -46,3 +46,10 @@ Optional generative AI stays disabled without safe valid service configuration. 
 - Check original/restored differences, additions, corrupt files, file clearing and in-flight owner isolation without planner writes or private text in reports.
 - Resolve overlapping controlled client edits with each explicit choice; verify convergence and preserved IDs/notes/metadata on both clients after reload.
 - Keep earlier-build confirmations dated and unchecked until repeated; never infer physical acceptance from capabilities or CI.
+
+## Release 5 weekly review gates
+
+- Verify local recovery across weeks/reload without changing canonical tasks, reviews or cloud revisions until explicit save.
+- Preserve both visible/stored copies when another tab or device changes a review; refuse stale saves/removals and retain unknown metadata.
+- Check quota/corruption/capacity refusal, Settings-only private recovery download, hidden owner isolation and exact-owner account cleanup.
+- Verify explicit range, previous-period evidence, escaped prior intentions, week/ID focus links and light/dark phone/desktop accessibility; retain manual acceptance limits.
