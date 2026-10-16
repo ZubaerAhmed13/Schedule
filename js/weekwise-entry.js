@@ -39,8 +39,7 @@
   const url=new URL(link.href,root.location.href);
   if(url.origin!==root.location.origin||url.pathname!==root.location.pathname)return;
   if(link.closest('#weekwiseHome')&&link.getAttribute('href').startsWith('#')){const target=$(url.hash.slice(1));if(target){event.preventDefault();root.history.pushState({},'',url);const gate=$('signinLanding'),top=gate.scrollTop+target.getBoundingClientRect().top-gate.getBoundingClientRect().top-90;gate.scrollTo({top:Math.max(0,top),behavior:root.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});const heading=target.matches('h1,h2')?target:target.querySelector('h1,h2');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}}}
-  else if(url.searchParams.get('page')==='signin'){event.preventDefault();signIn();}
-  else if(link.hasAttribute('data-entry-home')){event.preventDefault();go(installed()?'signin':'home');}
+  // Public/account links use native document navigation, including Back/Forward and reload.
  });
  root.addEventListener('popstate',()=>{if($('signinLanding')?.hidden)return;render(true);});
  root.addEventListener('hashchange',()=>{if($('signinLanding')?.hidden||root.location.hash!=='#weekwiseAccess')return;render();});

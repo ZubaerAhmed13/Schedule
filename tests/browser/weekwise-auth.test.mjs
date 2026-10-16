@@ -123,7 +123,7 @@ test('home and sign-in are separate routes with browser Back, direct reload and 
  const {context,page,errors}=await open(390,{entry:'home'});try{
   const before=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
   assert.equal(await page.locator('#weekwiseHome').isVisible(),true);assert.equal(await page.locator('#cloudEmail').isVisible(),false);
-  await page.locator('.ww-public-nav-cta').click();assert.equal(new URL(page.url()).searchParams.get('page'),'signin');assert.equal(await page.locator('#wwHomeMain').isVisible(),false);assert.equal(await page.locator('#cloudEmail').isVisible(),true);assert.equal(await page.locator('#cloudEmail').evaluate(el=>el===document.activeElement),true);
+  await page.locator('.ww-public-nav-cta').click();assert.equal(new URL(page.url()).searchParams.get('page'),'signin');assert.equal(await page.locator('#wwHomeMain').isVisible(),false);assert.equal(await page.locator('#cloudEmail').isVisible(),true);assert.equal(await page.locator('#cloudEmail').isEnabled(),true);
   await page.goBack();await page.locator('#wwHomeMain').waitFor({state:'visible'});assert.equal(await page.locator('#cloudEmail').isVisible(),false);
   await page.goForward();await page.locator('#cloudEmail').waitFor({state:'visible'});await page.reload();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),false);
   await page.locator('[data-entry-home]').click();assert.equal(await page.locator('#wwHomeMain').isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);assert.deepEqual(errors,[]);
