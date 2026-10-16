@@ -9,7 +9,7 @@ const sdk=String.raw`(()=>{
  async signUp(args){calls.push({kind:'signup',...args});await new Promise(resolve=>window.WeekwiseAuthFixture.finishSignup=resolve);return {data:{user:{id:'auth-fixture-owner',email:args.email},session:null}};},
  async resetPasswordForEmail(email){calls.push({kind:'reset',email});return {};},async updateUser(args){calls.push({kind:'update',...args});return {data:{user}};},async signOut(){user=null;emit('SIGNED_OUT');return {};}
  },from(){return {select(){return {eq(){return {async maybeSingle(){return {data:null,error:null};}};}};}};},functions:{async invoke(){return {error:new Error('Fixture service disabled')};}}};
- window.WeekwiseAuthFixture={calls,recover(){user={id:'auth-fixture-owner',email:'fixture@example.invalid'};emit('PASSWORD_RECOVERY');}};window.supabase={createClient(){return client;}};
+ window.WeekwiseAuthFixture={calls,signedOut(){user=null;emit('SIGNED_OUT');return new Promise(resolve=>setTimeout(resolve,0));},recover(){user={id:'auth-fixture-owner',email:'fixture@example.invalid'};emit('PASSWORD_RECOVERY');}};window.supabase={createClient(){return client;}};
 })();`;
 before(async()=>{
  fs.mkdirSync(path.join(root,'test-results'),{recursive:true});server=http.createServer((req,res)=>{
@@ -126,7 +126,7 @@ test('home and sign-in are separate routes with browser Back, direct reload and 
   await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(new URL(page.url()).searchParams.get('page'),'signin');assert.equal(await page.locator('#wwHomeMain').isVisible(),false);assert.equal(await page.locator('#cloudEmail').isVisible(),true);assert.equal(await page.locator('#cloudEmail').isEnabled(),true);
   await page.goBack();await page.locator('#wwHomeMain').waitFor({state:'visible'});assert.equal(await page.locator('#cloudEmail').isVisible(),false);
   await page.goForward();await page.locator('#cloudEmail').waitFor({state:'visible'});await page.reload();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),false);
-  await page.locator('[data-entry-home]').click();await page.locator('#wwHomeMain').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);assert.deepEqual(errors,[]);
+  await Promise.all([page.waitForURL(origin,{waitUntil:'domcontentloaded'}),page.locator('[data-entry-home]').click()]);await page.waitForFunction(()=>document.documentElement.dataset.entryRoute==='home');assert.equal(await page.locator('#wwHomeMain').isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
 
@@ -134,11 +134,52 @@ test('installed phone app skips marketing on first launch and explicit sign-out,
  for(const initialUser of [false,true]){
   const {context,page,errors}=await open(390,{entry:'home',installed:true,initialUser});try{
    assert.equal(await page.locator('#weekwiseHome').isVisible(),false);
-   if(initialUser){await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');await page.locator('#moreActions > summary').click();await page.locator('#cloudMenuBtn').click();page.on('dialog',d=>d.accept());await page.locator('#cloudSignOut').click();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#weekwiseHome').isVisible(),false);assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true);}
+   if(initialUser){await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');await page.locator('#moreActions > summary').click();await page.locator('#cloudMenuBtn').click();page.on('dialog',d=>d.accept());await page.locator('#cloudSignOut').click();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#weekwiseHome').isVisible(),false);assert.equal(await page.locator('#signinLocalContinue').isVisible(),true);assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true);}
    else assert.equal(await page.locator('#cloudEmail').isVisible(),true);
    assert.deepEqual(errors,[]);
   }finally{await context.close();}
  }
+});
+
+test('account-device local exploration stays separate through editing, reload and account sign-in',async()=>{
+ const {context,page,errors}=await open(390,{installed:true,initialUser:true});
+ const tasks=()=>page.evaluate(()=>Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2')).weeks).flatMap(w=>w.tasks||[]).map(t=>t.title));
+ const capture=async title=>{
+  await page.locator('#globalCaptureBtn').click();await page.locator('#modalTitleInput').fill(title);
+  await page.locator('#modalNoSchedule').check();await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+ };
+ page.on('dialog',d=>d.message().includes('Use your device-only planner')?d.dismiss():d.accept());
+ try{
+  await page.locator('#signinLanding').waitFor({state:'hidden'});
+  await capture('Private account fixture');await page.waitForFunction(()=>document.querySelector('#cloudMenuBadge').textContent==='Synced');
+  await page.locator('#moreActions > summary').click();await page.locator('#cloudMenuBtn').click();await page.locator('#cloudSignOut').click();await page.locator('#cloudEmail').waitFor({state:'visible'});
+  const cache=await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:auth-fixture-owner'));
+  assert.ok(cache.includes('Private account fixture'));
+  await page.locator('#cloudSignUpBtn').click();await page.locator('#signinLocalContinue').scrollIntoViewIfNeeded();
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),true,'the screenshot state has a working local option below Create account');
+  await snap(page,'account-device-explore');
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.allowsLocal(localStorage)),false,'local access needs a new explicit choice');
+  await page.locator('#signinLocalContinue').click();await page.locator('#signinLanding').waitFor({state:'hidden'});
+  assert.equal((await tasks()).includes('Private account fixture'),false);
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.canOpenOffline(localStorage,'auth-fixture-owner',false)),false);
+  await capture('Separate device fixture');
+  assert.equal((await tasks()).includes('Separate device fixture'),true,'local editing is enabled after isolation');
+  await page.reload({waitUntil:'domcontentloaded'});await page.locator('#signinLanding').waitFor({state:'hidden'});
+  assert.equal((await tasks()).includes('Separate device fixture'),true);
+  assert.equal((await tasks()).includes('Private account fixture'),false);
+  await page.evaluate(()=>WeekwiseAuthFixture.signedOut());
+  assert.equal(await page.locator('#signinLanding').isVisible(),false,'a delayed SDK sign-out event cannot close the explicitly chosen local planner');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:auth-fixture-owner')),cache,'account cache is untouched by local use');
+  await page.goto(origin+'?page=signin',{waitUntil:'domcontentloaded'});await page.locator('#cloudEmail').waitFor({state:'visible'});
+  await credentials(page);await page.locator('#cloudSignInBtn').click();await page.locator('#signinLanding').waitFor({state:'hidden'});
+  assert.equal((await tasks()).includes('Private account fixture'),true,'sign-in restores the account planner');
+  assert.equal((await tasks()).includes('Separate device fixture'),false,'declining the existing import prompt keeps local data separate');
+  assert.ok((await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:local'))).includes('Separate device fixture'));
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.allowsLocal(localStorage)),false);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
 });
 
 test('signed-in desktop visits bypass public and account pages and fresh login opens Today',async()=>{

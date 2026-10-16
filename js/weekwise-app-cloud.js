@@ -23,9 +23,9 @@ function offlineAccountSelected(){return !weekwiseRuntime.cloudUser&&weekwiseRun
 function renderOfflineAccountGate(){
  const available=!weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&root.WeekwiseOfflineAccess.canOpenOffline(localStorage,weekwiseRuntime.currentDataOwner,navigator.onLine);
  weekwiseRuntime.$('signinOfflineAccount').hidden=!available;weekwiseRuntime.$('signinOfflineNote').hidden=!available;
- const accountDevice=root.WeekwiseOfflineAccess.isAccountDevice(localStorage);
- weekwiseRuntime.$('signinLocalContinue').hidden=accountDevice;
- const note=weekwiseRuntime.$('signinLocalNote');if(note)note.hidden=accountDevice;
+ const signedIn=!!weekwiseRuntime.cloudUser&&!root.WeekwiseOfflineAccess.isSignedOut(localStorage);
+ weekwiseRuntime.$('signinLocalContinue').hidden=signedIn;
+ const note=weekwiseRuntime.$('signinLocalNote');if(note)note.hidden=signedIn;
 }
 
 function openOfflineAccount(){
@@ -213,7 +213,7 @@ async function startCloudForUser(user,force=false){
 
 function localPlannerSelected(){
  const url=new URL(root.location.href),explicitSignIn=url.searchParams.get('page')==='signin'||url.hash==='#weekwiseAccess';
- return !explicitSignIn&&root.WeekwiseEntry?.appRequested()&&localStorage.getItem('weekwise-local-mode-v1')==='true'&&weekwiseRuntime.currentDataOwner==='local'&&!root.WeekwiseOfflineAccess.isAccountDevice(localStorage);
+ return !explicitSignIn&&root.WeekwiseEntry?.appRequested()&&localStorage.getItem('weekwise-local-mode-v1')==='true'&&weekwiseRuntime.currentDataOwner==='local'&&root.WeekwiseOfflineAccess.allowsLocal(localStorage);
 }
 
 async function initializeCloud(){
@@ -223,7 +223,9 @@ async function initializeCloud(){
  try{
   // Subscribe before reading the session so auth redirects such as password recovery are not missed.
   weekwiseRuntime.cloudClient.auth.onAuthStateChange((event,session)=>{
-   if(session?.user?.id!==weekwiseRuntime.cloudUser?.id||event==='SIGNED_OUT'){weekwiseRuntime.cloudSessionEpoch++;weekwiseRuntime.cloudReady=false;if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.$('signinLanding').hidden=false;document.body.classList.add('signin-required');}
+   const acceptedUser=root.WeekwiseOfflineAccess.isSignedOut(localStorage)?null:session?.user;
+   const keepLocal=!acceptedUser&&localPlannerSelected();
+   if(!keepLocal&&(acceptedUser?.id!==weekwiseRuntime.cloudUser?.id||event==='SIGNED_OUT')){weekwiseRuntime.cloudSessionEpoch++;weekwiseRuntime.cloudReady=false;if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.$('signinLanding').hidden=false;document.body.classList.add('signin-required');}
    setTimeout(async()=>{
     if(event==='PASSWORD_RECOVERY'&&session?.user){await weekwiseRuntime.startCloudForUser(session.user);weekwiseRuntime.cloudUser=session.user;const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');}weekwiseRuntime.setCloudAuthMode('recovery');weekwiseRuntime.openCloudPanel();return;}
     if(session?.user&&!root.WeekwiseOfflineAccess.isSignedOut(localStorage))weekwiseRuntime.startCloudForUser(session.user).catch(()=>{});

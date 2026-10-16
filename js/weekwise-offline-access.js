@@ -3,7 +3,7 @@
    Never use an account identifier alone as proof of an offline session. */
 (function(root){
  'use strict';
- const KEY='weekwise-offline-access-v1',LOCK='weekwise-account-device-v1',SIGNED_OUT='weekwise-explicit-signout-v1';
+ const KEY='weekwise-offline-access-v1',LOCK='weekwise-account-device-v1',SIGNED_OUT='weekwise-explicit-signout-v1',LOCAL='weekwise-local-selection-v1';
  const WINDOW_MS=30*24*60*60*1000;
  const read=(storage,key)=>{try{return JSON.parse(storage.getItem(key)||'null');}catch(_){return null;}};
  function grant(storage,owner,now=Date.now()){
@@ -11,6 +11,8 @@
   try{
    storage.setItem(KEY,JSON.stringify({owner,verifiedAt:now}));
    storage.setItem(LOCK,'true');
+   storage.removeItem(LOCAL);
+   storage.removeItem('weekwise-local-mode-v1');
    storage.removeItem(SIGNED_OUT);
    return true;
   }catch(_){return false;}
@@ -23,8 +25,11 @@
  function unlockAfterPassword(storage){try{storage.removeItem(SIGNED_OUT);}catch(_){}}
  function isSignedOut(storage){try{return storage.getItem(SIGNED_OUT)==='true';}catch(_){return true;}}
  function isAccountDevice(storage){try{return storage.getItem(LOCK)==='true';}catch(_){return false;}}
+ // A deliberate local workspace choice never grants access to an account cache.
+ function allowsLocal(storage){try{return !isAccountDevice(storage)||storage.getItem(LOCAL)==='true';}catch(_){return false;}}
+ function selectLocal(storage){try{storage.setItem(LOCAL,'true');return true;}catch(_){return false;}}
  function revoke(storage){
-  try{storage.removeItem(KEY);storage.removeItem('weekwise-offline-owner-v1');storage.setItem(SIGNED_OUT,'true');storage.setItem(LOCK,'true');}catch(_){}
+  try{storage.removeItem(KEY);storage.removeItem('weekwise-offline-owner-v1');storage.removeItem(LOCAL);storage.removeItem('weekwise-local-mode-v1');storage.setItem(SIGNED_OUT,'true');storage.setItem(LOCK,'true');}catch(_){}
  }
  function canOpenOffline(storage,owner,online,now=Date.now()){return !online&&allows(storage,owner,now);}
  function display({owner,online,signedIn,offlineCopy,dirty,busy,conflict,ready,message}){
@@ -37,5 +42,5 @@
   if(!ready||dirty)return {label:dirty?'Waiting to sync':'Connecting',tone:'progress'};
   return {label:'Synced',tone:'success'};
  }
- root.WeekwiseOfflineAccess=Object.freeze({grant,allows,revoke,unlockAfterPassword,isSignedOut,isAccountDevice,canOpenOffline,display,WINDOW_MS});
+ root.WeekwiseOfflineAccess=Object.freeze({grant,allows,revoke,unlockAfterPassword,isSignedOut,isAccountDevice,allowsLocal,selectLocal,canOpenOffline,display,WINDOW_MS});
 })(typeof window!=='undefined'?window:globalThis);

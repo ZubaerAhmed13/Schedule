@@ -9,7 +9,7 @@ function renderZoneNotice(){let notice=weekwiseRuntime.$('timeZoneNotice');if(!w
 function dataCanWrite(){
  if(document.body.classList.contains('signin-required')||!weekwiseRuntime.$('signinLanding').hidden){weekwiseRuntime.showToast('Sign in to edit your account planner.');return false;}
  const owner=weekwiseRuntime.currentDataOwner;
- if(owner==='local'&&root.WeekwiseOfflineAccess.isAccountDevice(localStorage)){weekwiseRuntime.showToast('This device requires account sign-in to edit.');return false;}
+ if(owner==='local'&&!root.WeekwiseOfflineAccess.allowsLocal(localStorage)){weekwiseRuntime.showToast('Choose Explore on this device to open your separate device-only planner.');return false;}
  if(owner!=='local'&&weekwiseRuntime.cloudUser?.id!==owner&&!weekwiseRuntime.offlineAccountSelected()){weekwiseRuntime.showToast('Sign in to this account before editing.');return false;}
  if(owner!=='local'&&!navigator.onLine&&!root.WeekwiseOfflineAccess.allows(localStorage,owner)){weekwiseRuntime.showToast('Connect and sign in once to enable offline editing.');return false;}
  if(weekwiseRuntime.zoneNeedsReview()){weekwiseRuntime.renderZoneNotice();weekwiseRuntime.showToast('Review the time zone notice before changing your planner.');return false;}if(weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!==weekwiseRuntime.cloudUser.id){weekwiseRuntime.showToast('Your account is changing. Wait until its planner is ready.');return false;}if(weekwiseRuntime.plannerStorageBlocked||WeekwiseData.blockedKeys().length){weekwiseRuntime.showToast('Editing is paused to protect stored data. Restore a valid backup using the recovery notice.');return false;}return true;}

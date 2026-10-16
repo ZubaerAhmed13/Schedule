@@ -1756,7 +1756,8 @@ test('Settings is the single file-transfer location in both account and device-o
   page.on('dialog',dialog=>dialog.accept());
   await page.locator('#cloudSignOut').click();
   await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden===false);
-  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false,'a signed-out account device cannot bypass sign-in via guest mode');
+  await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),true,'a separate device-only planner remains an explicit option');
   assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false,'explicit sign-out revokes cached offline access');
   assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
  }finally{await context.close();}
@@ -1812,17 +1813,27 @@ test('explicit account sign-out locks cached mobile planner even while offline',
   page.on('dialog',d=>d.accept());
   await page.locator('#cloudSignOut').click();
   await page.waitForFunction(()=>document.querySelector('#signinLanding').hidden===false);
-  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);
+  await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),true);
   assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
   assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true);
   await context.setOffline(true);
   await page.reload({waitUntil:'domcontentloaded'});
   assert.equal(await page.locator('#signinLanding').isVisible(),true);
   assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
-  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),true);
   assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
   const retained=await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-account-cache-v1:weekwise-browser-test-user')||'null'));
   assert.equal(Object.values(retained?.payload?.store?.weeks||{}).flatMap(w=>w.tasks||[]).some(t=>t.title==='Private account appointment'),true,'the account owner-scoped cache is preserved behind the sign-in gate');
+  await page.locator('#signinLocalContinue').click();await page.locator('#signinLanding').waitFor({state:'hidden'});
+  assert.equal(await countStoredTasksNamed(page,'Private account appointment'),0);
+  await createFlexibleTask(page,'Device-only offline appointment');
+  await page.reload({waitUntil:'domcontentloaded'});await page.locator('#signinLanding').waitFor({state:'hidden'});
+  assert.equal(await countStoredTasksNamed(page,'Device-only offline appointment'),1);
+  assert.equal(await countStoredTasksNamed(page,'Private account appointment'),0);
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
+  assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.canOpenOffline(localStorage,'weekwise-browser-test-user',false)),false);
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-account-cache-v1:weekwise-browser-test-user'))),retained);
  }finally{await context.close();}
 });
 
@@ -1843,8 +1854,10 @@ test('offline account can be locked locally without a live auth session',async()
   page.on('dialog',d=>d.accept());
   await page.locator('#cloudOfflineLock').click();
   assert.equal(await page.locator('#signinLanding').isVisible(),true);
+  if(await page.locator('#weekwiseHome').isVisible())await page.locator('.ww-public-nav-cta').click();
+  await page.locator('#cloudEmail').waitFor({state:'visible'});
   assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
-  assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);
+  assert.equal(await page.locator('#signinLocalContinue').isVisible(),true);
   assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
   await page.reload({waitUntil:'domcontentloaded'});
   assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
