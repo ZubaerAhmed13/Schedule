@@ -48,7 +48,7 @@ test('planning explains readiness and blocked tasks and updates selection worklo
    if(width===390){
     await page.addScriptTag({content:axe.source});
     for(const theme of ['light','dark']){await page.evaluate(theme=>document.body.dataset.theme=theme,theme);const audit=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));fs.writeFileSync(path.join(root,'test-results','axe-'+engine+'-release3-plan-'+theme+'-device.json'),JSON.stringify(audit.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)}))));assert.deepEqual(audit.violations.map(v=>v.id),[],theme+' planning accessibility');}
-    await page.evaluate(()=>document.body.dataset.theme='light');await page.locator('#toast.show').waitFor({state:'hidden'});await page.locator('#planSelectionReview').scrollIntoViewIfNeeded();await snap(page,'release3-selected-plan');
+    await page.evaluate(()=>document.body.dataset.theme='light');await page.locator('#toast.show').waitFor({state:'hidden'});await page.locator('.plan-selection-review').scrollIntoViewIfNeeded();await snap(page,'release3-selected-plan');
    }
   }finally{await context.close();}
  }
