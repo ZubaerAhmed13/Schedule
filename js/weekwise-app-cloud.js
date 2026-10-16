@@ -83,13 +83,13 @@ function isolatePlannerOwner(nextOwner){
  localStorage.setItem('weekwise-account-cache-v1:'+previousOwner,JSON.stringify({payload,meta:weekwiseRuntime.readCloudMeta()}));
  weekwiseRuntime.closeTaskModal(true);
  // First-time local capture belongs to the account the user deliberately signs into.
- if(previousOwner==='local'&&nextOwner!=='local'&&!weekwiseRuntime.readCloudMeta()?.userId&&Object.values(payload.store.weeks).some(w=>w.tasks?.length)&&confirm('Use your device-only planner with this account? Cancel keeps it separate on this device.')){weekwiseRuntime.currentDataOwner=nextOwner;root.WeekwiseInterface?.navigation(weekwiseRuntime.workspaceView);root.WeekwiseInterface?.renderPins();root.WeekwiseProductivity?.render();root.WeekwiseQuality?.ownerChanged();return;}
+ if(previousOwner==='local'&&nextOwner!=='local'&&!weekwiseRuntime.readCloudMeta()?.userId&&Object.values(payload.store.weeks).some(w=>w.tasks?.length)&&confirm('Use your device-only planner with this account? Cancel keeps it separate on this device.')){weekwiseRuntime.currentDataOwner=nextOwner;root.WeekwiseInterface?.navigation(weekwiseRuntime.workspaceView);root.WeekwiseInterface?.renderPins();root.WeekwiseProductivity?.render();root.WeekwiseQuality?.ownerChanged();root.WeekwisePlanUI?.render();return;}
  const cached=WeekwiseData.readJSON(localStorage,'weekwise-account-cache-v1:'+nextOwner,value=>{weekwiseRuntime.validateCloudPayload(value.payload);return value;},null);
  if(WeekwiseData.blockedKeys().length)throw new Error('This account cache needs recovery. Export the original data before continuing.');
  const next=cached?.payload||{version:1,store:{settings:weekwiseRuntime.defaultSettings(),weeks:{},recurringTemplates:[],customLists:[]},reminders:[],focusSessions:[],habits:[],countdowns:[],savedTaskFilters:[],taskTemplates:[]};
  for(const name of ['reminders','focusSessions','habits','countdowns','savedTaskFilters','taskTemplates'])if(!Array.isArray(next[name]))next[name]=[];
  weekwiseRuntime.saveCloudLocalPayload(next);weekwiseRuntime.currentDataOwner=nextOwner;
- root.WeekwiseInterface?.navigation(weekwiseRuntime.workspaceView);root.WeekwiseInterface?.renderPins();root.WeekwiseProductivity?.render();root.WeekwiseQuality?.ownerChanged();
+ root.WeekwiseInterface?.navigation(weekwiseRuntime.workspaceView);root.WeekwiseInterface?.renderPins();root.WeekwiseProductivity?.render();root.WeekwiseQuality?.ownerChanged();root.WeekwisePlanUI?.render();
  localStorage.setItem(weekwiseRuntime.CLOUD_META_KEY,JSON.stringify(cached?.meta||{userId:nextOwner==='local'?'':nextOwner,revision:0,fingerprint:weekwiseRuntime.cloudFingerprint(weekwiseRuntime.buildCloudPayload())}));
  weekwiseRuntime.focusState=null;
 }

@@ -1,4 +1,8 @@
-# Weekwise current status — 15 October 2026
+# Weekwise current status — 16 October 2026
+
+## Planning usefulness follow-up
+
+Release 3 aligns readiness with the selected week, makes infeasibility and placement reasons explicit, and updates workload, breaks, remaining capacity and selected finish times as proposals are chosen. Missing-estimate editing, preserved review choices and explicit placement recovery use the existing task editor and scheduler. See [PLANNING_DECISIONS_RELEASE.md](PLANNING_DECISIONS_RELEASE.md) for semantics, data preservation and verification limits. The release PR owns final CI and deployment evidence. Google and Outlook activation remain excluded; older provider requests below are historical.
 
 ## Phone and daily execution follow-up
 

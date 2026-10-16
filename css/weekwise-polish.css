@@ -521,3 +521,31 @@ body .workspace-task-meta .workspace-folder-pill{background:var(--ww-soft)!impor
  #calendarToolbar .week-control .btn{min-width:44px;min-height:44px;height:auto;padding:8px;font-size:12px}
  #calendarToolbar .weeklabel{grid-column:2;grid-row:3;justify-self:end;min-width:0;max-width:22ch;font-size:11px;padding:0;text-align:right;white-space:normal;overflow-wrap:anywhere;line-height:1.5;order:0}
 }
+
+/* Planning decisions: shared palette, bounded readiness and selection feedback. */
+.plan-readiness-review,.plan-selection-review{background:var(--ww-surface);color:var(--ww-text);border:1px solid var(--ww-line);border-radius:16px;padding:20px;margin:18px 0;min-width:0}
+.plan-readiness-review[hidden]{display:none!important}
+.plan-readiness-review>summary{min-height:44px;align-content:center;cursor:pointer;font-weight:650;font-size:13px}
+.plan-readiness-review p,.plan-selection-review>p{color:var(--ww-muted);font-size:12px;line-height:1.7}
+.plan-readiness-review ul{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:10px}
+.plan-readiness-review li{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0}
+.plan-readiness-review li strong{overflow-wrap:anywhere;font-size:13px;min-width:0}
+.plan-readiness-review li .btn{flex-shrink:0}
+.plan-selection-review h3{font-size:16px;margin:0 0 12px}
+.plan-selection-review #planReviewSummary{color:var(--ww-text);font-weight:650;font-size:14px}
+.plan-selection-review .plan-day-capacity-list{margin-bottom:0}
+.plan-selection-review .plan-day-capacity{min-width:0;background:var(--ww-soft);color:var(--ww-text);border-color:var(--ww-line)}
+.plan-selection-review .plan-day-capacity strong{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.plan-selection-review .plan-day-capacity small{color:var(--ww-muted);font-size:11px;line-height:1.6}
+.plan-proposal>label{min-width:0;display:flex;gap:10px;align-items:flex-start;min-height:44px;overflow-wrap:anywhere}
+.plan-proposal>div{min-width:0;display:grid;gap:10px;overflow-wrap:anywhere}
+.plan-issue-label{display:block;color:var(--ww-text);font-weight:650;font-size:11px;margin-bottom:6px}
+.plan-unscheduled li>div{min-width:0}
+@media(max-width:650px){
+ .plan-readiness-review,.plan-selection-review{padding:16px}
+ .plan-selection-review .plan-day-capacity-list{grid-template-columns:1fr}
+ .plan-readiness-review li{align-items:flex-start;flex-wrap:wrap;gap:8px}
+ .plan-placement{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .plan-placement .btn{grid-column:1/-1;min-height:44px}
+ .plan-proposal input[type=date],.plan-proposal input[type=time]{font-size:16px;min-width:0;width:100%}
+}

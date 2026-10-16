@@ -70,3 +70,37 @@ test('split keeps parent ID/history and creates linked unscheduled parts with ex
  const value=store([task('large',{note:'Keep',subtasks:[{id:'old',title:'Existing',done:true}]})]);let id=0;const n=engine.splitTask(value,{week,id:'large'},[{title:'First',minutes:30},{title:'Second',minutes:45}],()=> 'child'+ ++id);const [parent,first,second]=n.weeks[week].tasks;assert.equal(parent.id,'large');assert.equal(parent.subtasks[0].id,'old');assert.equal(parent.planningChildren.length,2);assert.equal(first.parentTaskId,'large');assert.equal(second.estimatedDurationMinutes,45);assert.equal(first.start,null);assert.equal(first.reminderAt,null);assert.equal(value.weeks[week].tasks.length,1);assert.equal(engine.build({store:n,weekStart:week}).proposals.length,2);
 });
 test('acceptance rejects a tampered placement outside availability before mutating data',()=>{const value=store([task('a')]),p=build(value.weeks[week].tasks);p.proposals[0].start=300;const before=JSON.stringify(value);assert.throws(()=>engine.apply(value,p,[week+'::a']),/no longer feasible/);assert.equal(JSON.stringify(value),before);});
+
+
+test('readiness uses the selected week and exactly the build estimate rules without modifying records',()=>{
+ const value=store([task('ready',{unknown:{keep:true},todayPriority:true}),task('missing',{focusEstimateMinutes:null}),task('zero',{estimatedDurationMinutes:0}),task('done',{done:true}),task('skip',{status:'skipped'}),task('fixed',{fixed:true}),task('parent',{planningChildren:['child']}),task('fraction',{estimatedDurationMinutes:2.5}),task('scheduled',{start:600,unscheduled:false})]);
+ value.weeks['2026-11-01']={notes:'Future notes',tasks:[task('future')]};const before=JSON.stringify(value),r=engine.readiness(value,week),p=engine.build({store:value,weekStart:week});
+ assert.deepEqual(r.ready.map(r=>r.task.id),['ready']);assert.deepEqual(r.missing.map(r=>r.task.id),['missing','zero','fraction']);assert.equal(r.future,1);assert.equal(r.scheduled,1);assert.equal(r.highlighted.length,1);
+ assert.equal(p.proposals.length+p.unscheduled.length,r.ready.length+r.missing.length);assert.equal(JSON.stringify(value),before);
+});
+test('planning distinguishes missing hours, exhausted capacity, fragmented gaps and deadline constraints',()=>{
+ const none=build([task('one')],{days:[]});assert.equal(none.unscheduled[0].code,'availability');
+ const full=build([task('all',{allDay:true,day:1,duration:1440}),task('one')]);assert.equal(full.unscheduled[0].code,'capacity');
+ const fragmented=build([task('one',{estimatedDurationMinutes:70})],{buffer:0,breakMinutes:10,windows:[{days:[1],start:540,end:600},{days:[1],start:660,end:720}]});assert.equal(fragmented.unscheduled[0].code,'continuous-slot');assert.equal(fragmented.unscheduled[0].largestSlotMinutes,50);assert.match(fragmented.unscheduled[0].reason,/needs 70 min/);
+ const deadline=build([task('one',{estimatedDurationMinutes:70,dueDate:'2026-10-12'})],{buffer:0,breakMinutes:10,windows:[{days:[1],start:540,end:600},{days:[1],start:660,end:720}]});assert.equal(deadline.unscheduled[0].code,'deadline-slot');
+ const earlier=engine.build({store:store([task('one',{dueDate:'2026-10-13'})]),weekStart:'2026-10-18',notBefore:{date:'2026-10-12',minute:600}});assert.equal(earlier.unscheduled[0].code,'deadline-week');
+ const passed=engine.build({store:store([task('one',{dueDate:'2026-10-11'})]),weekStart:week,notBefore:{date:'2026-10-12',minute:600}});assert.equal(passed.unscheduled[0].code,'deadline-passed');
+});
+test('placement explanations identify preferred focus hours, chosen slots and ordinary earliest slots',()=>{
+ const tasks=[task('one')],prefs={buffer:0,breakMinutes:0,focusStart:840,focusEnd:960};const preferred=build(tasks,prefs).proposals[0];assert.equal(preferred.placement,'preferred');assert.match(preferred.reason,/preferred focus hours/);assert.equal(preferred.start,840);
+ const chosen=engine.build({store:store(tasks),weekStart:week,prefs,overrides:{[week+'::one']:{date:'2026-10-12',start:600}}}).proposals[0];assert.equal(chosen.placement,'chosen');assert.match(chosen.reason,/Your chosen slot/);assert.doesNotMatch(chosen.reason,/Earliest/);
+ assert.equal(build(tasks,{buffer:0,breakMinutes:0}).proposals[0].placement,'earliest');
+ const invalid=engine.build({store:store(tasks),weekStart:week,prefs,overrides:{[week+'::one']:{date:'2026-10-12',start:300}}});assert.equal(invalid.unscheduled[0].code,'placement');
+});
+test('selection review follows selected minutes, breaks, remaining capacity and last selected finish',()=>{
+ const value=store([task('a',{estimatedDurationMinutes:60,note:'Keep'}),task('b',{estimatedDurationMinutes:30})]),p=engine.build({store:value,weekStart:week,prefs:{days:[1],start:540,end:720,buffer:0,breakMinutes:10}}),before=JSON.stringify(p);
+ const r=engine.review(p,[week+'::a',week+'::a','unknown']);assert.equal(r.count,1);assert.equal(r.unchanged,1);assert.equal(r.taskMinutes,60);assert.equal(r.breakMinutes,10);assert.equal(r.remaining,110);assert.equal(r.days[0].lastFinish,600);assert.equal(r.days[0].remaining,110);
+ const empty=engine.review(p,[]);assert.equal(empty.remaining,p.capacity);assert.equal(empty.days[0].lastFinish,null);assert.equal(JSON.stringify(p),before);
+ const next=engine.apply(value,p,[week+'::a']);assert.equal(next.weeks[week].tasks[0].start,540);assert.equal(next.weeks[week].tasks[1].start,null);assert.equal(value.weeks[week].tasks[0].start,null);
+});
+test('selection review retains daily limits and weekly buffers across partial recovery approval',()=>{
+ const value=store([task('past',{start:540,duration:30,estimatedDurationMinutes:30,unscheduled:false}),task('other',{day:2,start:540,duration:30,estimatedDurationMinutes:30,unscheduled:false})]);const p=engine.build({store:value,weekStart:week,prefs:{days:[1,2],start:540,end:720,buffer:10,weeklyBuffer:20,maxDailyMinutes:120,breakMinutes:10},notBefore:{date:'2026-10-12',minute:600},mode:'recover'}),r=engine.review(p,p.proposals.slice(0,1).map(p=>p.week+'::'+p.id));
+ assert.equal(r.remaining,r.days.reduce((n,d)=>n+d.remaining,0));assert.equal(r.taskMinutes,30);assert.equal(r.remaining,p.capacity-40);assert.equal(p.protectedCount,2);
+});
+
+test('chosen start minutes cannot silently roll into another date',()=>{for(const start of [-1,1440,1500]){const p=engine.build({store:store([task('one')]),weekStart:week,overrides:{[week+'::one']:{date:'2026-10-12',start}}});assert.equal(p.proposals.length,0);assert.equal(p.unscheduled[0].code,'placement');}});
