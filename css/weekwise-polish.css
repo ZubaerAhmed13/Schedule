@@ -459,3 +459,65 @@ input::placeholder,textarea::placeholder {color:var(--ww-muted);opacity:.85;}
 #taskForm>.modalgrid{min-height:0;overflow:auto;overscroll-behavior:contain;padding:4px;scroll-padding-block:12px}
 #taskForm>.modalbuttons{position:static;bottom:auto;flex-shrink:0;margin-top:12px;padding:12px 0 0;border-top:1px solid var(--ww-line)}
 @media(max-width:650px){#taskForm .task-date-field{grid-column:1/-1}#taskForm .field:has(>#modalListId){grid-column:1/-1}}
+
+/* Daily decisions precede secondary totals; review never changes a task. */
+body .workspace-task-meta .workspace-folder-pill{background:var(--ww-soft)!important;color:var(--ww-text)!important}
+.today-spotlight{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;margin-bottom:18px}
+.today-spotlight .today-priorities{min-width:0}
+.today-review{margin:0 0 18px;border:1px solid var(--ww-line);border-radius:18px;background:var(--ww-surface);padding:0 18px}
+.today-review>summary{display:flex;align-items:center;gap:10px;min-height:56px;cursor:pointer;font-weight:650;font-size:13px;color:var(--ww-text);list-style:none}
+.today-review>summary::-webkit-details-marker{display:none}
+.today-review>summary::before{content:'+';font-size:20px;font-weight:400}
+.today-review[open]>summary::before{content:'−'}
+.today-review>summary>span{margin-left:auto;padding:4px 9px;border-radius:9px;background:var(--ww-soft);font-variant-numeric:tabular-nums}
+.today-review p{margin:0 0 14px;font-size:12px;line-height:1.7;color:var(--ww-muted)}
+.today-review ol{list-style:none;padding:0;margin:0 0 12px}
+.today-review li{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--ww-line)}
+.today-review li>div{flex:1;min-width:0}
+.today-review strong{display:block;font-size:13px;overflow-wrap:anywhere}
+.today-review small{display:block;font-size:11px;margin-top:4px;color:var(--ww-muted)}
+.today-review .btn{min-height:44px;font-size:12px}
+.today-review .today-review-note{margin-top:12px;font-size:11px}
+.today-review :focus-visible{outline:2px solid var(--ww-brand);outline-offset:3px;border-radius:6px}
+.today-columns .today-progress-card{min-width:0}
+@media(max-width:760px){
+ body[data-active-view=today] .workspace-main,body[data-active-view=calendar] .workspace-main{padding-top:12px}
+ body[data-active-view=today] .task-workspace-head{margin-bottom:12px}
+ body[data-active-view=today] .task-workspace-head h2{font-size:28px}
+ body[data-active-view=today] .task-workspace-head p,body[data-active-view=today] .workspace-capture-hint{display:none}
+ body[data-active-view=today] .workspace-capture{margin-bottom:14px}
+ .today-greeting{margin-bottom:12px}
+ .today-spotlight{grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:12px}
+ .today-spotlight .today-next{min-height:0;padding:16px 18px;gap:12px;border-radius:18px}
+ .today-spotlight .today-next .spotlight-icon{display:none}
+ .today-spotlight .today-next h3{font-size:21px;margin:6px 0;line-height:1.4;max-width:none}
+ .today-spotlight .today-next .plan-actions .btn{min-height:44px;white-space:normal}
+ .today-spotlight .today-priorities{padding:16px 18px;border-radius:18px}
+ .today-priority-heading{gap:8px}
+ .today-priority-heading .btn,.today-priorities article>.btn,.today-timeline article>.btn{min-height:44px}
+ .today-priorities article{padding-top:12px}
+ .today-priorities article>.priority-number{grid-row:1/3}
+ .today-priorities article>.btn{white-space:normal}
+ .today-review{padding:0 14px;margin-bottom:12px}
+ .today-review li{align-items:flex-start;flex-wrap:wrap}
+ .today-review li>div{flex:1 1 150px}
+ .today-columns{grid-template-columns:minmax(0,1fr)}
+ .today-timeline article{grid-template-columns:40px minmax(0,1fr)}
+ .today-timeline article>.btn{grid-column:2;justify-self:start}
+}
+@media(max-width:650px){
+ #calendarToolbar,#calendarToolbar.mobile-week-toolbar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:12px;margin-bottom:10px;align-items:center}
+ #calendarToolbar .calendar-heading{grid-column:1;grid-row:1;min-width:0}
+ #calendarToolbar .calendar-heading h2{font-size:22px;margin:0;letter-spacing:-.7px}
+ #calendarToolbar .calendar-instruction{font-size:11px;line-height:1.5}
+ #calendarToolbar .calendar-actions{display:contents}
+ #calendarToolbar .calendar-create-actions{grid-column:2;grid-row:1;display:flex;gap:6px;justify-self:end;justify-content:flex-end}
+ #calendarToolbar .calendar-create-actions .btn{width:44px;min-width:44px;min-height:44px;padding:10px;position:relative;flex:none}
+ #calendarToolbar .calendar-create-actions .btn>span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ #calendarToolbar .calendar-create-actions .ww-icon{width:20px;height:20px}
+ #calendarToolbar .view-switch{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;padding:3px;gap:0}
+ #calendarToolbar .view-switch-btn{min-width:0;min-height:44px;padding:7px 2px;font-size:11px}
+ #calendarToolbar .week-control{grid-column:1;grid-row:3;width:auto;gap:4px;order:0}
+ #calendarToolbar .week-control .btn{min-width:44px;min-height:44px;height:auto;padding:8px;font-size:12px}
+ #calendarToolbar .weeklabel{grid-column:2;grid-row:3;justify-self:end;min-width:0;max-width:22ch;font-size:11px;padding:0;text-align:right;white-space:normal;overflow-wrap:anywhere;line-height:1.5;order:0}
+}

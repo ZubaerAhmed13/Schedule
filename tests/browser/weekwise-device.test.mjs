@@ -30,6 +30,69 @@ async function canonical(page){return page.evaluate(()=>Object.fromEntries(['wee
 async function downloadedJSON(download){const file=await download.path();return JSON.parse(fs.readFileSync(file,'utf8'));}
 async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-device-'+name+'.png'),animations:'disabled'});}
 
+test('compact phone calendar controls keep five modes and 44-pixel actions before the schedule',async()=>{
+ for(const width of [320,390,650]){
+  rows.get(owner).data.store=mobileWeekFixture();const {context,page}=await open({width,height:844});
+  try{
+   await navigate(page,'calendar');await page.locator('#weekViewBtn').click();await page.evaluate(()=>scrollTo(0,0));const before=await canonical(page);
+   const toolbar=await page.locator('#calendarToolbar').boundingBox();assert.ok(toolbar.height<=205,JSON.stringify({width,toolbar}));
+   const heading=await page.locator('.mobile-week-day h3').first().boundingBox();assert.ok(heading.y<470,JSON.stringify({width,heading}));
+   for(const view of ['day','week','month','agenda','year']){
+    await page.locator('#'+view+'ViewBtn').click();assert.equal(await page.locator('#'+view+'ViewBtn').getAttribute('aria-pressed'),'true');
+    for(const selector of ['#dayViewBtn','#weekViewBtn','#monthViewBtn','#agendaViewBtn','#yearViewBtn','#prevWeek','#thisWeek','#nextWeek','#remindersQuickBtn','#addTaskBtn']){const box=await page.locator(selector).boundingBox();assert.ok(box.width>=43.9&&box.height>=43.9,JSON.stringify({selector,box,width}));assert.ok(box.x>=0&&box.x+box.width<=width+1,JSON.stringify({selector,box,width}));}
+    assert.equal(await page.getByRole('button',{name:'New event',exact:true}).isVisible(),true);assert.equal(await page.getByRole('button',{name:'Reminder',exact:true}).isVisible(),true);
+    const navigation=await page.locator('.week-control').boundingBox(),label=await page.locator('#weekLabel').boundingBox();assert.ok(navigation.x+navigation.width<=label.x+1,JSON.stringify({width,view,navigation,label}));
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+   }
+   await page.locator('#weekViewBtn').click();assert.deepEqual(await canonical(page),before);
+   if(width===390){await page.evaluate(()=>scrollTo(0,0));await snap(page,'release2-calendar-compact');}
+  }finally{await context.close();}
+ }
+});
+
+test('Today puts next commitment and highlights first and reviews the original past task',async()=>{
+ for(const width of [320,390]){
+  const store=fixture();store.weeks['2030-01-06'].tasks[0].todayPriority=true;store.weeks['2030-01-06'].tasks[0].dueDate='2030-01-07';
+  store.weeks['2029-12-30']={notes:'Keep earlier week notes',tasks:[{id:'past-review',title:'Earlier commitment <img src=x>',day:6,start:600,duration:30,done:false,status:'todo',custom:true,listId:'study',type:'study',note:'Keep the original note',unknownField:{retained:true}}]};rows.get(owner).data.store=store;
+  const {context,page}=await open({width,height:844});
+  try{
+   await navigate(page,'today');await page.evaluate(()=>scrollTo(0,0));const before=await canonical(page);
+   assert.equal(await page.locator('.today-next h3').innerText(),'Private task Beta');
+   const next=await page.locator('.today-next').boundingBox(),highlights=await page.locator('.today-priorities').boundingBox(),summary=await page.locator('.today-progress-card').boundingBox();
+   assert.ok(next.y<450&&highlights.y<700,JSON.stringify({width,next,highlights}));assert.ok(highlights.y<summary.y);
+   assert.match(await page.locator('.today-priorities').innerText(),/Not scheduled.*Inbox/);assert.equal(await page.locator('.today-progress-ring').getAttribute('aria-valuemax'),'1');
+   assert.equal(await page.locator('#todayReviewDetails').evaluate(el=>el.open),false);await page.locator('#todayReviewSummary').focus();await page.keyboard.press('Enter');
+   assert.equal(await page.locator('#todayReviewDetails li').count(),2);assert.equal(await page.locator('#todayReviewDetails img').count(),0);assert.deepEqual(await canonical(page),before);
+   await page.addScriptTag({content:axe.source});const audits=[];for(const theme of ['light','dark']){
+    await page.evaluate(theme=>document.body.setAttribute('data-theme',theme),theme);await page.waitForTimeout(300);
+    const result=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));audits.push({theme,violations:result.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)}))});
+   }
+   fs.writeFileSync(path.join(root,'test-results','axe-'+engine+'-today-release2-'+width+'-device.json'),JSON.stringify(audits,null,2));assert.deepEqual(audits.flatMap(a=>a.violations),[]);
+   await page.evaluate(()=>document.body.setAttribute('data-theme','light'));await page.locator('#todayReviewSummary').click();await page.evaluate(()=>scrollTo(0,0));if(width===390)await snap(page,'release2-today-first-screen');
+   await page.locator('#todayReviewSummary').click();await page.locator('[data-today-review-ref="2029-12-30::past-review"]').click();assert.equal(await page.locator('#modalNote').inputValue(),'Keep the original note');
+   await page.locator('#taskPriorityOptions > summary').click();await page.locator('#modalStatus').selectOption('done');await page.locator('#saveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
+   const after=JSON.parse((await canonical(page))['weekwise-planner-v2']),task=after.weeks['2029-12-30'].tasks.find(t=>t.id==='past-review');assert.equal(task.done,true);assert.deepEqual(task.unknownField,{retained:true});assert.equal(task.note,'Keep the original note');assert.equal(after.weeks['2029-12-30'].notes,'Keep earlier week notes');assert.equal(await page.locator('[data-today-review-ref="2029-12-30::past-review"]').count(),0);assert.equal(await page.locator('#todayReviewSummary').evaluate(el=>el===document.activeElement),true,'a completed review returns keyboard focus to the remaining review');assert.equal(await page.locator('#todayReviewDetails [data-experience-recover]').count(),0);assert.equal(await page.locator('#todayReviewDetails [data-experience-plan]').isVisible(),true,'due-only work uses planning rather than a recovery preview with no past block');
+   assert.deepEqual(after.weeks['2030-01-06'],JSON.parse(before['weekwise-planner-v2']).weeks['2030-01-06']);
+  }finally{await context.close();}
+ }
+});
+
+test('unfinished review paginates, retains keyboard position on clock refresh and opens a read-only current-week recovery preview',async()=>{
+ const store=fixture();store.settings.planning={days:[1,2,3,4,5],start:540,end:1020,buffer:0,breakMinutes:0,maxDailyMinutes:480};
+ for(let i=0;i<7;i++)store.weeks['2030-01-06'].tasks.push({id:'decision-'+i,title:'Decision '+i,day:2,start:540+i*15,duration:15,estimatedDurationMinutes:15,done:false,unscheduled:false,custom:true,listId:'inbox',type:'life',dueDate:'2030-01-08'});
+ rows.get(owner).data.store=store;seed(other);const {context,page}=await open();
+ try{
+  await navigate(page,'plan');await (await show(page,'#planWeek')).fill('2030-02-04');await page.locator('#planWeek').press('Tab');await navigate(page,'today');const before=await canonical(page);
+  await page.locator('#todayReviewSummary').click();assert.equal(await page.locator('#todayReviewDetails li').count(),5);await page.locator('#todayReviewMore').click();assert.equal(await page.locator('#todayReviewDetails li').count(),7);
+  await page.locator('[data-today-review-ref="2030-01-06::decision-2"]').focus();
+  await page.evaluate(()=>{const OriginalDate=Date,now=Date.now()+60000;window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}};window.dispatchEvent(new Event('focus'));});
+  assert.equal(await page.locator('#todayReviewDetails').evaluate(el=>el.open),true);assert.equal(await page.locator('[data-today-review-ref="2030-01-06::decision-2"]').evaluate(el=>el===document.activeElement),true);assert.equal(await page.locator('#todayReviewDetails li').count(),7);assert.deepEqual(await canonical(page),before);
+  await page.evaluate(id=>WeekwiseTestAuth.setUser(id),other);await page.waitForFunction(id=>document.querySelector('#cloudUserEmail').textContent===id+'@example.invalid',other);assert.equal(await page.locator('#todayReviewDetails').count(),0);assert.doesNotMatch(await page.locator('#todayOverview').innerText(),/Decision 2/);
+  await page.evaluate(id=>WeekwiseTestAuth.setUser(id),owner);await page.waitForFunction(()=>document.querySelector('#todayReviewDetails'));assert.equal(await page.locator('#todayReviewDetails').evaluate(el=>el.open),false);await page.locator('#todayReviewSummary').click();assert.equal(await page.locator('#todayReviewDetails li').count(),5);
+  const returned=await canonical(page);await page.locator('[data-experience-recover]').click();assert.equal(await page.locator('#planWeek').inputValue(),'2030-01-07');assert.equal(await page.locator('#planPreviewTitle').innerText(),'Review recovery adjustments');assert.ok(await page.locator('[name="planProposal"]').count());assert.equal(await page.locator('#planOverviewRange').innerText(),'7 Jan – 13 Jan');assert.equal(await page.locator('#planReadiness article').filter({hasText:'Already scheduled'}).locator('strong').innerText(),'8');assert.equal(await page.locator('#planPreviewTitle').evaluate(el=>el===document.activeElement),true);const previewHeading=await page.locator('#planPreviewTitle').boundingBox();assert.ok(previewHeading.y>80&&previewHeading.y+previewHeading.height<760,JSON.stringify(previewHeading));assert.deepEqual(await canonical(page),returned);await snap(page,'release2-recovery-preview');
+ }finally{await context.close();}
+});
+
 test('the design keeps narrow layouts and existing records usable when the local typeface cannot load',async()=>{
  const fallback=await open({width:320,blockFont:true});let before;
  try{

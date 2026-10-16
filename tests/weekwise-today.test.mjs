@@ -34,3 +34,22 @@ test('due-only backlog stays actionable even on a day with no appointments',()=>
  assert.deepEqual(result.due,{total:1,unplanned:1,overdue:1});
  assert.equal(result.inboxCount,1);
 });
+
+test('unfinished review separates past commitments and deadlines without duplicating or changing tasks',()=>{
+ const rows=[record('past',1,540,30),record('both',1,600,30,{dueDate:'2030-01-06'}),record('future-due',2,540,30,{dueDate:'2030-01-07'}),record('inbox',1,null,30,{unscheduled:true}),record('ongoing',1,690,60),record('complete',1,540,30,{status:'done'}),record('skipped',1,540,30,{status:'skipped'}),record('informational',1,540,30,{requiresCompletion:false})];
+ const before=JSON.stringify(rows),daily=WeekwiseToday.daily(rows,{settings:{timeZone:'UTC'}},Date.parse('2030-01-07T12:00:00Z'));
+ assert.deepEqual(daily.decisions.map(r=>[r.task.id,r.decision]),[['both','due'],['future-due','due'],['past','elapsed']]);
+ assert.equal(daily.next.task.id,'ongoing');assert.equal(daily.decisions[0].week,'2030-01-06');
+ assert.equal(JSON.stringify(rows),before);
+});
+
+test('unfinished review uses actual clock instants and completed all-day spans',()=>{
+ const slot=WeekwiseCalendarRange.slot('2030-10-27',90,30,'UTC','Europe/Berlin');
+ const exact={week:slot.week,task:{id:'fold',title:'fold',day:slot.day,start:slot.start,duration:slot.duration,scheduleInstant:slot.scheduleInstant}};
+ const legacy={week:slot.week,task:{id:'ambiguous',title:'ambiguous',day:slot.day,start:150,duration:30}};
+ assert.equal(WeekwiseToday.daily([exact,legacy],{settings:{timeZone:'Europe/Berlin'}},Date.parse('2030-10-27T01:45:00Z')).decisions.length,0,'a repeated clock hour does not make the live block past');
+ assert.deepEqual(WeekwiseToday.daily([exact,legacy],{settings:{timeZone:'Europe/Berlin'}},Date.parse('2030-10-27T02:00:00Z')).decisions.map(r=>r.task.id),['fold'],'unresolved legacy clock times stay out of the past-time review');
+ const trip=record('trip',0,null,2880,{allDay:true});
+ assert.equal(WeekwiseToday.daily([trip],{settings:{timeZone:'Asia/Tokyo'}},Date.parse('2030-01-07T14:59:00Z')).decisions.length,0);
+ assert.equal(WeekwiseToday.daily([trip],{settings:{timeZone:'Asia/Tokyo'}},Date.parse('2030-01-07T15:00:00Z')).decisions[0].task.id,'trip');
+});
