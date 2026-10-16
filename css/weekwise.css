@@ -93,3 +93,6 @@ body[data-theme=dark] .workspace-empty h3{color:var(--ww-text)}
 #accountEraseOwner{overflow-wrap:anywhere}
 
 .zone-conversion-preview{max-height:45vh;overflow:auto;margin:1rem 0}.zone-conversion-preview code{overflow-wrap:anywhere}.zone-notice{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}.zone-notice span{flex:1 1 260px}
+
+/* Utility footnotes use the current palette in every theme. */
+.utility-dialog .cloud-footnote{color:var(--ww-muted)}
