@@ -102,3 +102,5 @@ test('selection review retains daily limits and weekly buffers across partial re
  const value=store([task('past',{start:540,duration:30,estimatedDurationMinutes:30,unscheduled:false}),task('other',{day:2,start:540,duration:30,estimatedDurationMinutes:30,unscheduled:false})]);const p=engine.build({store:value,weekStart:week,prefs:{days:[1,2],start:540,end:720,buffer:10,weeklyBuffer:20,maxDailyMinutes:120,breakMinutes:10},notBefore:{date:'2026-10-12',minute:600},mode:'recover'}),r=engine.review(p,p.proposals.slice(0,1).map(p=>p.week+'::'+p.id));
  assert.equal(r.remaining,r.days.reduce((n,d)=>n+d.remaining,0));assert.equal(r.taskMinutes,30);assert.equal(r.remaining,p.capacity-40);assert.equal(p.protectedCount,2);
 });
+
+test('chosen start minutes cannot silently roll into another date',()=>{for(const start of [-1,1440,1500]){const p=engine.build({store:store([task('one')]),weekStart:week,overrides:{[week+'::one']:{date:'2026-10-12',start}}});assert.equal(p.proposals.length,0);assert.equal(p.unscheduled[0].code,'placement');}});

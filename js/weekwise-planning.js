@@ -157,13 +157,13 @@
       }
       options.sort((a,b)=>Number(b.preferred)-Number(a.preferred)||a.start-b.start);
       if(override){
-        if(root.WeekwiseData.validDate(override.date)&&Number.isInteger(override.start)){
+        if(root.WeekwiseData.validDate(override.date)&&Number.isInteger(override.start)&&override.start>=0&&override.start<DAY){
           const requestedSlot=(ordinal(override.date)-base)*DAY+override.start;
           if(validClock(requestedSlot)&&requestedSlot>=earliest&&requestedSlot>=0&&requestedSlot+duration<=deadline&&free.some(([a,b])=>requestedSlot>=a&&requestedSlot+duration+p.breakMinutes<=b))slot=requestedSlot;
         }
       }else for(const option of options){for(let candidate=option.start;candidate+duration<=Math.min(option.end,deadline,option.taskEnd??Infinity)&&candidate+duration+p.breakMinutes<=option.end;candidate+=15){if(validClock(candidate)){slot=candidate;preferred=option.preferred;break;}}if(slot!==null)break;}
       if (slot===null) {
-        const largestSlotMinutes=Math.max(0,...free.map(([a,b])=>Math.min(b-p.breakMinutes,deadline)-Math.ceil(a/15)*15));
+        const largestSlotMinutes=free.reduce((best,[a,b])=>Math.max(best,Math.min(b-p.breakMinutes,deadline)-Math.ceil(a/15)*15),0);
         if(override)fail('placement','Your requested time is outside availability, overlaps another block, or misses the deadline. Use the suggested time or check another slot.');
         else if(deadline<=earliest)fail('deadline-passed','Deadline has passed. Review the deadline before planning.');
         else if(deadline<=0)fail('deadline-week','Deadline is before this planning week. Choose an earlier week or review the deadline.');
