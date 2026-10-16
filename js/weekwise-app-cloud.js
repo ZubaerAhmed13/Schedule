@@ -23,9 +23,9 @@ function offlineAccountSelected(){return !weekwiseRuntime.cloudUser&&weekwiseRun
 function renderOfflineAccountGate(){
  const available=!weekwiseRuntime.cloudUser&&weekwiseRuntime.currentDataOwner!=='local'&&root.WeekwiseOfflineAccess.canOpenOffline(localStorage,weekwiseRuntime.currentDataOwner,navigator.onLine);
  weekwiseRuntime.$('signinOfflineAccount').hidden=!available;weekwiseRuntime.$('signinOfflineNote').hidden=!available;
- const accountDevice=root.WeekwiseOfflineAccess.isAccountDevice(localStorage);
- weekwiseRuntime.$('signinLocalContinue').hidden=accountDevice;
- const note=weekwiseRuntime.$('signinLocalNote');if(note)note.hidden=accountDevice;
+ const signedIn=!!weekwiseRuntime.cloudUser&&!root.WeekwiseOfflineAccess.isSignedOut(localStorage);
+ weekwiseRuntime.$('signinLocalContinue').hidden=signedIn;
+ const note=weekwiseRuntime.$('signinLocalNote');if(note)note.hidden=signedIn;
 }
 
 function openOfflineAccount(){
@@ -213,7 +213,7 @@ async function startCloudForUser(user,force=false){
 
 function localPlannerSelected(){
  const url=new URL(root.location.href),explicitSignIn=url.searchParams.get('page')==='signin'||url.hash==='#weekwiseAccess';
- return !explicitSignIn&&root.WeekwiseEntry?.appRequested()&&localStorage.getItem('weekwise-local-mode-v1')==='true'&&weekwiseRuntime.currentDataOwner==='local'&&!root.WeekwiseOfflineAccess.isAccountDevice(localStorage);
+ return !explicitSignIn&&root.WeekwiseEntry?.appRequested()&&localStorage.getItem('weekwise-local-mode-v1')==='true'&&weekwiseRuntime.currentDataOwner==='local'&&root.WeekwiseOfflineAccess.allowsLocal(localStorage);
 }
 
 async function initializeCloud(){
