@@ -1,0 +1,14 @@
+/* Settings uses a stable category index, with the original controls inside each group. */
+.settings-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:30px;align-items:start;max-width:1150px}
+.settings-category-nav{display:grid;gap:6px;position:sticky;top:22px;padding:8px;border:1px solid var(--ww-line);border-radius:18px;background:var(--ww-surface)}
+.settings-category{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;border:0;border-radius:11px;background:transparent;color:var(--ww-muted);font:inherit;font-size:13px;font-weight:600;padding:13px 12px;min-height:46px;cursor:pointer}
+.settings-category>span:last-child{opacity:0}.settings-category:hover{background:var(--ww-soft);color:var(--ww-text)}
+.settings-category.active{background:var(--ww-soft);color:var(--ww-brand)}.settings-category.active>span:last-child{opacity:1}
+.settings-category:focus-visible{outline:2px solid var(--ww-brand);outline-offset:2px}
+.settings-content{min-width:0}.settings-category-heading{margin:3px 0 22px}.settings-category-heading h3{font-size:25px;line-height:1.3;letter-spacing:-.7px;color:var(--ww-text);margin:9px 0}.settings-category-heading>p:last-child{font-size:13px;color:var(--ww-muted);line-height:1.7}
+#settingsWorkspace .settings-cards{display:grid;grid-template-columns:1fr;gap:18px}#settingsWorkspace .settings-cards>.personal-details-card{grid-column:auto}
+#settingsWorkspace .settings-cards>.plan-preview-card{margin:0;padding:24px;min-width:0}
+#settingsWorkspace .settings-cards>.plan-preview-card>h3{margin-top:12px;font-size:18px}#settingsWorkspace .settings-cards .btn{min-height:44px}
+.settings-advanced{margin-top:22px;border-top:1px solid var(--ww-line);padding-top:10px}.settings-advanced summary{min-height:44px;align-content:center;color:var(--ww-muted);font-size:13px;cursor:pointer}
+@media(min-width:1050px){#settings-appearance .settings-cards,#settings-help .settings-cards{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.settings-layout{display:block}.settings-category-nav{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:6px;margin-bottom:24px;border-radius:15px}.settings-category{font-size:12px;padding:10px;min-height:44px}.settings-category>span:last-child{display:none}#settingsWorkspace .settings-cards>.plan-preview-card{padding:20px}.settings-category-heading h3{font-size:23px}.settings-category-heading{margin-top:0}.settings-category-panel .personal-details-fields{grid-template-columns:1fr}}

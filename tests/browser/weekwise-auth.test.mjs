@@ -2,7 +2,7 @@ import test,{before,after} from 'node:test';import assert from 'node:assert/stri
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),site=path.resolve(root,process.env.WEEKWISE_TEST_SITE_ROOT||'.'),engine=process.env.WEEKWISE_BROWSER||'chromium';
 let server,browser,origin;
 const sdk=String.raw`(()=>{
- let user=null,listeners=[];const calls=[];const session=()=>user?{access_token:'auth-fixture-token',user}:null;
+ let user=window.__entryInitialUser?{id:'auth-fixture-owner',email:'fixture@example.invalid'}:null,listeners=[];const calls=[];const session=()=>user?{access_token:'auth-fixture-token',user}:null;
  const emit=event=>listeners.forEach(fn=>fn(event,session()));
  const client={auth:{onAuthStateChange(fn){listeners.push(fn);return {data:{subscription:{unsubscribe(){}}}};},async getSession(){return {data:{session:session()}};},async getUser(){return {data:{user}};},
  async signInWithPassword(args){calls.push({kind:'signin',...args});if(args.password!=='fixture-password')return {error:new Error('Invalid login credentials')};user={id:'auth-fixture-owner',email:args.email};emit('SIGNED_IN');return {data:{user,session:session()}};},
@@ -20,19 +20,20 @@ before(async()=>{
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));origin='http://127.0.0.1:'+server.address().port+'/';browser=await {chromium,firefox,webkit}[engine].launch({headless:true});
 });
 after(async()=>{await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));});
-async function open(width=390,{viewportMock=false}={}){
+async function open(width=390,{viewportMock=false,entry='signin',installed=false,initialUser=false}={}){
  const context=await browser.newContext({viewport:{width,height:width<=430?844:900},timezoneId:'UTC',serviceWorkers:'block'});
+ await context.addInitScript(({installed,initialUser})=>{window.__entryInitialUser=initialUser;if(installed)Object.defineProperty(navigator,'standalone',{value:true});},{installed,initialUser});
  if(viewportMock)await context.addInitScript(()=>{const view=new EventTarget();view.height=844;view.offsetTop=0;view.scale=1;Object.defineProperty(window,'visualViewport',{value:view});window.__authViewportFixture=view;});
  await context.route('**/supabase.min.js',r=>r.fulfill({status:200,contentType:'text/javascript',body:sdk}));
  await context.route('**/rest/v1/rpc/weekwise_save',r=>{const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST, OPTIONS'};if(r.request().method()==='OPTIONS')return r.fulfill({status:204,headers});const args=r.request().postDataJSON();return r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:true,revision:args.p_expected_revision+1,updated_at:'2030-01-08T12:00:00Z'}])});});
- await context.route('**/functions/v1/**',r=>r.abort());const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(origin,{waitUntil:'domcontentloaded'});await page.locator('#signinFormSlot #cloudEmail').waitFor({state:'visible'});return {context,page,errors};
+ await context.route('**/functions/v1/**',r=>r.abort());const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+(entry==='signin'?'?page=signin':''),{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.documentElement.dataset.entryRoute!=='pending');await page.evaluate(()=>document.fonts.ready.then(()=>true));return {context,page,errors};
 }
 async function credentials(page,password='fixture-password'){await page.locator('#cloudEmail').fill('fixture@example.invalid');await page.locator('#cloudPassword').fill(password);}
 async function snap(page,name){await page.screenshot({path:path.join(root,'test-results',engine+'-auth-'+name+'.png'),animations:'disabled'});}
 
 test('public homepage introduces Weekwise before login and offers a real path to existing sign-in',async()=>{
  for(const width of [390,1440]){
-  const {context,page,errors}=await open(width);
+  const {context,page,errors}=await open(width,{entry:'home'});
   try{
    assert.equal(await page.locator('#signinLanding').isVisible(),true);
    assert.equal(await page.locator('#wwHomeMain h1').count(),1);
@@ -46,8 +47,9 @@ test('public homepage introduces Weekwise before login and offers a real path to
    assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true,'app remains gated and unavailable to signed-out visitors');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'marketing does not overflow phone viewport');
    const previous=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
-   await page.locator('.ww-public-nav-cta').click();
-   await page.waitForFunction(()=>document.querySelector('#signinLanding').scrollTop>200);
+   await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});
+   assert.equal(new URL(page.url()).searchParams.get('page'),'signin');
+   assert.equal(await page.locator('#weekwiseHome').isVisible(),false);
    assert.equal(await page.locator('#cloudEmail').isVisible(),true);
    assert.equal(await page.locator('#signinLanding').isVisible(),true,'opening the sign-in section does not enter planner');
    assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),previous,'viewing marketing and account panel never alters planner data');
@@ -58,7 +60,7 @@ test('public homepage introduces Weekwise before login and offers a real path to
  }
 });
 test('homepage feature and FAQ navigation preserves focus and respects reduced motion',async()=>{
- const {context,page,errors}=await open(390);
+ const {context,page,errors}=await open(390,{entry:'home'});
  try{
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.locator('#signinLanding .ww-public-hero-actions a[href="#wwHow"]').click();
@@ -72,11 +74,11 @@ test('homepage feature and FAQ navigation preserves focus and respects reduced m
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
-test('the initial form remains visible and refuses credentials until its submit handler is attached',async()=>{
+test('session-loading screen keeps credentials disabled until the submit handler is attached',async()=>{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});let resume,requestedResolve;const requested=new Promise(resolve=>requestedResolve=resolve);
  await context.route('**/supabase.min.js',route=>new Promise(resolve=>{resume=async()=>{await route.fulfill({status:200,contentType:'text/javascript',body:sdk});resolve();};requestedResolve();}));
  const page=await context.newPage();try{
-  await page.goto(origin,{waitUntil:'commit'});await requested;await page.locator('#signinFormSlot #cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#cloudEmail').isEnabled(),false);assert.equal(await page.locator('#cloudSignInBtn').isEnabled(),false);assert.equal(await page.locator('#cloudAuthForm').getAttribute('aria-busy'),'true');assert.equal(new URL(page.url()).search,'');assert.ok(resume);const complete=resume;resume=null;await complete();await page.waitForLoadState('domcontentloaded');assert.equal(await page.locator('#cloudEmail').isEnabled(),true);assert.equal(await page.locator('#cloudAuthForm').getAttribute('aria-busy'),'false');
+  await page.goto(origin+'?page=signin',{waitUntil:'commit'});await requested;await page.locator('#entryLoading').waitFor({state:'visible'});assert.equal(await page.locator('#cloudEmail').isEnabled(),false);assert.equal(await page.locator('#cloudSignInBtn').isEnabled(),false);assert.equal(await page.locator('#cloudAuthForm').getAttribute('aria-busy'),'true');assert.equal(new URL(page.url()).searchParams.get('page'),'signin');assert.ok(resume);const complete=resume;resume=null;await complete();await page.waitForLoadState('domcontentloaded');assert.equal(await page.locator('#cloudEmail').isEnabled(),true);assert.equal(await page.locator('#cloudAuthForm').getAttribute('aria-busy'),'false');
  }finally{if(resume)await resume().catch(()=>{});await context.close();}
 });
 test('the real sign-in form is visible immediately with stable password-manager fields and one form copy',async()=>{
@@ -115,4 +117,56 @@ test('entry layouts fit narrow phones and pass automated accessibility checks in
   await page.addScriptTag({content:axe.source});for(const theme of ['light','dark']){await page.evaluate(theme=>document.body.setAttribute('data-theme',theme),theme);await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);const result=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));results.push({width,theme,violations:result.violations.map(v=>({id:v.id,impact:v.impact,targets:v.nodes.map(n=>n.target),details:v.nodes.map(n=>n.failureSummary)})),incomplete:result.incomplete.map(v=>v.id)});await snap(page,width+'-'+theme);}
  }finally{await context.close();}}
  fs.writeFileSync(path.join(root,'test-results','axe-'+engine+'-auth.json'),JSON.stringify(results,null,2));assert.deepEqual(results.flatMap(r=>r.violations.filter(v=>['serious','critical'].includes(v.impact))),[]);
+});
+
+test('home and sign-in are separate routes with browser Back, direct reload and no form on the homepage',async()=>{
+ const {context,page,errors}=await open(390,{entry:'home'});try{
+  const before=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
+  assert.equal(await page.locator('#weekwiseHome').isVisible(),true);assert.equal(await page.locator('#cloudEmail').isVisible(),false);
+  await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(new URL(page.url()).searchParams.get('page'),'signin');assert.equal(await page.locator('#wwHomeMain').isVisible(),false);assert.equal(await page.locator('#cloudEmail').isVisible(),true);assert.equal(await page.locator('#cloudEmail').isEnabled(),true);
+  await page.goBack();await page.locator('#wwHomeMain').waitFor({state:'visible'});assert.equal(await page.locator('#cloudEmail').isVisible(),false);
+  await page.goForward();await page.locator('#cloudEmail').waitFor({state:'visible'});await page.reload();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),false);
+  await page.locator('[data-entry-home]').click();await page.locator('#wwHomeMain').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
+test('installed phone app skips marketing on first launch and explicit sign-out, while sessions land on Today',async()=>{
+ for(const initialUser of [false,true]){
+  const {context,page,errors}=await open(390,{entry:'home',installed:true,initialUser});try{
+   assert.equal(await page.locator('#weekwiseHome').isVisible(),false);
+   if(initialUser){await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');await page.locator('#moreActions > summary').click();await page.locator('#cloudMenuBtn').click();page.on('dialog',d=>d.accept());await page.locator('#cloudSignOut').click();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#weekwiseHome').isVisible(),false);assert.equal(await page.locator('#signinLocalContinue').isVisible(),false);assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true);}
+   else assert.equal(await page.locator('#cloudEmail').isVisible(),true);
+   assert.deepEqual(errors,[]);
+  }finally{await context.close();}
+ }
+});
+
+test('signed-in desktop visits bypass public and account pages and fresh login opens Today',async()=>{
+ for(const entry of ['home','signin']){
+  const {context,page,errors}=await open(1440,{entry,initialUser:true});try{await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.title(),'Weekwise — Your planner');assert.deepEqual(errors,[]);}finally{await context.close();}
+ }
+ const {context,page}=await open(1440,{entry:'home'});try{await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});await credentials(page);await page.locator('#cloudSignInBtn').click();await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');assert.equal(new URL(page.url()).searchParams.has('page'),false);}finally{await context.close();}
+});
+
+test('all six Settings categories retain controls, unsaved fields and accessible phone layouts',async()=>{
+ for(const width of [320,390,1440]){
+  const {context,page,errors}=await open(width,{initialUser:true});try{
+   await page.locator('#signinLanding').waitFor({state:'hidden'});if(width<=760)await page.locator('#mobileNavigationToggle').click();await page.locator('#workspaceSidebar [data-workspace-view=settings]').click();const before=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
+   await page.locator('#personalFullName').fill('Unfinished settings name');
+   for(const key of ['profile','appearance','planning','reminders','data','help']){await page.locator('[data-settings-category='+key+']').click();assert.equal(await page.locator('.settings-category-panel:visible').count(),1);assert.equal(await page.locator('#settings-'+key).isVisible(),true);assert.equal(await page.locator('[data-settings-category='+key+']').getAttribute('aria-pressed'),'true');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);}
+   await page.locator('[data-settings-category=profile]').click();assert.equal(await page.locator('#personalFullName').inputValue(),'Unfinished settings name');assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);
+   await page.locator('[data-settings-category=planning]').click();assert.equal(await page.locator('#settings-planning [data-zone-conversion]').count(),1);await page.locator('[data-settings-category=data]').click();for(const id of ['exportBtn','importBtn','exportCalendarBtn','importCalendarBtn','downloadReviewDrafts'])assert.equal(await page.locator('#'+id).isVisible(),true);
+   if(width===390){await page.addScriptTag({content:axe.source});for(const key of ['profile','appearance','planning','reminders','data','help']){await page.locator('[data-settings-category='+key+']').click();for(const theme of ['light','dark']){await page.evaluate(t=>document.body.dataset.theme=t,theme);await page.waitForFunction(()=>document.getAnimations().filter(a=>a.effect?.target?.closest('#weekwiseHome,#settingsWorkspace')).every(a=>a.playState==='finished'||a.playState==='idle'));const audit=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));assert.deepEqual(audit.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)})),[],key+' '+theme);}}await page.evaluate(()=>document.body.dataset.theme='light');await page.locator('[data-settings-category=profile]').click();await snap(page,'organised-settings');}
+   assert.deepEqual(errors,[]);
+  }finally{await context.close();}
+ }
+});
+
+test('homepage content and installed launch URL reflow and retain their distinct entry behaviour',async()=>{
+ for(const width of [320,390,1440]){
+  const {context,page}=await open(width,{entry:'home'});try{
+   await page.waitForFunction(()=>document.getAnimations().filter(a=>a.effect?.target?.closest('#weekwiseHome,#settingsWorkspace')).every(a=>a.playState==='finished'||a.playState==='idle'));await page.addScriptTag({content:axe.source});for(const theme of ['light','dark']){await page.evaluate(t=>document.body.dataset.theme=t,theme);await page.waitForFunction(()=>document.getAnimations().filter(a=>a.effect?.target?.closest('#weekwiseHome,#settingsWorkspace')).every(a=>a.playState==='finished'||a.playState==='idle'));const audit=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));fs.writeFileSync(path.join(root,'test-results','axe-'+engine+'-homepage-'+width+'-'+theme+'.json'),JSON.stringify(audit.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)}))));assert.deepEqual(audit.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)})),[],width+' '+theme+' homepage');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);if(width===390)await snap(page,'homepage-'+theme);}
+   await page.goto(origin+'?view=today&launch=app',{waitUntil:'domcontentloaded'});await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),false);await page.reload();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),false);
+  }finally{await context.close();}
+ }
 });

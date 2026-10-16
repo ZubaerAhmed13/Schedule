@@ -111,7 +111,7 @@ test('device checks read the actual offline shell and detect a missing cached as
  const {context,page}=await openPlanner({width:390,height:844},{serviceWorkers:'allow'});
  try{
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();const before=await readPlannerStore(page);
-  await page.locator('[data-quality-open]').click();await page.waitForFunction(()=>document.querySelector('#qualityOfflineState').textContent.includes('Offline shell cached'));
+  await page.locator('[data-settings-category="help"]').click();await page.locator('[data-quality-open]').click();await page.waitForFunction(()=>document.querySelector('#qualityOfflineState').textContent.includes('Offline shell cached'));
   assert.deepEqual(await readPlannerStore(page),before);assert.equal(await page.locator('[data-quality-check="closed-push"]').isChecked(),false);
   await page.evaluate(async()=>{const key=(await caches.keys()).find(k=>k.startsWith('weekwise-static-'));const cache=await caches.open(key);await cache.delete(new URL('./web-vitals-LICENSE.txt',location.href).href);});
   await page.locator('#qualityRefresh').click();await page.waitForFunction(()=>document.querySelector('#qualityOfflineState').textContent.includes('not verified'));assert.deepEqual(await readPlannerStore(page),before);
@@ -222,8 +222,8 @@ test('modern Today and weekly overview use real data, reflow and keep overview n
 test('the linked data and privacy page reflows, has accessible structure and reloads offline',async()=>{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});await context.route('https://**/*',route=>route.abort());const page=await context.newPage();
  try{
-  await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
-  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('#settingsWorkspace a[href="./privacy.html"]').click();assert.equal(await page.locator('h1').innerText(),'Data and privacy');
+  await page.goto(origin,{waitUntil:'load'});await page.locator('.ww-public-nav-cta').click();await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('#settingsWorkspace a[href="./privacy.html"]').click();assert.equal(await page.locator('h1').innerText(),'Data and privacy');
   await page.addScriptTag({content:axe.source});const audit=await page.evaluate(async()=>{const result=await window.axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return result.violations.map(v=>({id:v.id,impact:v.impact}));});assert.deepEqual(audit.filter(v=>['critical','serious'].includes(v.impact)),[]);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2),true);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});assert.equal(await page.locator('h1').innerText(),'Data and privacy');await page.screenshot({animations:'disabled',fullPage:true,path:path.join(root,'test-results','privacy-phone.png')});
  }finally{await context.close();}
@@ -237,7 +237,7 @@ test('closed Weekwise tabs dispatch a controlled push to the notification API wi
  cdp.on('ServiceWorker.workerRegistrationUpdated',event=>{for(const registration of event.registrations)if(registration.scopeURL===origin&&!registration.isDeleted)registrationId=registration.registrationId;});
  await cdp.send('ServiceWorker.enable');const page=await context.newPage();
  try{
-  await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await page.goto(origin,{waitUntil:'load'});await page.locator('.ww-public-nav-cta').click();await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await page.evaluate(()=>navigator.serviceWorker.ready);const worker=context.serviceWorkers().find(item=>item.url().startsWith(origin));assert.ok(worker);
   // Observe the real API invocation. CI has no native notification platform;
   // promise settlement/OS delivery remain recorded external acceptance limits.
@@ -259,7 +259,7 @@ test('timezone review at 200 percent text size remains keyboard reachable and qu
  const {context,page}=await openPlanner({width:390,height:844});
  try{
 
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('#settingsWorkspace [data-zone-conversion]').click();
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="planning"]').click();await page.locator('#settingsWorkspace [data-zone-conversion]').click();
   await page.locator('#zoneConversionTarget').fill('Europe/Berlin');await page.locator('#zoneConversionForm button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('#zoneConversionPreview').textContent.includes('SHA-256'));
   const original=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
   await page.addStyleTag({content:'html{font-size:200%} #zoneConversionPanel,#zoneConversionPanel input,#zoneConversionPanel select,#zoneConversionPanel button{font-size:1rem}'});
@@ -389,7 +389,7 @@ async function openPlanner(viewport, options={}) {
   await context.route('**/rest/v1/rpc/weekwise_save',route=>{const request=route.request();if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});const user=request.headers().authorization?.split('browser-test-access-token:')[1];assert.ok(user,'cloud writes use the captured mock token');const args=request.postDataJSON(),row=rows.get(user),revision=row?.revision||0;if(args.p_expected_revision!==revision)return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:false,...row,revision}])});const next={user_id:user,data:args.p_data,revision:revision+1,updated_at:new Date().toISOString()};rows.set(user,next);return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:true,...next}])});});
   const page = await context.newPage();
   await page.goto(origin, { waitUntil: "domcontentloaded" });
-  if(options.deviceOnly)await page.locator('#signinLocalContinue').click();
+  if(options.deviceOnly){await page.locator('.ww-public-nav-cta').click();await page.locator('#signinLocalContinue').click();}
   await page.waitForFunction(() => {
     const gate = document.querySelector("#signinLanding");
     return !!gate && gate.hidden === true;
@@ -771,7 +771,7 @@ test('keyboard dialog traps focus and restores the opener; Insights reviews pers
 });
 
 test('device-only planner works offline after its service worker has cached the app',async()=>{
- const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});await context.route('https://**/*',route=>route.abort());const page=await context.newPage();try{await page.goto(origin,{waitUntil:'load'});await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#workspaceCaptureInput').fill('Offline responsibility');await page.locator('#workspaceCaptureForm button[type=submit]').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await countStoredTasksNamed(page,'Offline responsibility'),1);await page.locator('#workspaceCaptureInput').fill('Created without network');await page.locator('#workspaceCaptureForm button[type=submit]').click();assert.equal(await countStoredTasksNamed(page,'Created without network'),1);assert.equal(await page.locator('#cloudMenuBadge').textContent(),'Local');await page.evaluate(()=>{window.scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({animations:'disabled',path:path.join(root,'test-results','today-offline-mobile.png'),fullPage:true});
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});await context.route('https://**/*',route=>route.abort());const page=await context.newPage();try{await page.goto(origin,{waitUntil:'load'});await page.locator('.ww-public-nav-cta').click();await page.locator('#signinLocalContinue').click();await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await page.locator('#workspaceCaptureInput').fill('Offline responsibility');await page.locator('#workspaceCaptureForm button[type=submit]').click();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);assert.equal(await countStoredTasksNamed(page,'Offline responsibility'),1);await page.locator('#workspaceCaptureInput').fill('Created without network');await page.locator('#workspaceCaptureForm button[type=submit]').click();assert.equal(await countStoredTasksNamed(page,'Created without network'),1);assert.equal(await page.locator('#cloudMenuBadge').textContent(),'Local');await page.evaluate(()=>{window.scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({animations:'disabled',path:path.join(root,'test-results','today-offline-mobile.png'),fullPage:true});
  }finally{await context.close();}
 });
 
@@ -789,7 +789,7 @@ test('Recover moves an unfinished recurring occurrence without regenerating the 
 
 test('a valid confirmed restore replaces included collections and preserves omitted ones',async()=>{const {context,page}=await openPlanner({width:1440,height:1000},{deviceOnly:true});try{await createFlexibleTask(page,'Existing task');const before=await readPlannerStore(page),week=Object.keys(before.weeks)[0],restored={...before,app:'Weekwise',version:6,weeks:{[week]:{metadata:'Retain backup metadata',tasks:[{id:'restored-task',title:'Restored safely',day:1,start:null,duration:30,unscheduled:true,done:true}]}},habits:[{id:'restored-habit',title:'Restored habit',checkIns:['2026-10-12'],targetPerWeek:3}]};page.once('dialog',d=>d.accept());await page.locator('#importFile').setInputFiles({name:'valid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(restored))});await page.waitForFunction(()=>Object.values(JSON.parse(localStorage.getItem('weekwise-planner-v2')).weeks).some(w=>w.tasks.some(t=>t.id==='restored-task')));assert.equal(await countStoredTasksNamed(page,'Restored safely'),1);assert.equal(await countStoredTasksNamed(page,'Existing task'),0);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('weekwise-habits-v1'))[0].title),'Restored habit');assert.ok(await page.evaluate(()=>localStorage.getItem('weekwise-pre-restore-v1')));}finally{await context.close();}});
 
-test('light and dark daily, planning and insights views fit phones and retain readable focus',async()=>{for(const width of [390,820,1440]){const {context,page}=await openPlanner({width,height:width===390?844:1000});try{await createFlexibleTask(page,'A meaningful priority');if(width===390)await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-panel="appearancePanel"]').click();await page.locator('[data-theme-choice="dark"]').click();await page.locator('#closeUtility').click();for(const view of ['today','plan','insights']){await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="'+view+'"]')).click();assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true);await page.evaluate(()=>{scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({animations:'disabled',path:path.join(root,'test-results',view+'-dark-'+width+'.png'),fullPage:true});}assert.equal(await page.locator('body').getAttribute('data-theme'),'dark');}finally{await context.close();}}});
+test('light and dark daily, planning and insights views fit phones and retain readable focus',async()=>{for(const width of [390,820,1440]){const {context,page}=await openPlanner({width,height:width===390?844:1000});try{await createFlexibleTask(page,'A meaningful priority');if(width===390)await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="appearance"]').click();await page.locator('[data-settings-panel="appearancePanel"]').click();await page.locator('[data-theme-choice="dark"]').click();await page.locator('#closeUtility').click();for(const view of ['today','plan','insights']){await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="'+view+'"]')).click();assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)<=innerWidth+1),true);await page.evaluate(()=>{scrollTo(0,0);document.querySelector('#workspaceMain').focus({preventScroll:true});});await page.screenshot({animations:'disabled',path:path.join(root,'test-results',view+'-dark-'+width+'.png'),fullPage:true});}assert.equal(await page.locator('body').getAttribute('data-theme'),'dark');}finally{await context.close();}}});
 
 test('a second tab cannot overwrite a newer local task before cloud synchronization',async()=>{const {context,page}=await openPlanner({width:1440,height:1000}),second=await context.newPage();try{await second.goto(origin,{waitUntil:'domcontentloaded'});await second.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);await second.locator('#globalCaptureBtn').click();await second.locator('#modalTitleInput').fill('Stale tab task');await createFlexibleTask(page,'Newer local task');const before=await readPlannerStore(page);await second.locator('#saveTaskBtn').click();assert.match(await second.locator('#toast').textContent(),/Another tab/);assert.deepEqual(await readPlannerStore(second),before);assert.equal(await countStoredTasksNamed(second,'Newer local task'),1);assert.equal(await countStoredTasksNamed(second,'Stale tab task'),0);}finally{await context.close();}});
 
@@ -815,6 +815,7 @@ test('privacy settings download owner-scoped editor history without deleting dra
   });
   await page.reload();
   await page.locator('[data-workspace-view="settings"]').first().click();
+  await page.locator('[data-settings-category="data"]').click();
   const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#exportEditorHistoryBtn').click()]);
   const history=JSON.parse(fs.readFileSync(await download.path(),'utf8'));
   assert.equal(history.owner,owner);
@@ -950,7 +951,7 @@ test('optional first-run guide can be skipped, restored from Settings, and navig
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
   assert.equal(await page.locator('#todayOnboarding').count(),0,'dismissal persists on this device');
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
-  await page.locator('[data-experience-guide-show]').click();
+  await page.locator('[data-settings-category="help"]').click();await page.locator('[data-experience-guide-show]').click();
   await page.locator('#todayOnboarding').waitFor({state:'visible'});
   await page.locator('#todayOnboardingDetails > summary').click();
   await page.locator('#todayOnboarding [data-experience-plan]').click();
@@ -992,7 +993,7 @@ test('task and settings dialogs trap keyboard focus and restore their actual lau
   await page.waitForFunction(()=>document.activeElement?.id==='globalCaptureBtn');
   assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),false);
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
-  const settingsButton=page.locator('[data-settings-panel="appearancePanel"]').first();
+  await page.locator('[data-settings-category="appearance"]').click();const settingsButton=page.locator('[data-settings-panel="appearancePanel"]').first();
   await settingsButton.focus();
   await page.keyboard.press('Enter');
   await page.locator('#utilityModal').waitFor({state:'visible'});
@@ -1072,7 +1073,7 @@ test('automated WCAG A/AA and contrast checks across Today, Settings, Plan and e
   await audit('focus dialog');
   await page.locator('#closeUtility').click();
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
-  await page.locator('#settingsWorkspace [data-zone-conversion]').click();
+  await page.locator('[data-settings-category="planning"]').click();await page.locator('#settingsWorkspace [data-zone-conversion]').click();
   await audit('timezone review dialog');
   await page.locator('#closeUtility').click();
   await page.locator('#globalCaptureBtn').click();
@@ -1212,15 +1213,15 @@ test('task Archive and Recently removed preserve IDs, restore and guard Undo aft
   page.once('dialog',dialog=>dialog.accept());await page.locator('#archiveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
   assert.equal(await countStoredTasksNamed(page,original.title),0);
   let stored=await readPlannerStore(page);assert.equal(stored.taskHistory.length,1);assert.deepEqual(stored.taskHistory[0].items[0].task,original);
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="archive"]').click();
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="archive"]').click();
   await page.locator('[data-history-restore]').click();assert.equal(await countStoredTasksNamed(page,original.title),1);
   assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).find(t=>t.title===original.title).id,original.id);
   await page.locator('#closeUtility').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('[data-workspace-edit]').first().click();
   page.once('dialog',dialog=>dialog.accept());await page.locator('#deleteTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.equal(await countStoredTasksNamed(page,original.title),1);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.equal(await countStoredTasksNamed(page,original.title),1);
   await page.locator('#closeUtility').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('[data-workspace-edit]').first().click();page.once('dialog',dialog=>dialog.accept());await page.locator('#deleteTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
   await createFlexibleTask(page,'Newer preserved responsibility');
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.match(await page.locator('#taskHistoryStatus').innerText(),/Newer changes are protected/);assert.equal(await countStoredTasksNamed(page,'Newer preserved responsibility'),1);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.match(await page.locator('#taskHistoryStatus').innerText(),/Newer changes are protected/);assert.equal(await countStoredTasksNamed(page,'Newer preserved responsibility'),1);
   await page.locator('[data-history-restore]').click();assert.equal(await countStoredTasksNamed(page,original.title),1);assert.equal(await countStoredTasksNamed(page,'Newer preserved responsibility'),1);
  }finally{await context.close();}
 });
@@ -1231,11 +1232,11 @@ test('task history survives reload and another account cannot see archived recor
   await createFlexibleTask(page,'Private archived responsibility','60','flexible','inbox');await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('[data-workspace-edit]').first().click();
   page.once('dialog',dialog=>dialog.accept());await page.locator('#archiveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
   await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
-  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="archive"]').click();assert.match(await page.locator('#taskHistoryEntries').innerText(),/Private archived responsibility/);
+  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="archive"]').click();assert.match(await page.locator('#taskHistoryEntries').innerText(),/Private archived responsibility/);
   assert.equal(await page.locator('#taskHistoryEntries [data-history-restore]').count(),1);
   await page.screenshot({animations:'disabled',path:path.join(root,'test-results','task-history-mobile.png')});
   await page.locator('#closeUtility').click();await page.evaluate(()=>WeekwiseTestAuth.setUser('history-owner-b'));await page.waitForFunction(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')||'{}').userId==='history-owner-b');
-  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="archive"]').click();assert.equal(await page.locator('[data-history-restore]').count(),0);assert.ok(!(await page.locator('#taskHistoryEntries').innerText()).includes('Private archived responsibility'));
+  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="archive"]').click();assert.equal(await page.locator('[data-history-restore]').count(),0);assert.ok(!(await page.locator('#taskHistoryEntries').innerText()).includes('Private archived responsibility'));
  }finally{await context.close();}
 });
 
@@ -1330,7 +1331,7 @@ test('an IANA Calendar zone projects one record through every view and edits the
 
 async function openAccountErasure(page){
 
- await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-account-erase]').click();await page.locator('#accountEraseDialog').waitFor({state:'visible'});
+ await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="profile"]').click();await page.locator('#settings-profile .settings-advanced > summary').click();await page.locator('[data-account-erase]').click();await page.locator('#accountEraseDialog').waitFor({state:'visible'});
 }
 async function fillAccountErasure(page){
  await page.locator('#accountErasePassword').fill('fixture-password');await page.locator('#accountErasePhrase').fill('DELETE MY WEEKWISE ACCOUNT');await page.locator('#accountEraseBackup').check();
@@ -1748,7 +1749,7 @@ test('Settings is the single file-transfer location in both account and device-o
   await page.locator('#moreActions > summary').click();
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
   assert.equal(await page.locator('body').getAttribute('data-weekwise-json-mode'),'account');
-  for(const id of ids)assert.equal(await page.locator('#'+id).isVisible(),true,id+' visible in signed-in Settings');
+  await page.locator('[data-settings-category="data"]').click();for(const id of ids)assert.equal(await page.locator('#'+id).isVisible(),true,id+' visible in signed-in Data & files');
   assert.equal(await page.locator('#settingsWorkspace [data-cloud-json-info]').isVisible(),true);
   await page.locator('#moreActions > summary').click();
   await page.locator('#cloudMenuBtn').click();

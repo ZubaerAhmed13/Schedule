@@ -2,7 +2,7 @@
   "name": "Weekwise Personal Planner",
   "short_name": "Weekwise",
   "description": "A calm space for your tasks, calendar, focus and everyday plans.",
-  "start_url": "./",
+  "start_url": "./?view=today&launch=app",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -68,5 +68,6 @@
         }
       ]
     }
-  ]
+  ],
+  "id": "./"
 }
