@@ -4,6 +4,7 @@
  let settled=false,wasInApp=false;
  const $=id=>document.getElementById(id);
  const installed=()=>root.matchMedia('(display-mode: standalone)').matches||root.matchMedia('(display-mode: fullscreen)').matches||root.navigator.standalone===true;
+ const appRequested=()=>{const url=new URL(root.location.href);return installed()||url.searchParams.get('launch')==='app'||['today','tomorrow','inbox','plan','calendar','settings'].includes(url.searchParams.get('view'));};
  function publicRoute(){const url=new URL(root.location.href);return installed()||url.searchParams.get('launch')==='app'||url.searchParams.get('page')==='signin'||url.hash==='#weekwiseAccess'||$('signinOfflineAccount')?.hidden===false?'signin':'home';}
  function render(focus=false){
   const gate=$('signinLanding');if(!gate)return;
@@ -29,8 +30,8 @@
  }
  function ready(){settled=true;refresh();}
  function signIn(){go('signin');}
- function enterApp(){
-  settled=true;wasInApp=true;const url=new URL(root.location.href);url.searchParams.delete('page');if(url.hash==='#weekwiseAccess')url.hash='';
+ function enterApp(deviceOnly=false){
+  settled=true;wasInApp=true;const url=new URL(root.location.href);url.searchParams.delete('page');if(deviceOnly)url.searchParams.set('view','today');if(url.hash==='#weekwiseAccess')url.hash='';
   root.history.replaceState({},'',url);render();
  }
  function signedOut(){settled=true;wasInApp=false;go(installed()||new URL(root.location.href).searchParams.get('launch')==='app'?'signin':'home',{replace:true,focus:false});refresh();}
@@ -44,7 +45,7 @@
  root.addEventListener('popstate',()=>{if($('signinLanding')?.hidden)return;render(true);});
  root.addEventListener('hashchange',()=>{if($('signinLanding')?.hidden||root.location.hash!=='#weekwiseAccess')return;render();});
  const mode=root.matchMedia('(display-mode: standalone)');mode.addEventListener?.('change',()=>render());
- root.WeekwiseEntry=Object.freeze({refresh,ready,signIn,enterApp,signedOut});
+ root.WeekwiseEntry=Object.freeze({refresh,ready,signIn,enterApp,signedOut,appRequested});
  refresh();
  new MutationObserver(()=>{const gate=$('signinLanding');if(gate.hidden){render();}else if(wasInApp)signedOut();else render();}).observe($('signinLanding'),{attributes:true,attributeFilter:['hidden']});
 })(typeof window!=='undefined'?window:globalThis);
