@@ -325,3 +325,25 @@ body[data-theme=dark] .ww-public-screen .ww-public-comparison-arrow span{color:#
  body.keyboard-open .ww-public-screen .entry-divider{margin:9px 0 7px}
  body.keyboard-open .ww-public-screen .cloud-form-actions .cloud-submit{margin-top:3px}
 }
+
+/* Public homepage and account access are separate, addressable screens. */
+html[data-entry-route=pending] #weekwiseHome,html[data-entry-route=pending] #weekwiseAccess,html[data-entry-route=home] #weekwiseAccess,html[data-entry-route=signin] #weekwiseHome{display:none!important}
+.entry-loading{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;font-size:14px;color:var(--home-sub)}
+.ww-public-screen [hidden]{display:none!important}
+.ww-auth-page{padding:24px 28px 40px;min-height:100dvh;box-sizing:border-box}
+.ww-auth-nav{width:min(1100px,100%);margin:0 auto 24px;display:flex;justify-content:space-between;gap:20px;font-size:13px}
+.ww-auth-nav a{display:inline-flex;align-items:center;min-height:44px;color:var(--home-ink);text-decoration:none;font-weight:650}
+.ww-auth-nav a:focus-visible{outline:2px solid var(--home-forest);outline-offset:4px}
+.ww-public-screen .ww-auth-page .signin-card.entry-shell{margin:0 auto}
+.ww-public-installed{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,7vw,110px);align-items:center}
+.ww-public-installed h2{font-size:clamp(36px,4vw,57px);line-height:1.15;letter-spacing:-.052em;margin:18px 0 24px}.ww-public-installed>div>p{font-size:15px;color:var(--home-sub);line-height:1.9}
+.ww-public-device-points{display:grid;gap:16px;margin:28px 0 34px;color:var(--home-sub);font-size:12px}.ww-public-device-points strong{margin-left:14px;color:var(--home-ink);font-size:13px}
+.ww-public-today-preview{border:1px solid var(--home-line);border-radius:27px;background:#fffefa;box-shadow:var(--home-shadow);padding:34px;transform:rotate(1deg)}
+.ww-public-today-preview h3{font-size:25px;letter-spacing:-1px;margin:14px 0 8px}.ww-public-next{display:grid;gap:10px;margin-top:25px;padding:22px;border-left:3px solid #6a9372;background:#e9f1e6;border-radius:12px;color:#254b34}.ww-public-next small{font-size:10px;letter-spacing:.1em;font-weight:750}.ww-public-next strong{font-size:15px;line-height:1.6}.ww-public-next>span{font-size:12px;line-height:1.7}.ww-public-next-soft{background:#f7e7d4;border-color:#b88151;color:#63462d;margin-top:0}.ww-public-today-gap{padding:22px 8px;font-size:12px;font-weight:700;color:#526c59}.ww-public-today-preview .ww-public-preview-caption{font-size:10px;margin-top:25px}
+html[data-entry-route=signin] .ww-public-screen{scroll-padding-top:12px}
+@media(max-width:760px){.ww-auth-page{padding:12px 16px 32px}.ww-auth-nav{margin-bottom:12px}.ww-public-installed{grid-template-columns:1fr}.ww-public-today-preview{padding:25px;transform:none}.ww-public-installed .ww-public-button{width:100%}}
+@media(display-mode:standalone){.ww-auth-nav [data-entry-home]{visibility:hidden}}
+@media(prefers-reduced-motion:reduce){.ww-public-today-preview{transform:none}}
+.ww-public-today-preview{color:#173a2c}.ww-public-today-preview .ww-public-section-label{color:#496c52}.ww-public-installed .ww-public-today-preview>p{color:#4d6b56}
+body[data-theme=dark] .ww-public-home .ww-public-today-preview h3{color:#173a2c!important}
+body.keyboard-open .ww-auth-page{padding:0 0 20px}body.keyboard-open .ww-auth-nav{display:none}
