@@ -815,6 +815,7 @@ test('privacy settings download owner-scoped editor history without deleting dra
   });
   await page.reload();
   await page.locator('[data-workspace-view="settings"]').first().click();
+  await page.locator('[data-settings-category="data"]').click();
   const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#exportEditorHistoryBtn').click()]);
   const history=JSON.parse(fs.readFileSync(await download.path(),'utf8'));
   assert.equal(history.owner,owner);
@@ -950,7 +951,7 @@ test('optional first-run guide can be skipped, restored from Settings, and navig
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="today"]')).click();
   assert.equal(await page.locator('#todayOnboarding').count(),0,'dismissal persists on this device');
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
-  await page.locator('[data-experience-guide-show]').click();
+  await page.locator('[data-settings-category="help"]').click();await page.locator('[data-experience-guide-show]').click();
   await page.locator('#todayOnboarding').waitFor({state:'visible'});
   await page.locator('#todayOnboardingDetails > summary').click();
   await page.locator('#todayOnboarding [data-experience-plan]').click();
@@ -992,7 +993,7 @@ test('task and settings dialogs trap keyboard focus and restore their actual lau
   await page.waitForFunction(()=>document.activeElement?.id==='globalCaptureBtn');
   assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),false);
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();
-  const settingsButton=page.locator('[data-settings-panel="appearancePanel"]').first();
+  await page.locator('[data-settings-category="appearance"]').click();const settingsButton=page.locator('[data-settings-panel="appearancePanel"]').first();
   await settingsButton.focus();
   await page.keyboard.press('Enter');
   await page.locator('#utilityModal').waitFor({state:'visible'});
@@ -1212,15 +1213,15 @@ test('task Archive and Recently removed preserve IDs, restore and guard Undo aft
   page.once('dialog',dialog=>dialog.accept());await page.locator('#archiveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
   assert.equal(await countStoredTasksNamed(page,original.title),0);
   let stored=await readPlannerStore(page);assert.equal(stored.taskHistory.length,1);assert.deepEqual(stored.taskHistory[0].items[0].task,original);
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="archive"]').click();
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="archive"]').click();
   await page.locator('[data-history-restore]').click();assert.equal(await countStoredTasksNamed(page,original.title),1);
   assert.equal(Object.values((await readPlannerStore(page)).weeks).flatMap(w=>w.tasks).find(t=>t.title===original.title).id,original.id);
   await page.locator('#closeUtility').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('[data-workspace-edit]').first().click();
   page.once('dialog',dialog=>dialog.accept());await page.locator('#deleteTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.equal(await countStoredTasksNamed(page,original.title),1);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.equal(await countStoredTasksNamed(page,original.title),1);
   await page.locator('#closeUtility').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('[data-workspace-edit]').first().click();page.once('dialog',dialog=>dialog.accept());await page.locator('#deleteTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
   await createFlexibleTask(page,'Newer preserved responsibility');
-  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.match(await page.locator('#taskHistoryStatus').innerText(),/Newer changes are protected/);assert.equal(await countStoredTasksNamed(page,'Newer preserved responsibility'),1);
+  await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="trash"]').click();await page.locator('#taskHistoryUndo').click();assert.match(await page.locator('#taskHistoryStatus').innerText(),/Newer changes are protected/);assert.equal(await countStoredTasksNamed(page,'Newer preserved responsibility'),1);
   await page.locator('[data-history-restore]').click();assert.equal(await countStoredTasksNamed(page,original.title),1);assert.equal(await countStoredTasksNamed(page,'Newer preserved responsibility'),1);
  }finally{await context.close();}
 });
@@ -1231,11 +1232,11 @@ test('task history survives reload and another account cannot see archived recor
   await createFlexibleTask(page,'Private archived responsibility','60','flexible','inbox');await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="inbox"]')).click();await page.locator('[data-workspace-edit]').first().click();
   page.once('dialog',dialog=>dialog.accept());await page.locator('#archiveTaskBtn').click();await page.locator('#taskModal').waitFor({state:'hidden'});
   await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#signinLanding')?.hidden===true);
-  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="archive"]').click();assert.match(await page.locator('#taskHistoryEntries').innerText(),/Private archived responsibility/);
+  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="archive"]').click();assert.match(await page.locator('#taskHistoryEntries').innerText(),/Private archived responsibility/);
   assert.equal(await page.locator('#taskHistoryEntries [data-history-restore]').count(),1);
   await page.screenshot({animations:'disabled',path:path.join(root,'test-results','task-history-mobile.png')});
   await page.locator('#closeUtility').click();await page.evaluate(()=>WeekwiseTestAuth.setUser('history-owner-b'));await page.waitForFunction(()=>JSON.parse(localStorage.getItem('weekwise-cloud-sync-meta-v1')||'{}').userId==='history-owner-b');
-  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-task-history="archive"]').click();assert.equal(await page.locator('[data-history-restore]').count(),0);assert.ok(!(await page.locator('#taskHistoryEntries').innerText()).includes('Private archived responsibility'));
+  await page.locator('#mobileNavigationToggle').click();await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="data"]').click();await page.locator('[data-task-history="archive"]').click();assert.equal(await page.locator('[data-history-restore]').count(),0);assert.ok(!(await page.locator('#taskHistoryEntries').innerText()).includes('Private archived responsibility'));
  }finally{await context.close();}
 });
 
@@ -1330,7 +1331,7 @@ test('an IANA Calendar zone projects one record through every view and edits the
 
 async function openAccountErasure(page){
 
- await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-account-erase]').click();await page.locator('#accountEraseDialog').waitFor({state:'visible'});
+ await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="settings"]')).click();await page.locator('[data-settings-category="profile"]').click();await page.locator('#settings-profile .settings-advanced > summary').click();await page.locator('[data-account-erase]').click();await page.locator('#accountEraseDialog').waitFor({state:'visible'});
 }
 async function fillAccountErasure(page){
  await page.locator('#accountErasePassword').fill('fixture-password');await page.locator('#accountErasePhrase').fill('DELETE MY WEEKWISE ACCOUNT');await page.locator('#accountEraseBackup').check();

@@ -347,3 +347,6 @@ html[data-entry-route=signin] .ww-public-screen{scroll-padding-top:12px}
 .ww-public-today-preview{color:#173a2c}.ww-public-today-preview .ww-public-section-label{color:#496c52}.ww-public-installed .ww-public-today-preview>p{color:#4d6b56}
 body[data-theme=dark] .ww-public-home .ww-public-today-preview h3{color:#173a2c!important}
 body.keyboard-open .ww-auth-page{padding:0 0 20px}body.keyboard-open .ww-auth-nav{display:none}
+
+.ww-auth-nav>a:last-child{margin-left:auto}
+@media(max-width:820px){.ww-public-screen .entry-story{background:var(--ww-bg)}}

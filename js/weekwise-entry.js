@@ -4,11 +4,12 @@
  let settled=false,wasInApp=false;
  const $=id=>document.getElementById(id);
  const installed=()=>root.matchMedia('(display-mode: standalone)').matches||root.matchMedia('(display-mode: fullscreen)').matches||root.navigator.standalone===true;
- function publicRoute(){const url=new URL(root.location.href);return installed()||url.searchParams.get('launch')==='app'||url.searchParams.get('page')==='signin'||url.hash==='#weekwiseAccess'?'signin':'home';}
+ function publicRoute(){const url=new URL(root.location.href);return installed()||url.searchParams.get('launch')==='app'||url.searchParams.get('page')==='signin'||url.hash==='#weekwiseAccess'||$('signinOfflineAccount')?.hidden===false?'signin':'home';}
  function render(focus=false){
   const gate=$('signinLanding');if(!gate)return;
   const route=gate.hidden?'app':settled?publicRoute():'pending';
   document.documentElement.dataset.entryRoute=route;
+  const back=$('weekwiseAccess').querySelector('[data-entry-home]');if(back)back.hidden=installed()||new URL(root.location.href).searchParams.get('launch')==='app';
   $('weekwiseHome').hidden=route!=='home';$('weekwiseAccess').hidden=route!=='signin';$('entryLoading').hidden=route!=='pending';
   gate.setAttribute('aria-labelledby',route==='signin'?'signinLandingTitle':route==='pending'?'entryLoading':'wwLandingTitle');
   if(route==='app'){wasInApp=true;return;}
@@ -37,11 +38,12 @@
   const link=event.target.closest('a[href]');if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.target)return;
   const url=new URL(link.href,root.location.href);
   if(url.origin!==root.location.origin||url.pathname!==root.location.pathname)return;
-  if(url.searchParams.get('page')==='signin'){event.preventDefault();signIn();}
+  if(link.closest('#weekwiseHome')&&link.getAttribute('href').startsWith('#')){const target=$(url.hash.slice(1));if(target){event.preventDefault();root.history.pushState({},'',url);const gate=$('signinLanding'),top=gate.scrollTop+target.getBoundingClientRect().top-gate.getBoundingClientRect().top-90;gate.scrollTo({top:Math.max(0,top),behavior:root.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});const heading=target.matches('h1,h2')?target:target.querySelector('h1,h2');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}}}
+  else if(url.searchParams.get('page')==='signin'){event.preventDefault();signIn();}
   else if(link.hasAttribute('data-entry-home')){event.preventDefault();go(installed()?'signin':'home');}
  });
  root.addEventListener('popstate',()=>{if($('signinLanding')?.hidden)return;render(true);});
- root.addEventListener('hashchange',()=>{if($('signinLanding')?.hidden)return;render();});
+ root.addEventListener('hashchange',()=>{if($('signinLanding')?.hidden||root.location.hash!=='#weekwiseAccess')return;render();});
  const mode=root.matchMedia('(display-mode: standalone)');mode.addEventListener?.('change',()=>render());
  root.WeekwiseEntry=Object.freeze({refresh,ready,signIn,enterApp,signedOut});
  refresh();
