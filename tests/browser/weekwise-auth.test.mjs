@@ -143,7 +143,7 @@ test('installed phone app skips marketing on first launch and explicit sign-out,
 
 test('signed-in desktop visits bypass public and account pages and fresh login opens Today',async()=>{
  for(const entry of ['home','signin']){
-  const {context,page,errors}=await open(1440,{entry,initialUser:true});try{await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.deepEqual(errors,[]);}finally{await context.close();}
+  const {context,page,errors}=await open(1440,{entry,initialUser:true});try{await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.title(),'Weekwise — Your planner');assert.deepEqual(errors,[]);}finally{await context.close();}
  }
  const {context,page}=await open(1440,{entry:'home'});try{await page.locator('.ww-public-nav-cta').click();await credentials(page);await page.locator('#cloudSignInBtn').click();await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');assert.equal(new URL(page.url()).searchParams.has('page'),false);}finally{await context.close();}
 });

@@ -12,7 +12,7 @@
   const back=$('weekwiseAccess').querySelector('[data-entry-home]');if(back)back.hidden=installed()||new URL(root.location.href).searchParams.get('launch')==='app';
   $('weekwiseHome').hidden=route!=='home';$('weekwiseAccess').hidden=route!=='signin';$('entryLoading').hidden=route!=='pending';
   gate.setAttribute('aria-labelledby',route==='signin'?'signinLandingTitle':route==='pending'?'entryLoading':'wwLandingTitle');
-  if(route==='app'){wasInApp=true;return;}
+  if(route==='app'){document.title='Weekwise — Your planner';wasInApp=true;return;}
   document.title=route==='signin'?'Sign in — Weekwise':route==='pending'?'Opening Weekwise…':'Weekwise — Make room for what matters | Personal weekly planner';
   if(focus){gate.scrollTop=0;const target=route==='signin'?$('cloudEmail'):$('wwLandingTitle');if(target){if(target.tagName==='H1')target.tabIndex=-1;target.focus({preventScroll:true});}}
  }
