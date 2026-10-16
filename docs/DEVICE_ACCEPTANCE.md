@@ -1,6 +1,6 @@
 # Weekwise priorities 4–6: device, accessibility and recovery evidence
 
-Open **Settings → Device, speed & recovery** on the device you normally use. These tools are implemented; physical acceptance still needs real observations. Google/Outlook activation is requested and still needs actual provider credentials and consent; optional AI remains disabled.
+Open **Settings → Device, speed & recovery** on the device you normally use. These tools are implemented; physical acceptance still needs real observations. Google/Outlook activation is excluded from the current scope; optional AI remains disabled.
 
 | Priority | Delivered engineering | Evidence still required |
 | --- | --- | --- |
@@ -10,7 +10,7 @@ Open **Settings → Device, speed & recovery** on the device you normally use. T
 
 ## Confirming your device
 
-Each checkbox is a dated **confirmation by you**, scoped to this account/browser profile and build. It begins unconfirmed; a capability probe never checks it automatically. Repeat confirmations made on an earlier build. Keep downloaded reports private; they include device evidence and backup checksums/counts, without task text or authentication tokens.
+Each checkbox is a dated **confirmation by you**, scoped to this account/browser profile and build. It begins unconfirmed; a capability probe never checks it automatically. Earlier-build confirmations remain dated but appear unchecked and are excluded from the current-build count. Repeat them after upgrading. Keep downloaded reports private; they include device evidence and backup checksums/counts, without task text or authentication tokens.
 
 1. Enable background reminders from reminder settings. Schedule a harmless reminder a few minutes ahead, close all Weekwise tabs and confirm that a system notification arrives. Subscription readiness alone does not prove delivery. Some phone browsers require home-screen installation.
 2. Install the app using your browser menu or Share → Add to Home Screen. Open once online, then reopen offline. A cloud account's saved offline copy and a device-only planner remain separate.
@@ -30,9 +30,11 @@ Reference targets from the [Web Vitals documentation](https://web.dev/articles/v
 
 Choose a copy of an actual Weekwise JSON backup under 10 MB. Parsing, validation, complete production restore entries and checked storage transactions run against a fresh memory store. The production importer now captures the owner, auth epoch and included collection bytes before reading a file, then rechecks them before confirmation and before committing. Account switches or newer edits abort without a confirmation or write. Round-trip validation includes all persisted planner fields and every auxiliary collection present in the backup. Absent auxiliary collections stay absent. Reports contain SHA-256 of the original file, bytes/counts and the rehearsal result; no task contents. The selected file is never uploaded or persisted by this tool. Owner changes cancel pending results and clear the selected file/report.
 
-For a **full** historical restore acceptance test, open a separate browser profile, leave cloud sign-in off, import a copy through the existing restore workflow, and check original IDs, notes, reminder identifiers, recurrence, archive/history, habits and recorded focus. Reload, export the restored copy and compare it to the original. Keep your primary profile and original file unchanged. An in-memory rehearsal is useful evidence but does not test that physical profile's storage/quotas, cloud restoration or a file not selected.
+For a **full** historical restore acceptance test, open a separate browser profile, leave cloud sign-in off, import a copy through the existing restore workflow, and check original IDs, notes, reminder identifiers, recurrence, archive/history, habits and recorded focus. Reload, export the restored copy and compare it to the original. Use **Compare restored export** in the same Settings panel to compare the untouched original with the post-restore export. Review changed sections and additions, download the private checksum/count report if needed, then clear selected files. Matching files alone do not prove the restore happened. Keep your primary profile and original file unchanged. An in-memory rehearsal is useful evidence but does not test that physical profile's storage/quotas, cloud restoration or a file not selected.
 
 ## Automated scope
+
+Release 4 adds production import/reload/export round trips for unversioned and version 1–6 generated backups, both explicit overlapping-conflict resolutions followed by convergence/reload, private comparison failure/clearing/owner-race cases and current-build confirmation checks. These do not certify private historical backups, physical devices or server recovery. See [the release contract](RECOVERY_EVIDENCE_RELEASE.md). Older counts below are historical; the current release PR owns exact fresh results.
 
 The Chromium regression suite adds a real worker/cache health case and remains mandatory (69 cases). The device workflow runs eight additional scenarios in each of Chromium, Firefox and WebKit: read-only account isolation, exported-copy rehearsal, opt-in numeric recording/privacy, simulated keyboard geometry, narrow/enlarged-text focus, quick edit/Undo, two independent revision contexts with a controlled failed network write, and phone light/dark axe audits. All records and credentials are synthetic and isolated; no live user is a writable fixture. WebKit on Linux is an engine check, **not physical Safari**. Keyboard geometry and font scaling are controlled simulations, **not native OS keyboard or browser zoom certification**.
 

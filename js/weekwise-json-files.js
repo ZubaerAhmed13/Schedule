@@ -19,7 +19,7 @@
    control.inert=device;
   });
   if(previousOwner!==owner){
-   for(const id of ['importFile','workspaceImportListFile','calendarImportFile','qualityBackupFile']){
+   for(const id of ['importFile','workspaceImportListFile','calendarImportFile','qualityBackupFile','qualityRestoredFile']){
     const input=document.getElementById(id);
     if(input)input.value='';
    }

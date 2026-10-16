@@ -1,6 +1,6 @@
 /* Device checks, bounded private measurements, and read-only backup rehearsal. */
 (function(root){
- 'use strict';let app=null,owner=null,report=null,device=null,deviceSequence=0,fileSequence=0,selectionOwner=null;
+ 'use strict';let app=null,owner=null,report=null,comparison=null,device=null,deviceSequence=0,fileSequence=0,compareSequence=0,selectionOwner=null;
  const $=id=>document.getElementById(id),model=()=>root.WeekwiseEvidence,day=()=>new Date().toISOString().slice(0,10),build=()=>root.WeekwisePerformance.build();
  const visible=()=>!$('utilityModal').hidden&&$('utilityModalContent').contains($('qualityPanel'));
  function status(message){$('qualityStatus').textContent=message;}
@@ -29,7 +29,8 @@
    for(const row of value.events.filter(e=>e.build===build()).slice(-12).reverse()){const li=document.createElement('li');li.textContent=row.day+' · '+({'sync-read':'Cloud check','sync-save':'Cloud save','sync-start':'Cloud connection',runtime:'App error'}[row.operation])+' · '+row.outcome+(row.durationMs===null?'':' · '+row.durationMs+' ms');list.append(li);}
   }catch(error){status(error.message);}
  }
- function ownerChanged(){if(!app)return;const next=app.account();if(next===owner)return;owner=next;deviceSequence++;fileSequence++;report=null;device=null;$('qualityBackupFile').value='';$('qualityBackupResult').textContent='';$('qualityBackupReport').hidden=true;status('');root.WeekwisePerformance.ownerChanged();render();}
+ function clearComparison(){comparison=null;$('qualityCompareResult').textContent='';$('qualityComparisonReport').hidden=true;}
+ function ownerChanged(){if(!app)return;const next=app.account();if(next===owner)return;owner=next;deviceSequence++;fileSequence++;compareSequence++;report=null;device=null;$('qualityBackupFile').value='';$('qualityRestoredFile').value='';$('qualityBackupResult').textContent='';$('qualityBackupReport').hidden=true;clearComparison();status('');root.WeekwisePerformance.ownerChanged();render();}
  function render(){
   if(!app)return;if(owner!==app.account()){ownerChanged();return;}
   try{renderSync();renderDiagnostics();}catch(_){$('qualitySyncNow').disabled=true;status('Planner status could not be checked. Your saved data was retained.');}
@@ -40,7 +41,8 @@
    for(const name of ['lcp','inp','cls']){const row=s[name],id='quality'+name.toUpperCase();$(id).textContent=row.p75===null?'No sample':name==='cls'?row.p75.toFixed(3):name==='lcp'?(row.p75/1000).toFixed(2)+' s':Math.round(row.p75)+' ms';$(id+'Count').textContent=row.samples+' samples'+(row.samples<20?' · limited evidence':' · this device only');}
    $('qualityNavigation').textContent=s.navigation.length?s.navigation.map(n=>n.view+': '+Math.round(n.p75)+' ms ('+n.samples+' measurements)').join(' · '):'Navigate between views after enabling recording and reloading to measure response on this device.';
    const saved=model().readChecks(localStorage,owner).value.checks;
-   for(const control of document.querySelectorAll('[data-quality-check]')){const entry=saved[control.dataset.qualityCheck];control.checked=!!entry?.confirmed;control.closest('label').querySelector('small').textContent=entry?.confirmed?'Confirmed by you on '+entry.day+(entry.build===build()?' for this build.':' on an earlier build; repeat after upgrading.'):'Not yet confirmed on this device.';}
+   const checks=model().checkSummary(saved,build());$('qualityChecksSummary').textContent=checks.current+' of '+checks.total+' confirmed by you for this build'+(checks.previous?' · '+checks.previous+' earlier-build checks need repeating.':'.')+' Automated capabilities do not confirm these checks.';
+   for(const control of document.querySelectorAll('[data-quality-check]')){const entry=saved[control.dataset.qualityCheck];control.checked=!!entry?.confirmed&&entry.build===build();control.closest('label').querySelector('small').textContent=entry?.confirmed?'Confirmed by you on '+entry.day+(entry.build===build()?' for this build.':' on an earlier build; repeat after upgrading.'):'Not yet confirmed on this device.';}
   }catch(error){status(error.message);}
  }
  function workerHealth(worker){return new Promise(resolve=>{const channel=new MessageChannel(),timer=setTimeout(()=>{channel.port1.close();resolve(null);},1800);channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();resolve(event.data);};worker.postMessage({type:'WEEKWISE_HEALTH_CHECK'},[channel.port2]);});}
@@ -66,18 +68,35 @@
   $('qualityClearDiagnostics').onclick=()=>{if(!confirm('Clear this account’s troubleshooting history on this device?'))return;try{root.WeekwiseDiagnostics.clear(localStorage,owner);renderDiagnostics();status('Troubleshooting history cleared and recording disabled.');}catch(error){status(error.message);}};
   $('qualityRecordPerformance').onchange=()=>{try{model().recording(localStorage,owner,$('qualityRecordPerformance').checked);root.WeekwisePerformance.stop();render();status($('qualityRecordPerformance').checked?'Recording begins after your next reload. Save open work before refreshing.':'Performance recording stopped. Existing samples remain on this device.');}catch(error){status(error.message);render();}};
   $('qualityClearPerformance').onclick=()=>{if(!confirm('Clear this account’s performance samples on this device?'))return;try{model().clear(localStorage,owner);root.WeekwisePerformance.stop();render();status('Samples cleared and recording disabled.');}catch(error){status(error.message);}};
-  $('qualityExport').onclick=()=>{try{download({kind:'weekwise-private-device-report',version:1,capturedOn:day(),build:build(),capabilities:device,sync:syncState(),diagnostics:root.WeekwiseDiagnostics.read(localStorage,owner).value,humanConfirmations:model().readChecks(localStorage,owner).value.checks,performance:model().exportPerformance(model().read(localStorage,owner).value),backupRehearsal:report},'weekwise-device-report.json');}catch(error){status(error.message);}};
+  $('qualityExport').onclick=()=>{try{download({kind:'weekwise-private-device-report',version:1,capturedOn:day(),build:build(),capabilities:device,sync:syncState(),diagnostics:root.WeekwiseDiagnostics.read(localStorage,owner).value,humanConfirmations:model().readChecks(localStorage,owner).value.checks,performance:model().exportPerformance(model().read(localStorage,owner).value),backupRehearsal:report,backupComparison:comparison},'weekwise-device-report.json');}catch(error){status(error.message);}};
   document.querySelectorAll('[data-quality-check]').forEach(control=>control.onchange=()=>{try{model().check(localStorage,owner,control.dataset.qualityCheck,control.checked,day(),build());render();}catch(error){status(error.message);render();}});
-  $('qualityBackupFile').addEventListener('click',()=>{selectionOwner=owner;});
+  for(const id of ['qualityBackupFile','qualityRestoredFile'])$(id).addEventListener('click',()=>{selectionOwner=owner;});
   $('qualityBackupFile').onchange=async()=>{
    if(selectionOwner!==null&&selectionOwner!==owner){$('qualityBackupFile').value='';selectionOwner=null;status('Your account changed while choosing the backup. Select it again for this account.');return;}selectionOwner=null;
-   const file=$('qualityBackupFile').files[0],captured=owner,id=++fileSequence;report=null;$('qualityBackupReport').hidden=true;if(!file)return;
-   if(!root.WeekwiseJsonFiles.allowed(captured)){status('JSON backup rehearsal is available only in device-only mode.');return;}
+   const file=$('qualityBackupFile').files[0],captured=owner,id=++fileSequence;report=null;$('qualityBackupReport').hidden=true;$('qualityBackupResult').textContent='';$('qualityRestoredFile').value='';compareSequence++;clearComparison();if(!file)return;
+   if(!root.WeekwiseJsonFiles.allowed(captured)){status('Choose an account or device planner before rehearsing a backup.');return;}
    $('qualityBackupResult').textContent='Checking an isolated copy…';
    try{if(file.size>root.WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Too large');const next=await root.WeekwiseRecovery.rehearse(await file.text());if(owner!==captured||app.account()!==captured||fileSequence!==id||!root.WeekwiseJsonFiles.allowed(owner))return;report=next;$('qualityBackupResult').textContent='Rehearsal passed: '+next.tasks+' tasks across '+next.weeks+' weeks; complete restored entries retained. SHA-256: '+next.sha256+'. Your planner and cloud copy were not changed.';$('qualityBackupReport').hidden=false;}
    catch(_){if(owner===captured&&app.account()===captured&&fileSequence===id)$('qualityBackupResult').textContent='This backup could not be rehearsed. Choose a supported Weekwise JSON backup under 10 MB. Your original file and planner were not changed.';}
   };
   $('qualityBackupReport').onclick=()=>{if(report&&root.WeekwiseJsonFiles.allowed(owner))download(report,'weekwise-backup-rehearsal.json');};
+  $('qualityRestoredFile').onchange=()=>{compareSequence++;clearComparison();if(selectionOwner!==null&&selectionOwner!==owner){$('qualityRestoredFile').value='';status('Your account changed while choosing the export. Select it again for this account.');}selectionOwner=null;};
+  $('qualityCompare').onclick=async()=>{
+   const original=$('qualityBackupFile').files[0],restored=$('qualityRestoredFile').files[0],captured=owner,id=++compareSequence;clearComparison();
+   if(!root.WeekwiseJsonFiles.allowed(captured))return;
+   if(!original||!restored){$('qualityCompareResult').textContent='Choose the original backup and the export taken after restoring it in a separate browser profile.';return;}
+   $('qualityCompareResult').textContent='Comparing both files on this device…';
+   try{
+    if([original,restored].some(file=>file.size>root.WeekwiseData.MAX_BACKUP_BYTES))throw new Error('Too large');
+    const next=await root.WeekwiseRecovery.compare(...await Promise.all([original.text(),restored.text()]));
+    if(owner!==captured||app.account()!==captured||compareSequence!==id||!root.WeekwiseJsonFiles.allowed(owner))return;
+    comparison=next;const labels={settings:'settings',weeks:'weeks and tasks',recurringTemplates:'recurrence rules',customLists:'custom lists',taskHistory:'archive and trash',otherPlannerData:'other planner fields',reminders:'reminders',focusSessions:'focus sessions',habits:'habits',countdowns:'countdowns',savedTaskFilters:'saved filters',taskTemplates:'task templates'},changed=next.sections.filter(row=>!row.preserved).map(row=>labels[row.section]),added=next.sections.reduce((sum,row)=>sum+row.added,0);
+    $('qualityCompareResult').textContent=(next.preserved?'Original values preserved in all compared sections.':'Differences found in '+changed.join(', ')+'. Keep the original backup and review the restored copy.')+' Original: '+next.original.counts.tasks+' tasks; restored: '+next.restored.counts.tasks+' tasks. '+(added?added+' added fields or entries need review. ':'')+'Export dates and collections absent from the original are excluded. This compares files; it does not verify cloud or server recovery.';
+    $('qualityComparisonReport').hidden=false;
+   }catch(_){if(owner===captured&&app.account()===captured&&compareSequence===id)$('qualityCompareResult').textContent='These files could not be compared. Choose two supported Weekwise JSON backups under 10 MB. Your files and planner were not changed.';}
+  };
+  $('qualityComparisonReport').onclick=()=>{if(comparison)download(comparison,'weekwise-backup-comparison.json');};
+  $('qualityClearFiles').onclick=()=>{fileSequence++;compareSequence++;report=null;selectionOwner=null;$('qualityBackupFile').value='';$('qualityRestoredFile').value='';$('qualityBackupResult').textContent='';$('qualityBackupReport').hidden=true;clearComparison();status('Selected files and reports cleared from this panel.');};
   root.addEventListener('weekwise-performance-change',()=>{if(visible())render();});
   root.addEventListener('weekwise-sync-status',()=>{if(visible())render();});
   root.addEventListener('weekwise-diagnostics-change',()=>{if(visible())renderDiagnostics();});

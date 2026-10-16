@@ -37,6 +37,7 @@
   return {name,raw,value};
  }
  function check(storage,owner,id,confirmed,day,build){if(!checks.includes(id)||typeof confirmed!=='boolean'||!root.WeekwiseData.validDate(day)||typeof build!=='string'||build.length>80)throw new Error('Invalid device confirmation.');const e=readChecks(storage,owner);return write(storage,e,{version:1,checks:{...e.value.checks,[id]:{confirmed,day,build}}});}
+ function checkSummary(saved,build){const current=checks.filter(id=>saved[id]?.confirmed&&saved[id].build===build).length,previous=checks.filter(id=>saved[id]?.confirmed&&saved[id].build!==build).length;return {current,previous,total:checks.length,remaining:checks.length-current};}
  function exportPerformance(value){return {kind:'private-device-performance',version:1,method:'web-vitals 6.1.0; local samples, not a public field score',samples:value.samples.map(({id,...row})=>row)};}
- root.WeekwiseEvidence=Object.freeze({key,read,recording,put,clear,summary,percentile,readChecks,check,exportPerformance,views});
+ root.WeekwiseEvidence=Object.freeze({key,read,recording,put,clear,summary,percentile,readChecks,check,checkSummary,exportPerformance,views});
 })(typeof window!=='undefined'?window:globalThis);

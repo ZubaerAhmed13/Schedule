@@ -1,5 +1,9 @@
 # Weekwise current status — 16 October 2026
 
+## Recovery evidence follow-up
+
+Release 4 adds private original/restored-export comparison, current-build device confirmation counts and full production restore/reload/export coverage for legacy and version 1–6 backups. Controlled two-client tests cover both explicit conflict-resolution choices and convergence after reload. See [RECOVERY_EVIDENCE_RELEASE.md](RECOVERY_EVIDENCE_RELEASE.md) for exact comparison semantics and limits. The release PR records final checks and public identity. Physical device, notification, mailbox, offsite server restore and field-speed acceptance remain open. Google/Outlook activation remains excluded; earlier requests below are historical.
+
 ## Planning usefulness follow-up
 
 Release 3 aligns readiness with the selected week, makes infeasibility and placement reasons explicit, and updates workload, breaks, remaining capacity and selected finish times as proposals are chosen. Missing-estimate editing, preserved review choices and explicit placement recovery use the existing task editor and scheduler. See [PLANNING_DECISIONS_RELEASE.md](PLANNING_DECISIONS_RELEASE.md) for semantics, data preservation and verification limits. The release PR owns final CI and deployment evidence. Google and Outlook activation remain excluded; older provider requests below are historical.
