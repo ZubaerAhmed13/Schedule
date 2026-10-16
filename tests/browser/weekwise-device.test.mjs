@@ -38,7 +38,7 @@ function planningDecisionsFixture(){
 }
 test('planning explains readiness and blocked tasks and updates selection workload without writes',async()=>{
  for(const width of [320,390,1440]){
-  rows.get(owner).data.store=planningDecisionsFixture();const {context,page}=await open({width,height:1000});
+  rows.get(owner).data.store=planningDecisionsFixture();const {context,page}=await open({width,height:width<=390?844:1000});
   try{
    const before=await canonical(page);await navigate(page,'plan');assert.equal(await page.locator('#planReadiness article').filter({hasText:'Ready to place'}).locator('strong').innerText(),'4');assert.equal(await page.locator('#planReadiness article').filter({hasText:'Needs an estimate'}).locator('strong').innerText(),'1');assert.match(await page.locator('#planOverviewNote').innerText(),/1 later-dated flexible task is/);
    await page.locator('#planPreferences button[type=submit]').click();assert.equal(await page.locator('[name=planProposal]').count(),2);assert.match(await page.locator('[data-plan-issue=deadline-passed]').innerText(),/Deadline has passed/);assert.match(await page.locator('[data-plan-issue=continuous-slot]').innerText(),/largest remaining task slot/);assert.match(await page.locator('#planReviewSummary').innerText(),/2 selected · 1h 30m of task time \+ 20m of breaks/);assert.match(await page.locator('#planDayCapacity').innerText(),/Selected tasks finish 10:45/);assert.equal(await page.locator('#planProposals img').count(),0);
@@ -48,7 +48,7 @@ test('planning explains readiness and blocked tasks and updates selection worklo
    if(width===390){
     await page.addScriptTag({content:axe.source});
     for(const theme of ['light','dark']){await page.evaluate(theme=>document.body.dataset.theme=theme,theme);const audit=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));fs.writeFileSync(path.join(root,'test-results',engine+'-release3-plan-'+theme+'-axe.json'),JSON.stringify(audit.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)}))));assert.deepEqual(audit.violations.map(v=>v.id),[],theme+' planning accessibility');}
-    await page.evaluate(()=>document.body.dataset.theme='light');await page.locator('#toast.show').waitFor({state:'hidden'});await page.locator('#planReviewTitle').scrollIntoViewIfNeeded();await snap(page,'release3-selected-plan');
+    await page.evaluate(()=>document.body.dataset.theme='light');await page.locator('#toast.show').waitFor({state:'hidden'});await page.locator('#planSelectionReview').scrollIntoViewIfNeeded();await snap(page,'release3-selected-plan');
    }
   }finally{await context.close();}
  }
@@ -63,10 +63,10 @@ test('missing-estimate review edits the original task, preserves fields, and sel
  }finally{await context.close();}
 });
 test('invalid placement can return to suggestions without reselecting excluded work or leaking across owners',async()=>{
- rows.get(owner).data.store=planningDecisionsFixture();seed(other);const {context,page}=await open();
+ rows.get(owner).data.store=planningDecisionsFixture();seed(other);rows.get(other).data.store.settings.planning={days:[4],start:600,end:660,buffer:0,breakMinutes:0,maxDailyMinutes:480};const {context,page}=await open();
  try{
   await navigate(page,'plan');await page.locator('#planPreferences button[type=submit]').click();const before=await canonical(page);await page.locator('[name=planProposal]').nth(1).uncheck();await page.locator('[data-placement-start="0"]').fill('02:00');await page.locator('[data-placement-apply="0"]').click();assert.equal(await page.locator('[data-plan-issue=placement]').count(),1);assert.equal(await page.locator('[name=planProposal]:checked').count(),0);assert.equal(await page.locator('#planApply').isDisabled(),true);await page.locator('[data-plan-clear-id=select-a]').click();assert.equal(await page.locator('[data-plan-issue=placement]').count(),0);assert.equal(await page.locator('[name=planProposal]:checked').count(),0);assert.deepEqual(await canonical(page),before);
-  await page.evaluate(id=>WeekwiseTestAuth.setUser(id),other);await page.waitForFunction(id=>document.querySelector('#cloudUserEmail').textContent===id+'@example.invalid',other);assert.equal(await page.locator('#planResults').isVisible(),false);assert.equal(await page.locator('#planMissingTasks button').count(),0);assert.doesNotMatch(await page.locator('#planWorkspace').innerText(),/Release three/);
+  await page.evaluate(id=>WeekwiseTestAuth.setUser(id),other);await page.waitForFunction(id=>document.querySelector('#cloudUserEmail').textContent===id+'@example.invalid',other);assert.equal(await page.locator('#planResults').isVisible(),false);assert.equal(await page.locator('#planMissingTasks button').count(),0);assert.doesNotMatch(await page.locator('#planWorkspace').textContent(),/Release three/);await navigate(page,'plan');assert.equal(await page.locator('#planStart').inputValue(),'10:00');assert.equal(await page.locator('#planEnd').inputValue(),'11:00');
  }finally{await context.close();}
 });
 
