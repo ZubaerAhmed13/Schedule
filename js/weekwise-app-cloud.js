@@ -224,7 +224,8 @@ async function initializeCloud(){
   // Subscribe before reading the session so auth redirects such as password recovery are not missed.
   weekwiseRuntime.cloudClient.auth.onAuthStateChange((event,session)=>{
    const acceptedUser=root.WeekwiseOfflineAccess.isSignedOut(localStorage)?null:session?.user;
-   if(acceptedUser?.id!==weekwiseRuntime.cloudUser?.id||event==='SIGNED_OUT'){weekwiseRuntime.cloudSessionEpoch++;weekwiseRuntime.cloudReady=false;if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.$('signinLanding').hidden=false;document.body.classList.add('signin-required');}
+   const keepLocal=!acceptedUser&&localPlannerSelected();
+   if(!keepLocal&&(acceptedUser?.id!==weekwiseRuntime.cloudUser?.id||event==='SIGNED_OUT')){weekwiseRuntime.cloudSessionEpoch++;weekwiseRuntime.cloudReady=false;if(weekwiseRuntime.cloudSyncTimer)clearTimeout(weekwiseRuntime.cloudSyncTimer);weekwiseRuntime.$('signinLanding').hidden=false;document.body.classList.add('signin-required');}
    setTimeout(async()=>{
     if(event==='PASSWORD_RECOVERY'&&session?.user){await weekwiseRuntime.startCloudForUser(session.user);weekwiseRuntime.cloudUser=session.user;const gate=weekwiseRuntime.$('signinLanding');if(gate){gate.hidden=true;document.body.classList.remove('signin-required');}weekwiseRuntime.setCloudAuthMode('recovery');weekwiseRuntime.openCloudPanel();return;}
     if(session?.user&&!root.WeekwiseOfflineAccess.isSignedOut(localStorage))weekwiseRuntime.startCloudForUser(session.user).catch(()=>{});

@@ -9,7 +9,7 @@ const sdk=String.raw`(()=>{
  async signUp(args){calls.push({kind:'signup',...args});await new Promise(resolve=>window.WeekwiseAuthFixture.finishSignup=resolve);return {data:{user:{id:'auth-fixture-owner',email:args.email},session:null}};},
  async resetPasswordForEmail(email){calls.push({kind:'reset',email});return {};},async updateUser(args){calls.push({kind:'update',...args});return {data:{user}};},async signOut(){user=null;emit('SIGNED_OUT');return {};}
  },from(){return {select(){return {eq(){return {async maybeSingle(){return {data:null,error:null};}};}};}};},functions:{async invoke(){return {error:new Error('Fixture service disabled')};}}};
- window.WeekwiseAuthFixture={calls,recover(){user={id:'auth-fixture-owner',email:'fixture@example.invalid'};emit('PASSWORD_RECOVERY');}};window.supabase={createClient(){return client;}};
+ window.WeekwiseAuthFixture={calls,signedOut(){user=null;emit('SIGNED_OUT');return new Promise(resolve=>setTimeout(resolve,0));},recover(){user={id:'auth-fixture-owner',email:'fixture@example.invalid'};emit('PASSWORD_RECOVERY');}};window.supabase={createClient(){return client;}};
 })();`;
 before(async()=>{
  fs.mkdirSync(path.join(root,'test-results'),{recursive:true});server=http.createServer((req,res)=>{
@@ -169,6 +169,8 @@ test('account-device local exploration stays separate through editing, reload an
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('#signinLanding').waitFor({state:'hidden'});
   assert.equal((await tasks()).includes('Separate device fixture'),true);
   assert.equal((await tasks()).includes('Private account fixture'),false);
+  await page.evaluate(()=>WeekwiseAuthFixture.signedOut());
+  assert.equal(await page.locator('#signinLanding').isVisible(),false,'a delayed SDK sign-out event cannot close the explicitly chosen local planner');
   assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-account-cache-v1:auth-fixture-owner')),cache,'account cache is untouched by local use');
   await page.goto(origin+'?page=signin',{waitUntil:'domcontentloaded'});await page.locator('#cloudEmail').waitFor({state:'visible'});
   await credentials(page);await page.locator('#cloudSignInBtn').click();await page.locator('#signinLanding').waitFor({state:'hidden'});
