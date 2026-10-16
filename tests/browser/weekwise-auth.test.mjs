@@ -4,7 +4,7 @@ let server,browser,origin;
 const sdk=String.raw`(()=>{
  let user=window.__entryInitialUser?{id:'auth-fixture-owner',email:'fixture@example.invalid'}:null,listeners=[];const calls=[];const session=()=>user?{access_token:'auth-fixture-token',user}:null;
  const emit=event=>listeners.forEach(fn=>fn(event,session()));
- const client={auth:{onAuthStateChange(fn){listeners.push(fn);return {data:{subscription:{unsubscribe(){}}}};},async getSession(){return {data:{session:session()}};},async getUser(){return {data:{user}};},
+ const client={auth:{onAuthStateChange(fn){listeners.push(fn);const initial=session();setTimeout(()=>fn('INITIAL_SESSION',initial),0);return {data:{subscription:{unsubscribe(){}}}};},async getSession(){return {data:{session:session()}};},async getUser(){return {data:{user}};},
  async signInWithPassword(args){calls.push({kind:'signin',...args});if(args.password!=='fixture-password')return {error:new Error('Invalid login credentials')};user={id:'auth-fixture-owner',email:args.email};emit('SIGNED_IN');return {data:{user,session:session()}};},
  async signUp(args){calls.push({kind:'signup',...args});await new Promise(resolve=>window.WeekwiseAuthFixture.finishSignup=resolve);return {data:{user:{id:'auth-fixture-owner',email:args.email},session:null}};},
  async resetPasswordForEmail(email){calls.push({kind:'reset',email});return {};},async updateUser(args){calls.push({kind:'update',...args});return {data:{user}};},async signOut(){user=null;emit('SIGNED_OUT');return {};}
@@ -20,9 +20,9 @@ before(async()=>{
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));origin='http://127.0.0.1:'+server.address().port+'/';browser=await {chromium,firefox,webkit}[engine].launch({headless:true});
 });
 after(async()=>{await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));});
-async function open(width=390,{viewportMock=false,entry='signin',installed=false,initialUser=false}={}){
+async function open(width=390,{viewportMock=false,entry='signin',installed=false,initialUser=false,localMode=false}={}){
  const context=await browser.newContext({viewport:{width,height:width<=430?844:900},timezoneId:'UTC',serviceWorkers:'block'});
- await context.addInitScript(({installed,initialUser})=>{window.__entryInitialUser=initialUser;if(installed)Object.defineProperty(navigator,'standalone',{value:true});},{installed,initialUser});
+ await context.addInitScript(({installed,initialUser,localMode})=>{window.__entryInitialUser=initialUser;if(localMode)localStorage.setItem('weekwise-local-mode-v1','true');if(installed)Object.defineProperty(navigator,'standalone',{value:true});},{installed,initialUser,localMode});
  if(viewportMock)await context.addInitScript(()=>{const view=new EventTarget();view.height=844;view.offsetTop=0;view.scale=1;Object.defineProperty(window,'visualViewport',{value:view});window.__authViewportFixture=view;});
  await context.route('**/supabase.min.js',r=>r.fulfill({status:200,contentType:'text/javascript',body:sdk}));
  await context.route('**/rest/v1/rpc/weekwise_save',r=>{const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST, OPTIONS'};if(r.request().method()==='OPTIONS')return r.fulfill({status:204,headers});const args=r.request().postDataJSON();return r.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify([{saved:true,revision:args.p_expected_revision+1,updated_at:'2030-01-08T12:00:00Z'}])});});
@@ -167,6 +167,17 @@ test('homepage content and installed launch URL reflow and retain their distinct
   const {context,page}=await open(width,{entry:'home'});try{
    await page.waitForFunction(()=>document.getAnimations().filter(a=>a.effect?.target?.closest('#weekwiseHome,#settingsWorkspace')).every(a=>a.playState==='finished'||a.playState==='idle'));await page.addScriptTag({content:axe.source});for(const theme of ['light','dark']){await page.evaluate(t=>document.body.dataset.theme=t,theme);await page.waitForFunction(()=>document.getAnimations().filter(a=>a.effect?.target?.closest('#weekwiseHome,#settingsWorkspace')).every(a=>a.playState==='finished'||a.playState==='idle'));const audit=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));fs.writeFileSync(path.join(root,'test-results','axe-'+engine+'-homepage-'+width+'-'+theme+'.json'),JSON.stringify(audit.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)}))));assert.deepEqual(audit.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)})),[],width+' '+theme+' homepage');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);if(width===390)await snap(page,'homepage-'+theme);}
    await page.goto(origin+'?view=today&launch=app',{waitUntil:'domcontentloaded'});await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),false);await page.reload();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),false);
+  }finally{await context.close();}
+ }
+});
+
+
+test('real initial-session events preserve deliberate device mode without overriding an explicit sign-in page',async()=>{
+ for(const entry of ['home','signin']){
+  const {context,page,errors}=await open(390,{entry,localMode:true});try{
+   if(entry==='home'){await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');await page.reload({waitUntil:'domcontentloaded'});await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');}
+   else{await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(new URL(page.url()).searchParams.get('page'),'signin');assert.equal(await page.locator('#weekwiseHome').isVisible(),false);await page.reload({waitUntil:'domcontentloaded'});await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(new URL(page.url()).searchParams.get('page'),'signin');await credentials(page);await page.locator('#cloudSignInBtn').click();await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');}
+   assert.deepEqual(errors,[]);
   }finally{await context.close();}
  }
 });

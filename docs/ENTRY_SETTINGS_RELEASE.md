@@ -21,3 +21,5 @@ Six categories progressively reveal existing controls without replacing forms or
 ## Validation boundary
 
 Run the existing Node, release/build, browser regression and three-engine device/auth suites, with additional entry, history, installed launch, session restoration and category accessibility checks. CI screenshots support visual inspection. Actual iOS/Android installation, home-screen launch and OS session behaviour still require real-device observation.
+
+Explicit account-page visits take precedence over remembered device-only mode. A null INITIAL_SESSION event preserves a deliberately selected local planner instead of reopening the public gate. The auth fixture emits the same initial event as Supabase, including local-mode reload and explicit account-page regression cases.
