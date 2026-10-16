@@ -351,3 +351,6 @@ body.keyboard-open .ww-auth-page{padding:0 0 20px}body.keyboard-open .ww-auth-na
 .ww-auth-nav>a:last-child{margin-left:auto}
 @media(max-width:820px){.ww-public-screen .entry-story{background:var(--ww-bg)}}
 body[data-theme=dark] .ww-public-screen .ww-public-today-preview .ww-public-section-label{color:#496c52}
+/* Keep the illustration caption readable against the dark homepage. */
+body[data-theme=dark] .ww-public-screen .ww-public-sample-label,body[data-theme=dark] .ww-public-screen .ww-public-sample-label span{color:#c2d6c6}
+body[data-theme=dark] .ww-public-showcase::before{background:radial-gradient(ellipse at 48% 55%,#294b33 0%,#1c3023 47%,transparent 75%)}
