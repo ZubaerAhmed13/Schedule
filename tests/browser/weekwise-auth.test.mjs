@@ -47,7 +47,7 @@ test('public homepage introduces Weekwise before login and offers a real path to
    assert.equal(await page.locator('.wrap').evaluate(el=>el.inert),true,'app remains gated and unavailable to signed-out visitors');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'marketing does not overflow phone viewport');
    const previous=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
-   await page.locator('.ww-public-nav-cta').click();
+   await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});
    assert.equal(new URL(page.url()).searchParams.get('page'),'signin');
    assert.equal(await page.locator('#weekwiseHome').isVisible(),false);
    assert.equal(await page.locator('#cloudEmail').isVisible(),true);
@@ -123,10 +123,10 @@ test('home and sign-in are separate routes with browser Back, direct reload and 
  const {context,page,errors}=await open(390,{entry:'home'});try{
   const before=await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2'));
   assert.equal(await page.locator('#weekwiseHome').isVisible(),true);assert.equal(await page.locator('#cloudEmail').isVisible(),false);
-  await page.locator('.ww-public-nav-cta').click();assert.equal(new URL(page.url()).searchParams.get('page'),'signin');assert.equal(await page.locator('#wwHomeMain').isVisible(),false);assert.equal(await page.locator('#cloudEmail').isVisible(),true);assert.equal(await page.locator('#cloudEmail').isEnabled(),true);
+  await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(new URL(page.url()).searchParams.get('page'),'signin');assert.equal(await page.locator('#wwHomeMain').isVisible(),false);assert.equal(await page.locator('#cloudEmail').isVisible(),true);assert.equal(await page.locator('#cloudEmail').isEnabled(),true);
   await page.goBack();await page.locator('#wwHomeMain').waitFor({state:'visible'});assert.equal(await page.locator('#cloudEmail').isVisible(),false);
   await page.goForward();await page.locator('#cloudEmail').waitFor({state:'visible'});await page.reload();await page.locator('#cloudEmail').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),false);
-  await page.locator('[data-entry-home]').click();assert.equal(await page.locator('#wwHomeMain').isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);assert.deepEqual(errors,[]);
+  await page.locator('[data-entry-home]').click();await page.locator('#wwHomeMain').waitFor({state:'visible'});assert.equal(await page.locator('#wwHomeMain').isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.evaluate(()=>localStorage.getItem('weekwise-planner-v2')),before);assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
 
@@ -145,7 +145,7 @@ test('signed-in desktop visits bypass public and account pages and fresh login o
  for(const entry of ['home','signin']){
   const {context,page,errors}=await open(1440,{entry,initialUser:true});try{await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');assert.equal(new URL(page.url()).searchParams.has('page'),false);assert.equal(await page.title(),'Weekwise — Your planner');assert.deepEqual(errors,[]);}finally{await context.close();}
  }
- const {context,page}=await open(1440,{entry:'home'});try{await page.locator('.ww-public-nav-cta').click();await credentials(page);await page.locator('#cloudSignInBtn').click();await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');assert.equal(new URL(page.url()).searchParams.has('page'),false);}finally{await context.close();}
+ const {context,page}=await open(1440,{entry:'home'});try{await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});await credentials(page);await page.locator('#cloudSignInBtn').click();await page.locator('#signinLanding').waitFor({state:'hidden'});assert.equal(await page.locator('body').getAttribute('data-active-view'),'today');assert.equal(new URL(page.url()).searchParams.has('page'),false);}finally{await context.close();}
 });
 
 test('all six Settings categories retain controls, unsaved fields and accessible phone layouts',async()=>{
