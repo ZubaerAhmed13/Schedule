@@ -10,7 +10,7 @@
 
 ## Entry contract
 
-Browser visitors see the product homepage, with no visible login form. The Sign in link opens `./?page=signin`, a separate addressable account page served by the same static app shell. Public/account links use native document navigation, so refresh, deep links, browser Back/Forward and password managers work without a server rewrite. There is exactly one auth form. Public page navigation never submits credentials or mutates planner records. A neutral loading state waits for the existing session initialization, avoiding a marketing-page flash for authenticated visits. Successful authentication and restored sessions enter Today through the existing finishSignInLanding path. Existing explicit device-only mode remains available.
+Browser visitors see the product homepage, with no visible login form. The Sign in link opens `./?page=signin`, a separate addressable account page served by the same static app shell. Public/account links use native document navigation, so refresh, deep links, browser Back/Forward and password managers work without a server rewrite. There is exactly one auth form. Public page navigation never submits credentials or mutates planner records. A neutral loading state waits for the existing session initialization, avoiding a marketing-page flash for authenticated visits. Successful authentication and restored sessions enter Today through the existing finishSignInLanding path. Deliberately opened device-only planners retain their app URL (`?view=today`) and reopen locally; an ordinary signed-out visit to the public root shows the homepage.
 
 Installed launches use `./?view=today&launch=app` and skip marketing, including when sign-in is needed. Standalone/fullscreen detection and iOS navigator.standalone cover existing installed apps whose old manifest start URL is still cached. Browser visits remain eligible for the homepage. Sign-out retains existing account/offline revocation and returns to the browser homepage or installed account screen. No cache flag is promoted to proof of authentication. Password recovery retains the original dedicated account recovery workflow.
 
@@ -21,3 +21,5 @@ Six categories progressively reveal existing controls without replacing forms or
 ## Validation boundary
 
 Run the existing Node, release/build, browser regression and three-engine device/auth suites, with additional entry, history, installed launch, session restoration and category accessibility checks. CI screenshots support visual inspection. Actual iOS/Android installation, home-screen launch and OS session behaviour still require real-device observation.
+
+Explicit account-page visits take precedence over remembered device-only mode. A null INITIAL_SESSION event preserves a deliberately selected local planner instead of reopening the public gate. The auth fixture emits the same initial event as Supabase, including local-mode reload and explicit account-page regression cases.
