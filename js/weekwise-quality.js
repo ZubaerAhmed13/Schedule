@@ -29,6 +29,7 @@
    for(const row of value.events.filter(e=>e.build===build()).slice(-12).reverse()){const li=document.createElement('li');li.textContent=row.day+' · '+({'sync-read':'Cloud check','sync-save':'Cloud save','sync-start':'Cloud connection',runtime:'App error'}[row.operation])+' · '+row.outcome+(row.durationMs===null?'':' · '+row.durationMs+' ms');list.append(li);}
   }catch(error){status(error.message);}
  }
+ async function readBackup(file){return new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(await file.arrayBuffer());}
  function clearComparison(){comparison=null;$('qualityCompareResult').textContent='';$('qualityComparisonReport').hidden=true;}
  function ownerChanged(){if(!app)return;const next=app.account();if(next===owner)return;owner=next;deviceSequence++;fileSequence++;compareSequence++;report=null;device=null;$('qualityBackupFile').value='';$('qualityRestoredFile').value='';$('qualityBackupResult').textContent='';$('qualityBackupReport').hidden=true;clearComparison();status('');root.WeekwisePerformance.ownerChanged();render();}
  function render(){
@@ -76,7 +77,7 @@
    const file=$('qualityBackupFile').files[0],captured=owner,id=++fileSequence;report=null;$('qualityBackupReport').hidden=true;$('qualityBackupResult').textContent='';$('qualityRestoredFile').value='';compareSequence++;clearComparison();if(!file)return;
    if(!root.WeekwiseJsonFiles.allowed(captured)){status('Choose an account or device planner before rehearsing a backup.');return;}
    $('qualityBackupResult').textContent='Checking an isolated copy…';
-   try{if(file.size>root.WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Too large');const next=await root.WeekwiseRecovery.rehearse(await file.text());if(owner!==captured||app.account()!==captured||fileSequence!==id||!root.WeekwiseJsonFiles.allowed(owner))return;report=next;$('qualityBackupResult').textContent='Rehearsal passed: '+next.tasks+' tasks across '+next.weeks+' weeks; complete restored entries retained. SHA-256: '+next.sha256+'. Your planner and cloud copy were not changed.';$('qualityBackupReport').hidden=false;}
+   try{if(file.size>root.WeekwiseData.MAX_BACKUP_BYTES)throw new Error('Too large');const next=await root.WeekwiseRecovery.rehearse(await readBackup(file));if(owner!==captured||app.account()!==captured||fileSequence!==id||!root.WeekwiseJsonFiles.allowed(owner))return;report=next;$('qualityBackupResult').textContent='Rehearsal passed: '+next.tasks+' tasks across '+next.weeks+' weeks; complete restored entries retained. SHA-256: '+next.sha256+'. Your planner and cloud copy were not changed.';$('qualityBackupReport').hidden=false;}
    catch(_){if(owner===captured&&app.account()===captured&&fileSequence===id)$('qualityBackupResult').textContent='This backup could not be rehearsed. Choose a supported Weekwise JSON backup under 10 MB. Your original file and planner were not changed.';}
   };
   $('qualityBackupReport').onclick=()=>{if(report&&root.WeekwiseJsonFiles.allowed(owner))download(report,'weekwise-backup-rehearsal.json');};
@@ -88,7 +89,7 @@
    $('qualityCompareResult').textContent='Comparing both files on this device…';
    try{
     if([original,restored].some(file=>file.size>root.WeekwiseData.MAX_BACKUP_BYTES))throw new Error('Too large');
-    const next=await root.WeekwiseRecovery.compare(...await Promise.all([original.text(),restored.text()]));
+    const next=await root.WeekwiseRecovery.compare(...await Promise.all([readBackup(original),readBackup(restored)]));
     if(owner!==captured||app.account()!==captured||compareSequence!==id||!root.WeekwiseJsonFiles.allowed(owner))return;
     comparison=next;const labels={settings:'settings',weeks:'weeks and tasks',recurringTemplates:'recurrence rules',customLists:'custom lists',taskHistory:'archive and trash',otherPlannerData:'other planner fields',reminders:'reminders',focusSessions:'focus sessions',habits:'habits',countdowns:'countdowns',savedTaskFilters:'saved filters',taskTemplates:'task templates'},changed=next.sections.filter(row=>!row.preserved).map(row=>labels[row.section]),added=next.sections.reduce((sum,row)=>sum+row.added,0);
     $('qualityCompareResult').textContent=(next.preserved?'Original values preserved in all compared sections.':'Differences found in '+changed.join(', ')+'. Keep the original backup and review the restored copy.')+' Original: '+next.original.counts.tasks+' tasks; restored: '+next.restored.counts.tasks+' tasks. '+(added?added+' added fields or entries need review. ':'')+'Export dates and collections absent from the original are excluded. This compares files; it does not verify cloud or server recovery.';
