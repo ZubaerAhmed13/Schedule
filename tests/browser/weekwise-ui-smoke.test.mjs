@@ -1854,7 +1854,8 @@ test('offline account can be locked locally without a live auth session',async()
   page.on('dialog',d=>d.accept());
   await page.locator('#cloudOfflineLock').click();
   assert.equal(await page.locator('#signinLanding').isVisible(),true);
-  await page.locator('.ww-public-nav-cta').click();await page.locator('#cloudEmail').waitFor({state:'visible'});
+  if(await page.locator('#weekwiseHome').isVisible())await page.locator('.ww-public-nav-cta').click();
+  await page.locator('#cloudEmail').waitFor({state:'visible'});
   assert.equal(await page.locator('#signinOfflineAccount').isVisible(),false);
   assert.equal(await page.locator('#signinLocalContinue').isVisible(),true);
   assert.equal(await page.evaluate(()=>WeekwiseOfflineAccess.isSignedOut(localStorage)),true);
