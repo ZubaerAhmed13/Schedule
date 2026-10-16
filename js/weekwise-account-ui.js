@@ -31,7 +31,8 @@
    await app.detach(captured);
    const entries=root.WeekwiseAccountPrivacy.ownedEntries(localStorage,captured);
    root.WeekwiseAccountPrivacy.removeOwned(localStorage,entries);
-   configured=false;status('The account and its cloud planner were deleted. Its named device cache, focus state and editor drafts were removed. Exported backups, shared recovery checkpoints and copies on other devices remain.');
+   root.WeekwiseReviewUI?.forgetOwner(captured);
+   configured=false;status('The account and its cloud planner were deleted. Its named device cache, focus state, editor drafts and weekly review drafts were removed. Exported backups, shared recovery checkpoints and copies on other devices remain.');
    app.announce('Weekwise account deleted. Other planners and exported backups remain.');
   }catch(error){status((deleted?'The cloud account was deleted, but device cleanup needs attention. ':'')+(error.message||'Erasure was not confirmed. Local copies remain saved.'));if(deleted)configured=false;}
   finally{$('accountErasePassword').value='';busy=false;controls();}

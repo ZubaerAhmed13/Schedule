@@ -5,7 +5,7 @@
   const exact=new Set(['weekwise-account-cache-v1:'+owner,'weekwise-focus-active-v1:'+owner,'weekwise-editor-draft-v1:'+owner,'weekwise-onboarding-v1:'+encodeURIComponent(owner),'weekwise-nav-groups-v1:'+encodeURIComponent(owner),'weekwise-zone-review-v1:'+encodeURIComponent(owner),'weekwise-zone-backup-v1:'+encodeURIComponent(owner)]);
   exact.add('weekwise-quick-edit-v1:'+encodeURIComponent(owner));
   exact.add('weekwise-performance-v1:'+encodeURIComponent(owner));exact.add('weekwise-device-checks-v1:'+encodeURIComponent(owner));
-  exact.add('weekwise-diagnostics-v1:'+encodeURIComponent(owner));
+  exact.add('weekwise-diagnostics-v1:'+encodeURIComponent(owner));exact.add('weekwise-review-drafts-v1:'+encodeURIComponent(owner));
   const entries=[];for(let i=0;i<storage.length;i++){const key=storage.key(i);if(exact.has(key)||key.startsWith('weekwise-editor-draft-archive-v1:'+owner+':'))entries.push([key,storage.getItem(key)]);}
   if(storage.getItem('weekwise-offline-owner-v1')===owner)entries.push(['weekwise-offline-owner-v1',owner]);return entries;
  }

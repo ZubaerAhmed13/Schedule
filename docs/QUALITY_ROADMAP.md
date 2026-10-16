@@ -1,6 +1,6 @@
 # Weekwise quality roadmap and acceptance
 
-The product promise is simple: capture responsibilities, build a realistic week, and recover when plans change. The existing calendar, planning, habits, focus, history, backups and offline functionality remain available. The current scope excludes Google/Outlook activation; earlier provider requests are historical. Optional AI stays disabled. Release 4 adds original/restored-file comparison, current-build human evidence and historical full-restore/conflict-resolution regression coverage; see [the release contract](RECOVERY_EVIDENCE_RELEASE.md). Earlier usability and planning releases remain delivered.
+The product promise is simple: capture responsibilities, build a realistic week, and recover when plans change. The existing calendar, planning, habits, focus, history, backups and offline functionality remain available. The current scope excludes Google/Outlook activation; earlier provider requests are historical. Optional AI stays disabled. Release 5 improves existing weekly review with recoverable local drafts, guarded canonical saves, explicit comparison evidence and the previous intention; see [the release contract](WEEKLY_REVIEW_RELEASE.md). Earlier usability, planning and recovery releases remain delivered. Optional planning depth still requires observed need.
 
 | Area | Engineering delivered | Acceptance still needed |
 | --- | --- | --- |
