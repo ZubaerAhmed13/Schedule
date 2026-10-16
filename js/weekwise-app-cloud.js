@@ -79,7 +79,7 @@ function isolatePlannerOwner(nextOwner){
  if(weekwiseRuntime.currentDataOwner===nextOwner)return;
  const previousOwner=weekwiseRuntime.currentDataOwner,payload=JSON.parse(JSON.stringify(weekwiseRuntime.buildCloudPayload()));
  if(weekwiseRuntime.focusState?.owner===previousOwner){weekwiseRuntime.focusState=WeekwiseFocus.pause(weekwiseRuntime.focusState);WeekwiseData.commitStorage(localStorage,[['weekwise-focus-active-v1:'+previousOwner,JSON.stringify(weekwiseRuntime.focusState)]]);}
- root.WeekwiseReviewUI?.checkpoint();
+ root.WeekwiseReviewUI?.checkpointForOwnerChange();
  weekwiseRuntime.checkpointEditorDraft();
  localStorage.setItem('weekwise-account-cache-v1:'+previousOwner,JSON.stringify({payload,meta:weekwiseRuntime.readCloudMeta()}));
  weekwiseRuntime.closeTaskModal(true);
