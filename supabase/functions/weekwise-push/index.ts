@@ -160,13 +160,17 @@ async function dispatchDueReminders(admin: ReturnType<typeof adminClient>) {
       totals.usersChecked += 1;
       const timeZone = reminderZone(cloud.data,subscriptions[0].timezone);
       if(!timeZone){totals.skipped+=1;continue;}
+      const planner = cloud.data?.store as Json | undefined;
+      const quietSettings = { ...((planner?.settings as Json | undefined) || {}), timeZone };
       const records = listTasksFromCloud(cloud.data ?? {}, timeZone);
 
       for (const record of records) {
         const reminder = taskReminderTime(record.task, record.reminderAt, timeZone);
         if (!reminder){totals.skipped+=1;continue;}
         const timestamp = reminder.getTime();
+        // Quiet hours suppress task alerts without claiming a delivery or replaying stale alerts.
         if (timestamp > now.getTime() || timestamp < cutoff || (record.automatic && (record.start === null || record.start <= now.getTime()))) continue;
+        if (automaticReminders.duringQuietHours(quietSettings, timestamp) || automaticReminders.duringQuietHours(quietSettings, now.getTime())) { totals.skipped += 1; continue; }
         totals.dueReminders += 1;
         const taskId = String(record.task.id);
         const { data: claimed, error: claimError } = await admin.rpc("weekwise_claim_push_delivery", {
