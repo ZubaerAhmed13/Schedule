@@ -173,6 +173,8 @@
   async function toggleBackgroundPush() {
     if (busy) return;
     busy = true;
+    // Supersede any in-flight focus probe before owning the controls.
+    refreshBusy = false;
     const epoch = ++statusEpoch;
     const current = () => epoch === statusEpoch;
     const setStatus = (...args) => { if (current()) writeStatus(...args); };
@@ -240,7 +242,12 @@
     } catch (error) {
       failure = error.message || "Could not enable background reminders.";
     } finally {
-      if (current()) { busy = false; await refreshState(); if (failure) writeStatus(failure, true); }
+      if (current()) {
+        busy = false;
+        const expectedRefreshEpoch = statusEpoch + 1;
+        await refreshState();
+        if (failure && statusEpoch === expectedRefreshEpoch) writeStatus(failure, true);
+      }
     }
   }
 

@@ -28,3 +28,12 @@ test('queued browser locks recheck the owner before delivering a private reminde
 test('a hidden tab defers in-app fallback until the planner becomes visible',async()=>{
  const f=fixture();f.context.Notification.permission='denied';f.context.document.hidden=true;await f.context.checkTaskReminders();assert.equal(f.toasts.length,0);f.context.document.hidden=false;await f.context.checkTaskReminders();assert.equal(f.toasts.length,1);
 });
+for(const change of ['off','rescheduled','completed'])test('a pending service-worker alert is revalidated when '+change,async()=>{
+ const f=fixture({fail:true});let release;const sent=[];
+ f.context.navigator.serviceWorker={getRegistration:()=>new Promise(resolve=>{release=()=>resolve({showNotification:async(...args)=>sent.push(args)});})};
+ const pending=f.context.checkTaskReminders();assert.equal(typeof release,'function');
+ if(change==='off')f.context.store.settings.reminderLeadMinutes=0;
+ if(change==='rescheduled')f.task.start+=60;
+ if(change==='completed')f.task.done=true;
+ release();await pending;assert.equal(sent.length,0);assert.equal(f.toasts.length,0);
+});

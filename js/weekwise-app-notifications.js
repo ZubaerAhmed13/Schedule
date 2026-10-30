@@ -83,7 +83,14 @@ async function checkTaskReminders(){
     if('Notification' in window&&Notification.permission==='granted'){
      try{const notification=new Notification('Weekwise · '+record.task.title,options);notification.onclick=()=>{try{notification.close();}catch(_){}if(allowed())weekwiseRuntime.openReminderTask(record);};sent=true;}
      catch(_){
-      try{const registration=await navigator.serviceWorker?.getRegistration('./');if(!allowed())return;if(registration?.showNotification){await registration.showNotification('Weekwise · '+record.task.title,options);sent=true;}}catch(_){}
+      try{
+       const registration=await navigator.serviceWorker?.getRegistration('./');if(!allowed())return;
+       // Settings, completion, or the schedule can change while browser APIs wait.
+       const fresh=weekwiseRuntime.workspaceRecords().find(r=>r.week===record.week&&r.task.id===record.task.id);
+       const eligible=fresh&&root.WeekwiseReminderPolicy.due(fresh,weekwiseRuntime.store.settings,Date.now()).some(r=>r.at===reminder.at&&r.value===reminder.value&&r.automatic===reminder.automatic&&r.start===reminder.start);
+       if(!eligible)continue;
+       if(registration?.showNotification){await registration.showNotification('Weekwise · '+fresh.task.title,options);sent=true;}
+      }catch(_){}
      }
     }
     if(!allowed())return;
