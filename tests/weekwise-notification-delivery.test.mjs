@@ -3,9 +3,9 @@ import '../js/weekwise-data.js';import '../js/weekwise-timezones.js';import '../
 import {exposeController} from './application-source.mjs';
 function fixture({fail=false,storageFail=false}={}){
  const at=Date.now(),date=new Date(at+10*60000),day=date.getUTCDay(),week=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate()-day)).toISOString().slice(0,10);
- const task={id:'reminder',title:'Upcoming activity',day,start:date.getUTCHours()*60+date.getUTCMinutes(),duration:30},disk=new Map(),alerts=[],toasts=[];
- const context={Date,Set,Map,JSON,Number,String,Array,Promise,console,WeekwiseReminderPolicy,Notification:class{static permission='granted';constructor(title,options){if(fail)throw Error('unsupported constructor');alerts.push({title,options});}},navigator:{},localStorage:{getItem:k=>disk.get(k)||null,setItem(k,v){if(storageFail)throw Error('quota');disk.set(k,v);}},document:{hidden:false},zoneNeedsReview:()=>false,currentDataOwner:'local',cloudUser:null,store:{settings:{timeZone:'UTC',reminderLeadMinutes:15}},workspaceRecords:()=>[{week,task}],showToast:message=>toasts.push(message),saveCurrent:()=>{throw Error('reminder delivery must not save planner');},saveStore:()=>{throw Error('reminder delivery must not save planner');},renderAll:()=>{},taskReminderTimes:t=>t.reminderTimes||[],currentWeek:week,$:()=>null};
- context.window=context;exposeController(context,'notifications',['checkTaskReminders']);return {context,task,disk,alerts,toasts};
+ const task={id:'reminder',title:'Upcoming activity',day,start:date.getUTCHours()*60+date.getUTCMinutes(),duration:30},disk=new Map(),alerts=[],toasts=[],actions=[];
+ const context={Date,Set,Map,JSON,Number,String,Array,Promise,console,WeekwiseReminderPolicy,Notification:class{static permission='granted';constructor(title,options){if(fail)throw Error('unsupported constructor');alerts.push({title,options});}},navigator:{},localStorage:{getItem:k=>disk.get(k)||null,setItem(k,v){if(storageFail)throw Error('quota');disk.set(k,v);}},document:{hidden:false},zoneNeedsReview:()=>false,currentDataOwner:'local',cloudUser:null,store:{settings:{timeZone:'UTC',reminderLeadMinutes:15}},workspaceRecords:()=>[{week,task}],showToast:(message,label,callback)=>{toasts.push(message);if(label&&callback)actions.push({label,callback});},saveCurrent:()=>{throw Error('reminder delivery must not save planner');},saveStore:()=>{throw Error('reminder delivery must not save planner');},renderAll:()=>{},taskReminderTimes:t=>t.reminderTimes||[],currentWeek:week,$:()=>null};
+ context.window=context;exposeController(context,'notifications',['checkTaskReminders']);return {context,task,disk,alerts,toasts,actions};
 }
 test('automatic foreground delivery is deduplicated without changing planner records',async()=>{
  const f=fixture(),before=JSON.stringify(f.task);await f.context.checkTaskReminders();await f.context.checkTaskReminders();
@@ -36,4 +36,23 @@ for(const change of ['off','rescheduled','completed'])test('a pending service-wo
  if(change==='rescheduled')f.task.start+=60;
  if(change==='completed')f.task.done=true;
  release();await pending;assert.equal(sent.length,0);assert.equal(f.toasts.length,0);
+});
+
+test('same-activity grouping uses a stable owner-scoped tag and can be turned off',async()=>{
+ const first=fixture();await first.context.checkTaskReminders();
+ assert.equal(first.alerts[0].options.tag,'weekwise-task-local-reminder');
+ const second=fixture();second.context.store.settings.reminderGroupByTask=false;await second.context.checkTaskReminders();
+ assert.match(second.alerts[0].options.tag,/^weekwise-task-local-reminder-2030|^weekwise-task-local-reminder-/);
+ assert.notEqual(second.alerts[0].options.tag,first.alerts[0].options.tag);
+});
+test('foreground snooze is explicit, owner-scoped, bounded and never edits planner tasks',async()=>{
+ const f=fixture();f.task.reminderAt=new Date(Date.now()-60000).toISOString();
+ const before=JSON.stringify(f.task);
+ await f.context.checkTaskReminders();assert.equal(f.actions[0].label,'Snooze 10 min');
+ f.actions[0].callback();
+ const key='weekwise-alert-snoozes-v1:local',items=JSON.parse(f.disk.get(key));
+ assert.equal(items.length,1);assert.ok(items[0].until>Date.now());
+ items[0].until=Date.now()-1000;f.disk.set(key,JSON.stringify(items));
+ await f.context.checkTaskReminders();assert.equal(f.alerts.length,2);
+ assert.deepEqual(JSON.parse(f.disk.get(key)),[]);assert.equal(JSON.stringify(f.task),before);
 });
