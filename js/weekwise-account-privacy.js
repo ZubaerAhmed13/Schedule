@@ -4,6 +4,7 @@
  function ownedEntries(storage,owner){if(typeof owner!=='string'||!owner||owner==='local')throw new Error('Choose a signed-in account.');
   const exact=new Set(['weekwise-account-cache-v1:'+owner,'weekwise-focus-active-v1:'+owner,'weekwise-editor-draft-v1:'+owner,'weekwise-onboarding-v1:'+encodeURIComponent(owner),'weekwise-nav-groups-v1:'+encodeURIComponent(owner),'weekwise-zone-review-v1:'+encodeURIComponent(owner),'weekwise-zone-backup-v1:'+encodeURIComponent(owner)]);
   exact.add('weekwise-alert-receipts-v1:'+owner);
+  exact.add('weekwise-alert-snoozes-v1:'+owner);
   exact.add('weekwise-quick-edit-v1:'+encodeURIComponent(owner));
   exact.add('weekwise-performance-v1:'+encodeURIComponent(owner));exact.add('weekwise-device-checks-v1:'+encodeURIComponent(owner));
   exact.add('weekwise-diagnostics-v1:'+encodeURIComponent(owner));exact.add('weekwise-review-drafts-v1:'+encodeURIComponent(owner));
