@@ -12,3 +12,14 @@
 .settings-advanced{margin-top:22px;border-top:1px solid var(--ww-line);padding-top:10px}.settings-advanced summary{min-height:44px;align-content:center;color:var(--ww-muted);font-size:13px;cursor:pointer}
 @media(min-width:1050px){#settings-appearance .settings-cards,#settings-help .settings-cards{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){.settings-layout{display:block}.settings-category-nav{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:6px;margin-bottom:24px;border-radius:15px}.settings-category{font-size:12px;padding:10px;min-height:44px}.settings-category>span:last-child{display:none}#settingsWorkspace .settings-cards>.plan-preview-card{padding:20px}.settings-category-heading h3{font-size:23px}.settings-category-heading{margin-top:0}.settings-category-panel .personal-details-fields{grid-template-columns:1fr}}
+
+/* Reminder timing remains readable and keyboard friendly at phone widths. */
+.notification-timing-card p,.notification-device-card p{line-height:1.65;color:var(--ww-muted)}
+#notificationTimingForm{display:grid;gap:16px;margin-top:20px;max-width:540px}
+#notificationTimingForm select{width:100%;min-height:48px;font:inherit}
+#notificationTimingForm .btn{justify-self:start}
+#notificationTimingStatus{min-height:1.6em;font-size:13px;color:var(--ww-text)}
+.notification-device-card .task-notification-settings{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 0;margin:0;border:0;border-bottom:1px solid var(--ww-line);background:transparent}
+.notification-device-card .task-notification-settings strong{color:var(--ww-text)}
+.notification-device-card .task-notification-settings .btn{flex-shrink:0;white-space:normal;max-width:220px}
+@media(max-width:600px){.notification-device-card .task-notification-settings{align-items:stretch;flex-direction:column;gap:8px}.notification-device-card .task-notification-settings .btn{max-width:none;width:100%}#notificationTimingForm .btn{width:100%}}
