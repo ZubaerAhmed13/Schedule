@@ -1,3 +1,6 @@
+import '../../../js/weekwise-data.js';
+import '../../../js/weekwise-calendar-range.js';
+import '../../../js/weekwise-reminder-policy.js';
 import '../../../js/weekwise-timezones.js';
 // Reuse the exact saved-zone converter; uncertain clock values never trigger a guess.
 /** @returns {Date|null} */
@@ -18,3 +21,5 @@ export function reminderZone(data,subscriptionZone){
  const saved=data?.store?.settings?.timeZone,zone=typeof saved==='string'&&saved?saved:subscriptionZone;
  try{if(typeof zone!=='string'||!zone||zone.length>128)return null;new Intl.DateTimeFormat('en-US',{timeZone:zone});return zone;}catch(_){return null;}
 }
+
+export const automaticReminders = globalThis.WeekwiseReminderPolicy;

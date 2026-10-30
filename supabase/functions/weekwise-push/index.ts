@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 import { pushConfiguration } from "../_shared/runtime-config.mjs";
 import webpush from "npm:web-push@3.6.7";
-import { taskReminderTime, reminderZone } from "../_shared/reminder-clock.mjs";
+import { taskReminderTime, reminderZone, automaticReminders } from "../_shared/reminder-clock.mjs";
 
 type Json = Record<string, unknown>;
 type BrowserPushSubscription = {
@@ -87,24 +87,16 @@ function validTimeZone(candidate: unknown): string {
   }
 }
 
-function listTasksFromCloud(data: Json): Array<{ task: Json; reminderAt: string }> {
+function listTasksFromCloud(data: Json, timeZone: string): Array<{ task: Json; reminderAt: string; automatic: boolean; start: number | null }> {
   const store = data.store as Json | undefined;
   const weeks = store?.weeks as Record<string, Json> | undefined;
   if (!weeks || typeof weeks !== "object") return [];
-  const output: Array<{ task: Json; reminderAt: string }> = [];
-  for (const week of Object.values(weeks)) {
-    const tasks = week?.tasks;
-    if (!Array.isArray(tasks)) continue;
-    for (const task of tasks) {
-      if (!task || typeof task !== "object" || task.custom === false || task.done === true || task.status === "done") continue;
-      const id = String(task.id ?? "").trim();
-      if (!id) continue;
-      const values = Array.isArray(task.reminderTimes) ? task.reminderTimes : (task.reminderAt ? [task.reminderAt] : []);
-      const notified = new Set(Array.isArray(task.reminderNotifiedTimes) ? task.reminderNotifiedTimes.map(String) : []);
-      if (task.reminderAt && task.reminderNotifiedAt === task.reminderAt) notified.add(String(task.reminderAt));
-      for (const raw of values.slice(0, 5)) {
-        const reminderAt = String(raw ?? "").trim();
-        if (reminderAt && !notified.has(reminderAt)) output.push({ task: task as Json, reminderAt });
+  const output: Array<{ task: Json; reminderAt: string; automatic: boolean; start: number | null }> = [];
+  for (const [week, entry] of Object.entries(weeks)) {
+    if (!Array.isArray(entry?.tasks)) continue;
+    for (const task of entry.tasks) {
+      for (const reminder of automaticReminders.reminders({ week, task }, { ...(store?.settings as Json || {}), timeZone })) {
+        output.push({ task, reminderAt: reminder.value, automatic: reminder.automatic, start: reminder.start });
       }
     }
   }
@@ -157,8 +149,6 @@ async function dispatchDueReminders(admin: ReturnType<typeof adminClient>) {
     if (!rows.length) break;
 
     for (const cloud of rows) {
-      const records = listTasksFromCloud(cloud.data ?? {});
-      if (!records.length) continue;
       const { data: subscriptionRows, error: subscriptionError } = await admin
         .from("weekwise_push_subscriptions")
         .select("endpoint,subscription,timezone,user_agent,updated_at")
@@ -169,13 +159,14 @@ async function dispatchDueReminders(admin: ReturnType<typeof adminClient>) {
       if (!subscriptions.length) continue;
       totals.usersChecked += 1;
       const timeZone = reminderZone(cloud.data,subscriptions[0].timezone);
-      if(!timeZone){totals.skipped+=records.length;continue;}
+      if(!timeZone){totals.skipped+=1;continue;}
+      const records = listTasksFromCloud(cloud.data ?? {}, timeZone);
 
       for (const record of records) {
         const reminder = taskReminderTime(record.task, record.reminderAt, timeZone);
         if (!reminder){totals.skipped+=1;continue;}
         const timestamp = reminder.getTime();
-        if (timestamp > now.getTime() || timestamp < cutoff) continue;
+        if (timestamp > now.getTime() || timestamp < cutoff || (record.automatic && (record.start === null || record.start <= now.getTime()))) continue;
         totals.dueReminders += 1;
         const taskId = String(record.task.id);
         const { data: claimed, error: claimError } = await admin.rpc("weekwise_claim_push_delivery", {
@@ -191,7 +182,7 @@ async function dispatchDueReminders(admin: ReturnType<typeof adminClient>) {
 
         const payload = JSON.stringify({
           title: "Weekwise · " + getTaskName(record.task),
-          body: "Your task reminder is due now.",
+          body: record.automatic ? "Your activity starts at " + new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(record.start!)) + "." : "Your task reminder is due now.",
           tag: "weekwise-task-" + taskId + "-" + record.reminderAt,
           url: APP_URL,
           taskId,
