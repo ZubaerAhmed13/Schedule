@@ -56,6 +56,7 @@ test('optional category defaults override global timing but never custom reminde
  assert.equal(WeekwiseReminderPolicy.reminders(r,chosen)[0].at,Date.parse('2030-01-07T09:00:00Z'));
  assert.equal(WeekwiseReminderPolicy.reminders(record({type:'life'}),chosen).length,0);
  assert.equal(WeekwiseReminderPolicy.reminders(record({type:'hobby'}),chosen)[0].at,at);
+ assert.equal(WeekwiseReminderPolicy.preferredLead({...settings,reminderCategoryLeadMinutes:{other:5}},record({type:'legacy-class'}).task),5);
  const explicit=record({type:'study',reminderTimes:['2030-01-07T09:35']});
  assert.equal(WeekwiseReminderPolicy.reminders(explicit,chosen)[0].automatic,false);
  assert.deepEqual(r,before);
