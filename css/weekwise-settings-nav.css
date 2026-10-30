@@ -41,3 +41,7 @@
 .notification-quiet-times input,.notification-category-grid select {min-height:42px;max-width:250px;padding:9px;border:1px solid var(--ww-line);background:var(--ww-surface);color:var(--ww-text);border-radius:10px;}
 .notification-category-settings {margin:15px 0;}
 .notification-category-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:14px 0;}
+
+/* Foreground-only snooze control; the browser's push limitations are stated in Settings. */
+.toast-action {margin-left:12px;min-height:36px;padding:7px 12px;border:1px solid currentColor;border-radius:9px;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;}
+.toast-action:focus-visible {outline:3px solid currentColor;outline-offset:3px;}
