@@ -79,7 +79,8 @@ async function checkTaskReminders(){
     const identity=JSON.stringify([record.week,record.task.id,reminder.at]);
     if(receipts[identity]||memoryReceipts.get(owner+'::'+identity)>now-86400000)continue;
     const body=reminder.automatic?'Your activity starts at '+new Intl.DateTimeFormat('en-GB',{timeZone:weekwiseRuntime.store.settings.timeZone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(reminder.start))+'.':'Your task reminder is due now.';
-    const options={body,tag:'weekwise-task-'+record.task.id+'-'+reminder.value};let sent=false;
+    const tag=weekwiseRuntime.store.settings.reminderGroupByTask===false?'weekwise-task-'+owner+'-'+record.task.id+'-'+reminder.value:'weekwise-task-'+owner+'-'+record.task.id;
+     const options={body,tag};let sent=false;
     if('Notification' in window&&Notification.permission==='granted'){
      try{const notification=new Notification('Weekwise · '+record.task.title,options);notification.onclick=()=>{try{notification.close();}catch(_){}if(allowed())weekwiseRuntime.openReminderTask(record);};sent=true;}
      catch(_){
