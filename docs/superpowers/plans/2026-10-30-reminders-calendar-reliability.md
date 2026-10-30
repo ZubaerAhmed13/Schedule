@@ -24,30 +24,30 @@
 ### Task 1: Shared reminder policy and background integration
 **Files:** create js/weekwise-reminder-policy.js, tests/weekwise-reminder-policy.test.mjs; modify supabase/functions/_shared/reminder-clock.mjs and supabase/functions/weekwise-push/index.ts.
 **Interfaces:** WeekwiseReminderPolicy.leadMinutes(value) => 0|5|15|60; reminders(record,settings) => [{value,at,automatic,start}]; due(record,settings,now) => eligible reminders. record={week,task}; at/start are epoch milliseconds; automatic values are ISO timestamps, explicit values remain unchanged.
-- [ ] Write tests for default/invalid settings, supported lead times, manual precedence/dedup, fixed/recurring events, rescheduling, completed/all-day/unscheduled exclusion, midnight and DST anchors. Run with node --test tests/weekwise-reminder-policy.test.mjs; expect failure before implementation.
-- [ ] Implement the pure policy using existing saved-zone utilities; export it through the project's global module pattern.
-- [ ] Derive push records through the same policy and preserve explicit delivery identifiers; automatic records carry their own calculated instant and upcoming-start cutoff.
-- [ ] Run policy and existing push-clock/contract tests and Deno check; expect pass. Commit this task.
+- [x] Write tests for default/invalid settings, supported lead times, manual precedence/dedup, fixed/recurring events, rescheduling, completed/all-day/unscheduled exclusion, midnight and DST anchors. Run with node --test tests/weekwise-reminder-policy.test.mjs; expect failure before implementation.
+- [x] Implement the pure policy using existing saved-zone utilities; export it through the project's global module pattern.
+- [x] Derive push records through the same policy and preserve explicit delivery identifiers; automatic records carry their own calculated instant and upcoming-start cutoff.
+- [x] Run policy and existing push-clock/contract tests and Deno check; expect pass. Commit this task.
 
 ### Task 2: Deterministic calendar accents
 **Files:** modify js/weekwise-task-options.js, js/weekwise-app-calendar.js, js/weekwise-calendar-range-ui.js; create tests/weekwise-consecutive-colours.test.mjs.
 **Interfaces:** WeekwiseTaskOptions.consecutive(records) => Map keyed by record object with colour name; records carry task,date,start,duration. WeekwiseTaskOptions.attributes(task,displayColour?) preserves old calls and allows derived accents.
-- [ ] Write tests for chains, exact touching vs gaps/overlaps, manual neighbors, order stability, separate days, and input immutability. Run focused test and see missing-function failures.
-- [ ] Implement deterministic automatic accents and integrate day/week/range renderings without saving derived metadata.
-- [ ] Run focused and existing task-options/calendar tests; expect pass. Commit this task.
+- [x] Write tests for chains, exact touching vs gaps/overlaps, manual neighbors, order stability, separate days, and input immutability. Run focused test and see missing-function failures.
+- [x] Implement deterministic automatic accents and integrate day/week/range renderings without saving derived metadata.
+- [x] Run focused and existing task-options/calendar tests; expect pass. Commit this task.
 
 ### Task 3: Settings and safe foreground delivery
 **Files:** create js/weekwise-notification-settings.js, tests/weekwise-notification-delivery.test.mjs; modify index.html, sw.js, js/weekwise-app.js, js/weekwise-app-notifications.js, weekwise-push.js, css/weekwise-settings-nav.css; add tests/weekwise-push-ui.test.mjs.
 **Interfaces:** notification-settings init(bridge) uses planner snapshot/account/commit; render() refreshes saved state. Foreground policy consumes Task 1 reminders; owner-scoped local receipt storage never edits task notification markers or planner records.
-- [ ] Write failing controller tests for repeated checks, failed Notification fallback, no planner writes, owner changes and signed-out delivery suppression; write push UI race test.
-- [ ] Add accessible Settings Notifications section with select and explicit Save, permission and background controls, inline status and custom-reminder explanation. Reuse guarded planner transactions and owner resets.
-- [ ] Integrate shared policy; coordinate foreground tabs with navigator.locks where available and a bounded localStorage receipt fallback. Use service-worker showNotification where needed, retain toast fallback, recheck ownership after async calls, and never navigate away from an open editor.
-- [ ] Guard asynchronous push status with account/request epochs and preserve actionable error messages.
-- [ ] Register modules in source HTML/offline shell and render updates via existing app bridge. Run targeted controller/push tests and existing Node suite; expect pass. Commit this task.
+- [x] Write failing controller tests for repeated checks, failed Notification fallback, no planner writes, owner changes and signed-out delivery suppression; write push UI race test.
+- [x] Add accessible Settings Notifications section with select and explicit Save, permission and background controls, inline status and custom-reminder explanation. Reuse guarded planner transactions and owner resets.
+- [x] Integrate shared policy; coordinate foreground tabs with navigator.locks where available and a bounded localStorage receipt fallback. Use service-worker showNotification where needed, retain toast fallback, recheck ownership after async calls, and never navigate away from an open editor.
+- [x] Guard asynchronous push status with account/request epochs and preserve actionable error messages.
+- [x] Register modules in source HTML/offline shell and render updates via existing app bridge. Run targeted controller/push tests and existing Node suite; expect pass. Commit this task.
 
 ### Task 4: Browser verification and delivery notes
 **Files:** create tests/browser/weekwise-reminder-settings.test.mjs and docs/NOTIFICATIONS_CALENDAR_RELEASE.md; update .github/workflows/browser-smoke.yml.
-- [ ] Add browser tests for settings persistence, save failure, owner isolation, permission refusal, automatic reminder fallback, no duplicates, calendar colours and unchanged saved records. Include light/dark narrow/wide screenshots and axe checks. Watch new behavior assertions fail before wiring any missing integration.
-- [ ] Build and run the new browser suite, then all existing Chromium browser suites sequentially. Run release validation, all Node tests, all five Deno checks and git diff --check; inspect changed-surface screenshots.
-- [ ] Document configuration, custom precedence, background function deployment prerequisite, and actual verification limits. Commit implementation and documentation.
-- [ ] Fresh whole-branch review; reproduce and fix material findings with regression tests. Leave changes local for user review; do not publish.
+- [x] Add browser tests for settings persistence, save failure, owner isolation, permission refusal, automatic reminder fallback, no duplicates, calendar colours and unchanged saved records. Include light/dark narrow/wide screenshots and axe checks. Watch new behavior assertions fail before wiring any missing integration.
+- [x] Build and run the new browser suite, then all existing Chromium browser suites sequentially. Run release validation, all Node tests, all five Deno checks and git diff --check; inspect changed-surface screenshots.
+- [x] Document configuration, custom precedence, background function deployment prerequisite, and actual verification limits. Commit implementation and documentation.
+- [x] Fresh whole-branch review; reproduce and fix material findings with regression tests. Leave changes local for user review; do not publish.

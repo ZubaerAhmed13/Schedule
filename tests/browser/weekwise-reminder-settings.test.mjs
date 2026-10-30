@@ -34,3 +34,13 @@ test('notification settings fit narrow and wide screens in both themes and pass 
 test('consecutive calendar blocks are distinct and manual colours and saved activities remain unchanged',async()=>{
  for(const width of [390,1280]){const {page,context,errors}=await open(width);try{const before=(await saved(page)).weeks;await navigate(page,'calendar');await page.locator('#dayViewBtn').click();const colours=await page.locator('.cal-event[data-task-id]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.taskId,n.dataset.taskColor])));assert.ok(colours.first);assert.notEqual(colours.first,colours.second);assert.equal(colours.manual,'purple');await page.locator('#weekViewBtn').click();const weekColours=await page.locator('.range-event[data-range-id],.mobile-week-event[data-range-id]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.rangeId,n.dataset.taskColor])));assert.ok(weekColours.first,'week view retains automatic accents');assert.notEqual(weekColours.first,weekColours.second);assert.equal(weekColours.manual,'purple');assert.deepEqual((await saved(page)).weeks,before);await page.screenshot({path:path.join(root,'test-results',`consecutive-${width}.png`),animations:'disabled'});assert.deepEqual(errors,[]);}finally{await context.close();}}
 });
+
+test('sticky week navigation leaves safe touch spacing around partially scrolled add buttons',async()=>{
+ const {page,context}=await open(390);try{
+ await navigate(page,'calendar');await page.locator('#weekViewBtn').click();await page.addScriptTag({content:axe.source});
+ for(const offset of [28,35,43]){
+  await page.evaluate(offset=>{const grid=document.getElementById('daysGrid'),button=document.querySelectorAll('.mobile-week-add')[1],index=document.querySelector('.mobile-week-index');grid.scrollTop+=button.getBoundingClientRect().top-index.getBoundingClientRect().bottom+offset;},offset);
+  const violations=await page.evaluate(async()=>{const result=await axe.run(document,{runOnly:['target-size']});return result.violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)}));});assert.deepEqual(violations,[],`touch spacing at scroll offset ${offset}`);
+ }
+ }finally{await context.close();}
+});
