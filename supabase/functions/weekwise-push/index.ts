@@ -187,7 +187,7 @@ async function dispatchDueReminders(admin: ReturnType<typeof adminClient>) {
         const payload = JSON.stringify({
           title: "Weekwise · " + getTaskName(record.task),
           body: record.automatic ? "Your activity starts at " + new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(record.start!)) + "." : "Your task reminder is due now.",
-          tag: "weekwise-task-" + taskId + "-" + record.reminderAt,
+          tag: quietSettings.reminderGroupByTask === false ? "weekwise-task-" + cloud.user_id + "-" + taskId + "-" + record.reminderAt : "weekwise-task-" + cloud.user_id + "-" + taskId,
           url: APP_URL,
           taskId,
           reminderAt: record.reminderAt,
