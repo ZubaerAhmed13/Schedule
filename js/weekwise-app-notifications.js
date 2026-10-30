@@ -62,6 +62,42 @@ function openReminderTask(record){
  const t=weekwiseRuntime.tasks.find(x=>x.id===record.task.id);if(t)weekwiseRuntime.openTaskModal(t.id,t.day,t.start);
 }
 
+
+function snoozes(owner){
+ try{const value=JSON.parse(localStorage.getItem('weekwise-alert-snoozes-v1:'+owner)||'[]');return Array.isArray(value)?value.filter(x=>x&&typeof x.id==='string'&&typeof x.week==='string'&&Number.isFinite(x.until)).slice(-50):[];}
+ catch(_){return [];}
+}
+function saveSnoozes(owner,value){localStorage.setItem('weekwise-alert-snoozes-v1:'+owner,JSON.stringify(value.slice(-50)));}
+function snoozeActivity(owner,record,reminder){
+ if(owner!==weekwiseRuntime.currentDataOwner)return;
+ try{
+  const now=Date.now(),identity=JSON.stringify([record.week,record.task.id,reminder.at]),pending=snoozes(owner).filter(x=>x.identity!==identity&&x.until>now);
+  saveSnoozes(owner,[...pending,{identity,week:record.week,id:record.task.id,until:now+600000,automatic:reminder.automatic===true,start:reminder.start||null}]);
+  weekwiseRuntime.showToast('Snoozed 10 minutes on this device. Keep Weekwise running to receive the alert.');
+ }catch(_){weekwiseRuntime.showToast('Snooze was not saved. The activity was not changed.');}
+}
+function deliverSnoozes(owner,now,allowed){
+ const pending=[];let changed=false;
+ for(const item of snoozes(owner)){
+  if(!allowed())return;
+  const record=weekwiseRuntime.workspaceRecords().find(r=>r.week===item.week&&r.task.id===item.id);
+  if(!record||record.task.done||record.task.archived||record.task.status==='done'||now-item.until>86400000||(item.automatic&&item.start&&item.start<=now)){changed=true;continue;}
+  if(item.until>now){pending.push(item);continue;}
+  if(document.hidden&&(!('Notification' in window)||Notification.permission!=='granted')){pending.push(item);continue;}
+  let sent=false;
+  if('Notification' in window&&Notification.permission==='granted'){
+   try{const alert=new Notification('Weekwise · '+record.task.title,{body:'Snoozed reminder',tag:'weekwise-snooze-'+owner+'-'+item.id});
+    alert.onclick=()=>{try{alert.close();}catch(_){}if(allowed())weekwiseRuntime.openReminderTask(record);};sent=true;
+   }catch(_){}
+  }
+  if(!sent&&document.hidden){pending.push(item);continue;}
+  let at=0;try{at=JSON.parse(item.identity)[2];}catch(_){}
+  weekwiseRuntime.showToast(record.task.title+' · Snoozed reminder','Snooze 10 min',()=>snoozeActivity(owner,record,{at,automatic:item.automatic,start:item.start}));
+  changed=true;
+ }
+ if(changed){try{saveSnoozes(owner,pending);}catch(_){/* Keep disk entry if it cannot be acknowledged. */}}
+}
+
 async function checkTaskReminders(){
  if(reminderCheckBusy||weekwiseRuntime.zoneNeedsReview())return;
  const owner=weekwiseRuntime.currentDataOwner;
@@ -73,6 +109,7 @@ async function checkTaskReminders(){
   const now=Date.now(),receiptKey='weekwise-alert-receipts-v1:'+owner;
   let receipts={};try{receipts=JSON.parse(localStorage.getItem(receiptKey)||'{}');if(!receipts||typeof receipts!=='object'||Array.isArray(receipts))receipts={};}catch(_){}
   const entries=Object.entries(receipts).filter(([,time])=>typeof time==='number'&&time>now-86400000&&time<=now).slice(-512);receipts=Object.fromEntries(entries);
+  deliverSnoozes(owner,now,allowed);
   for(const record of weekwiseRuntime.workspaceRecords()){
    for(const reminder of root.WeekwiseReminderPolicy.due(record,weekwiseRuntime.store.settings,now)){
     if(!allowed())return;
@@ -96,7 +133,7 @@ async function checkTaskReminders(){
     }
     if(!allowed())return;
     if(!sent&&document.hidden)continue;
-    if(!sent)weekwiseRuntime.showToast(record.task.title+' · '+body);
+    weekwiseRuntime.showToast(record.task.title+' · '+body,'Snooze 10 min',()=>snoozeActivity(owner,record,reminder));
     // Receipts acknowledge an accepted system alert OR a visible in-app fallback,
     // never a task edit. Failed storage cannot cause a repeated alert in this tab.
     receipts[identity]=now;memoryReceipts.set(owner+'::'+identity,now);
