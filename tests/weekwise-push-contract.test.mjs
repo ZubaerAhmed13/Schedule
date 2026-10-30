@@ -57,7 +57,7 @@ test("service worker displays pushed reminders and safely opens only Weekwise UR
   assert.match(worker, /addEventListener\('notificationclick'/);
   assert.match(worker, /candidate\.origin === scope\.origin/);
   assert.match(worker, /candidate\.pathname\.startsWith\(scope\.pathname\)/);
-  assert.match(worker, /weekwise-static-v77/);
+  assert.match(worker, /weekwise-static-v78/);
   assert.match(worker, /weekwise-push\.js/);
 });
 
