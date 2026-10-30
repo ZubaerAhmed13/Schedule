@@ -69,7 +69,7 @@ test("calendar UI is exposed through the app bridge and never stores provider se
 });
 
 test("the service worker caches calendar controls and callback JWT verification is handled in code", () => {
-  assert.match(worker, /weekwise-static-v77/);
+  assert.match(worker, /weekwise-static-v78/);
   assert.match(worker, /weekwise-calendar\.js/);
   assert.match(config, /\[functions\.weekwise-calendar\]\s+verify_jwt = false/);
   assert.match(edge, /auth\.getUser\(\)/);
