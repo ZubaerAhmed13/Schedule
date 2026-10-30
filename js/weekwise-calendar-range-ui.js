@@ -1,15 +1,15 @@
 /* Calendar presentation uses dates and source references, never storage indices. */
 (function(root){
- 'use strict';let app=null,state=null,cacheKey='',cached=[],drag=null,lastViewportKey=null;
+ 'use strict';let app=null,state=null,cacheKey='',cached=[],accents=new Map(),drag=null,lastViewportKey=null;
  const $=id=>document.getElementById(id),model=()=>root.WeekwiseCalendarRange,esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const clock=minute=>String(Math.floor(minute/60)%24).padStart(2,'0')+':'+String(Math.floor(minute%60)).padStart(2,'0');
  const fmt=(date,options={weekday:'short',day:'numeric',month:'short'})=>new Date(date+'T12:00:00Z').toLocaleDateString('en-GB',{...options,timeZone:'UTC'});
  const zone=()=>state.store.settings.calendarTimeZone||state.store.settings.timeZone||Intl.DateTimeFormat().resolvedOptions().timeZone;
  const reference=record=>' data-range-week="'+esc(record.week)+'" data-range-id="'+esc(record.task.id)+'"';
- function refreshRecords(){const signature=JSON.stringify(state.store)+'::'+zone();if(signature!==cacheKey){cached=model().project(state.store,zone());cacheKey=signature;}}
+ function refreshRecords(){const signature=JSON.stringify(state.store)+'::'+zone();if(signature!==cacheKey){cached=model().project(state.store,zone());accents=root.WeekwiseTaskOptions.consecutive(cached);cacheKey=signature;}}
  function records(){return cached;}
  function onDate(date){return records().filter(record=>record.date===date||(record.instant&&record.date<date&&record.endDate>=date&&(record.endDate!==date||record.endMinute>0))||(record.allDay&&record.date<date&&model().ordinal(date)<model().ordinal(record.date)+Math.max(1,Math.ceil(record.duration/1440))));}
- function chip(record){return '<button type="button" class="month-event-chip" data-edit="'+esc(record.task.id)+'" data-range-edit'+reference(record)+root.WeekwiseTaskOptions.attributes(record.task)+' title="'+esc(record.task.title+' · '+(record.allDay?'All day':record.zoneError?'Needs zone review':record.start==null?(record.task.recurrenceScheduleReview?.reason||'Unscheduled'):clock(record.start)+'–'+clock(record.endMinute??record.start+record.duration)))+'"><span class="month-event-time">'+(record.allDay?'All day':record.start==null?'—':clock(record.start))+'</span><span class="month-event-title">'+esc(record.task.title)+'</span></button>';}
+ function chip(record){return '<button type="button" class="month-event-chip" data-edit="'+esc(record.task.id)+'" data-range-edit'+reference(record)+root.WeekwiseTaskOptions.attributes(record.task,accents.get(record))+' title="'+esc(record.task.title+' · '+(record.allDay?'All day':record.zoneError?'Needs zone review':record.start==null?(record.task.recurrenceScheduleReview?.reason||'Unscheduled'):clock(record.start)+'–'+clock(record.endMinute??record.start+record.duration)))+'"><span class="month-event-time">'+(record.allDay?'All day':record.start==null?'—':clock(record.start))+'</span><span class="month-event-title">'+esc(record.task.title)+'</span></button>';}
  function mobileTime(record,date){
   if(record.zoneError)return 'Needs time review';
   if(record.allDay)return 'All day'+(record.date<date?' · continues':'');
