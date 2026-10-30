@@ -72,6 +72,7 @@ function snoozeActivity(owner,record,reminder){
  if(owner!==weekwiseRuntime.currentDataOwner)return;
  try{
   const now=Date.now(),identity=JSON.stringify([record.week,record.task.id,reminder.at]),pending=snoozes(owner).filter(x=>x.identity!==identity&&x.until>now);
+  if(reminder.automatic===true&&reminder.start&&now+600000>=reminder.start){weekwiseRuntime.showToast('This activity starts before the snooze would end.');return;}
   saveSnoozes(owner,[...pending,{identity,week:record.week,id:record.task.id,until:now+600000,automatic:reminder.automatic===true,start:reminder.start||null}]);
   weekwiseRuntime.showToast('Snoozed 10 minutes on this device. Keep Weekwise running to receive the alert.');
  }catch(_){weekwiseRuntime.showToast('Snooze was not saved. The activity was not changed.');}
@@ -133,7 +134,9 @@ async function checkTaskReminders(){
     }
     if(!allowed())return;
     if(!sent&&document.hidden)continue;
-    weekwiseRuntime.showToast(record.task.title+' · '+body,'Snooze 10 min',()=>snoozeActivity(owner,record,reminder));
+    const canSnooze=!reminder.automatic||reminder.start>Date.now()+600000;
+    if(canSnooze)weekwiseRuntime.showToast(record.task.title+' · '+body,'Snooze 10 min',()=>snoozeActivity(owner,record,reminder));
+    else weekwiseRuntime.showToast(record.task.title+' · '+body);
     // Receipts acknowledge an accepted system alert OR a visible in-app fallback,
     // never a task edit. Failed storage cannot cause a repeated alert in this tab.
     receipts[identity]=now;memoryReceipts.set(owner+'::'+identity,now);
