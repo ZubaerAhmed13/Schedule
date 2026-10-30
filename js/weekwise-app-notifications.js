@@ -82,7 +82,7 @@ function deliverSnoozes(owner,now,allowed){
   if(!allowed())return;
   const record=weekwiseRuntime.workspaceRecords().find(r=>r.week===item.week&&r.task.id===item.id);
   if(!record||record.task.done||record.task.archived||record.task.status==='done'||now-item.until>86400000||(item.automatic&&item.start&&item.start<=now)){changed=true;continue;}
-  if(item.until>now){pending.push(item);continue;}
+  if(item.until>now||root.WeekwiseReminderPolicy.duringQuietHours(weekwiseRuntime.store.settings,now)){pending.push(item);continue;}
   if(document.hidden&&(!('Notification' in window)||Notification.permission!=='granted')){pending.push(item);continue;}
   let sent=false;
   if('Notification' in window&&Notification.permission==='granted'){
