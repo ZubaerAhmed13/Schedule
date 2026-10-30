@@ -57,10 +57,10 @@ test('quiet hours and category defaults are optional, guarded, and restored afte
   await page.locator('#notificationCategoryOptions summary').click();
   await page.locator('[data-notification-category="study"]').selectOption('60');
   await page.locator('#saveNotificationTiming').click();
-  const settings=(await saved(page)).settings;
-  assert.deepEqual(settings.reminderQuietHours,{enabled:true,start:'21:00',end:'07:00'});
-  assert.equal(settings.reminderGroupByTask,false);
-  assert.equal(settings.reminderCategoryLeadMinutes.study,60);
+  const savedSettings=(await saved(page)).settings;
+  assert.deepEqual(savedSettings.reminderQuietHours,{enabled:true,start:'21:00',end:'07:00'});
+  assert.equal(savedSettings.reminderGroupByTask,false);
+  assert.equal(savedSettings.reminderCategoryLeadMinutes.study,60);
   assert.deepEqual((await saved(page)).weeks,before);
   await page.reload();await settings(page);
   assert.equal(await page.locator('#notificationQuietEnabled').isChecked(),true);
