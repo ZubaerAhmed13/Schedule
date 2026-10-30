@@ -9,7 +9,7 @@ fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true}); /
 for(const file of files){const target=path.join(out,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,file),target);}
 let html=fs.readFileSync(path.join(out,'index.html'),'utf8');html=html.replace(/(src|href)="(\.\/[^"?]+\.(?:js|css))"/g,(_,attr,url)=>`${attr}="${url}?v=${version}"`);fs.writeFileSync(path.join(out,'index.html'),html);
 let privacy=fs.readFileSync(path.join(out,'privacy.html'),'utf8').replace(/href="(\.\/[^"?]+\.css)"/g,(_,url)=>`href="${url}?v=${version}"`);fs.writeFileSync(path.join(out,'privacy.html'),privacy);
-let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8').replace("weekwise-static-v77",'weekwise-static-v77-'+version);sw=sw.replace(/'((?:\.\/)[^']+\.(?:js|css))'/g,(_,url)=>`'${url}?v=${version}'`);fs.writeFileSync(path.join(out,'sw.js'),sw);
+let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8').replace("weekwise-static-v78",'weekwise-static-v78-'+version);sw=sw.replace(/'((?:\.\/)[^']+\.(?:js|css))'/g,(_,url)=>`'${url}?v=${version}'`);fs.writeFileSync(path.join(out,'sw.js'),sw);
 const marker=fs.existsSync(path.join(root,'build-info.json'))?JSON.parse(fs.readFileSync(path.join(root,'build-info.json'),'utf8')):{};fs.writeFileSync(path.join(out,'build-info.json'),JSON.stringify({...marker,assetVersion:version})+'\n');
 const included=files.filter(f=>f!=='sw.js');for(const file of included){if(!fs.existsSync(path.join(out,file)))throw new Error('Missing build asset '+file);}
 console.log('Built '+files.length+' client assets; version '+version+'.');
