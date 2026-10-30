@@ -18,7 +18,8 @@
  }
  // Keep advanced category defaults optional; custom task reminders always win.
  function preferredLead(settings,task){
-  const category=String(task?.type||'other').toLowerCase();
+  const rawCategory=String(task?.type||'other').toLowerCase();
+  const category=['study','job','life','language','hobby'].includes(rawCategory)?rawCategory:'other';
   const overrides=settings?.reminderCategoryLeadMinutes;
   const value=overrides&&typeof overrides==='object'&&!Array.isArray(overrides)?overrides[category]:undefined;
   return [0,5,15,60].includes(value)?value:leadMinutes(settings?.reminderLeadMinutes);
