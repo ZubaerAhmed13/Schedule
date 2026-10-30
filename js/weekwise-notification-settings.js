@@ -8,7 +8,7 @@
  function settingsFields(){
   const enabled=$('notificationQuietEnabled').checked,start=$('notificationQuietStart').value,end=$('notificationQuietEnd').value;
   if(enabled&&(!time.test(start)||!time.test(end)||start===end))throw new Error('Choose two different valid quiet-hours times.');
-  const result={reminderLeadMinutes:Number($('notificationLeadMinutes').value),reminderQuietHours:{enabled,start,end},reminderCategoryLeadMinutes:{}};
+  const result={reminderLeadMinutes:Number($('notificationLeadMinutes').value),reminderQuietHours:{enabled,start,end},reminderCategoryLeadMinutes:{},reminderGroupByTask:$('notificationGroupByTask').checked};
   if(!allowed.includes(result.reminderLeadMinutes))throw new Error('Choose an available reminder time.');
   for(const select of document.querySelectorAll('[data-notification-category]')){
    const value=select.value;
@@ -28,6 +28,7 @@
    const settings=snapshot.store.settings||{},quiet=settings.reminderQuietHours||{},overrides=settings.reminderCategoryLeadMinutes||{};
    $('notificationLeadMinutes').value=String(root.WeekwiseReminderPolicy.leadMinutes(settings.reminderLeadMinutes));
    $('notificationQuietEnabled').checked=quiet.enabled===true;
+   $('notificationGroupByTask').checked=settings.reminderGroupByTask!==false;
    $('notificationQuietStart').value=time.test(quiet.start||'')?quiet.start:'22:00';
    $('notificationQuietEnd').value=time.test(quiet.end||'')?quiet.end:'07:00';
    for(const select of document.querySelectorAll('[data-notification-category]')){
@@ -58,6 +59,7 @@
     const values=settingsFields(),snapshot=JSON.parse(expected),next=JSON.parse(JSON.stringify(snapshot.store));
     next.settings.reminderLeadMinutes=values.reminderLeadMinutes;
     next.settings.reminderQuietHours=values.reminderQuietHours;
+    next.settings.reminderGroupByTask=values.reminderGroupByTask;
     const overrides={...(next.settings.reminderCategoryLeadMinutes||{})};
     for(const category of categories)delete overrides[category];
     Object.assign(overrides,values.reminderCategoryLeadMinutes);
