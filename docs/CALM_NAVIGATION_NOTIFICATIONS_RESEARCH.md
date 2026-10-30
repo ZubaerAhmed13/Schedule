@@ -25,7 +25,7 @@ Research sources:
 - Existing settings remain valid; new preferences are optional and default to existing behavior, except that repeated alerts for the same activity can now replace previous notification cards.
 - Custom manual task reminders override both global and category defaults.
 - Quiet hours use the saved planner zone, not the device clock. Start and end are inclusive/exclusive, including midnight-spanning windows. Equal/invalid enabled quiet times are rejected.
-- Quiet hours suppress both foreground and background task alerts before receipt/delivery claims. Suppressed alerts are not replayed after quiet hours; tasks themselves remain unchanged.
+- Quiet hours suppress both foreground and background task alerts before receipt/delivery claims. Alerts originally scheduled within quiet hours are not replayed later; an overdue alert scheduled before quiet hours can still catch up afterwards. Tasks themselves remain unchanged.
 - Snooze entries are local to the current planner owner, bounded to 50, never included in canonical task records, and acted on only while Weekwise runs. Closed-app push snooze is **not** implemented because a system action without server rescheduling would mislead users.
 - Grouping uses owner+task notification tags for successive alerts; it does not fuse separate task reminders or alter delivery log entries.
 - Account changes and blocked planners prevent emitting snoozed reminders for the prior owner.
