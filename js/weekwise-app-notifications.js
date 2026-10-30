@@ -2,6 +2,7 @@
 (function(root){
 'use strict';
 function create(weekwiseRuntime){
+let reminderCheckBusy=false;const memoryReceipts=new Map();
 
 
 function reminderTodayKey(){return weekwiseRuntime.dateKey(new Date());}
@@ -49,6 +50,7 @@ async function enableTaskNotifications(){
 }
 
 function openReminderTask(record){
+ if(weekwiseRuntime.$('taskModal')?.classList.contains('show')){weekwiseRuntime.showToast('Finish your open edit first. Your reminder remains in the schedule.');return;}
  try{window.focus();}catch(_){}
  weekwiseRuntime.setWorkspaceView('calendar');
  weekwiseRuntime.saveCurrent();
@@ -60,40 +62,54 @@ function openReminderTask(record){
  const t=weekwiseRuntime.tasks.find(x=>x.id===record.task.id);if(t)weekwiseRuntime.openTaskModal(t.id,t.day,t.start);
 }
 
-function checkTaskReminders(){if(weekwiseRuntime.zoneNeedsReview())return;
- const currentTime=Date.now(),due=[];
- weekwiseRuntime.workspaceRecords().forEach(record=>{
-  const task=record.task;if(!task||task.done)return;
-  const notified=new Set(Array.isArray(task.reminderNotifiedTimes)?task.reminderNotifiedTimes:[]);
-  if(task.reminderAt&&task.reminderNotifiedAt===task.reminderAt)notified.add(task.reminderAt);
-  weekwiseRuntime.taskReminderTimes(task).forEach(value=>{
-   if(notified.has(value))return;
-   let at;try{at=WeekwiseZoneConversion.taskReminderInstant(task,value,weekwiseRuntime.store.settings.timeZone);}catch(_){return;}if(Number.isFinite(at)&&at<=currentTime&&currentTime-at<86400000)due.push({record,value});
-  });
- });
- if(!due.length)return;
- let changedCurrent=false,changedOther=false,fallbackCount=0;
- due.forEach(({record,value})=>{
-  const task=record.task;
-  task.reminderNotifiedTimes=Array.isArray(task.reminderNotifiedTimes)?task.reminderNotifiedTimes:[];
-  if(!task.reminderNotifiedTimes.includes(value))task.reminderNotifiedTimes.push(value);
-  if(task.reminderAt===value)task.reminderNotifiedAt=value;
-  let sent=false;
-  if('Notification' in window&&Notification.permission==='granted'){
-   try{
-    const notification=new Notification('Weekwise · '+task.title,{body:'Your task reminder is due now.',tag:'weekwise-task-'+task.id+'-'+value});
-    notification.onclick=()=>{try{notification.close();}catch(_){}weekwiseRuntime.openReminderTask(record);};
-    sent=true;
-   }catch(_){}
+async function checkTaskReminders(){
+ if(reminderCheckBusy||weekwiseRuntime.zoneNeedsReview())return;
+ const owner=weekwiseRuntime.currentDataOwner;
+ const allowed=()=>owner===weekwiseRuntime.currentDataOwner&&(owner==='local'||weekwiseRuntime.cloudUser?.id===owner)&&!weekwiseRuntime.plannerStorageBlocked&&!weekwiseRuntime.cloudConflict;
+ if(!allowed())return;
+ reminderCheckBusy=true;
+ const deliver=async()=>{
+  if(!allowed())return;
+  const now=Date.now(),receiptKey='weekwise-alert-receipts-v1:'+owner;
+  let receipts={};try{receipts=JSON.parse(localStorage.getItem(receiptKey)||'{}');if(!receipts||typeof receipts!=='object'||Array.isArray(receipts))receipts={};}catch(_){}
+  const entries=Object.entries(receipts).filter(([,time])=>typeof time==='number'&&time>now-86400000&&time<=now).slice(-512);receipts=Object.fromEntries(entries);
+  for(const record of weekwiseRuntime.workspaceRecords()){
+   for(const reminder of root.WeekwiseReminderPolicy.due(record,weekwiseRuntime.store.settings,now)){
+    if(!allowed())return;
+    const identity=JSON.stringify([record.week,record.task.id,reminder.at]);
+    if(receipts[identity]||memoryReceipts.get(owner+'::'+identity)>now-86400000)continue;
+    const body=reminder.automatic?'Your activity starts at '+new Intl.DateTimeFormat('en-GB',{timeZone:weekwiseRuntime.store.settings.timeZone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(reminder.start))+'.':'Your task reminder is due now.';
+    const options={body,tag:'weekwise-task-'+record.task.id+'-'+reminder.value};let sent=false;
+    if('Notification' in window&&Notification.permission==='granted'){
+     try{const notification=new Notification('Weekwise · '+record.task.title,options);notification.onclick=()=>{try{notification.close();}catch(_){}if(allowed())weekwiseRuntime.openReminderTask(record);};sent=true;}
+     catch(_){
+      try{
+       const registration=await navigator.serviceWorker?.getRegistration('./');if(!allowed())return;
+       // Settings, completion, or the schedule can change while browser APIs wait.
+       const fresh=weekwiseRuntime.workspaceRecords().find(r=>r.week===record.week&&r.task.id===record.task.id);
+       const eligible=fresh&&root.WeekwiseReminderPolicy.due(fresh,weekwiseRuntime.store.settings,Date.now()).some(r=>r.at===reminder.at&&r.value===reminder.value&&r.automatic===reminder.automatic&&r.start===reminder.start);
+       if(!eligible)continue;
+       if(registration?.showNotification){await registration.showNotification('Weekwise · '+fresh.task.title,options);sent=true;}
+      }catch(_){}
+     }
+    }
+    if(!allowed())return;
+    if(!sent&&document.hidden)continue;
+    if(!sent)weekwiseRuntime.showToast(record.task.title+' · '+body);
+    // Receipts acknowledge an accepted system alert OR a visible in-app fallback,
+    // never a task edit. Failed storage cannot cause a repeated alert in this tab.
+    receipts[identity]=now;memoryReceipts.set(owner+'::'+identity,now);
+    if(memoryReceipts.size>512)memoryReceipts.delete(memoryReceipts.keys().next().value);
+    receipts=Object.fromEntries(Object.entries(receipts).slice(-512));
+    try{localStorage.setItem(receiptKey,JSON.stringify(receipts));}catch(_){}
+   }
   }
-  if(!sent)fallbackCount++;
-  if(record.week===weekwiseRuntime.currentWeek)changedCurrent=true;else changedOther=true;
- });
- if(changedCurrent)weekwiseRuntime.saveCurrent();
- if(changedOther)weekwiseRuntime.saveStore();
- weekwiseRuntime.renderAll();
- if(fallbackCount===1)weekwiseRuntime.showToast('Task reminder: '+due[0].record.task.title);
- else if(fallbackCount>1)weekwiseRuntime.showToast(fallbackCount+' task reminders are due. Open Today or Upcoming to review them.');
+ };
+ try{
+  if(navigator.locks?.request)await navigator.locks.request('weekwise-task-alerts:'+owner,deliver);
+  else await deliver();
+ }catch(_){/* A denied lock is retried on the next reminder tick. */}
+ finally{reminderCheckBusy=false;}
 }
 
 function parseWeekwiseNaturalCapture(raw,baseDate=new Date()){

@@ -6,15 +6,16 @@
   const statusId = "backgroundPushStatus";
   let busy = false;
   let refreshBusy = false;
+  let statusEpoch = 0;
 
-  function setStatus(message, error = false) {
+  function writeStatus(message, error = false) {
     const status = $(statusId);
     if (!status) return;
     status.textContent = message;
     status.dataset.tone = error ? "error" : "";
   }
 
-  function setButton(text, disabled = false) {
+  function writeButton(text, disabled = false) {
     const button = $(buttonId);
     if (!button) return;
     button.textContent = text;
@@ -25,10 +26,17 @@
     return window.weekwiseCloudClient || null;
   }
 
+  function bounded(operation) {
+    let timer;
+    return Promise.race([operation, new Promise((_, reject) => {
+      timer = window.setTimeout(() => reject(new Error("The reminder service timed out. Check your connection and try again.")), 15000);
+    })]).finally(() => window.clearTimeout(timer));
+  }
+
   async function getSignedInSession() {
     const supabase = client();
     if (!supabase?.auth?.getSession) throw new Error("Weekwise cloud sign-in is unavailable. Reload the app while online.");
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await bounded(supabase.auth.getSession());
     if (error) throw new Error("Could not verify the Weekwise session.");
     if (!data?.session?.user) throw new Error("Sign in to Weekwise before enabling background reminders.");
     return data.session;
@@ -39,9 +47,9 @@
     if (!supabase?.functions?.invoke) {
       throw new Error("The Weekwise push service is not deployed yet. Complete the background-push setup first.");
     }
-    const { data, error } = await supabase.functions.invoke("weekwise-push", {
+    const { data, error } = await bounded(supabase.functions.invoke("weekwise-push", {
       body: { action, ...payload }
-    });
+    }));
     if (error) {
       let detail = error.message || "Background reminder request failed.";
       try {
@@ -72,7 +80,7 @@
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       throw new Error("This browser does not support background Web Push notifications.");
     }
-    const registration = await navigator.serviceWorker.getRegistration("./");
+    const registration = await bounded(navigator.serviceWorker.getRegistration("./"));
     if (!registration) throw new Error("Weekwise's service worker is not ready. Open the app online once, then reload.");
     if (!registration.pushManager) throw new Error("Background push is not available in this browser.");
     return registration;
@@ -80,7 +88,7 @@
 
   async function readDeviceState(session) {
     const registration = await getRegistration();
-    const subscription = await registration.pushManager.getSubscription();
+    const subscription = await bounded(registration.pushManager.getSubscription());
     if (!subscription) return { registration, subscription: null, enabledForUser: false };
     const status = await invoke("status", { endpoint: subscription.endpoint });
     return {
@@ -93,6 +101,11 @@
   async function refreshState() {
     if (refreshBusy || busy) return;
     refreshBusy = true;
+    const epoch = ++statusEpoch;
+    const current = () => epoch === statusEpoch;
+    const setStatus = (...args) => { if (current()) writeStatus(...args); };
+    const setButton = (...args) => { if (current()) writeButton(...args); };
+
     try {
       const supabase = client();
       if (!supabase?.auth?.getSession) {
@@ -101,7 +114,7 @@
         return;
       }
 
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await bounded(supabase.auth.getSession());
       if (error || !data?.session?.user) {
         setButton("Sign in to enable", true);
         setStatus("Sign in to Weekwise before enabling background reminders.");
@@ -118,13 +131,13 @@
         return;
       }
 
-      const registration = await navigator.serviceWorker.getRegistration("./");
+      const registration = await bounded(navigator.serviceWorker.getRegistration("./"));
       if (!registration?.pushManager) {
         setButton("Service worker not ready", true);
         setStatus("Open Weekwise online once and reload so its service worker can be installed.", true);
         return;
       }
-      const subscription = await registration.pushManager.getSubscription();
+      const subscription = await bounded(registration.pushManager.getSubscription());
       // Probe the authenticated backend even when no local subscription exists, so the
       // UI does not imply setup is ready when the Edge Function is still undeployed.
       let state;
@@ -153,18 +166,29 @@
       setButton("Configure background reminders");
       setStatus(error.message || "Could not check background reminder support.", true);
     } finally {
-      refreshBusy = false;
+      if (current()) refreshBusy = false;
     }
   }
 
   async function toggleBackgroundPush() {
     if (busy) return;
     busy = true;
+    // Supersede any in-flight focus probe before owning the controls.
+    refreshBusy = false;
+    const epoch = ++statusEpoch;
+    const current = () => epoch === statusEpoch;
+    const setStatus = (...args) => { if (current()) writeStatus(...args); };
+    const setButton = (...args) => { if (current()) writeButton(...args); };
+
     setButton("Working…", true);
+    let failure = null;
     try {
       await getSignedInSession();
+      if (!current()) return;
       const registration = await getRegistration();
-      const existing = await registration.pushManager.getSubscription();
+      if (!current()) return;
+      const existing = await bounded(registration.pushManager.getSubscription());
+      if (!current()) return;
 
       if (existing) {
         let state = { enabled: false };
@@ -173,6 +197,7 @@
           // A local subscription is safe to keep; do not delete it when the server is unavailable.
           throw new Error("Could not verify the device subscription: " + (error.message || "push service unavailable"));
         }
+        if (!current()) return;
         if (state.enabled === true) {
           await invoke("unsubscribe", { endpoint: existing.endpoint });
           await existing.unsubscribe();
@@ -180,7 +205,7 @@
           return;
         }
         // A browser profile may still hold a subscription from a different Weekwise account.
-        // Re-registering moves the endpoint to the currently authenticated account.
+        // The server enforces ownership; a cross-account endpoint cannot be transferred.
         await invoke("subscribe", { subscription: existing.toJSON(), timezone: currentTimeZone() });
         setStatus("Background reminder subscription is enabled for this device (" + currentTimeZone() + "). Delivery with Weekwise closed is unverified on this device.");
         return;
@@ -196,12 +221,14 @@
       }
 
       const { publicKey } = await invoke("public-key");
+      if (!current()) return;
       if (!publicKey || typeof publicKey !== "string") throw new Error("The push service did not provide its public VAPID key.");
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: encodeApplicationServerKey(publicKey)
       });
 
+      if (!current()) { await subscription.unsubscribe(); return; }
       try {
         await invoke("subscribe", {
           subscription: subscription.toJSON(),
@@ -213,10 +240,14 @@
       }
       setStatus("Background reminder subscription is enabled for this device (" + currentTimeZone() + "). Delivery with Weekwise closed is unverified on this device.");
     } catch (error) {
-      setStatus(error.message || "Could not enable background reminders.", true);
+      failure = error.message || "Could not enable background reminders.";
     } finally {
-      busy = false;
-      await refreshState();
+      if (current()) {
+        busy = false;
+        const expectedRefreshEpoch = statusEpoch + 1;
+        await refreshState();
+        if (failure && statusEpoch === expectedRefreshEpoch) writeStatus(failure, true);
+      }
     }
   }
 
@@ -227,6 +258,9 @@
     const supabase = client();
     if (supabase?.auth?.onAuthStateChange) {
       supabase.auth.onAuthStateChange(() => {
+        statusEpoch += 1; busy = false; refreshBusy = false;
+        writeButton("Checking background reminders…", true);
+        writeStatus("Checking the current account’s reminder settings…");
         window.setTimeout(() => { refreshState(); }, 0);
       });
     }

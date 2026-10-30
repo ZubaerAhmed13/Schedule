@@ -184,7 +184,7 @@ body .field label,body .modal .field label,body .template-form .field label,body
  .mobile-week-toolbar .calendar-create-actions .btn{min-height:42px;font-size:12px;padding:8px 10px}
  #daysGrid.mobile-week-mode{height:72vh!important;height:72dvh!important;min-height:340px!important;max-height:760px!important;overflow-x:hidden;overflow-y:auto;padding:0 12px 14px;background:var(--ww-surface);border:1px solid var(--ww-line);border-radius:20px;scroll-padding-top:84px}
  .mobile-week-mode .range-zone-label{padding:10px 2px 0;margin:0;font-size:11px;color:var(--ww-muted)}
- .mobile-week-index{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;padding:10px 0;background:var(--ww-surface);border-bottom:1px solid var(--ww-line)}
+ .mobile-week-index{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;padding:10px 0 24px;background:var(--ww-surface);border-bottom:1px solid var(--ww-line)}
  .mobile-week-description{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
  .mobile-week-date{display:grid;place-items:center;gap:3px;min-width:0;min-height:66px;padding:7px 1px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--ww-text);font:inherit;font-size:11px;cursor:pointer}
  .mobile-week-date strong{font-size:18px;font-weight:750;line-height:1.2}.mobile-week-date small{font-size:10px;color:var(--ww-muted)}
