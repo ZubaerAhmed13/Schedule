@@ -2,7 +2,16 @@
 (function(root){
 'use strict';
 function create(weekwiseRuntime){
-function showToast(msg){const el=weekwiseRuntime.$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(weekwiseRuntime.toastTimer);weekwiseRuntime.toastTimer=setTimeout(()=>el.classList.remove('show'),2400);}
+function showToast(msg,actionLabel=null,onAction=null){
+ const el=weekwiseRuntime.$('toast');el.textContent=msg;
+ if(actionLabel&&typeof onAction==='function'){
+  const button=document.createElement('button');button.type='button';button.className='toast-action';button.textContent=actionLabel;
+  button.onclick=()=>{clearTimeout(weekwiseRuntime.toastTimer);el.classList.remove('show');onAction();};
+  el.appendChild(button);
+ }
+ el.classList.add('show');clearTimeout(weekwiseRuntime.toastTimer);
+ weekwiseRuntime.toastTimer=setTimeout(()=>el.classList.remove('show'),actionLabel?10000:2400);
+}
 
 function populateDaySelects(){['quickDay','modalDay'].forEach(id=>{const el=weekwiseRuntime.$(id);el.innerHTML=weekwiseRuntime.DAY_NAMES.map((n,i)=>`<option value="${i}">${n}</option>`).join('')});}
 

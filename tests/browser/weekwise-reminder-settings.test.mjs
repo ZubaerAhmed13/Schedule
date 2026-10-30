@@ -44,3 +44,41 @@ test('sticky week navigation leaves safe touch spacing around partially scrolled
  }
  }finally{await context.close();}
 });
+
+test('quiet hours and category defaults are optional, guarded, and restored after reload',async()=>{
+ const {page,context,errors}=await open();try{
+  await settings(page);
+  assert.equal(await page.locator('#notificationCategoryOptions').evaluate(el=>el.open),false);
+  const before=(await saved(page)).weeks;
+  await page.locator('#notificationQuietEnabled').check();
+  await page.locator('#notificationQuietStart').fill('21:00');
+  await page.locator('#notificationQuietEnd').fill('07:00');
+  await page.locator('#notificationGroupByTask').uncheck();
+  await page.locator('#notificationCategoryOptions summary').click();
+  await page.locator('[data-notification-category="study"]').selectOption('60');
+  await page.locator('#saveNotificationTiming').click();
+  const savedSettings=(await saved(page)).settings;
+  assert.deepEqual(savedSettings.reminderQuietHours,{enabled:true,start:'21:00',end:'07:00'});
+  assert.equal(savedSettings.reminderGroupByTask,false);
+  assert.equal(savedSettings.reminderCategoryLeadMinutes.study,60);
+  assert.deepEqual((await saved(page)).weeks,before);
+  await page.reload();await settings(page);
+  assert.equal(await page.locator('#notificationQuietEnabled').isChecked(),true);
+  assert.equal(await page.locator('#notificationQuietStart').inputValue(),'21:00');
+  assert.equal(await page.locator('[data-notification-category="study"]').inputValue(),'60');
+  assert.equal(await page.locator('#notificationGroupByTask').isChecked(),false);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+test('quiet hours suppress due foreground alerts while keeping other tasks and save state intact',async()=>{
+ const {page,context,errors}=await open(1280,{permission:'denied'});try{
+  await settings(page);await page.locator('#notificationQuietEnabled').check();
+  await page.locator('#notificationQuietStart').fill('09:00');
+  await page.locator('#notificationQuietEnd').fill('11:00');
+  await page.locator('#notificationLeadMinutes').selectOption('15');
+  await page.locator('#saveNotificationTiming').click();
+  await page.evaluate(()=>window.checkTaskReminders?.());
+  assert.equal(await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('weekwise-alert-receipts-v1:local')||'{}')).length),0);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});

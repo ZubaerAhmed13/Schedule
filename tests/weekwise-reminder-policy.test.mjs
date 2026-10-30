@@ -48,3 +48,33 @@ test('midnight and saved-zone DST anchors determine the real instant, never the 
  assert.equal(WeekwiseReminderPolicy.reminders(fold,{...settings,timeZone:'Europe/Berlin'})[0].at,Date.parse('2030-10-27T01:15Z'));
  assert.deepEqual(WeekwiseReminderPolicy.reminders(record(),{...settings,timeZone:'Invalid/Zone'}),[]);
 });
+
+test('optional category defaults override global timing but never custom reminders',()=>{
+ const r=record({type:'study'}),before=structuredClone(r);
+ const chosen={...settings,reminderCategoryLeadMinutes:{study:60,life:0}};
+ assert.equal(WeekwiseReminderPolicy.preferredLead(chosen,r.task),60);
+ assert.equal(WeekwiseReminderPolicy.reminders(r,chosen)[0].at,Date.parse('2030-01-07T09:00:00Z'));
+ assert.equal(WeekwiseReminderPolicy.reminders(record({type:'life'}),chosen).length,0);
+ assert.equal(WeekwiseReminderPolicy.reminders(record({type:'hobby'}),chosen)[0].at,at);
+ assert.equal(WeekwiseReminderPolicy.preferredLead({...settings,reminderCategoryLeadMinutes:{other:5}},record({type:'legacy-class'}).task),5);
+ const explicit=record({type:'study',reminderTimes:['2030-01-07T09:35']});
+ assert.equal(WeekwiseReminderPolicy.reminders(explicit,chosen)[0].automatic,false);
+ assert.deepEqual(r,before);
+});
+test('quiet hours respect the saved planner zone, midnight and same-day windows',()=>{
+ const quiet={enabled:true,start:'22:00',end:'07:00'};
+ const zone={...settings,reminderQuietHours:quiet};
+ assert.equal(WeekwiseReminderPolicy.duringQuietHours(zone,Date.parse('2030-01-07T22:30Z')),true);
+ assert.equal(WeekwiseReminderPolicy.duringQuietHours(zone,Date.parse('2030-01-07T06:59Z')),true);
+ assert.equal(WeekwiseReminderPolicy.duringQuietHours(zone,Date.parse('2030-01-07T07:00Z')),false);
+ assert.equal(WeekwiseReminderPolicy.duringQuietHours({...zone,timeZone:'Asia/Tokyo'},Date.parse('2030-01-07T15:00Z')),true);
+ assert.equal(WeekwiseReminderPolicy.duringQuietHours({...zone,reminderQuietHours:{enabled:true,start:'12:00',end:'13:00'}},Date.parse('2030-01-07T12:30Z')),true);
+ assert.equal(WeekwiseReminderPolicy.duringQuietHours({...zone,reminderQuietHours:{enabled:true,start:'10:00',end:'10:00'}},Date.parse('2030-01-07T10:00Z')),false);
+});
+test('quiet alerts never replay after quiet hours; disabling quiet hours preserves old delivery',()=>{
+ const r=record({reminderAt:'2030-01-07T06:30:00Z'});
+ const zone={...settings,reminderQuietHours:{enabled:true,start:'22:00',end:'07:00'}};
+ assert.equal(WeekwiseReminderPolicy.due(r,zone,Date.parse('2030-01-07T06:31Z')).length,0);
+ assert.equal(WeekwiseReminderPolicy.due(r,zone,Date.parse('2030-01-07T07:30Z')).length,0);
+ assert.equal(WeekwiseReminderPolicy.due(r,{...zone,reminderQuietHours:{enabled:false,start:'22:00',end:'07:00'}},Date.parse('2030-01-07T07:30Z')).length,1);
+});

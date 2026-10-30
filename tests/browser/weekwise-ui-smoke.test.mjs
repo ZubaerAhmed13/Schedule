@@ -660,7 +660,7 @@ async function createFlexibleTask(page,title,estimate='60',mode='flexible',listI
 }
 async function openFuturePlan(page) {
   await (await visibleControl(page,'#workspaceSidebar [data-workspace-view="plan"]')).click();
-  const futureWeek=await page.evaluate(()=>{const date=new Date();date.setDate(date.getDate()+7-date.getDay());return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');});
+  const futureWeek=await page.evaluate(()=>{const date=new Date();date.setDate(date.getDate()+((8-date.getDay())%7||7));return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');});
   await (await visibleControl(page,'#planWeek')).fill(futureWeek);
   await page.locator('#planPreferences button[type="submit"]').click();
   await page.locator('#planResults').waitFor({state:'visible'});
