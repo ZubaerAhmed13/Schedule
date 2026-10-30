@@ -62,8 +62,8 @@ self.addEventListener('notificationclick', event => {
     for (const client of windows) {
       if (client.url.startsWith(scope.origin + scope.pathname)) {
         try {
-          const focused = await client.focus();
-          if (focused && typeof focused.navigate === 'function') await focused.navigate(target.href);
+          // Keep open editors and unsaved reviews intact when returning from an alert.
+          await client.focus();
           return;
         } catch (_) {}
       }

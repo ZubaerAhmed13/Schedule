@@ -87,6 +87,7 @@ async function checkTaskReminders(){
      }
     }
     if(!allowed())return;
+    if(!sent&&document.hidden)continue;
     if(!sent)weekwiseRuntime.showToast(record.task.title+' · '+body);
     // Receipts acknowledge an accepted system alert OR a visible in-app fallback,
     // never a task edit. Failed storage cannot cause a repeated alert in this tab.

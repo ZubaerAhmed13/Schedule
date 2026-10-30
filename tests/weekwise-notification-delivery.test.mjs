@@ -25,3 +25,6 @@ test('queued browser locks recheck the owner before delivering a private reminde
  const f=fixture();let resume;f.context.navigator.locks={request:(_name,run)=>new Promise(resolve=>{resume=()=>resolve(run());})};
  const pending=f.context.checkTaskReminders();f.context.currentDataOwner='someone-else';f.context.cloudUser={id:'someone-else'};await resume();await pending;assert.equal(f.alerts.length,0);
 });
+test('a hidden tab defers in-app fallback until the planner becomes visible',async()=>{
+ const f=fixture();f.context.Notification.permission='denied';f.context.document.hidden=true;await f.context.checkTaskReminders();assert.equal(f.toasts.length,0);f.context.document.hidden=false;await f.context.checkTaskReminders();assert.equal(f.toasts.length,1);
+});
