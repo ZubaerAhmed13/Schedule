@@ -161,7 +161,7 @@ async function dispatchDueReminders(admin: ReturnType<typeof adminClient>) {
       const timeZone = reminderZone(cloud.data,subscriptions[0].timezone);
       if(!timeZone){totals.skipped+=1;continue;}
       const planner = cloud.data?.store as Json | undefined;
-      const quietSettings = { ...((planner?.settings as Json | undefined) || {}), timeZone };
+      const quietSettings: Json = { ...((planner?.settings as Json | undefined) || {}), timeZone };
       const records = listTasksFromCloud(cloud.data ?? {}, timeZone);
 
       for (const record of records) {
