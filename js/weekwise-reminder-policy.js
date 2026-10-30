@@ -27,7 +27,7 @@
  function duringQuietHours(settings,instant){
   const quiet=settings?.reminderQuietHours;
   if(!quiet||quiet.enabled!==true||!Number.isFinite(instant))return false;
-  const clock=/^([01]\\d|2[0-3]):([0-5]\\d)$/;
+  const clock=/^([01]\d|2[0-3]):([0-5]\d)$/;
   const a=typeof quiet.start==='string'?clock.exec(quiet.start):null;
   const b=typeof quiet.end==='string'?clock.exec(quiet.end):null;
   if(!a||!b||!settings.timeZone)return false;
